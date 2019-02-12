@@ -1,6 +1,6 @@
 import abc
 from typing import Any, Callable
-from i2i.py2store import Path, Obj, Data
+from py2store import Path, Obj, Data
 
 
 class PathOf(object):
@@ -14,6 +14,7 @@ class PathOf(object):
     @abc.abstractmethod
     def key_of(self, path):
         raise NotImplementedError("This method needs to be implemented")
+
 
 class IdentityPathOf(PathOf):
     def __call__(self, key):
@@ -45,11 +46,11 @@ class KeyValPersister(object):
     def delete(self, key):
         raise NotImplementedError
 
-    # :param __iter__: A method that lists (iteratively) the paths that the store contains.
-    # @abc.abstractmethod
-    # def __iter__(self):
-    #     """Iterate over item references (paths)"""
-    #     raise NotImplementedError
+        # :param __iter__: A method that lists (iteratively) the paths that the store contains.
+        # @abc.abstractmethod
+        # def __iter__(self):
+        #     """Iterate over item references (paths)"""
+        #     raise NotImplementedError
 
 
 # from i2i.pymint import name_of_obj
@@ -166,7 +167,6 @@ def mk_in_memory_obj_store():
                     data_of_obj=lambda obj: obj,
                     obj_of_data=lambda data: data)
 
-
 # TODO: Make object validation and dump_only_if_does_not_exist decorators
 # def add_obj_validation(obj_store, obj_validaton: Union[Callable[[Obj], bool], None]):
 #     """
@@ -187,4 +187,3 @@ def mk_in_memory_obj_store():
 #             return func(self, *args, **kwargs)
 #
 #         return wrapper
-

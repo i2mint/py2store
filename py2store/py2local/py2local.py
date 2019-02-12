@@ -4,9 +4,9 @@ from glob import iglob
 
 import attr
 
-from i2i.py2store import file_sep
-from i2i.py2store.py2store import Obj, Data
-from i2i.py2store.py2store import PathOf, KeyValPersister, ObjStore
+from py2store import file_sep
+from py2store import Obj, Data
+from py2store import PathOf, KeyValPersister, ObjStore
 
 
 class FilepathOf(PathOf):
