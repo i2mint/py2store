@@ -1,5 +1,6 @@
 from collections.abc import MutableMapping
-from py2store.obj_source import ObjSource, DictObjSource
+from py2store.obj_source import DictObjSource
+from py2store.base import ObjSource
 
 
 class DataWriter(MutableMapping):

@@ -3,8 +3,8 @@ import os
 import re
 from typing import Callable, Union, Any
 import soundfile as sf  # TODO: Replace by another wav reader, and move to another module
-from functools import wraps
-from py2store.obj_source import ObjSource
+
+from py2store.base import Keys, ObjSource
 from py2store.parse_format import match_re_for_fstring
 
 file_sep = os.path.sep
@@ -160,8 +160,7 @@ def mk_file_reader_func(kind: str = 'dflt', **kwargs):
     return _file_reader_for_kind[kind](**kwargs)
 
 
-
-class Paths(object):
+class Paths(Keys):
     def is_valid_path(self, k):
         return bool(self._path_match_re.match(k))
 
@@ -198,6 +197,51 @@ dflt_contents_of_file = mk_file_reader_func(kind='dflt')
 
 
 class LocalFileObjSource(ObjSource):
+    def __init__(self, contents_of_file: Callable[[str], Any] = dflt_contents_of_file):
+        """
+
+        :param contents_of_file: The function that returns the python object stored at a given key (path)
+        """
+        self._contents_of_file = contents_of_file
+
+    @classmethod
+    def for_kind(cls, kind: str = 'dflt', **kwargs):
+        """
+        Makes a LocalFileObjSource using specific kind of serialization.
+        :param path_format: the path_format to use for the LocalFileObjSource
+        :param kind: kind of file reader to use ('dflt', 'wav', 'json', 'pickle')
+        :param kwargs: to feed to the mk_file_reader_func to control the file reader that is made
+        :return: an instance of LocalFileObjSource
+
+        >>> import tempfile
+        >>> import json, pickle
+        >>>
+        >>> ####### Testing the 'json' kind
+        >>> filepath = tempfile.mktemp(suffix='.json')  # making a filepath for a json
+        >>> d = {'a': 'foo', 'b': {'c': 'bar', 'd': 3}, 'c': [1, 2, 3], 'd': True, 'none': None}  # making some data
+        >>> json.dump(d, open(filepath, 'w'))  # saving this data as a json file
+        >>>
+        >>> obj_source = LocalFileObjSource.for_kind(path_format='', kind='json')  # make an obj_source for json
+        >>> assert d == obj_source[filepath]  # see that obj_source returns the same data we put into it
+        >>>
+        >>> ####### Testing the 'pickle' kind
+        >>> filepath = tempfile.mktemp(suffix='.p')  # making a filepath for a pickle
+        >>> import pandas as pd; d = pd.DataFrame({'A': [1, 2, 3], 'B': ['one', 'two', 'three']})  # make some data
+        >>> pickle.dump(d, open(filepath, 'wb'), )  # save the data in the filepath
+        >>> obj_source = LocalFileObjSource.for_kind(path_format='', kind='pickle')  # make an obj_source for pickles
+        >>> assert all(d == obj_source[filepath])  # get the data in filepath and assert it's the same as the saved
+        """
+        contents_of_file = mk_file_reader_func(kind=kind, **kwargs)
+        return cls(contents_of_file)
+
+    def __getitem__(self, k):
+        try:
+            return self._contents_of_file(k)
+        except Exception as e:
+            raise KeyError("KeyError in {} when trying to __getitem__({}): {}".format(e.__class__.__name__, k, e))
+
+
+class LocalFileObjSourceWithPathCollection(ObjSource):
     """
     An implementation of an ObjSource that uses local files as to store things.
     An ObjSource offers the basic methods: __getitem__, __len__ and __iter__, along with the consequential
@@ -208,21 +252,10 @@ class LocalFileObjSource(ObjSource):
     def __init__(self, paths, contents_of_file: Callable[[str], Any] = dflt_contents_of_file):
         """
 
-        :param path_format: The f-string format that the fullpath keys of the obj source should have.
-            Often, just the root directory whose FILES contain the (full_filepath, content) data
-            Also common is to use path_format='{rootdir}/{relative_path}.EXT' to impose a specific extension EXT
+        :param paths: A collection (e.g. list, tuple, set) of paths
         :param contents_of_file: The function that returns the python object stored at a given key (path)
         """
-        if '{' not in path_format:
-            self._rootdir = path_format
-        else:
-            rootdir = re.match('[^\{]*', path_format).group(0)
-            self._rootdir = os.path.dirname(rootdir)
-
-        if path_format == self._rootdir:  # if the path_format is equal to the _rootdir (i.e. there's no {} formatting)
-            path_format += '{}'  # ... add a formatting element so that the matcher can match all subfiles.
-        self._path_match_re = match_re_for_fstring(path_format)
-        self._path_format = path_format
+        self.paths = paths
         self._contents_of_file = contents_of_file
 
     @classmethod
@@ -256,22 +289,16 @@ class LocalFileObjSource(ObjSource):
         return cls(path_format, contents_of_file)
 
     def is_valid_key(self, k):
-        return bool(self._path_match_re.match(k))
+        return k in self.paths
 
     def __iter__(self):
-        return recursive_file_walk_iterator_with_filepath_filter(
-            self._rootdir, filt=self.is_valid_key, return_full_path=True)
-        # return filter(os.path.isfile, iglob('{}/*'.format(self._rootdir)))
+        return self.paths
 
     def __contains__(self, k):  # override abstract version, which is not as efficient
         return self.is_valid_key(k) and os.path.isfile(k)
 
     def __len__(self):
-        # TODO: Use itertools, or some other means to more quickly count files
-        count = 0
-        for _ in self.__iter__():
-            count += 1
-        return count
+        return len(self.paths)
 
     def __getitem__(self, k):
         try:

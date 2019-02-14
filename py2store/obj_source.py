@@ -1,24 +1,4 @@
-from collections.abc import Mapping
-
-
-class ObjSource(Mapping):
-    """
-    Interface for an Object Source.
-    An ObjSource offers the basic methods: __getitem__, __len__ and __iter__, along with the consequential
-    mixin methods that collections.abc.Mapping adds automatically:
-        __contains__, keys, items, values, get, __eq__, and __ne__
-    (see https://docs.python.org/3/library/collections.abc.html)
-
-    """
-
-    def __getitem__(self, k):
-        raise NotImplementedError("Need to implement in concrete class")
-
-    def __len__(self):
-        raise NotImplementedError("Need to implement in concrete class")
-
-    def __iter__(self):
-        raise NotImplementedError("Need to implement in concrete class")
+from py2store.base import ObjSource
 
 
 class DictObjSource(ObjSource):
