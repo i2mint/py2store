@@ -1,6 +1,4 @@
 import abc
-from typing import Any, Callable
-from py2store import Path, Obj, Data
 
 
 class PathOf(object):
@@ -92,8 +90,8 @@ class ObjStore(object):
     def __init__(self,
                  persister: KeyValPersister,
                  path_of: PathOf = IdentityPathOf(),
-                 data_of_obj: Callable[[Obj], Data] = lambda obj: obj,
-                 obj_of_data: Callable[[Data], Obj] = lambda data: data):
+                 data_of_obj=lambda obj: obj,
+                 obj_of_data=lambda data: data):
         """
         Construct an ObjStore instance.
         :param persister: A KeyValPersister object (which should contain dump, load, and delete methods

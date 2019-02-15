@@ -4,7 +4,7 @@ import re
 from typing import Callable, Union, Any
 import soundfile as sf  # TODO: Replace by another wav reader, and move to another module
 
-from py2store.base import Keys, ObjSource
+from py2store.base import Keys, AbstractObjSource
 from py2store.parse_format import match_re_for_fstring
 
 file_sep = os.path.sep
@@ -196,7 +196,7 @@ class LocalPaths(Paths):
 dflt_contents_of_file = mk_file_reader_func(kind='dflt')
 
 
-class LocalFileObjSource(ObjSource):
+class LocalFileObjSource(AbstractObjSource):
     def __init__(self, contents_of_file: Callable[[str], Any] = dflt_contents_of_file):
         """
 
@@ -241,7 +241,7 @@ class LocalFileObjSource(ObjSource):
             raise KeyError("KeyError in {} when trying to __getitem__({}): {}".format(e.__class__.__name__, k, e))
 
 
-class LocalFileObjSourceWithPathCollection(ObjSource):
+class LocalFileObjSourceWithPathCollection(AbstractObjSource):
     """
     An implementation of an ObjSource that uses local files as to store things.
     An ObjSource offers the basic methods: __getitem__, __len__ and __iter__, along with the consequential
@@ -307,7 +307,7 @@ class LocalFileObjSourceWithPathCollection(ObjSource):
             raise KeyError("KeyError in {} when trying to __getitem__({}): {}".format(e.__class__.__name__, k, e))
 
 
-class LocalFileObjSourceWithPathFormat(ObjSource):
+class LocalFileObjSourceWithPathFormat(AbstractObjSource):
     """
     An implementation of an ObjSource that uses local files as to store things.
     An ObjSource offers the basic methods: __getitem__, __len__ and __iter__, along with the consequential
