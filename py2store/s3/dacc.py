@@ -1,5 +1,6 @@
 from py2store.base import AbstractKeys, AbstractObjReader, AbstractObjWriter, AbstractObjStore
 import boto3
+from botocore.exceptions import ClientError
 from py2store.util import lazyprop
 from py2store.s3 import DFLT_AWS_S3_ENDPOINT, DFLT_BOTO_CLIENT_VERIFY, DFLT_CONFIG
 
@@ -41,27 +42,34 @@ def get_s3_bucket(name,
 
 
 class S3BucketDacc(object):
-    def __init__(self, name, aws_access_key_id, aws_secret_access_key,
-                 endpoint_url=DFLT_AWS_S3_ENDPOINT,
-                 verify=DFLT_BOTO_CLIENT_VERIFY,
-                 config=DFLT_CONFIG):
-        self.bucket_name = name
-        self._resource_dict = dict(aws_access_key_id=aws_access_key_id,
-                                   aws_secret_access_key=aws_secret_access_key,
-                                   endpoint_url=endpoint_url,
-                                   verify=verify,
-                                   config=config)
+    def __init__(self, bucket_name, s3_bucket):
+        self.bucket_name = bucket_name
+        self._s3_bucket = s3_bucket
 
-    @lazyprop
-    def _s3(self):
-        return get_s3_resource(**self._resource_dict)
+    @classmethod
+    def from_s3_resource_kwargs(cls,
+                                bucket_name,
+                                aws_access_key_id,
+                                aws_secret_access_key,
+                                endpoint_url=DFLT_AWS_S3_ENDPOINT,
+                                verify=DFLT_BOTO_CLIENT_VERIFY,
+                                config=DFLT_CONFIG):
+        s3_resource = get_s3_resource(aws_access_key_id=aws_access_key_id,
+                                      aws_secret_access_key=aws_secret_access_key,
+                                      endpoint_url=endpoint_url,
+                                      verify=verify,
+                                      config=config)
+        return cls.from_s3_resource(bucket_name, s3_resource)
 
-    @lazyprop
-    def _s3_bucket(self):
-        return self._s3.Bucket(self.bucket_name)
+    @classmethod
+    def from_s3_resource(cls,
+                         bucket_name,
+                         s3_resource):
+        s3_bucket = s3_resource.Bucket(bucket_name)
+        return cls(bucket_name, s3_bucket)
 
     def _obj_of_key(self, k):
-        return self._s3.Object(self.bucket_name, key=k)
+        return self._s3_bucket.Object(key=k)
 
 
 class S3BucketKeys(AbstractKeys, S3BucketDacc):
@@ -69,10 +77,26 @@ class S3BucketKeys(AbstractKeys, S3BucketDacc):
     def __iter__(self, prefix=''):
         return (x.key for x in self._s3_bucket.objects.filter(Prefix=prefix))
 
-    # def __contains__(self, k):  # TODO: Find s3 specific more efficient way of doing __contains__
-    #     pass
+    def __contains__(self, k):
+        """
+        Check if key exists
+        :param k: A key to search for
+        :return: True if k exists, False if not
+        """
+        # TODO: s3_client.head_object(Bucket=dacc.bucket_name, Key=k) slightly more efficient but needs boto3.client
+        try:
+            self._obj_of_key(k).load()
+        except ClientError as e:
+            if e.response['Error']['Code'] == "404":
+                # The object does not exist.
+                return False
+            else:
+                # Something else has gone wrong.
+                raise
+        else:
+            return True
 
-    # def __len__(self, k):  # TODO: Find s3 specific more efficient way of doing __len__
+    # def __len__(self, k):  # TODO: Is there a s3 specific more efficient way of doing __len__?
     #     pass
 
 
