@@ -1,6 +1,5 @@
 from collections.abc import MutableMapping
 from py2store.obj_source import DictObjSource
-from py2store.base import ObjSource
 
 
 class DataWriter(MutableMapping):
@@ -19,7 +18,6 @@ class DataWriter(MutableMapping):
     def __delitem__(self, k):
         raise NotImplementedError("Need to implement in concrete class")
 
-
     def clear(self):
         print('''
         The MutableMapping clear method was overridden to make dangerous difficult.
@@ -29,7 +27,6 @@ class DataWriter(MutableMapping):
                     self.popitem()
             except KeyError:
                 pass''')
-
 
 
 class DictDataWriter(DictObjSource, DataWriter):

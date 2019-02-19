@@ -19,7 +19,7 @@ def _check_methods(C, *methods):
     return True
 
 
-class Keys(Collection):
+class AbstractKeys(Collection):
     """
     An ABC that defines
         (a) how to iterate over a collection of elements (keys) (__iter__)
@@ -90,17 +90,21 @@ class AbstractObjWriter(metaclass=ABCMeta):
     __slots__ = ()
 
     @abstractmethod
-    def __setitem__(self, k):
+    def __setitem__(self, k, v):
+        pass
+
+    @abstractmethod
+    def __delitem__(self, k):
         pass
 
     @classmethod
     def __subclasshook__(cls, C):
         if cls is AbstractObjWriter:
-            return _check_methods(C, "__setitem__")
+            return _check_methods(C, "__setitem__", "__delitem__")
         return NotImplemented
 
 
-class AbstractObjSource(Keys, AbstractObjReader, Mapping):
+class AbstractObjSource(AbstractKeys, AbstractObjReader, Mapping):
     """
     Interface for an Object Source.
     An ObjSource offers the basic methods: __getitem__, __len__ and __iter__, along with the consequential

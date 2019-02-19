@@ -4,7 +4,7 @@ import re
 from typing import Callable, Union, Any
 import soundfile as sf  # TODO: Replace by another wav reader, and move to another module
 
-from py2store.base import Keys, AbstractObjSource
+from py2store.base import AbstractKeys, AbstractObjSource
 from py2store.parse_format import match_re_for_fstring
 
 file_sep = os.path.sep
@@ -160,7 +160,7 @@ def mk_file_reader_func(kind: str = 'dflt', **kwargs):
     return _file_reader_for_kind[kind](**kwargs)
 
 
-class Paths(Keys):
+class Paths(AbstractKeys):
     def is_valid_path(self, k):
         return bool(self._path_match_re.match(k))
 

@@ -6,7 +6,7 @@ import attr
 
 from py2store import file_sep
 from py2store import Obj, Data
-from py2store import PathOf, KeyValPersister, ObjStore
+from py2store.old_py2store import PathOf, KeyValPersister, ObjStore
 
 
 class FilepathOf(PathOf):

@@ -1,7 +1,7 @@
-from py2store.base import ObjSource
+from py2store.base import AbstractObjSource
 
 
-class DictObjSource(ObjSource):
+class DictObjSource(AbstractObjSource):
     """
     An implementation of an ObjSource that uses a dict to store things
     An ObjSource offers the basic methods: __getitem__, __len__ and __iter__, along with the consequential

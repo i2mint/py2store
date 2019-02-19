@@ -1,9 +1,9 @@
 from collections.abc import Mapping, Collection
 from typing import Callable
-from py2store.base import Keys, AbstractObjReader
+from py2store.base import AbstractKeys, AbstractObjReader
 
 
-class ExplicitKeys(Keys):
+class ExplicitKeys(AbstractKeys):
     """
     py2store.base.Keys implementation that gets it's keys explicitly from a collection given at initialization time.
     The key_collection must be a collections.abc.Collection (such as list, tuple, set, etc.)
