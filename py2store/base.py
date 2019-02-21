@@ -118,4 +118,10 @@ class AbstractObjSource(AbstractKeys, AbstractObjReader, Mapping):
 
 
 class AbstractObjStore(AbstractObjSource, AbstractObjWriter, MutableMapping):
-    pass
+    def clear(self):
+        """
+        clear method was removed from MutableMapping subclass for safety reasons (too easy to delete all data).
+        It can easily be added back in situations where a blankey "delete everything" method it is desired.
+        Alternatively, one can loop over all keys() and use __delitem__(k) on them, if deleting all data is desired.
+        """
+        raise NotImplementedError("clear method was removed from MutableMapping subclass for safety reasons")
