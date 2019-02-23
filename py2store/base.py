@@ -1,5 +1,7 @@
 from abc import ABCMeta, abstractmethod
-from collections.abc import Collection, Mapping, MutableMapping
+from typing import Union
+from collections.abc import Collection, Mapping, MutableMapping, Container
+from py2store.errors import KeyValidationError, OverWritesNotAllowedError
 
 
 def _check_methods(C, *methods):
@@ -125,3 +127,36 @@ class AbstractObjStore(AbstractObjSource, AbstractObjWriter, MutableMapping):
         Alternatively, one can loop over all keys() and use __delitem__(k) on them, if deleting all data is desired.
         """
         raise NotImplementedError("clear method was removed from MutableMapping subclass for safety reasons")
+
+
+class KeyValidation(metaclass=ABCMeta):
+    """
+    An ABC for an object writer.
+    Single purpose: store an object under a given key.
+    How the object is serialized and or physically stored should be defined in a concrete subclass.
+    """
+    __slots__ = ()
+
+    @abstractmethod
+    def is_valid_key(self, k):
+        pass
+
+    def check_key_is_valid(self, k):
+        if not self.is_valid_key(k):
+            raise KeyValidationError("key is not valid: {}".format(k))
+
+    @classmethod
+    def __subclasshook__(cls, C):
+        if cls is AbstractObjWriter:
+            return _check_methods(C, "is_valid_key", "check_key_is_valid")
+        return NotImplemented
+
+
+# TODO: Would this need better be served by a (class or object) decorator?
+class OverWritesNotAllowed:
+    def __setitem__(self: Union[AbstractObjWriter, Container], k, v):
+        if self.__contains__(k):
+            raise OverWritesNotAllowedError(
+                "key {} already exists and cannot be overwritten. "
+                "If you really want to write to that key, delete it before writing".format(k))
+        super().__setitem__(k, v)

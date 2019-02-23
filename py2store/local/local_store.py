@@ -4,19 +4,16 @@ import re
 from typing import Callable, Union, Any
 import soundfile as sf  # TODO: Replace by another wav reader, and move to another module
 
-from py2store.base import AbstractKeys, AbstractObjReader, AbstractObjSource
+from py2store.base import AbstractKeys, AbstractObjSource
 from py2store.parse_format import match_re_for_fstring
+
+from py2store.base import KeyValidation
 
 file_sep = os.path.sep
 
 
 ########################################################################################################################
 # File system navigation
-
-def iter_relative_files_and_folder(root_folder):
-    if not root_folder.endswith(file_sep):
-        root_folder += file_sep
-    return map(lambda x: x.replace(root_folder, ''), iglob(root_folder + '*'))
 
 
 def pattern_filter(pattern):
@@ -28,176 +25,192 @@ def pattern_filter(pattern):
     return _pattern_filter
 
 
-def recursive_file_walk_iterator_with_filepath_filter(root_folder,
-                                                      filt: Union[str, Callable] = None,
-                                                      return_full_path=True):
+def iter_relative_files_and_folder(root_folder):
+    if not root_folder.endswith(file_sep):
+        root_folder += file_sep
+    return map(lambda x: x.replace(root_folder, ''), iglob(root_folder + '*'))
+
+
+def iter_filepaths_in_folder(root_folder):
+    return (os.path.join(root_folder, name) for name in iter_relative_files_and_folder(root_folder))
+
+
+def iter_filepaths_in_folder_recursively(root_folder, filt: Union[str, Callable] = None):
     if not callable(filt):
         if filt is None:
-            filt = lambda x: x
+            filt = lambda x: True
         else:  # isinstance(filt, str):
             filt = pattern_filter(filt)
-    for name in iter_relative_files_and_folder(root_folder):
-        full_path = os.path.join(root_folder, name)
+
+    for full_path in iter_filepaths_in_folder(root_folder):
         if os.path.isdir(full_path):
-            for entry in recursive_file_walk_iterator_with_filepath_filter(full_path, filt, return_full_path):
+            for entry in iter_filepaths_in_folder_recursively(full_path, filt):
                 yield entry
         else:
             if os.path.isfile(full_path):
                 if filt(full_path):
-                    if return_full_path:
-                        yield full_path
-                    else:
-                        yield name
+                    yield full_path
 
 
 ########################################################################################################################
-# File readers
+# LocalFile Daccs
+class PrefixValidation(KeyValidation):
+    def __init__(self, _prefix=''):
+        self._prefix = _prefix
 
-def _mk_file_reader_for_dflt(mode='r', **kwargs):
+    def is_valid_key(self, k):
+        return k.startswith(self._prefix)
+
+#
+# class LocalPathKeys(AbstractKeys):
+#     """
+#     A S3BucketDacc collection.
+#     A collection is a iterable and sizable container.
+#     That is, this mixin adds iteration (__iter__), length (__len__), and containment (__contains__(k)) to S3BucketDacc.
+#     """
+#
+#     def __iter__(self):
+#         yield k from iter_filepaths_in_folder_recursively(self.prefix_)
+#
+#     def __contains__(self, k):
+#         """
+#         Check if file path exists
+#         :param k: A path to search for
+#         :return: True if k exists, False if not
+#         """
+#         return os.path.isfile(k)
+
+
+class S3BucketKeys(AbstractKeys, S3BucketDacc):
     """
-    Makes a function that reads a json file, returning a dict.
-
-    Signature is that of builtin open function.
+    A S3BucketDacc collection.
+    A collection is a iterable and sizable container.
+    That is, this mixin adds iteration (__iter__), length (__len__), and containment (__contains__(k)) to S3BucketDacc.
     """
 
-    def contents_of_file(filepath):
-        """Reads a file.
-        Generated from _mk_file_reader_for_dflt"""  # ({})""".format(
-        # ', '.join(('{}={}'.format(k, v) for k, v in kwargs.items())))
-        with open(filepath, mode=mode, **kwargs) as fp:
-            return fp.read()
+    def __iter__(self, prefix=None):
+        if prefix is None:  # NOTE: I hesitate whether to give control over prefix at iteration time or not
+            prefix = self._prefix
+        return (x.key for x in self._s3_bucket.objects.filter(Prefix=prefix))
 
-    return contents_of_file
-
-
-# @wraps(sf.read)
-def _mk_file_reader_for_wav(dtype='int16', wf_only=True, assert_sr=None, **kwargs):
-    """
-    Makes a function that reads a wav file, returning a waveform (if wf_only=True) or a
-    (waveform, samplerate) pair (if wf_only=False), asserting that the samplerate is equal to assert_sr, if given.
-    By default, the dtype of the numpy array returned is int16, unless otherwise specified.
-    All other kwargs are those from the signature of soundfile.read function, pasted below.
-    """
-    if assert_sr is not None:
-        assert isinstance(assert_sr, int), "assert_sr must be an int"
-
-    def contents_of_file(filepath):
-        """Reads a wav file.
-        Generated from _mk_file_reader_for_wav"""  # ({})""".format(
-        # ', '.join(('{}={}'.format(k, v) for k, v in kwargs.items())))
-        wf, sr = sf.read(filepath, dtype=dtype, **kwargs)
-        if assert_sr is not None:
-            assert sr == assert_sr, "Sample rate must be {} (was {})".format(assert_sr, sr)
-        if wf_only:
-            return wf
+    def __contains__(self, k):
+        """
+        Check if key exists
+        :param k: A key to search for
+        :return: True if k exists, False if not
+        """
+        # TODO: s3_client.head_object(Bucket=dacc.bucket_name, Key=k) slightly more efficient but needs boto3.client
+        self.check_key_is_valid(k)
+        try:
+            self._obj_of_key(k).load()
+        except ClientError as e:
+            if e.response['Error']['Code'] == "404":
+                # The object does not exist.
+                return False
+            else:
+                # Something else has gone wrong.
+                raise
         else:
-            return wf, sr
+            return True
 
-    return contents_of_file
+    # def __len__(self, k):  # TODO: Is there a s3 specific more efficient way of doing __len__?
+    #     pass
 
 
-def _mk_file_read_for_json(open_kwargs=None, cls=None, object_hook=None, parse_float=None,
-                           parse_int=None, parse_constant=None, object_pairs_hook=None, **kw):
+class S3BucketReader(AbstractObjReader, S3BucketDacc):
+    """ Adds a __getitem__ to S3BucketDacc, which returns a bucket's object binary data for a key."""
+
+    def __getitem__(self, k):
+        return self._obj_of_key(k).get()['Body'].read()
+
+
+class S3BucketSource(AbstractObjSource, S3BucketKeys, S3BucketReader):
     """
-    Makes a function that reads a json file, returning a dict.
-
-    Signature is that of json.load.
+    A S3BucketDacc mapping (i.e. a collection (iterable, sizable container) that has a reader (__getitem__),
+    and mapping mixin methods such as get, keys, items, values, __eq__ and __ne__.
     """
-    import json
-
-    if open_kwargs is None:
-        open_kwargs = dict(mode='r', buffering=-1, encoding=None,
-                           errors=None, newline=None, closefd=True, opener=None)
-
-    def contents_of_file(filepath):
-        """Reads a json file.
-        Generated from _mk_file_read_for_json"""  # ({})""".format(
-        # ', '.join(('{}={}'.format(k, v) for k, v in kwargs.items())))
-        return json.load(open(filepath, **open_kwargs),
-                         cls=cls, object_hook=object_hook, parse_float=parse_float,
-                         parse_int=parse_int, parse_constant=parse_constant, object_pairs_hook=object_pairs_hook, **kw)
-
-    return contents_of_file
+    pass
 
 
-def _mk_file_read_for_pickle(open_kwargs=None, fix_imports=True, encoding='ASCII', errors='strict'):
-    """Makes a function that reads a pickle file, returning a python object.
+class S3BucketWriter(AbstractObjWriter, S3BucketDacc):
+    """ A S3BucketDacc that can write to s3 and delete keys (and data) """
 
-    Signature is that of pickle.load, pasted below:
+    def __setitem__(self, k, v):
+        """
+        Write data to s3 key.
+        Method will check if key is valid before writing data to it,
+        but will not check if data is already stored there.
+        This means that any data previously stored at the key's location will be lost.
+        :param k: s3 key
+        :param v: data to write
+        :return: None
+        """
+        # TODO: Faster to ignore s3 response, but perhaps better to get it, possibly cache it, and possibly handle it
+        self.check_key_is_valid(k)
+        self._obj_of_key(k).put(Body=v)
 
-    {}
+    def __delitem__(self, k):
+        """
+        Delete data stored at key k.
+        Method will check if key is valid before deleting its data.
+        :param k:
+        :return:
+        """
+        # TODO: Faster to ignore s3 response, but perhaps better to get it, possibly cache it, and possibly handle it
+        self.check_key_is_valid(k)
+        self._obj_of_key(k).delete()
+
+
+class S3BucketWriterNoOverwrites(S3BucketWriter, OverWritesNotAllowed):
     """
-
-    import pickle
-
-    if open_kwargs is None:
-        open_kwargs = dict(mode='rb', buffering=-1, encoding=None,
-                           errors=None, newline=None, closefd=True, opener=None)
-
-    def contents_of_file(filepath):
-        """Reads a pickle file.
-        Generated from _mk_file_read_for_pickle"""  # ({})""".format(
-        # ', '.join(('{}={}'.format(k, v) for k, v in kwargs.items())))
-        return pickle.load(open(filepath, **open_kwargs),
-                           fix_imports=fix_imports, encoding=encoding, errors=errors)
-
-    return contents_of_file
+    Exactly like S3BucketWriter, but where writes to an already existing key are protected.
+    If a key already exists, __setitem__ will raise a OverWritesNotAllowedError
+    """
+    pass
 
 
-_file_reader_for_kind = {
-    'dflt': _mk_file_reader_for_dflt,
-    'wav': _mk_file_reader_for_wav,  # TODO: Deprecate and use wav_wf instead
-    'wav_wf': _mk_file_reader_for_wav,
-    'json': _mk_file_read_for_json,
-    'pickle': _mk_file_read_for_pickle
-}
+class S3BucketWriterIfNotWrittenBefore(S3BucketWriter):
+    """ A S3BucketDacc that can write to s3 and delete keys (and data) """
+
+    def __setitem__(self, k, v):
+        """
+        Write data to s3 key, but raise an error if data was already stored
+        Method will check if key is valid before writing data to it.
+        :param k: s3 key
+        :param v: data to write
+        :return: None
+        """
+        # TODO: Faster to ignore s3 response, but perhaps better to get it, possibly cache it, and possibly handle it
+        self.check_key_is_valid(k)
+        self._obj_of_key(k).put(Body=v)
 
 
-def mk_file_reader_func(kind: str = 'dflt', **kwargs):
-    if kind is None:
-        print("Possible kinds: {}".format(', '.join(_file_reader_for_kind)))
-        return None
-    return _file_reader_for_kind[kind](**kwargs)
+class S3BucketStore(AbstractObjStore, S3BucketSource, S3BucketWriter):
+    """
+    A S3BucketDacc MutableMapping.
+    That is, a S3BucketDacc that can read and write, as well as iterate
+    """
+    pass
 
 
-class Paths(AbstractKeys):
-    def is_valid_path(self, k):
-        return bool(self._path_match_re.match(k))
+class S3BucketStoreNoOverwrites(OverWritesNotAllowed, S3BucketStore):
+    """
+    A S3BucketDacc MutableMapping.
+    That is, a S3BucketDacc that can read and write, as well as iterate
+    """
+    pass
 
-    def __iter__(self):
-        return recursive_file_walk_iterator_with_filepath_filter(
-            self._rootdir, filt=self.is_valid_path, return_full_path=True)
-        # return filter(os.path.isfile, iglob('{}/*'.format(self._rootdir)))
-
-    # def __contains__(self, k):  # override abstract version, which is not as efficient
-    #     return self.is_valid_path(k) and os.path.isfile(k)
-
-    def __len__(self):
-        # TODO: Use itertools, or some other means to more quickly count files
-        count = 0
-        for _ in self.__iter__():
-            count += 1
-        return count
-
-
-class LocalPaths(Paths):
-    def __iter__(self):
-        return recursive_file_walk_iterator_with_filepath_filter(
-            self._rootdir, filt=self.is_valid_path, return_full_path=True)
-        # return filter(os.path.isfile, iglob('{}/*'.format(self._rootdir)))
-
-    def __contains__(self, k):  # override abstract version, which is not as efficient
-        return self.is_valid_path(k) and os.path.isfile(k)
 
 
 ########################################################################################################################
 # LocalFileObjSource
 
-dflt_contents_of_file = mk_file_reader_func(kind='dflt')
+mk_file_reader_func = None
+dflt_contents_of_file = None
 
 
-class LocalFileObjReader(AbstractObjReader):
-    def __init__(self, contents_of_file: Callable[[str], Any] = dflt_contents_of_file):
+class LocalFileObjSource(AbstractObjSource):
+    def __init__(self, contents_of_file: Callable[[str], Any]):
         """
 
         :param contents_of_file: The function that returns the python object stored at a given key (path)
@@ -221,15 +234,15 @@ class LocalFileObjReader(AbstractObjReader):
         >>> d = {'a': 'foo', 'b': {'c': 'bar', 'd': 3}, 'c': [1, 2, 3], 'd': True, 'none': None}  # making some data
         >>> json.dump(d, open(filepath, 'w'))  # saving this data as a json file
         >>>
-        >>> obj_source = LocalFileObjReader.for_kind(path_format='', kind='json')  # make an obj_source for json
+        >>> obj_source = LocalFileObjSource.for_kind(path_format='', kind='json')  # make an obj_source for json
         >>> assert d == obj_source[filepath]  # see that obj_source returns the same data we put into it
         >>>
         >>> ####### Testing the 'pickle' kind
         >>> filepath = tempfile.mktemp(suffix='.p')  # making a filepath for a pickle
         >>> import pandas as pd; d = pd.DataFrame({'A': [1, 2, 3], 'B': ['one', 'two', 'three']})  # make some data
         >>> pickle.dump(d, open(filepath, 'wb'), )  # save the data in the filepath
-        >>> obj_source = LocalFileObjReader.for_kind(path_format='', kind='pickle')  # make an obj_source for pickles
-        # >>> assert all(d == obj_source[filepath])  # get the data in filepath and assert it's the same as the saved
+        >>> obj_source = LocalFileObjSource.for_kind(path_format='', kind='pickle')  # make an obj_source for pickles
+        >>> assert all(d == obj_source[filepath])  # get the data in filepath and assert it's the same as the saved
         """
         contents_of_file = mk_file_reader_func(kind=kind, **kwargs)
         return cls(contents_of_file)
@@ -241,7 +254,7 @@ class LocalFileObjReader(AbstractObjReader):
             raise KeyError("KeyError in {} when trying to __getitem__({}): {}".format(e.__class__.__name__, k, e))
 
 
-class LocalFileObjReaderWithPathCollection(LocalFileObjReader):
+class LocalFileObjSourceWithPathCollection(AbstractObjSource):
     """
     An implementation of an ObjSource that uses local files as to store things.
     An ObjSource offers the basic methods: __getitem__, __len__ and __iter__, along with the consequential
@@ -275,16 +288,14 @@ class LocalFileObjReaderWithPathCollection(LocalFileObjReader):
         >>> d = {'a': 'foo', 'b': {'c': 'bar', 'd': 3}, 'c': [1, 2, 3], 'd': True, 'none': None}  # making some data
         >>> json.dump(d, open(filepath, 'w'))  # saving this data as a json file
         >>>
-        >>> # make an obj_source for json
-        >>> obj_source = LocalFileObjReaderWithPathCollection.for_kind(path_format='', kind='json')
+        >>> obj_source = LocalFileObjSource.for_kind(path_format='', kind='json')  # make an obj_source for json
         >>> assert d == obj_source[filepath]  # see that obj_source returns the same data we put into it
         >>>
         >>> ####### Testing the 'pickle' kind
         >>> filepath = tempfile.mktemp(suffix='.p')  # making a filepath for a pickle
         >>> import pandas as pd; d = pd.DataFrame({'A': [1, 2, 3], 'B': ['one', 'two', 'three']})  # make some data
         >>> pickle.dump(d, open(filepath, 'wb'), )  # save the data in the filepath
-        >>> # make an obj_source for pickles
-        >>> obj_source = LocalFileObjReaderWithPathCollection.for_kind(path_format='', kind='pickle')
+        >>> obj_source = LocalFileObjSource.for_kind(path_format='', kind='pickle')  # make an obj_source for pickles
         >>> assert all(d == obj_source[filepath])  # get the data in filepath and assert it's the same as the saved
         """
         contents_of_file = mk_file_reader_func(kind=kind, **kwargs)
@@ -340,7 +351,7 @@ class LocalFileObjSourceWithPathFormat(AbstractObjSource):
     >>> write_to_key(filepath_of, 'b', 'bar')
     >>>
     >>> # point the obj source to the rootdir
-    >>> o = LocalFileObjReader(path_format=rootdir)
+    >>> o = LocalFileObjSource(path_format=rootdir)
     >>>
     >>> # assert things...
     >>> assert o._rootdir == rootdir  # the _rootdir is the one given in constructor
@@ -376,7 +387,7 @@ class LocalFileObjSourceWithPathFormat(AbstractObjSource):
     ['bar', 'blah', 'bloo', 'foo', 'this']
     >>>
     >>> # but if we make an obj source to only take files whose extension is '.txt'...
-    >>> o = LocalFileObjReader(path_format=rootdir + '{}.txt')
+    >>> o = LocalFileObjSource(path_format=rootdir + '{}.txt')
     >>>
     >>>
     >>> rootdir_2 = os.path.join(gettempdir(), 'obj_source_test_2') # get another rootdir
@@ -388,7 +399,7 @@ class LocalFileObjSourceWithPathFormat(AbstractObjSource):
     >>> write_to_key(filepath_of, 'that.txt', 'blah')
     >>> write_to_key(filepath_of, 'the_other.txt', 'bloo')
     >>>
-    >>> oo = LocalFileObjReader(path_format=rootdir_2 + '{}.txt')
+    >>> oo = LocalFileObjSource(path_format=rootdir_2 + '{}.txt')
     >>>
     >>> assert o != oo  # though pointing to identical content, o and oo are not equal since the paths are not equal!
     """
@@ -430,14 +441,14 @@ class LocalFileObjSourceWithPathFormat(AbstractObjSource):
         >>> d = {'a': 'foo', 'b': {'c': 'bar', 'd': 3}, 'c': [1, 2, 3], 'd': True, 'none': None}  # making some data
         >>> json.dump(d, open(filepath, 'w'))  # saving this data as a json file
         >>>
-        >>> obj_source = LocalFileObjReader.for_kind(path_format='', kind='json')  # make an obj_source for json
+        >>> obj_source = LocalFileObjSource.for_kind(path_format='', kind='json')  # make an obj_source for json
         >>> assert d == obj_source[filepath]  # see that obj_source returns the same data we put into it
         >>>
         >>> ####### Testing the 'pickle' kind
         >>> filepath = tempfile.mktemp(suffix='.p')  # making a filepath for a pickle
         >>> import pandas as pd; d = pd.DataFrame({'A': [1, 2, 3], 'B': ['one', 'two', 'three']})  # make some data
         >>> pickle.dump(d, open(filepath, 'wb'), )  # save the data in the filepath
-        >>> obj_source = LocalFileObjReader.for_kind(path_format='', kind='pickle')  # make an obj_source for pickles
+        >>> obj_source = LocalFileObjSource.for_kind(path_format='', kind='pickle')  # make an obj_source for pickles
         >>> assert all(d == obj_source[filepath])  # get the data in filepath and assert it's the same as the saved
         """
         contents_of_file = mk_file_reader_func(kind=kind, **kwargs)
@@ -468,6 +479,6 @@ class LocalFileObjSourceWithPathFormat(AbstractObjSource):
             raise KeyError("KeyError in {} when trying to __getitem__({}): {}".format(e.__class__.__name__, k, e))
 
 
-class LocalFileObjReaderWithCachedKeys(LocalFileObjReader):
+class LocalFileObjSourceWithCachedKeys(LocalFileObjSource):
     def __init__(self):
         pass

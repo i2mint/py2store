@@ -1,7 +1,9 @@
 from py2store.base import AbstractKeys, AbstractObjReader, AbstractObjWriter, AbstractObjSource, AbstractObjStore
+from py2store.base import OverWritesNotAllowed
+from py2store.base import KeyValidation
+
 import boto3
 from botocore.exceptions import ClientError
-from py2store.util import lazyprop
 from py2store.s3 import DFLT_AWS_S3_ENDPOINT, DFLT_BOTO_CLIENT_VERIFY, DFLT_CONFIG
 
 
@@ -41,7 +43,7 @@ def get_s3_bucket(name,
     return s3.Bucket(name)
 
 
-class S3BucketDacc(object):
+class S3BucketDacc(KeyValidation):
     def __init__(self, bucket_name: str, _s3_bucket, _prefix: str = ''):
         """
         S3 Bucket accessor.
@@ -85,14 +87,11 @@ class S3BucketDacc(object):
         s3_bucket = s3_resource.Bucket(bucket_name)
         return cls(bucket_name, s3_bucket)
 
-    def is_valid(self, k):
+    def is_valid_key(self, k):
         return k.startswith(self._prefix)
 
-    def assert_is_valid(self, k):
-        assert self.is_valid(k), "key ({}) is not valid (prefix must be {})".format(k, self._prefix)
-
     def _obj_of_key(self, k):
-        self.assert_is_valid(k)
+        self.is_valid_key(k)
         return self._s3_bucket.Object(key=k)
 
 
@@ -102,6 +101,7 @@ class S3BucketKeys(AbstractKeys, S3BucketDacc):
     A collection is a iterable and sizable container.
     That is, this mixin adds iteration (__iter__), length (__len__), and containment (__contains__(k)) to S3BucketDacc.
     """
+
     def __iter__(self, prefix=None):
         if prefix is None:  # NOTE: I hesitate whether to give control over prefix at iteration time or not
             prefix = self._prefix
@@ -114,6 +114,7 @@ class S3BucketKeys(AbstractKeys, S3BucketDacc):
         :return: True if k exists, False if not
         """
         # TODO: s3_client.head_object(Bucket=dacc.bucket_name, Key=k) slightly more efficient but needs boto3.client
+        self.check_key_is_valid(k)
         try:
             self._obj_of_key(k).load()
         except ClientError as e:
@@ -132,6 +133,7 @@ class S3BucketKeys(AbstractKeys, S3BucketDacc):
 
 class S3BucketReader(AbstractObjReader, S3BucketDacc):
     """ Adds a __getitem__ to S3BucketDacc, which returns a bucket's object binary data for a key."""
+
     def __getitem__(self, k):
         return self._obj_of_key(k).get()['Body'].read()
 
@@ -145,23 +147,67 @@ class S3BucketSource(AbstractObjSource, S3BucketKeys, S3BucketReader):
 
 
 class S3BucketWriter(AbstractObjWriter, S3BucketDacc):
-    """ A S3BucketDacc that can write to s3 """
+    """ A S3BucketDacc that can write to s3 and delete keys (and data) """
+
     def __setitem__(self, k, v):
         """
         Write data to s3 key.
+        Method will check if key is valid before writing data to it,
+        but will not check if data is already stored there.
+        This means that any data previously stored at the key's location will be lost.
         :param k: s3 key
         :param v: data to write
         :return: None
         """
         # TODO: Faster to ignore s3 response, but perhaps better to get it, possibly cache it, and possibly handle it
+        self.check_key_is_valid(k)
         self._obj_of_key(k).put(Body=v)
 
     def __delitem__(self, k):
+        """
+        Delete data stored at key k.
+        Method will check if key is valid before deleting its data.
+        :param k:
+        :return:
+        """
         # TODO: Faster to ignore s3 response, but perhaps better to get it, possibly cache it, and possibly handle it
+        self.check_key_is_valid(k)
         self._obj_of_key(k).delete()
 
 
+class S3BucketWriterNoOverwrites(S3BucketWriter, OverWritesNotAllowed):
+    """
+    Exactly like S3BucketWriter, but where writes to an already existing key are protected.
+    If a key already exists, __setitem__ will raise a OverWritesNotAllowedError
+    """
+    pass
+
+
+class S3BucketWriterIfNotWrittenBefore(S3BucketWriter):
+    """ A S3BucketDacc that can write to s3 and delete keys (and data) """
+
+    def __setitem__(self, k, v):
+        """
+        Write data to s3 key, but raise an error if data was already stored
+        Method will check if key is valid before writing data to it.
+        :param k: s3 key
+        :param v: data to write
+        :return: None
+        """
+        # TODO: Faster to ignore s3 response, but perhaps better to get it, possibly cache it, and possibly handle it
+        self.check_key_is_valid(k)
+        self._obj_of_key(k).put(Body=v)
+
+
 class S3BucketStore(AbstractObjStore, S3BucketSource, S3BucketWriter):
+    """
+    A S3BucketDacc MutableMapping.
+    That is, a S3BucketDacc that can read and write, as well as iterate
+    """
+    pass
+
+
+class S3BucketStoreNoOverwrites(OverWritesNotAllowed, S3BucketStore):
     """
     A S3BucketDacc MutableMapping.
     That is, a S3BucketDacc that can read and write, as well as iterate
