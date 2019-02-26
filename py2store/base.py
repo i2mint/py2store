@@ -21,6 +21,89 @@ def _check_methods(C, *methods):
     return True
 
 
+class StoreInterface:
+
+    ####################################################################################################################
+    # Default interface methods
+
+    def _id_of_key(self, k):
+        """
+        Maps an interface identifier (key) to an internal identifier (_id) that is actually used to perform operations.
+        Can also perform validation and permission checks.
+        :param k: interface identifier of some data
+        :return: internal identifier _id
+        """
+        return k
+
+    def _key_of_id(self, _id):
+        """
+        The inverse of _id_of_key. Maps an internal identifier (_id) to an interface identifier (key)
+        :param _id:
+        :return:
+        """
+        return _id
+
+    def _data_of_obj(self, v):
+        """
+        Serialization of a python object.
+        :param v: A python object.
+        :return: The serialization of this object, in a format that can be stored by super().__getitem__
+        """
+        return v
+
+    def _obj_of_data(self, data):
+        """
+        Deserialization. The inverse of _data_of_obj.
+        :param data: Serialized data.
+        :return: The python object corresponding to this data.
+        """
+        return data
+
+    ####################################################################################################################
+    # Interface CRUD method (that depend on some definition of the "internal" methods pointed to by super)
+
+    def __getitem__(self, k):
+        return self._obj_of_data(super().__getitem__(self._id_of_key(k)))
+
+    def __setitem__(self, k, v):
+        return super().__setitem__(self._id_of_key(k), self._data_of_obj(v))
+
+    def __delitem__(self, k):
+        return super().__delitem__(self._id_of_key(k))
+
+    def __iter__(self):
+        return map(self._key_of_id, super().__iter__())
+
+    ####################################################################################################################
+    # Default __len__ and __contains__ (that depend on the definition of an __iter__)
+
+    def __len__(self) -> int:
+        """
+        Number of elements in collection of keys.
+        Note: This method iterates over all elements of the collection and counts them.
+        Therefore it is not efficient, and in most cases should be overridden with a more efficient version.
+        :return: The number (int) of elements in the collection of keys.
+        """
+        # TODO: some other means to more quickly count files?
+        # Note: Found that sum(1 for _ in self.__iter__()) was slower for small, slightly faster for big inputs.
+        count = 0
+        for _ in self.__iter__():
+            count += 1
+        return count
+
+    def __contains__(self, k) -> bool:
+        """
+        Check if collection of keys contains k.
+        Note: This method iterates over all elements of the collection to check if k is present.
+        Therefore it is not efficient, and in most cases should be overridden with a more efficient version.
+        :return: True if k is in the collection, and False if not
+        """
+        for collection_key in self.__iter__():
+            if collection_key == k:
+                return True
+        return False  # return False if the key wasn't found
+
+
 class AbstractKeys(Collection):
     """
     An ABC that defines
@@ -63,6 +146,26 @@ class AbstractKeys(Collection):
             if collection_key == k:
                 return True
         return False  # return False if the key wasn't found
+
+
+class FilteredKeys(AbstractKeys):
+    """
+    Filters __iter__ and __contains__ with (the boolean filter function attribute) _key_filt.
+    """
+
+    def __iter__(self):
+        return filter(self._key_filt, super().__iter__())
+
+    def __contains__(self, k) -> bool:
+        """
+        Check if collection of keys contains k.
+        Note: This method iterates over all elements of the collection to check if k is present.
+        Therefore it is not efficient, and in most cases should be overridden with a more efficient version.
+        :return: True if k is in the collection, and False if not
+        """
+        return self._key_filt(k) and super().__contains__(k)
+
+
 
 
 class AbstractObjReader(metaclass=ABCMeta):

@@ -39,3 +39,6 @@ class lazyprop:
             value = self.func(instance)
             setattr(instance, self.func.__name__, value)
             return value
+
+
+

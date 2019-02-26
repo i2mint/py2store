@@ -1,6 +1,7 @@
 from py2store.base import AbstractKeys, AbstractObjReader, AbstractObjWriter, AbstractObjSource, AbstractObjStore
 from py2store.base import OverWritesNotAllowed
-from py2store.base import KeyValidation
+from py2store.base import KeyValidation, StoreInterface
+from py2store.errors import NoSuchKeyError
 
 import boto3
 from botocore.exceptions import ClientError
@@ -43,14 +44,14 @@ def get_s3_bucket(name,
     return s3.Bucket(name)
 
 
-class S3BucketDacc(KeyValidation):
+class S3BucketDacc(StoreInterface, KeyValidation):
     def __init__(self, bucket_name: str, _s3_bucket, _prefix: str = ''):
         """
         S3 Bucket accessor.
         This class is meant to be subclassed, used with other mixins that actually add read and write methods.
         All S3BucketDacc does is create (or maintain) a bucket object, offer validation (is_valid)
         and assertion methods (assert_is_valid) methods to check that a key is prefixed by given _prefix, and
-        more importantly, offers a hidden _obj_of_key method that returns an object for a given key.
+        more importantly, offers a hidden _id_of_key method that returns an object for a given key.
 
         Observe that the _s3_bucket constructor argument is a boto3 s3.Bucket, but offers other factories to make
         a S3BucketDacc instance.
@@ -90,12 +91,15 @@ class S3BucketDacc(KeyValidation):
     def is_valid_key(self, k):
         return k.startswith(self._prefix)
 
-    def _obj_of_key(self, k):
-        self.is_valid_key(k)
+    def _id_of_key(self, k):
+        self.check_key_is_valid(k)
         return self._s3_bucket.Object(key=k)
 
+    def _key_of_id(self, _id):
+        return _id.key
 
-class S3BucketKeys(AbstractKeys, S3BucketDacc):
+
+class S3BucketKeysMixin(AbstractKeys):
     """
     A S3BucketDacc collection.
     A collection is a iterable and sizable container.
@@ -105,7 +109,7 @@ class S3BucketKeys(AbstractKeys, S3BucketDacc):
     def __iter__(self, prefix=None):
         if prefix is None:  # NOTE: I hesitate whether to give control over prefix at iteration time or not
             prefix = self._prefix
-        return (x.key for x in self._s3_bucket.objects.filter(Prefix=prefix))
+        return map(self._key_of_id, self._s3_bucket.objects.filter(Prefix=prefix))
 
     def __contains__(self, k):
         """
@@ -114,9 +118,8 @@ class S3BucketKeys(AbstractKeys, S3BucketDacc):
         :return: True if k exists, False if not
         """
         # TODO: s3_client.head_object(Bucket=dacc.bucket_name, Key=k) slightly more efficient but needs boto3.client
-        self.check_key_is_valid(k)
         try:
-            self._obj_of_key(k).load()
+            self._id_of_key(k).load()
         except ClientError as e:
             if e.response['Error']['Code'] == "404":
                 # The object does not exist.
@@ -131,23 +134,21 @@ class S3BucketKeys(AbstractKeys, S3BucketDacc):
     #     pass
 
 
-class S3BucketReader(AbstractObjReader, S3BucketDacc):
-    """ Adds a __getitem__ to S3BucketDacc, which returns a bucket's object binary data for a key."""
+class S3BucketReaderMixin(AbstractObjReader):
+    """ Mixin to add read functionality to a S3BucketDacc."""
 
     def __getitem__(self, k):
-        return self._obj_of_key(k).get()['Body'].read()
+        try:  # TODO: Didn't manage to catch this exception for some reason. Make it work!
+            return k.get()['Body'].read()
+        except Exception as e:
+            if hasattr(e, '__name__'):
+                if e.__name__ == 'NoSuchKey':
+                    raise NoSuchKeyError("Key wasn't found: {}".format(k))
+            raise  # if you got so far
 
 
-class S3BucketSource(AbstractObjSource, S3BucketKeys, S3BucketReader):
-    """
-    A S3BucketDacc mapping (i.e. a collection (iterable, sizable container) that has a reader (__getitem__),
-    and mapping mixin methods such as get, keys, items, values, __eq__ and __ne__.
-    """
-    pass
-
-
-class S3BucketWriter(AbstractObjWriter, S3BucketDacc):
-    """ A S3BucketDacc that can write to s3 and delete keys (and data) """
+class S3BucketWriterMixin(AbstractObjWriter):
+    """ A mixin to add write and delete functionality """
 
     def __setitem__(self, k, v):
         """
@@ -160,8 +161,7 @@ class S3BucketWriter(AbstractObjWriter, S3BucketDacc):
         :return: None
         """
         # TODO: Faster to ignore s3 response, but perhaps better to get it, possibly cache it, and possibly handle it
-        self.check_key_is_valid(k)
-        self._obj_of_key(k).put(Body=v)
+        k.put(Body=v)
 
     def __delitem__(self, k):
         """
@@ -171,11 +171,38 @@ class S3BucketWriter(AbstractObjWriter, S3BucketDacc):
         :return:
         """
         # TODO: Faster to ignore s3 response, but perhaps better to get it, possibly cache it, and possibly handle it
-        self.check_key_is_valid(k)
-        self._obj_of_key(k).delete()
+        try:  # TODO: Didn't manage to catch this exception for some reason. Make it work!
+            k.delete()
+        except Exception as e:
+            if hasattr(e, '__name__'):
+                if e.__name__ == 'NoSuchKey':
+                    raise NoSuchKeyError("Key wasn't found: {}".format(k))
+            raise  # if you got so far
 
 
-class S3BucketWriterNoOverwrites(S3BucketWriter, OverWritesNotAllowed):
+class S3BucketKeys(S3BucketDacc, S3BucketKeysMixin):
+    pass
+
+
+class S3BucketReader(S3BucketDacc, S3BucketReaderMixin):
+    """ Adds a __getitem__ to S3BucketDacc, which returns a bucket's object binary data for a key."""
+    pass
+
+
+class S3BucketSource(AbstractObjSource, S3BucketKeysMixin, S3BucketReaderMixin, S3BucketDacc):
+    """
+    A S3BucketDacc mapping (i.e. a collection (iterable, sizable container) that has a reader (__getitem__),
+    and mapping mixin methods such as get, keys, items, values, __eq__ and __ne__.
+    """
+    pass
+
+
+class S3BucketWriter(S3BucketDacc, S3BucketWriterMixin):
+    """ A S3BucketDacc that can write to s3 and delete keys (and data) """
+    pass
+
+
+class S3BucketWriterNoOverwrites(OverWritesNotAllowed, S3BucketWriter):
     """
     Exactly like S3BucketWriter, but where writes to an already existing key are protected.
     If a key already exists, __setitem__ will raise a OverWritesNotAllowedError
@@ -183,23 +210,7 @@ class S3BucketWriterNoOverwrites(S3BucketWriter, OverWritesNotAllowed):
     pass
 
 
-class S3BucketWriterIfNotWrittenBefore(S3BucketWriter):
-    """ A S3BucketDacc that can write to s3 and delete keys (and data) """
-
-    def __setitem__(self, k, v):
-        """
-        Write data to s3 key, but raise an error if data was already stored
-        Method will check if key is valid before writing data to it.
-        :param k: s3 key
-        :param v: data to write
-        :return: None
-        """
-        # TODO: Faster to ignore s3 response, but perhaps better to get it, possibly cache it, and possibly handle it
-        self.check_key_is_valid(k)
-        self._obj_of_key(k).put(Body=v)
-
-
-class S3BucketStore(AbstractObjStore, S3BucketSource, S3BucketWriter):
+class S3BucketStore(S3BucketDacc, AbstractObjStore, S3BucketKeysMixin, S3BucketReaderMixin, S3BucketWriterMixin):
     """
     A S3BucketDacc MutableMapping.
     That is, a S3BucketDacc that can read and write, as well as iterate
