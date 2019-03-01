@@ -1,7 +1,8 @@
 from abc import ABCMeta, abstractmethod
 from typing import Union
 from collections.abc import Collection, Mapping, MutableMapping, Container
-from py2store.errors import KeyValidationError, OverWritesNotAllowedError
+from py2store.errors import KeyValidationError, OverWritesNotAllowedError, \
+    ReadsNotAllowed, WritesNotAllowed, DeletionsNotAllowed, IterationNotAllowed
 
 
 def _check_methods(C, *methods):
@@ -21,7 +22,67 @@ def _check_methods(C, *methods):
     return True
 
 
+class StoreLeaf:
+    def __getitem__(self, k):
+        raise ReadsNotAllowed("You can't read with that Store")
+
+    def __setitem__(self, k, v):
+        raise WritesNotAllowed("You can't write with that Store")
+
+    def __delitem__(self, k):
+        raise DeletionsNotAllowed("You can't delete with that Store")
+
+    def __iter__(self):
+        raise IterationNotAllowed("You can't iterate with that Store")
+
+
 class StoreInterface:
+    """
+    Mixin to provide the a Store interface.
+
+    By store we mean key-value store. This could be files in a filesystem, objects in s3, or a database. Where and
+    how the content is stored should be specified, but StoreInterface offers a dict-like interface to this.
+
+    StoreInterface provides an interface to create storage functionality, but no actual storage capabilities on
+    it's own. A concrete Store must be provided by extending StoreInterface to specify the concrete storage
+    functionality. Typically in the form:
+        class ConcreteStore(StoreInterface, ConcreteStorageSpec, Mixins...):
+            pass
+
+    ConcreteStorageSpec (or whatever classes follow StoreInterface in the mro) should specify at least four methods:
+        __getitem__(self, k): How to get an item keyed by k
+        __setitem__(self, k, v): How to store an object v under k
+        __delitem__(self, k): How to delete the object under k
+        __iter__(self): How to list (i.e. get an iterator of) all keys of the store
+
+    Note: StoreInterface forwards the work to later mro classes. If any of these methods are not found, a specific
+    OperationNotAllowed will be raised. If you want to make a read-only store, for example, you simply need to
+    not specify how to write (__setitem__) or delete (__delitem__).
+
+    StoreInterface also adds a key and value conversion layer.
+        _id_of_key(self, k): specifies how to convert incoming keys
+        _key_of_id(self, k): specifies how to convert outcoming keys (called _ids to distinguish from k)
+        _data_of_obj(self, v): serialize: convert incoming object to data (data is what's given to __setitem__ to store)
+        _obj_of_data(self, data): deserialize: convert incoming data to object (data is what's returned by __getitem__)
+
+    Consider the following example. You're store is meant to store waveforms as wav files on a remote server.
+    Say waveforms are represented in python as a tuple (wf, sr), where wf is a list of numbers and sr is the sample
+    rate, an int). The __setitem__ method will specify how to store bytes on a remote server, but you'll need to specify
+    how to SERIALIZE (wf, sr) to the bytes that constitute that wav file: _data_of_obj specifies that.
+    You might also want to read those wav files back into a python (wf, sr) tuple. The __getitem__ method will get
+    you those bytes from the server, but the store will need to know how to DESERIALIZE those bytes back into a python
+    object: _obj_of_data specifies that
+
+    Further, say you're storing these .wav files in /some/folder/on/the/server/, but you don't want the store to use
+    these as the keys. For one, it's annoying to type and harder to read. But more importantly, it's an irrelevant
+    implementation detail that shouldn't be exposed. THe _id_of_key and _key_of_id pair are what allow you to
+    add this key interface layer.
+
+    These key converters object serialization methods default to the identity (i.e. they return the input as is).
+    This means that you don't have to implement these as all, and can choose to implement these concerns within
+    the storage methods themselves.
+
+    """
 
     ####################################################################################################################
     # Default interface methods
@@ -74,8 +135,8 @@ class StoreInterface:
     def __iter__(self):
         return map(self._key_of_id, super().__iter__())
 
-    ####################################################################################################################
-    # Default __len__ and __contains__ (that depend on the definition of an __iter__)
+    # ####################################################################################################################
+    # # Default __len__ and __contains__ (that depend on the definition of an __iter__)
 
     def __len__(self) -> int:
         """
@@ -104,7 +165,8 @@ class StoreInterface:
         return False  # return False if the key wasn't found
 
 
-class AbstractKeys(Collection):
+
+class Keys:
     """
     An ABC that defines
         (a) how to iterate over a collection of elements (keys) (__iter__)
@@ -148,7 +210,7 @@ class AbstractKeys(Collection):
         return False  # return False if the key wasn't found
 
 
-class FilteredKeys(AbstractKeys):
+class FilteredKeys:
     """
     Filters __iter__ and __contains__ with (the boolean filter function attribute) _key_filt.
     """
@@ -166,7 +228,16 @@ class FilteredKeys(AbstractKeys):
         return self._key_filt(k) and super().__contains__(k)
 
 
+class StoreMapping(Mapping):
+    pass
 
+
+class StoreMutableMapping(MutableMapping):
+    def clear(self):
+        raise DeletionsNotAllowed("Bulk deletes not allowed.")
+
+
+###### NOT SURE I NEED THE BELOW ANYMORE, given the new stuff...
 
 class AbstractObjReader(metaclass=ABCMeta):
     """
@@ -210,7 +281,7 @@ class AbstractObjWriter(metaclass=ABCMeta):
         return NotImplemented
 
 
-class AbstractObjSource(AbstractKeys, AbstractObjReader, Mapping):
+class AbstractObjSource(Keys, AbstractObjReader, Mapping):
     """
     Interface for an Object Source.
     An ObjSource offers the basic methods: __getitem__, __len__ and __iter__, along with the consequential

@@ -1,4 +1,4 @@
-from py2store.base import AbstractKeys, AbstractObjReader, AbstractObjWriter, AbstractObjSource, AbstractObjStore
+from py2store.base import Keys, AbstractObjReader, AbstractObjWriter, AbstractObjSource, AbstractObjStore
 from py2store.base import OverWritesNotAllowed
 from py2store.base import KeyValidation, StoreInterface
 from py2store.errors import NoSuchKeyError
@@ -99,7 +99,7 @@ class S3BucketDacc(StoreInterface, KeyValidation):
         return _id.key
 
 
-class S3BucketKeysMixin(AbstractKeys):
+class S3BucketKeysMixin(Keys):
     """
     A S3BucketDacc collection.
     A collection is a iterable and sizable container.

@@ -7,7 +7,7 @@ class NoSuchKeyError(KeyError):
     pass
 
 
-class OperationNotAllowed(PermissionError):
+class OperationNotAllowed(NotImplementedError):
     pass
 
 
@@ -20,6 +20,10 @@ class WritesNotAllowed(OperationNotAllowed):
 
 
 class DeletionsNotAllowed(OperationNotAllowed):
+    pass
+
+
+class IterationNotAllowed(OperationNotAllowed):
     pass
 
 

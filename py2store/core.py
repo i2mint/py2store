@@ -1,6 +1,6 @@
 from collections.abc import Mapping, Collection
 from typing import Callable
-from py2store.base import AbstractKeys, AbstractObjReader
+from py2store.base import AbstractObjReader
 from py2store.util import lazyprop
 
 
@@ -50,7 +50,7 @@ class PrefixRelativization:
         return super()._key_of_id(_id[self._prefix_length:])
 
 
-class ExplicitKeys(AbstractKeys):
+class ExplicitKeys:
     """
     py2store.base.Keys implementation that gets it's keys explicitly from a collection given at initialization time.
     The key_collection must be a collections.abc.Collection (such as list, tuple, set, etc.)

@@ -5,7 +5,7 @@ Parse strings using a specification based on the Python format() syntax.
 
    ``parse()`` is the opposite of ``format()``
 
-=
+
 From there it's a simple thing to parse a string:
 
 >>> parse("It's {}, I love it!", "It's spam, I love it!")
