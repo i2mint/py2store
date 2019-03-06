@@ -3,6 +3,7 @@ import os
 import shutil
 from tempfile import gettempdir
 from py2store.errors import OverWritesNotAllowedError, DeletionsNotAllowed
+from py2store.test.util import get_s3_test_access_info_from_env_vars
 
 
 # from collections.abc import MutableMapping
@@ -130,6 +131,7 @@ def test_dict_ops():
 
 def test_local_file_ops():
     from py2store.stores.local_store import RelativePathFormatStore
+    from functools import partial
 
     rootdir = os.path.join(gettempdir(), 'py_store_tests')
     # empty and recreate rootdir if necessary
@@ -138,7 +140,22 @@ def test_local_file_ops():
     os.mkdir(rootdir)
 
     store = RelativePathFormatStore(path_format=rootdir)
+    # store._obj_of_data = partial(str, encoding='utf-8')
     _multi_test(store)
+
+
+def test_s3_ops():
+    try:
+        s3_access = get_s3_test_access_info_from_env_vars(perm='rw')
+        from py2store.stores.s3_store import S3BucketStore, S3BucketStoreNoOverwrites
+        prefix = 'py_store_tests'
+        s = S3BucketStore.from_s3_resource_kwargs(_prefix=prefix, **s3_access)
+        _multi_test(s)
+
+    except LookupError as e:
+        msg = "Not going to be able to test with test_s3_ops since I don't have a proper access to s3\n"
+        msg += str(e)
+        print(msg)
 
 
 if __name__ == '__main__':

@@ -5,11 +5,9 @@ from typing import Callable, Union, Any
 # import soundfile as sf  # TODO: Replace by another wav reader, and move to another module
 
 # from py2store.base import Keys
-from py2store.base import AbstractObjSource, FilteredKeys, StoreInterface
+from py2store.base import FilteredKeys, StoreBase, IdentityKvWrap, IterBasedSized, StoreMutableMapping, KeyValidation
 from py2store.parse_format import match_re_for_fstring
-from py2store.base import StoreMutableMapping
 from py2store.core import PrefixRelativization
-from py2store.base import KeyValidation
 
 DFLT_READ_MODE = ''
 DFLT_WRITE_MODE = ''
@@ -76,7 +74,7 @@ class PrefixedFilepaths:
         return os.path.isfile(k)
 
 
-class PrefixedFilepathsRecursive:
+class PrefixedFilepathsRecursive(PrefixedFilepaths):
     """
     Keys collection for local files, where the keys are full filepaths RECURSIVELY under a given root dir _prefix.
     This mixin adds iteration (__iter__), length (__len__), and containment (__contains__(k)).
@@ -86,7 +84,7 @@ class PrefixedFilepathsRecursive:
         return iter_filepaths_in_folder_recursively(self._prefix)
 
 
-class FilepathFormatKeys(FilteredKeys, KeyValidation, PrefixedFilepathsRecursive):
+class FilepathFormatKeys(FilteredKeys, KeyValidation, PrefixedFilepathsRecursive, IterBasedSized):
     def __init__(self, path_format: str):
         """
 
@@ -118,10 +116,10 @@ class FilepathFormatKeys(FilteredKeys, KeyValidation, PrefixedFilepathsRecursive
         return self._key_filt(k)
 
 
-
 ########################################################################################################################
 # Local File Persistence : Utils
 from functools import partial
+
 
 def _specific_open(mode, buffering=-1, encoding=None, errors=None, newline=None, closefd=True, opener=None):
     return partial(open, mode=mode, buffering=buffering, encoding=encoding,
@@ -232,7 +230,7 @@ class LocalFileRWD(LocalFileReader, LocalFileWriter, LocalFileDeleter):
         LocalFileDeleter.__init__(self, delete)
 
 
-class PathFormatStore(StoreInterface, FilepathFormatKeys, LocalFileRWD, StoreMutableMapping):
+class PathFormatStore(StoreBase, IdentityKvWrap, FilepathFormatKeys, LocalFileRWD, StoreMutableMapping):
     """
     Union of FilepathFormatKeys and LocalFileRWD.
 
@@ -325,4 +323,3 @@ class PathFormatStore(StoreInterface, FilepathFormatKeys, LocalFileRWD, StoreMut
 
 class RelativePathFormatStore(PrefixRelativization, PathFormatStore):
     pass
-

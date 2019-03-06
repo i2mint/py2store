@@ -1,5 +1,30 @@
+"""
+Base classes for making stores.
+In the language of the collections.abc module, a store is a MutableMapping that is configured to work with a specific
+representation of keys, serialization of objects (python values), and persistence of the serialized data.
+
+That is, stores offer the same interface as a dict, but where the actual implementation of writes, reads, and listing
+are configurable.
+
+Consider the following example. You're store is meant to store waveforms as wav files on a remote server.
+Say waveforms are represented in python as a tuple (wf, sr), where wf is a list of numbers and sr is the sample
+rate, an int). The __setitem__ method will specify how to store bytes on a remote server, but you'll need to specify
+how to SERIALIZE (wf, sr) to the bytes that constitute that wav file: _data_of_obj specifies that.
+You might also want to read those wav files back into a python (wf, sr) tuple. The __getitem__ method will get
+you those bytes from the server, but the store will need to know how to DESERIALIZE those bytes back into a python
+object: _obj_of_data specifies that
+
+Further, say you're storing these .wav files in /some/folder/on/the/server/, but you don't want the store to use
+these as the keys. For one, it's annoying to type and harder to read. But more importantly, it's an irrelevant
+implementation detail that shouldn't be exposed. THe _id_of_key and _key_of_id pair are what allow you to
+add this key interface layer.
+
+These key converters object serialization methods default to the identity (i.e. they return the input as is).
+This means that you don't have to implement these as all, and can choose to implement these concerns within
+the storage methods themselves.
+"""
+
 from abc import ABCMeta, abstractmethod
-from typing import Union
 from collections.abc import Collection, Mapping, MutableMapping, Container
 from py2store.errors import KeyValidationError, OverWritesNotAllowedError, \
     ReadsNotAllowed, WritesNotAllowed, DeletionsNotAllowed, IterationNotAllowed
@@ -22,71 +47,94 @@ def _check_methods(C, *methods):
     return True
 
 
-class StoreLeaf:
-    def __getitem__(self, k):
-        raise ReadsNotAllowed("You can't read with that Store")
-
-    def __setitem__(self, k, v):
-        raise WritesNotAllowed("You can't write with that Store")
-
-    def __delitem__(self, k):
-        raise DeletionsNotAllowed("You can't delete with that Store")
-
-    def __iter__(self):
-        raise IterationNotAllowed("You can't iterate with that Store")
-
-
-class StoreInterface:
+class KeysWrap(metaclass=ABCMeta):
     """
-    Mixin to provide the a Store interface.
+    An ABC providing key conversion.
+        _id_of_key(self, k): specifies how to convert incoming keys.
+            Maps an interface identifier (key) to an internal identifier (_id) that is actually used to perform
+            operations. Can also perform validation and permission checks.
+        _key_of_id(self, _id): specifies how to convert outgoing keys (called _ids to distinguish from k)
 
-    By store we mean key-value store. This could be files in a filesystem, objects in s3, or a database. Where and
-    how the content is stored should be specified, but StoreInterface offers a dict-like interface to this.
+    Note: It's expected, but not enforced, that _id_of_key and _key_of_id are inverse of each other.
+    If this is not the case, strange things could happen.
 
-    StoreInterface provides an interface to create storage functionality, but no actual storage capabilities on
-    it's own. A concrete Store must be provided by extending StoreInterface to specify the concrete storage
-    functionality. Typically in the form:
-        class ConcreteStore(StoreInterface, ConcreteStorageSpec, Mixins...):
-            pass
+    _id_of_key will be called by:	__getitem__	    __setitem__	    __delitem__
+    _key_of_id will be called by:				                                    __iter__
+    """
+    __slots__ = ()
 
-    ConcreteStorageSpec (or whatever classes follow StoreInterface in the mro) should specify at least four methods:
-        __getitem__(self, k): How to get an item keyed by k
-        __setitem__(self, k, v): How to store an object v under k
-        __delitem__(self, k): How to delete the object under k
-        __iter__(self): How to list (i.e. get an iterator of) all keys of the store
+    @abstractmethod
+    def _id_of_key(self, k):
+        """
+        Maps an interface identifier (key) to an internal identifier (_id) that is actually used to perform operations.
+        Can also perform validation and permission checks.
+        :param k: interface identifier of some data
+        :return: internal identifier _id
+        """
+        pass
 
-    Note: StoreInterface forwards the work to later mro classes. If any of these methods are not found, a specific
-    OperationNotAllowed will be raised. If you want to make a read-only store, for example, you simply need to
-    not specify how to write (__setitem__) or delete (__delitem__).
+    @abstractmethod
+    def _key_of_id(self, k):
+        """
+        The inverse of _id_of_key. Maps an internal identifier (_id) to an interface identifier (key)
+        :param _id:
+        :return:
+        """
+        pass
 
-    StoreInterface also adds a key and value conversion layer.
-        _id_of_key(self, k): specifies how to convert incoming keys
-        _key_of_id(self, k): specifies how to convert outcoming keys (called _ids to distinguish from k)
+    @classmethod
+    def __subclasshook__(cls, C):
+        if cls is KeysWrap:
+            return _check_methods(C, "_id_of_key", "_key_of_id")
+        return NotImplemented
+
+
+class ValsWrap(metaclass=ABCMeta):
+    """
+    An ABC providing value conversion. Intended to be used for serialization/deserialization.
         _data_of_obj(self, v): serialize: convert incoming object to data (data is what's given to __setitem__ to store)
         _obj_of_data(self, data): deserialize: convert incoming data to object (data is what's returned by __getitem__)
 
-    Consider the following example. You're store is meant to store waveforms as wav files on a remote server.
-    Say waveforms are represented in python as a tuple (wf, sr), where wf is a list of numbers and sr is the sample
-    rate, an int). The __setitem__ method will specify how to store bytes on a remote server, but you'll need to specify
-    how to SERIALIZE (wf, sr) to the bytes that constitute that wav file: _data_of_obj specifies that.
-    You might also want to read those wav files back into a python (wf, sr) tuple. The __getitem__ method will get
-    you those bytes from the server, but the store will need to know how to DESERIALIZE those bytes back into a python
-    object: _obj_of_data specifies that
+    Note: It's desirable to have _data_of_obj and _obj_of_data be inverse of eachother.
+    Unlike with KeysWrap (_id_of_key and _key_of_id), it is not as crucial for the well functioning of stores.
+    If serialization and deserialization are not inverse of each other, it just means that the object you get back
+    is not the same as the one you stored. Which may be exactly what is desired sometimes.
 
-    Further, say you're storing these .wav files in /some/folder/on/the/server/, but you don't want the store to use
-    these as the keys. For one, it's annoying to type and harder to read. But more importantly, it's an irrelevant
-    implementation detail that shouldn't be exposed. THe _id_of_key and _key_of_id pair are what allow you to
-    add this key interface layer.
-
-    These key converters object serialization methods default to the identity (i.e. they return the input as is).
-    This means that you don't have to implement these as all, and can choose to implement these concerns within
-    the storage methods themselves.
-
+    _data_of_obj will be called by:	                __setitem__
+    _obj_of_data will be called by:	__getitem__
     """
+    __slots__ = ()
 
-    ####################################################################################################################
-    # Default interface methods
+    @abstractmethod
+    def _data_of_obj(self, k):
+        """
+        Serialization of a python object.
+        :param v: A python object.
+        :return: The serialization of this object, in a format that can be stored by super().__getitem__
+        """
+        pass
 
+    @abstractmethod
+    def _obj_of_data(self, k):
+        """
+        Deserialization. Often the inverse of _data_of_obj.
+        :param data: Serialized data.
+        :return: The python object corresponding to this data.
+        """
+        pass
+
+    @classmethod
+    def __subclasshook__(cls, C):
+        if cls is ValsWrap:
+            return _check_methods(C, "_data_of_obj", "_obj_of_data")
+        return NotImplemented
+
+
+class IdentityKeysWrap(KeysWrap):
+    """Transparent KeysWrap. Often placed in the mro to satisfy the KeysWrap need in a neutral way.
+    This is useful in cases where the keys the persistence functions work with are the same as those you want to work
+    with.
+    """
     def _id_of_key(self, k):
         """
         Maps an interface identifier (key) to an internal identifier (_id) that is actually used to perform operations.
@@ -104,6 +152,12 @@ class StoreInterface:
         """
         return _id
 
+
+class IdentityValsWrap:
+    """ Transparent ValsWrap. Often placed in the mro to satisfy the KeysWrap need in a neutral way.
+        This is useful in cases where the values can be persisted by __setitem__ as is (or the serialization is
+        handled somewhere in the __setitem__ method.
+    """
     def _data_of_obj(self, v):
         """
         Serialization of a python object.
@@ -120,6 +174,59 @@ class StoreInterface:
         """
         return data
 
+
+class IdentityKvWrap(IdentityKeysWrap, IdentityValsWrap):
+    """Transparent Keys and Vals Wrap"""
+    pass
+
+
+class DfltWrapper(KeysWrap, ValsWrap):
+    def _data_of_obj(self, v):
+        """
+        Serialization of a python object.
+        :param v: A python object.
+        :return: The serialization of this object, in a format that can be stored by super().__getitem__
+        """
+        return v
+
+    def _obj_of_data(self, data):
+        """
+        Deserialization. The inverse of _data_of_obj.
+        :param data: Serialized data.
+        :return: The python object corresponding to this data.
+        """
+        return data
+
+
+class StoreBase:
+    """Mixin that intercepts base store methods, transforming the keys and values involved.
+
+    By store we mean key-value store. This could be files in a filesystem, objects in s3, or a database. Where and
+    how the content is stored should be specified, but StoreInterface offers a dict-like interface to this.
+
+    StoreBase provides an interface to create storage functionality, but no actual storage capabilities on
+    it's own. A concrete Store must be provided by extending StoreInterface to specify the concrete storage
+    functionality. Typically in the form:
+        class ConcreteStore(StoreBase, ConcreteStorageSpec, Mixins...):
+            pass
+
+    ConcreteStorageSpec (or whatever classes follow StoreInterface in the mro) should specify at least four methods:
+        __getitem__(self, k): How to get an item keyed by k
+        __setitem__(self, k, v): How to store an object v under k
+        __delitem__(self, k): How to delete the object under k
+        __iter__(self): How to list (i.e. get an iterator of) all keys of the store
+
+    Note: StoreInterface forwards the work to later mro classes.
+    If any of these methods are not found, an AttributeError will be raised.
+    To raise a specific OperationNotAllowed error instead, you can use StoreLeaf (placed, in the mro, after the
+    definitions of the desired implemented methods.
+
+    __getitem__ calls: _id_of_key			                    _obj_of_data
+    __setitem__ calls: _id_of_key		        _data_of_obj
+    __delitem__ calls: _id_of_key
+    __iter__    calls:	            _key_of_id
+    """
+
     ####################################################################################################################
     # Interface CRUD method (that depend on some definition of the "internal" methods pointed to by super)
 
@@ -135,9 +242,61 @@ class StoreInterface:
     def __iter__(self):
         return map(self._key_of_id, super().__iter__())
 
-    # ####################################################################################################################
-    # # Default __len__ and __contains__ (that depend on the definition of an __iter__)
+    def __contains__(self, k):
+        return super().__contains__(self._id_of_key(k))
 
+
+class StoreLeaf:
+    """Meant to be placed at the end of the mro to raise more meaningful errors when a base method wasn't defined"""
+    def __getitem__(self, k):
+        raise ReadsNotAllowed("You can't read with that Store")
+
+    def __setitem__(self, k, v):
+        raise WritesNotAllowed("You can't write with that Store")
+
+    def __delitem__(self, k):
+        raise DeletionsNotAllowed("You can't delete with that Store")
+
+    def __iter__(self):
+        raise IterationNotAllowed("You can't iterate with that Store")
+
+    def __contains__(self, k):
+        return NotImplementedError("__contains__ (i.e. what gives you 'x in X' functionality) wasn't implemented")
+
+
+########################################################################################################################
+# Mixins to insert specific collection methods in stores
+
+class GetBasedContainer:
+    def __contains__(self, k) -> bool:
+        """
+        Check if collection of keys contains k.
+        Note: This method actually fetches the contents for k, returning False if there's a key error trying to do so
+        Therefore it may not be efficient, and in most cases, a method specific to the case should be used.
+        :return: True if k is in the collection, and False if not
+        """
+        try:
+            self.__getitem__(k)
+            return True
+        except KeyError:
+            return False
+
+
+class IterBasedContainer:
+    def __contains__(self, k) -> bool:
+        """
+        Check if collection of keys contains k.
+        Note: This method iterates over all elements of the collection to check if k is present.
+        Therefore it is not efficient, and in most cases should be overridden with a more efficient version.
+        :return: True if k is in the collection, and False if not
+        """
+        for collection_key in self.__iter__():
+            if collection_key == k:
+                return True
+        return False  # return False if the key wasn't found
+
+
+class IterBasedSized:
     def __len__(self) -> int:
         """
         Number of elements in collection of keys.
@@ -152,21 +311,8 @@ class StoreInterface:
             count += 1
         return count
 
-    def __contains__(self, k) -> bool:
-        """
-        Check if collection of keys contains k.
-        Note: This method iterates over all elements of the collection to check if k is present.
-        Therefore it is not efficient, and in most cases should be overridden with a more efficient version.
-        :return: True if k is in the collection, and False if not
-        """
-        for collection_key in self.__iter__():
-            if collection_key == k:
-                return True
-        return False  # return False if the key wasn't found
 
-
-
-class Keys:
+class IterBasedSizedContainer(IterBasedSized, IterBasedContainer):
     """
     An ABC that defines
         (a) how to iterate over a collection of elements (keys) (__iter__)
@@ -182,32 +328,7 @@ class Keys:
     offers mixin __len__ and __contains__ methods based on a given __iter__ method.
     Note that usually __len__ and __contains__ should be overridden to more, context-dependent, efficient methods.
     """
-
-    def __len__(self) -> int:
-        """
-        Number of elements in collection of keys.
-        Note: This method iterates over all elements of the collection and counts them.
-        Therefore it is not efficient, and in most cases should be overridden with a more efficient version.
-        :return: The number (int) of elements in the collection of keys.
-        """
-        # TODO: some other means to more quickly count files?
-        # Note: Found that sum(1 for _ in self.__iter__()) was slower for small, slightly faster for big inputs.
-        count = 0
-        for _ in self.__iter__():
-            count += 1
-        return count
-
-    def __contains__(self, k) -> bool:
-        """
-        Check if collection of keys contains k.
-        Note: This method iterates over all elements of the collection to check if k is present.
-        Therefore it is not efficient, and in most cases should be overridden with a more efficient version.
-        :return: True if k is in the collection, and False if not
-        """
-        for collection_key in self.__iter__():
-            if collection_key == k:
-                return True
-        return False  # return False if the key wasn't found
+    pass
 
 
 class FilteredKeys:
@@ -237,72 +358,17 @@ class StoreMutableMapping(MutableMapping):
         raise DeletionsNotAllowed("Bulk deletes not allowed.")
 
 
-###### NOT SURE I NEED THE BELOW ANYMORE, given the new stuff...
-
-class AbstractObjReader(metaclass=ABCMeta):
-    """
-    An ABC for an object reader.
-    Single purpose: returning the object keyed by a requested key k.
-    How the data is retrieved and deserialized into an object should be defined in a concrete subclass.
-    """
-    __slots__ = ()
-
-    @abstractmethod
-    def __getitem__(self, k):
-        pass
-
-    @classmethod
-    def __subclasshook__(cls, C):
-        if cls is AbstractObjReader:
-            return _check_methods(C, "__getitem__")
-        return NotImplemented
-
-
-class AbstractObjWriter(metaclass=ABCMeta):
-    """
-    An ABC for an object writer.
-    Single purpose: store an object under a given key.
-    How the object is serialized and or physically stored should be defined in a concrete subclass.
-    """
-    __slots__ = ()
-
-    @abstractmethod
+# TODO: Would this need better be served by a (class or object) decorator?
+class OverWritesNotAllowed:
     def __setitem__(self, k, v):
-        pass
-
-    @abstractmethod
-    def __delitem__(self, k):
-        pass
-
-    @classmethod
-    def __subclasshook__(cls, C):
-        if cls is AbstractObjWriter:
-            return _check_methods(C, "__setitem__", "__delitem__")
-        return NotImplemented
+        if self.__contains__(k):
+            raise OverWritesNotAllowedError(
+                "key {} already exists and cannot be overwritten. "
+                "If you really want to write to that key, delete it before writing".format(k))
+        super().__setitem__(k, v)
 
 
-class AbstractObjSource(Keys, AbstractObjReader, Mapping):
-    """
-    Interface for an Object Source.
-    An ObjSource offers the basic methods: __getitem__, __len__ and __iter__, along with the consequential
-    mixin methods that collections.abc.Mapping adds automatically:
-        __contains__, keys, items, values, get, __eq__, and __ne__
-    (see https://docs.python.org/3/library/collections.abc.html)
-
-    """
-    pass
-
-
-class AbstractObjStore(AbstractObjSource, AbstractObjWriter, MutableMapping):
-    def clear(self):
-        """
-        clear method was removed from MutableMapping subclass for safety reasons (too easy to delete all data).
-        It can easily be added back in situations where a blankey "delete everything" method it is desired.
-        Alternatively, one can loop over all keys() and use __delitem__(k) on them, if deleting all data is desired.
-        """
-        raise NotImplementedError("clear method was removed from MutableMapping subclass for safety reasons")
-
-
+# Note: Not sure I want to do key validation this way. Perhaps better injected in _id_of_key?
 class KeyValidation(metaclass=ABCMeta):
     """
     An ABC for an object writer.
@@ -321,16 +387,9 @@ class KeyValidation(metaclass=ABCMeta):
 
     @classmethod
     def __subclasshook__(cls, C):
-        if cls is AbstractObjWriter:
+        if cls is KeyValidation:
             return _check_methods(C, "is_valid_key", "check_key_is_valid")
         return NotImplemented
 
 
-# TODO: Would this need better be served by a (class or object) decorator?
-class OverWritesNotAllowed:
-    def __setitem__(self: Union[AbstractObjWriter, Container], k, v):
-        if self.__contains__(k):
-            raise OverWritesNotAllowedError(
-                "key {} already exists and cannot be overwritten. "
-                "If you really want to write to that key, delete it before writing".format(k))
-        super().__setitem__(k, v)
+

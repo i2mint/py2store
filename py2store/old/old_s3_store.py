@@ -1,10 +1,10 @@
-from py2store.base import Keys, AbstractObjReader, AbstractObjWriter, AbstractObjSource, AbstractObjStore
+from py2store.base import IterBasedSizedContainer, AbstractObjReader, AbstractObjWriter, AbstractObjSource, AbstractObjStore
 from py2store.base import OverWritesNotAllowed
 from py2store.base import KeyValidation
 
 import boto3
 from botocore.exceptions import ClientError
-from py2store.s3 import DFLT_AWS_S3_ENDPOINT, DFLT_BOTO_CLIENT_VERIFY, DFLT_CONFIG
+from py2store.old.s3 import DFLT_AWS_S3_ENDPOINT, DFLT_BOTO_CLIENT_VERIFY, DFLT_CONFIG
 
 
 def get_s3_resource(aws_access_key_id,
@@ -95,7 +95,7 @@ class S3BucketDacc(KeyValidation):
         return self._s3_bucket.Object(key=k)
 
 
-class S3BucketKeys(Keys, S3BucketDacc):
+class S3BucketKeys(IterBasedSizedContainer, S3BucketDacc):
     """
     A S3BucketDacc collection.
     A collection is a iterable and sizable container.
