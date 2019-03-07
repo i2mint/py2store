@@ -41,4 +41,18 @@ class lazyprop:
             return value
 
 
-
+def max_common_prefix(a):
+    """
+    Given a list of strings (or other sliceable sequences), returns the longest common prefix
+    :param a: list-like of strings
+    :return: the smallest common prefix of all strings in a
+    """
+    if not a:
+        return ''
+    # Note: Try to optimize by using a min_max function to give me both in one pass. The current version is still faster
+    s1 = min(a)
+    s2 = max(a)
+    for i, c in enumerate(s1):
+        if c != s2[i]:
+            return s1[:i]
+    return s1

@@ -1,6 +1,7 @@
 from collections.abc import Collection
 
-from py2store.util import lazyprop
+from py2store.util import lazyprop, max_common_prefix
+from py2store.base import StoreBase, IdentityKvWrap
 
 
 class PrefixRelativization:
@@ -80,3 +81,25 @@ class ExplicitKeys:
 
     def __contains__(self, k):
         return k in self._key_collection
+
+
+class ExplicitKeysWithPrefixRelativization(StoreBase, PrefixRelativization, IdentityKvWrap, ExplicitKeys):
+    """
+    py2store.base.Keys implementation that gets it's keys explicitly from a collection given at initialization time.
+    The key_collection must be a collections.abc.Collection (such as list, tuple, set, etc.)
+
+    >>> keys = ExplicitKeysWithPrefixRelativization(key_collection=['/root/of/foo', '/root/of/bar', '/root/for/alice'])
+    >>> 'of/foo' in keys
+    True
+    >>> 'not there' in keys
+    False
+    >>> list(keys)
+    ['of/foo', 'of/bar', 'for/alice']
+    """
+    __slots__ = ('_key_collection',)
+
+    def __init__(self, key_collection: Collection, _prefix=None):
+        super().__init__(key_collection=key_collection)
+        if _prefix is None:
+            _prefix = max_common_prefix(key_collection)
+        self._prefix = _prefix
