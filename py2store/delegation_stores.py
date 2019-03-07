@@ -1,0 +1,268 @@
+from collections.abc import MutableMapping
+from py2store.util import lazyprop
+
+from py2store.stores.local_store import DFLT_READ_MODE, DFLT_WRITE_MODE, DFLT_DELETE_MODE
+from py2store.stores.local_store import PathFormatPersister
+
+from py2store.stores.s3_store import get_s3_resource
+from py2store.stores.s3_store import DFLT_AWS_S3_ENDPOINT, DFLT_BOTO_CLIENT_VERIFY, DFLT_CONFIG
+
+
+class Persister(MutableMapping):
+    def __len__(self):
+        count = 0
+        for _ in self.__iter__():
+            count += 1
+        return count
+
+
+class Store:
+    # __slots__ = ('_id_of_key', '_key_of_id', '_data_of_obj', '_obj_of_data')
+
+    # _id_of_key = lambda x: x
+    # _key_of_id = lambda x: x
+    # _data_of_obj = lambda x: x
+    # _obj_of_data = lambda x: x
+
+    def __init__(self,
+                 persister=None,
+                 _id_of_key=lambda x: x,
+                 _key_of_id=lambda x: x,
+                 _data_of_obj=lambda x: x,
+                 _obj_of_data=lambda x: x):
+        if persister is None:
+            persister = dict()
+        self.persister = persister
+        self._id_of_key = _id_of_key
+        self._key_of_id = _key_of_id
+        self._data_of_obj = _data_of_obj
+        self._obj_of_data = _obj_of_data
+
+    def __getitem__(self, k):
+        return self._obj_of_data(self.persister.__getitem__(self._id_of_key(k)))
+
+    def __setitem__(self, k, v):
+        return self.persister.__setitem__(self._id_of_key(k), self._data_of_obj(v))
+
+    def __delitem__(self, k):
+        return self.persister.__delitem__(self._id_of_key(k))
+
+    def __iter__(self):
+        return map(self._key_of_id, self.persister.__iter__())
+
+    def clear(self):
+        raise NotImplementedError("the clear method wasn't implemented, to protect from bulk deletion")
+
+    def __len__(self):
+        return self.persister.__len__()
+
+    def __contains__(self, k):
+        return self.persister.__contains__(self._id_of_key(k))
+
+    # def get(self, k, default=None):
+    #     try:
+    #         return self._obj_of_data(self.persister.get(self._id_of_key(k), default))
+    #     except NoSuchKeyError:
+    #         return default
+
+
+class PrefixRelativization:
+    def __init__(self, _prefix=""):
+        self._prefix = _prefix
+
+    @lazyprop
+    def _prefix_length(self):
+        return len(self._prefix)
+
+    def _id_of_key(self, k):
+        return self._prefix + k
+
+    def _key_of_id(self, _id):
+        return _id[self._prefix_length:]
+
+
+# class LocalFilePersister(FilepathFormatKeys, LocalFileRWD):
+#     pass
+
+class LocalFileStore(Store):
+    def __init__(self, path_format, read=DFLT_READ_MODE, write=DFLT_WRITE_MODE, delete=DFLT_DELETE_MODE,
+                 buffering=-1, encoding=None, errors=None, newline=None, closefd=True, opener=None):
+        persister = PathFormatPersister(path_format, read, write, delete,
+                                        buffering=buffering, encoding=encoding, errors=errors,
+                                        newline=newline, closefd=closefd, opener=opener)
+        key_wrap = PrefixRelativization(_prefix=persister._prefix)
+        super().__init__(persister=persister, _id_of_key=key_wrap._id_of_key, _key_of_id=key_wrap._key_of_id)
+
+
+########################################################################################################################
+# S3
+
+from botocore.exceptions import ClientError
+
+from functools import partial
+
+encode_as_utf8 = partial(str, encoding='utf-8')
+
+DFLT_S3_OBJ_OF_DATA = encode_as_utf8
+from py2store.errors import NoSuchKeyError
+
+
+class S3BucketPersister(Persister):
+    def __init__(self, bucket_name: str, _s3_bucket, _prefix: str = ''):
+        """
+        S3 Bucket accessor.
+        This class is meant to be subclassed, used with other mixins that actually add read and write methods.
+        All S3BucketDacc does is create (or maintain) a bucket object, offer validation (is_valid)
+        and assertion methods (assert_is_valid) methods to check that a key is prefixed by given _prefix, and
+        more importantly, offers a hidden _id_of_key method that returns an object for a given key.
+
+        Observe that the _s3_bucket constructor argument is a boto3 s3.Bucket, but offers other factories to make
+        a S3BucketDacc instance.
+        For example. if you only have access and secrete keys (and possibly endpoint url, config, etc.)
+        then use the class method from_s3_resource_kwargs to construct.
+
+        :param bucket_name: Bucket name (string)
+        :param _s3_bucket: boto3 s3.Bucket object.
+        :param _prefix: prefix that all accessed keys should have
+        """
+        self.bucket_name = bucket_name
+        self._s3_bucket = _s3_bucket
+        self._prefix = _prefix
+
+    def __getitem__(self, k):
+        try:  # TODO: Didn't manage to catch this exception for some reason. Make it work!
+            return k.get()['Body'].read()
+        except Exception as e:
+            raise NoSuchKeyError("Key wasn't found: {}".format(k))
+            # if hasattr(e, '__name__'):
+            #     if e.__name__ == 'NoSuchKey':
+            #         raise NoSuchKeyError("Key wasn't found: {}".format(k))
+            # raise  # if you got so far
+
+    def __setitem__(self, k, v):
+        """
+        Write data to s3 key.
+        Method will check if key is valid before writing data to it,
+        but will not check if data is already stored there.
+        This means that any data previously stored at the key's location will be lost.
+        :param k: s3 key
+        :param v: data to write
+        :return: None
+        """
+        # TODO: Faster to ignore s3 response, but perhaps better to get it, possibly cache it, and possibly handle it
+        k.put(Body=v)
+
+    def __delitem__(self, k):
+        """
+        Delete data stored at key k.
+        Method will check if key is valid before deleting its data.
+        :param k:
+        :return:
+        """
+        # TODO: Faster to ignore s3 response, but perhaps better to get it, possibly cache it, and possibly handle it
+        try:  # TODO: Didn't manage to catch this exception for some reason. Make it work!
+            k.delete()
+        except Exception as e:
+            if hasattr(e, '__name__'):
+                if e.__name__ == 'NoSuchKey':
+                    raise NoSuchKeyError("Key wasn't found: {}".format(k))
+            raise  # if you got so far
+
+    def __iter__(self):
+        return iter(self._s3_bucket.objects.filter(Prefix=self._prefix))
+
+    def __contains__(self, k):
+        """
+        Check if key exists
+        :param k: A key to search for
+        :return: True if k exists, False if not
+        """
+        # TODO: s3_client.head_object(Bucket=dacc.bucket_name, Key=k) slightly more efficient but needs boto3.client
+        try:
+            k.load()
+            return True  # if all went well
+        except ClientError as e:
+            if e.response['Error']['Code'] == "404":
+                # The object does not exist.
+                return False
+            else:
+                # Something else has gone wrong.
+                raise
+
+    @classmethod
+    def from_s3_resource_kwargs(cls,
+                                bucket_name,
+                                aws_access_key_id,
+                                aws_secret_access_key,
+                                _prefix: str = '',
+                                endpoint_url=DFLT_AWS_S3_ENDPOINT,
+                                verify=DFLT_BOTO_CLIENT_VERIFY,
+                                config=DFLT_CONFIG):
+        s3_resource = get_s3_resource(aws_access_key_id=aws_access_key_id,
+                                      aws_secret_access_key=aws_secret_access_key,
+                                      endpoint_url=endpoint_url,
+                                      verify=verify,
+                                      config=config)
+        return cls.from_s3_resource(bucket_name, s3_resource, _prefix=_prefix)
+
+    @classmethod
+    def from_s3_resource(cls,
+                         bucket_name,
+                         s3_resource,
+                         _prefix=''
+                         ):
+        s3_bucket = s3_resource.Bucket(bucket_name)
+        return cls(bucket_name, s3_bucket, _prefix=_prefix)
+
+
+class S3Store(Store):
+    def __init__(self, bucket_name: str, _s3_bucket, _prefix: str = '',
+                 _data_of_obj=lambda x: x, _obj_of_data=DFLT_S3_OBJ_OF_DATA):
+        persister = S3BucketPersister(bucket_name, _s3_bucket, _prefix)
+        key_wrap = PrefixRelativization(_prefix=persister._prefix)
+
+        def _id_of_key(k):
+            return persister._s3_bucket.Object(key=key_wrap._id_of_key(k))
+
+        def _key_of_id(_id):
+            return key_wrap._key_of_id(_id.key)
+
+        super().__init__(persister=persister,
+                         _id_of_key=_id_of_key,
+                         _key_of_id=_key_of_id,
+                         _data_of_obj=_data_of_obj,
+                         _obj_of_data=_obj_of_data
+                         )
+
+        # super().__init__(persister=persister, _id_of_key=key_wrap._id_of_key, _key_of_id=key_wrap._key_of_id)
+
+    @classmethod
+    def from_s3_resource_kwargs(cls,
+                                bucket_name,
+                                aws_access_key_id,
+                                aws_secret_access_key,
+                                _prefix: str = '',
+                                _data_of_obj=lambda x: x,
+                                _obj_of_data=DFLT_S3_OBJ_OF_DATA,
+                                endpoint_url=DFLT_AWS_S3_ENDPOINT,
+                                verify=DFLT_BOTO_CLIENT_VERIFY,
+                                config=DFLT_CONFIG):
+        s3_resource = get_s3_resource(aws_access_key_id=aws_access_key_id,
+                                      aws_secret_access_key=aws_secret_access_key,
+                                      endpoint_url=endpoint_url,
+                                      verify=verify,
+                                      config=config)
+        return cls.from_s3_resource(bucket_name, s3_resource, _prefix=_prefix,
+                                    _data_of_obj=_data_of_obj, _obj_of_data=_obj_of_data)
+
+    @classmethod
+    def from_s3_resource(cls,
+                         bucket_name,
+                         s3_resource,
+                         _prefix='',
+                         _data_of_obj=lambda x: x,
+                         _obj_of_data=DFLT_S3_OBJ_OF_DATA,
+                         ):
+        s3_bucket = s3_resource.Bucket(bucket_name)
+        return cls(bucket_name, s3_bucket, _prefix=_prefix,
+                   _data_of_obj=_data_of_obj, _obj_of_data=_obj_of_data)

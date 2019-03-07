@@ -230,7 +230,16 @@ class LocalFileRWD(LocalFileReader, LocalFileWriter, LocalFileDeleter):
         LocalFileDeleter.__init__(self, delete)
 
 
-class PathFormatStore(StoreBase, IdentityKvWrap, FilepathFormatKeys, LocalFileRWD, StoreMutableMapping):
+class PathFormatPersister(FilepathFormatKeys, LocalFileRWD):
+    def __init__(self, path_format, read=DFLT_READ_MODE, write=DFLT_WRITE_MODE, delete=DFLT_DELETE_MODE,
+                 buffering=-1, encoding=None, errors=None, newline=None, closefd=True, opener=None):
+        FilepathFormatKeys.__init__(self, path_format)
+        LocalFileRWD.__init__(self, read, write, delete,
+                              buffering=buffering, encoding=encoding, errors=errors,
+                              newline=newline, closefd=closefd, opener=opener)
+
+
+class PathFormatStore(StoreBase, IdentityKvWrap, PathFormatPersister, StoreMutableMapping):
     """
     Union of FilepathFormatKeys and LocalFileRWD.
 
@@ -312,13 +321,7 @@ class PathFormatStore(StoreBase, IdentityKvWrap, FilepathFormatKeys, LocalFileRW
     >>>
     >>> assert s != ss  # though pointing to identical content, o and oo are not equal since the paths are not equal!
     """
-
-    def __init__(self, path_format, read=DFLT_READ_MODE, write=DFLT_WRITE_MODE, delete=DFLT_DELETE_MODE,
-                 buffering=-1, encoding=None, errors=None, newline=None, closefd=True, opener=None):
-        FilepathFormatKeys.__init__(self, path_format)
-        LocalFileRWD.__init__(self, read, write, delete,
-                              buffering=buffering, encoding=encoding, errors=errors,
-                              newline=newline, closefd=closefd, opener=opener)
+    pass
 
 
 class RelativePathFormatStore(PrefixRelativization, PathFormatStore):

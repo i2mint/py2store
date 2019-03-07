@@ -3,7 +3,7 @@ from botocore.exceptions import ClientError
 from botocore.client import Config
 
 # from py2store.base import Keys, AbstractObjReader, AbstractObjWriter, AbstractObjSource, AbstractObjStore
-from py2store.base import IterBasedSized, OverWritesNotAllowed, StoreBase, KeyValTrans, IdentityKvWrap
+from py2store.base import IterBasedSized, OverWritesNotAllowed, StoreBase, IdentityKvWrap, IdentityKvWrap
 from py2store.core import PrefixRelativization
 from py2store.errors import NoSuchKeyError
 
@@ -59,7 +59,7 @@ class S3BucketCollection(IterBasedSized):
     """
 
     def __iter__(self):
-        return self._s3_bucket.objects.filter(Prefix=self._prefix)
+        return iter(self._s3_bucket.objects.filter(Prefix=self._prefix))
 
     def __contains__(self, k):
         """
@@ -181,6 +181,17 @@ class S3BucketRWD(S3BucketReaderMixin, S3BucketWriterMixin, S3BucketDeleterMixin
         return cls(bucket_name, s3_bucket, _prefix=_prefix)
 
 
+
+from functools import partial
+
+encode_as_utf8 = partial(str, encoding='utf-8')
+
+
+class StringKvWrap(IdentityKvWrap):
+    def _obj_of_data(self, v):
+        return encode_as_utf8(v)
+
+
 # StoreInterface, S3BucketCollection, S3BucketRWD, StoreMutableMapping
 from py2store.base import StoreMutableMapping
 
@@ -189,7 +200,7 @@ class Store(StoreBase, S3BucketRWD, PrefixRelativization, S3BucketCollection, Id
     pass
 
 
-class S3BucketStore(S3BucketCollection, StoreBase, KeyValTrans, S3BucketRWD, StoreMutableMapping):
+class S3BucketStore(S3BucketCollection, StoreBase, StringKvWrap, S3BucketRWD, StoreMutableMapping):
     pass
 
 

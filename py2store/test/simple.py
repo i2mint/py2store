@@ -12,6 +12,16 @@ from py2store.test.util import get_s3_test_access_info_from_env_vars
 #
 # Store = typing.Union(AbstractObjStore, MutableMapping)
 
+env_s3_access = dict(S3_TEST_BUCKET_RW="otoscrap",
+                     S3_TEST_ACCESS_RW="AKIAIMYTEETVN56EEJMA",
+                     S3_TEST_SECRET_RW="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",
+                     S3_TEST_BUCKET_RO="otoscrap",
+                     S3_TEST_ACCESS_RO="AKIAIMYTEETVN56EEJMA",
+                     S3_TEST_SECRET_RO="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")
+
+for k, v in env_s3_access.items():
+    if k not in os.environ:
+        os.environ[k] = v
 
 def _delete_keys_from_store(store, keys_to_delete):
     for k in keys_to_delete:
@@ -30,7 +40,7 @@ def _test_ops_on_store(store):
 
     s['_foo'] = 'bar'  # store 'bar' in '_foo'
     assert "_foo" in s, '"_foo" in s'
-    assert s['_foo'] == 'bar', "The value of _foo should be 'bar'"
+    assert s['_foo'] == 'bar'
 
     s['_hello'] = 'world'  # store 'world' in '_hello'
 
@@ -145,11 +155,16 @@ def test_local_file_ops():
 
 
 def test_s3_ops():
+    from functools import partial
+    encode_as_utf8 = partial(str, encoding='utf-8')
+
     try:
         s3_access = get_s3_test_access_info_from_env_vars(perm='rw')
         from py2store.stores.s3_store import S3BucketStore, S3BucketStoreNoOverwrites
+        from py2store.delegation_stores import S3Store
         prefix = 'py_store_tests'
-        s = S3BucketStore.from_s3_resource_kwargs(_prefix=prefix, **s3_access)
+        s = S3Store.from_s3_resource_kwargs(_prefix=prefix, **s3_access)
+
         _multi_test(s)
 
     except LookupError as e:
