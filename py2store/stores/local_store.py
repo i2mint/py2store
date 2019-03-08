@@ -5,9 +5,9 @@ from typing import Callable, Union, Any
 # import soundfile as sf  # TODO: Replace by another wav reader, and move to another module
 
 # from py2store.base import Keys
-from py2store.base import FilteredKeys, StoreBase, IdentityKvWrap, IterBasedSized, StoreMutableMapping, KeyValidation
+from py2store.base import FilteredKeysMixin, StoreBaseMixin, IdentityKvWrapMixin, IterBasedSizedMixin, StoreMutableMapping, KeyValidationABC
 from py2store.parse_format import match_re_for_fstring
-from py2store.core import PrefixRelativization
+from py2store.core import PrefixRelativizationMixin
 
 DFLT_READ_MODE = ''
 DFLT_WRITE_MODE = ''
@@ -84,7 +84,7 @@ class PrefixedFilepathsRecursive(PrefixedFilepaths):
         return iter_filepaths_in_folder_recursively(self._prefix)
 
 
-class FilepathFormatKeys(FilteredKeys, KeyValidation, PrefixedFilepathsRecursive, IterBasedSized):
+class FilepathFormatKeys(FilteredKeysMixin, KeyValidationABC, PrefixedFilepathsRecursive, IterBasedSizedMixin):
     def __init__(self, path_format: str):
         """
 
@@ -239,7 +239,7 @@ class PathFormatPersister(FilepathFormatKeys, LocalFileRWD):
                               newline=newline, closefd=closefd, opener=opener)
 
 
-class PathFormatStore(StoreBase, IdentityKvWrap, PathFormatPersister, StoreMutableMapping):
+class PathFormatStore(StoreBaseMixin, IdentityKvWrapMixin, PathFormatPersister, StoreMutableMapping):
     """
     Union of FilepathFormatKeys and LocalFileRWD.
 
@@ -324,5 +324,5 @@ class PathFormatStore(StoreBase, IdentityKvWrap, PathFormatPersister, StoreMutab
     pass
 
 
-class RelativePathFormatStore(PrefixRelativization, PathFormatStore):
+class RelativePathFormatStore(PrefixRelativizationMixin, PathFormatStore):
     pass

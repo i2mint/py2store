@@ -123,10 +123,10 @@ class StoreBase:
     By store we mean key-value store. This could be files in a filesystem, objects in s3, or a database. Where and
     how the content is stored should be specified, but StoreInterface offers a dict-like interface to this.
 
-    StoreBase provides an interface to create storage functionality, but no actual storage capabilities on
+    StoreBaseMixin provides an interface to create storage functionality, but no actual storage capabilities on
     it's own. A concrete Store must be provided by extending StoreInterface to specify the concrete storage
     functionality. Typically in the form:
-        class ConcreteStore(StoreBase, ConcreteStorageSpec, Mixins...):
+        class ConcreteStore(StoreBaseMixin, ConcreteStorageSpec, Mixins...):
             pass
 
     ConcreteStorageSpec (or whatever classes follow StoreInterface in the mro) should specify at least four methods:

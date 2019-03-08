@@ -3,8 +3,8 @@ from botocore.exceptions import ClientError
 from botocore.client import Config
 
 # from py2store.base import Keys, AbstractObjReader, AbstractObjWriter, AbstractObjSource, AbstractObjStore
-from py2store.base import IterBasedSized, OverWritesNotAllowed, StoreBase, IdentityKvWrap, IdentityKvWrap
-from py2store.core import PrefixRelativization
+from py2store.base import IterBasedSizedMixin, OverWritesNotAllowedMixin, StoreBaseMixin, IdentityKvWrapMixin, IdentityKvWrapMixin
+from py2store.core import PrefixRelativizationMixin
 from py2store.errors import NoSuchKeyError
 
 DFLT_AWS_S3_ENDPOINT = "https://s3.amazonaws.com"
@@ -49,13 +49,13 @@ def get_s3_bucket(name,
     return s3.Bucket(name)
 
 
-class S3BucketCollection(IterBasedSized):
+class S3BucketCollection(IterBasedSizedMixin):
     """
     A S3BucketDacc collection.
     A collection is a iterable and sizable container.
     That is, this mixin adds iteration (__iter__), length (__len__), and containment (__contains__(k)) to S3BucketDacc.
 
-    Note: Subclasses IterBasedSized for the sole purpose of reusing it's __len__ method before any KV wrapping
+    Note: Subclasses IterBasedSizedMixin for the sole purpose of reusing it's __len__ method before any KV wrapping
     """
 
     def __iter__(self):
@@ -187,7 +187,7 @@ from functools import partial
 encode_as_utf8 = partial(str, encoding='utf-8')
 
 
-class StringKvWrap(IdentityKvWrap):
+class StringKvWrap(IdentityKvWrapMixin):
     def _obj_of_data(self, v):
         return encode_as_utf8(v)
 
@@ -196,37 +196,37 @@ class StringKvWrap(IdentityKvWrap):
 from py2store.base import StoreMutableMapping
 
 
-class Store(StoreBase, S3BucketRWD, PrefixRelativization, S3BucketCollection, IdentityKvWrap):
+class Store(StoreBaseMixin, S3BucketRWD, PrefixRelativizationMixin, S3BucketCollection, IdentityKvWrapMixin):
     pass
 
 
-class S3BucketStore(S3BucketCollection, StoreBase, StringKvWrap, S3BucketRWD, StoreMutableMapping):
+class S3BucketStore(S3BucketCollection, StoreBaseMixin, StringKvWrap, S3BucketRWD, StoreMutableMapping):
     pass
 
 
-class S3BucketStoreNoOverwrites(OverWritesNotAllowed, S3BucketStore):
+class S3BucketStoreNoOverwrites(OverWritesNotAllowedMixin, S3BucketStore):
     pass
 
 #
-# class RelativePathFormatStore(PrefixRelativization, PathFormatStore):
+# class RelativePathFormatStore(PrefixRelativizationMixin, PathFormatStore):
 #     pass
 #
 #
-# from py2store.core import PrefixRelativization
+# from py2store.core import PrefixRelativizationMixin
 #
 #
 #
 # # StoreInterface, FilepathFormatKeys, LocalFileRWD, StoreMutableMapping
-# # class S3BucketCollection(PrefixRelativization, S3BucketDacc, S3BucketCollection):
+# # class S3BucketCollection(PrefixRelativizationMixin, S3BucketDacc, S3BucketCollection):
 # #     pass
 #
 #
-# class S3BucketReader(PrefixRelativization, S3BucketDacc, S3BucketReaderMixin):
+# class S3BucketReader(PrefixRelativizationMixin, S3BucketDacc, S3BucketReaderMixin):
 #     """ Adds a __getitem__ to S3BucketDacc, which returns a bucket's object binary data for a key."""
 #     pass
 #
 #
-# class S3BucketSource(PrefixRelativization, AbstractObjSource, S3BucketCollection, S3BucketReaderMixin, S3BucketDacc):
+# class S3BucketSource(PrefixRelativizationMixin, AbstractObjSource, S3BucketCollection, S3BucketReaderMixin, S3BucketDacc):
 #     """
 #     A S3BucketDacc mapping (i.e. a collection (iterable, sizable container) that has a reader (__getitem__),
 #     and mapping mixin methods such as get, keys, items, values, __eq__ and __ne__.
@@ -234,12 +234,12 @@ class S3BucketStoreNoOverwrites(OverWritesNotAllowed, S3BucketStore):
 #     pass
 #
 #
-# class S3BucketWriter(PrefixRelativization, S3BucketDacc, S3BucketWriterMixin):
+# class S3BucketWriter(PrefixRelativizationMixin, S3BucketDacc, S3BucketWriterMixin):
 #     """ A S3BucketDacc that can write to s3 and delete keys (and data) """
 #     pass
 #
 #
-# class S3BucketWriterNoOverwrites(OverWritesNotAllowed, S3BucketWriter):
+# class S3BucketWriterNoOverwrites(OverWritesNotAllowedMixin, S3BucketWriter):
 #     """
 #     Exactly like S3BucketWriter, but where writes to an already existing key are protected.
 #     If a key already exists, __setitem__ will raise a OverWritesNotAllowedError
@@ -249,7 +249,7 @@ class S3BucketStoreNoOverwrites(OverWritesNotAllowed, S3BucketStore):
 #
 #
 #
-# class S3BucketStore(PrefixRelativization, S3BucketDacc, AbstractObjStore, S3BucketCollection,
+# class S3BucketStore(PrefixRelativizationMixin, S3BucketDacc, AbstractObjStore, S3BucketCollection,
 #                     S3BucketReaderMixin, S3BucketWriterMixin):
 #     """
 #     A S3BucketDacc MutableMapping.
@@ -258,7 +258,7 @@ class S3BucketStoreNoOverwrites(OverWritesNotAllowed, S3BucketStore):
 #     pass
 #
 #
-# class S3BucketStoreNoOverwrites(OverWritesNotAllowed, S3BucketStore):
+# class S3BucketStoreNoOverwrites(OverWritesNotAllowedMixin, S3BucketStore):
 #     """
 #     A S3BucketDacc MutableMapping.
 #     That is, a S3BucketDacc that can read and write, as well as iterate

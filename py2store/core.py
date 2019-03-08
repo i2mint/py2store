@@ -1,10 +1,10 @@
 from collections.abc import Collection
 
 from py2store.util import lazyprop, max_common_prefix
-from py2store.base import StoreBase, IdentityKvWrap
+from py2store.base import StoreBaseMixin, IdentityKvWrapMixin
 
 
-class PrefixRelativization:
+class PrefixRelativizationMixin:
     """
     Mixin that adds a intercepts the _id_of_key an _key_of_id methods, transforming absolute keys to relative ones.
     Designed to work with string keys, where absolute and relative are relative to a _prefix attribute
@@ -14,16 +14,16 @@ class PrefixRelativization:
     When subclassed, should be placed before the class defining _id_of_key an _key_of_id.
     Also, assumes that a (string) _prefix attribute will be available.
 
-    >>> from py2store.base import KeyValidation, StoreBase, IdentityKvWrap
+    >>> from py2store.base import KeyValidationABC, StoreBaseMixin, IdentityKvWrapMixin
     >>> from collections import UserDict
     >>>
-    >>> class DictStore(PrefixRelativization, StoreBase, IdentityKvWrap, UserDict):
+    >>> class DictStore(PrefixRelativizationMixin, StoreBaseMixin, IdentityKvWrapMixin, UserDict):
     ...     def __init__(self, _prefix='/root/of/data/', *args, **kwargs):
     ...         super().__init__(*args, **kwargs)
     ...         self._prefix = _prefix
     ...
     >>> # In the above, UserDict provides the actual physical data storage, StoreInterface the key and value wraps,
-    >>> # and PrefixRelativization the extra absolute/relative layer.
+    >>> # and PrefixRelativizationMixin the extra absolute/relative layer.
     >>> s = DictStore()
     >>> s['foo'] = 'bar'
     >>> assert s['foo'] == 'bar'
@@ -83,7 +83,7 @@ class ExplicitKeys:
         return k in self._key_collection
 
 
-class ExplicitKeysWithPrefixRelativization(StoreBase, PrefixRelativization, IdentityKvWrap, ExplicitKeys):
+class ExplicitKeysWithPrefixRelativization(StoreBaseMixin, PrefixRelativizationMixin, IdentityKvWrapMixin, ExplicitKeys):
     """
     py2store.base.Keys implementation that gets it's keys explicitly from a collection given at initialization time.
     The key_collection must be a collections.abc.Collection (such as list, tuple, set, etc.)

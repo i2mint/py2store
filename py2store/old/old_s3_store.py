@@ -1,6 +1,6 @@
-from py2store.base import IterBasedSizedContainer, AbstractObjReader, AbstractObjWriter, AbstractObjSource, AbstractObjStore
-from py2store.base import OverWritesNotAllowed
-from py2store.base import KeyValidation
+from py2store.base import IterBasedSizedContainerMixin, AbstractObjReader, AbstractObjWriter, AbstractObjSource, AbstractObjStore
+from py2store.base import OverWritesNotAllowedMixin
+from py2store.base import KeyValidationABC
 
 import boto3
 from botocore.exceptions import ClientError
@@ -43,7 +43,7 @@ def get_s3_bucket(name,
     return s3.Bucket(name)
 
 
-class S3BucketDacc(KeyValidation):
+class S3BucketDacc(KeyValidationABC):
     def __init__(self, bucket_name: str, _s3_bucket, _prefix: str = ''):
         """
         S3 Bucket accessor.
@@ -95,7 +95,7 @@ class S3BucketDacc(KeyValidation):
         return self._s3_bucket.Object(key=k)
 
 
-class S3BucketKeys(IterBasedSizedContainer, S3BucketDacc):
+class S3BucketKeys(IterBasedSizedContainerMixin, S3BucketDacc):
     """
     A S3BucketDacc collection.
     A collection is a iterable and sizable container.
@@ -175,7 +175,7 @@ class S3BucketWriter(AbstractObjWriter, S3BucketDacc):
         self._obj_of_key(k).delete()
 
 
-class S3BucketWriterNoOverwrites(S3BucketWriter, OverWritesNotAllowed):
+class S3BucketWriterNoOverwrites(S3BucketWriter, OverWritesNotAllowedMixin):
     """
     Exactly like S3BucketWriter, but where writes to an already existing key are protected.
     If a key already exists, __setitem__ will raise a OverWritesNotAllowedError
@@ -207,7 +207,7 @@ class S3BucketStore(AbstractObjStore, S3BucketSource, S3BucketWriter):
     pass
 
 
-class S3BucketStoreNoOverwrites(OverWritesNotAllowed, S3BucketStore):
+class S3BucketStoreNoOverwrites(OverWritesNotAllowedMixin, S3BucketStore):
     """
     A S3BucketDacc MutableMapping.
     That is, a S3BucketDacc that can read and write, as well as iterate

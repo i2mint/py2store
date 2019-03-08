@@ -47,7 +47,7 @@ def _check_methods(C, *methods):
     return True
 
 
-class KeysWrap(metaclass=ABCMeta):
+class KeysWrapABC(metaclass=ABCMeta):
     """
     An ABC providing key conversion.
         _id_of_key(self, k): specifies how to convert incoming keys.
@@ -84,19 +84,19 @@ class KeysWrap(metaclass=ABCMeta):
 
     @classmethod
     def __subclasshook__(cls, C):
-        if cls is KeysWrap:
+        if cls is KeysWrapABC:
             return _check_methods(C, "_id_of_key", "_key_of_id")
         return NotImplemented
 
 
-class ValsWrap(metaclass=ABCMeta):
+class ValsWrapABC(metaclass=ABCMeta):
     """
     An ABC providing value conversion. Intended to be used for serialization/deserialization.
         _data_of_obj(self, v): serialize: convert incoming object to data (data is what's given to __setitem__ to store)
         _obj_of_data(self, data): deserialize: convert incoming data to object (data is what's returned by __getitem__)
 
     Note: It's desirable to have _data_of_obj and _obj_of_data be inverse of eachother.
-    Unlike with KeysWrap (_id_of_key and _key_of_id), it is not as crucial for the well functioning of stores.
+    Unlike with KeysWrapABC (_id_of_key and _key_of_id), it is not as crucial for the well functioning of stores.
     If serialization and deserialization are not inverse of each other, it just means that the object you get back
     is not the same as the one you stored. Which may be exactly what is desired sometimes.
 
@@ -125,13 +125,13 @@ class ValsWrap(metaclass=ABCMeta):
 
     @classmethod
     def __subclasshook__(cls, C):
-        if cls is ValsWrap:
+        if cls is ValsWrapABC:
             return _check_methods(C, "_data_of_obj", "_obj_of_data")
         return NotImplemented
 
 
-class IdentityKeysWrap(KeysWrap):
-    """Transparent KeysWrap. Often placed in the mro to satisfy the KeysWrap need in a neutral way.
+class IdentityKeysWrapMixin(KeysWrapABC):
+    """Transparent KeysWrapABC. Often placed in the mro to satisfy the KeysWrapABC need in a neutral way.
     This is useful in cases where the keys the persistence functions work with are the same as those you want to work
     with.
     """
@@ -153,8 +153,8 @@ class IdentityKeysWrap(KeysWrap):
         return _id
 
 
-class IdentityValsWrap:
-    """ Transparent ValsWrap. Often placed in the mro to satisfy the KeysWrap need in a neutral way.
+class IdentityValsWrapMixin:
+    """ Transparent ValsWrapABC. Often placed in the mro to satisfy the KeysWrapABC need in a neutral way.
         This is useful in cases where the values can be persisted by __setitem__ as is (or the serialization is
         handled somewhere in the __setitem__ method.
     """
@@ -175,12 +175,12 @@ class IdentityValsWrap:
         return data
 
 
-class IdentityKvWrap(IdentityKeysWrap, IdentityValsWrap):
+class IdentityKvWrapMixin(IdentityKeysWrapMixin, IdentityValsWrapMixin):
     """Transparent Keys and Vals Wrap"""
     pass
 
 
-class DfltWrapper(KeysWrap, ValsWrap):
+class DfltWrapperMixin(KeysWrapABC, ValsWrapABC):
     def _data_of_obj(self, v):
         """
         Serialization of a python object.
@@ -198,16 +198,16 @@ class DfltWrapper(KeysWrap, ValsWrap):
         return data
 
 
-class StoreBase:
+class StoreBaseMixin:
     """Mixin that intercepts base store methods, transforming the keys and values involved.
 
     By store we mean key-value store. This could be files in a filesystem, objects in s3, or a database. Where and
     how the content is stored should be specified, but StoreInterface offers a dict-like interface to this.
 
-    StoreBase provides an interface to create storage functionality, but no actual storage capabilities on
+    StoreBaseMixin provides an interface to create storage functionality, but no actual storage capabilities on
     it's own. A concrete Store must be provided by extending StoreInterface to specify the concrete storage
     functionality. Typically in the form:
-        class ConcreteStore(StoreBase, ConcreteStorageSpec, Mixins...):
+        class ConcreteStore(StoreBaseMixin, ConcreteStorageSpec, Mixins...):
             pass
 
     ConcreteStorageSpec (or whatever classes follow StoreInterface in the mro) should specify at least four methods:
@@ -267,7 +267,7 @@ class StoreLeaf:
 ########################################################################################################################
 # Mixins to insert specific collection methods in stores
 
-class GetBasedContainer:
+class GetBasedContainerMixin:
     def __contains__(self, k) -> bool:
         """
         Check if collection of keys contains k.
@@ -282,7 +282,7 @@ class GetBasedContainer:
             return False
 
 
-class IterBasedContainer:
+class IterBasedContainerMixin:
     def __contains__(self, k) -> bool:
         """
         Check if collection of keys contains k.
@@ -296,7 +296,7 @@ class IterBasedContainer:
         return False  # return False if the key wasn't found
 
 
-class IterBasedSized:
+class IterBasedSizedMixin:
     def __len__(self) -> int:
         """
         Number of elements in collection of keys.
@@ -312,7 +312,7 @@ class IterBasedSized:
         return count
 
 
-class IterBasedSizedContainer(IterBasedSized, IterBasedContainer):
+class IterBasedSizedContainerMixin(IterBasedSizedMixin, IterBasedContainerMixin):
     """
     An ABC that defines
         (a) how to iterate over a collection of elements (keys) (__iter__)
@@ -331,7 +331,7 @@ class IterBasedSizedContainer(IterBasedSized, IterBasedContainer):
     pass
 
 
-class FilteredKeys:
+class FilteredKeysMixin:
     """
     Filters __iter__ and __contains__ with (the boolean filter function attribute) _key_filt.
     """
@@ -359,7 +359,7 @@ class StoreMutableMapping(MutableMapping):
 
 
 # TODO: Would this need better be served by a (class or object) decorator?
-class OverWritesNotAllowed:
+class OverWritesNotAllowedMixin:
     def __setitem__(self, k, v):
         if self.__contains__(k):
             raise OverWritesNotAllowedError(
@@ -369,7 +369,7 @@ class OverWritesNotAllowed:
 
 
 # Note: Not sure I want to do key validation this way. Perhaps better injected in _id_of_key?
-class KeyValidation(metaclass=ABCMeta):
+class KeyValidationABC(metaclass=ABCMeta):
     """
     An ABC for an object writer.
     Single purpose: store an object under a given key.
@@ -387,7 +387,7 @@ class KeyValidation(metaclass=ABCMeta):
 
     @classmethod
     def __subclasshook__(cls, C):
-        if cls is KeyValidation:
+        if cls is KeyValidationABC:
             return _check_methods(C, "is_valid_key", "check_key_is_valid")
         return NotImplemented
 
