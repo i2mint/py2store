@@ -157,6 +157,20 @@ class StoreBase:
         return map(self._key_of_id, super().__iter__())
 
 
+class ReadOnlyMixin:
+    def __setitem__(self, k, v):
+        raise WritesNotAllowed("You can't write with that Store")
+
+    def __delitem__(self, k):
+        raise DeletionsNotAllowed("You can't delete with that Store")
+
+    def clear(self):
+        raise DeletionsNotAllowed("You can't delete (so definitely not delete all) with that Store")
+
+    def pop(self, k):
+        raise DeletionsNotAllowed("You can't delete (including popping) with that Store")
+
+
 class StoreLeaf:
     def __getitem__(self, k):
         raise ReadsNotAllowed("You can't read with that Store")

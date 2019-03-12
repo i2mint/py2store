@@ -60,7 +60,14 @@ class Store:
         return map(self._key_of_id, self.persister.__iter__())
 
     def clear(self):
-        raise NotImplementedError("the clear method wasn't implemented, to protect from bulk deletion")
+        raise NotImplementedError('''
+        The clear method was overridden to make dangerous difficult.
+        If you really want to delete all your data, you can do so by doing:
+            try:
+                while True:
+                    self.popitem()
+            except KeyError:
+                pass''')
 
     def __len__(self):
         return self.persister.__len__()

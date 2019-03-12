@@ -135,6 +135,7 @@ class IdentityKeysWrapMixin(KeysWrapABC):
     This is useful in cases where the keys the persistence functions work with are the same as those you want to work
     with.
     """
+
     def _id_of_key(self, k):
         """
         Maps an interface identifier (key) to an internal identifier (_id) that is actually used to perform operations.
@@ -158,6 +159,7 @@ class IdentityValsWrapMixin:
         This is useful in cases where the values can be persisted by __setitem__ as is (or the serialization is
         handled somewhere in the __setitem__ method.
     """
+
     def _data_of_obj(self, v):
         """
         Serialization of a python object.
@@ -246,8 +248,25 @@ class StoreBaseMixin:
         return super().__contains__(self._id_of_key(k))
 
 
+class ReadOnlyMixin:
+    """Put this as your first parent class to disallow write/delete operations"""
+
+    def __setitem__(self, k, v):
+        raise WritesNotAllowed("You can't write with that Store")
+
+    def __delitem__(self, k):
+        raise DeletionsNotAllowed("You can't delete with that Store")
+
+    def clear(self):
+        raise DeletionsNotAllowed("You can't delete (so definitely not delete all) with that Store")
+
+    def pop(self, k):
+        raise DeletionsNotAllowed("You can't delete (including popping) with that Store")
+
+
 class StoreLeaf:
     """Meant to be placed at the end of the mro to raise more meaningful errors when a base method wasn't defined"""
+
     def __getitem__(self, k):
         raise ReadsNotAllowed("You can't read with that Store")
 
@@ -390,6 +409,3 @@ class KeyValidationABC(metaclass=ABCMeta):
         if cls is KeyValidationABC:
             return _check_methods(C, "is_valid_key", "check_key_is_valid")
         return NotImplemented
-
-
-

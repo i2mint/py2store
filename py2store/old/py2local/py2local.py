@@ -220,7 +220,7 @@ def mk_local_pickle_obj_store(rootdir: str, ext: str = '', protocol=None, fix_im
         return pickle.dumps(obj, protocol=protocol, fix_imports=fix_imports)
 
     def obj_of_serial(serial):
-        return pickle.loads(serial, protocol=protocol, fix_imports=fix_imports)
+        return pickle.loads(serial, fix_imports=fix_imports)
 
     # Notice that file_write_mode and file_read_mode defaults are overwritten to binary mode
     return mk_local_obj_store(rootdir=rootdir, ext=ext,
