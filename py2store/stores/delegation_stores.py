@@ -1,11 +1,6 @@
 from collections.abc import MutableMapping
 from py2store.util import lazyprop
-
-from py2store.stores.local_store import DFLT_READ_MODE, DFLT_WRITE_MODE, DFLT_DELETE_MODE
-from py2store.stores.local_store import PathFormatPersister
-
-from py2store.stores.s3_store import get_s3_resource
-from py2store.stores.s3_store import DFLT_AWS_S3_ENDPOINT, DFLT_BOTO_CLIENT_VERIFY, DFLT_CONFIG
+from py2store.errors import KeyValidationError
 
 
 class Persister(MutableMapping):
@@ -26,6 +21,7 @@ class Store:
     __delitem__ calls: _id_of_key
     __iter__    calls:	            _key_of_id
     """
+
     # __slots__ = ('_id_of_key', '_key_of_id', '_data_of_obj', '_obj_of_data')
 
     # _id_of_key = lambda x: x
@@ -83,6 +79,16 @@ class Store:
 
 
 class PrefixRelativization:
+    """A key wrap that allows one to interface with absolute paths through relative paths.
+    The original intent was for local files. Instead of referencing files through an absolute path such as
+        /A/VERY/LONG/ROOT/FOLDER/the/file/we.want
+    we can instead reference the file as
+        the/file/we.want
+
+    But PrefixRelativization can be used, not only for local paths, but when ever a string reference is involved.
+    In fact, not only strings, but any key object that has a __len__, __add__, and subscripting.
+    """
+
     def __init__(self, _prefix=""):
         self._prefix = _prefix
 
@@ -100,7 +106,102 @@ class PrefixRelativization:
 # class LocalFilePersister(FilepathFormatKeys, LocalFileRWD):
 #     pass
 
+
+########################################################################################################################
+########################################################################################################################
+# Local Files
+import os
+import re
+from glob import iglob
+
+########################################################################################################################
+# File system navigation: Utils
+
+file_sep = os.sep
+
+
+def ensure_slash_suffix(path):
+    if not path.endswith(file_sep):
+        return path + file_sep
+    else:
+        return path
+
+
+def pattern_filter(pattern):
+    pattern = re.compile(pattern)
+
+    def _pattern_filter(s):
+        return pattern.match(s) is not None
+
+    return _pattern_filter
+
+
+def iter_relative_files_and_folder(root_folder):
+    root_folder = ensure_slash_suffix(root_folder)
+    return map(lambda x: x.replace(root_folder, ''), iglob(root_folder + '*'))
+
+
+def iter_filepaths_in_folder(root_folder):
+    return (os.path.join(root_folder, name) for name in iter_relative_files_and_folder(root_folder))
+
+
+def iter_filepaths_in_folder_recursively(root_folder):
+    for full_path in iter_filepaths_in_folder(root_folder):
+        if os.path.isdir(full_path):
+            for entry in iter_filepaths_in_folder_recursively(full_path):
+                yield entry
+        else:
+            if os.path.isfile(full_path):
+                yield full_path
+
+
+########################################################################################################################
+# Local File Persisters
+
+class SimpleFilePersister(Persister):
+    def __init__(self, rootdir, mode='t'):
+        self.rootdir = ensure_slash_suffix(rootdir)
+        assert mode in {'t', 'b', ''}, f"mode ({mode}) not valid: Must be 't' or 'b'"
+        self.mode = mode
+
+    def _validate_key(self, k):
+        if not k.startswith(self.rootdir):
+            raise KeyValidationError(f"Path ({k}) not valid. Must begin with {self.rootdir}")
+
+    def __getitem__(self, k):
+        self._validate_key(k)
+        with open(self.rootdir + k, 'r' + self.mode) as fp:
+            data = fp.read()
+        return data
+
+    def __setitem__(self, k, v):
+        self._validate_key(k)
+        with open(self.rootdir + k, 'w' + self.mode) as fp:
+            fp.write(v)
+
+    def __delitem__(self, k):
+        self._validate_key(k)
+        os.remove(k)
+
+    def __iter__(self):
+        return iter_filepaths_in_folder_recursively(self.rootdir)
+
+
+class SimpleFileStore(Store):
+    def __init__(self, rootdir, mode='t'):
+        persister = SimpleFilePersister(rootdir, mode)
+        key_wrap = PrefixRelativization(_prefix=rootdir)
+        super().__init__(persister=persister, _id_of_key=key_wrap._id_of_key, _key_of_id=key_wrap._key_of_id)
+
+
+# LocalFileStore is a more flexible FileStore with more functionalities. Excluding to not detract from the essentials.
+from py2store.stores.local_store import DFLT_READ_MODE, DFLT_WRITE_MODE, DFLT_DELETE_MODE
+from py2store.stores.local_store import PathFormatPersister
+
+
 class LocalFileStore(Store):
+    """ A store using local file persistence, with a relative path key interface """
+
     def __init__(self, path_format, read=DFLT_READ_MODE, write=DFLT_WRITE_MODE, delete=DFLT_DELETE_MODE,
                  buffering=-1, encoding=None, errors=None, newline=None, closefd=True, opener=None):
         persister = PathFormatPersister(path_format, read, write, delete,
@@ -114,7 +215,8 @@ class LocalFileStore(Store):
 # S3
 
 from botocore.exceptions import ClientError
-
+from py2store.stores.s3_store import get_s3_resource
+from py2store.stores.s3_store import DFLT_AWS_S3_ENDPOINT, DFLT_BOTO_CLIENT_VERIFY, DFLT_CONFIG
 from functools import partial
 
 encode_as_utf8 = partial(str, encoding='utf-8')

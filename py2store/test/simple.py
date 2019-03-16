@@ -139,9 +139,22 @@ def test_dict_ops():
     _multi_test(store)
 
 
+# def test_simple_file_ops():
+#     from py2store.stores.local_store import RelativePathFormatStore
+#
+#     rootdir = os.path.join(gettempdir(), 'py_store_tests')
+#     # empty and recreate rootdir if necessary
+#     if os.path.isdir(rootdir):
+#         shutil.rmtree(rootdir)
+#     os.mkdir(rootdir)
+#
+#     store = RelativePathFormatStore(path_format=rootdir)
+#     # store._obj_of_data = partial(str, encoding='utf-8')
+#     _multi_test(store)
+
+
 def test_local_file_ops():
     from py2store.stores.local_store import RelativePathFormatStore
-    from functools import partial
 
     rootdir = os.path.join(gettempdir(), 'py_store_tests')
     # empty and recreate rootdir if necessary
@@ -161,7 +174,7 @@ def test_s3_ops():
     try:
         s3_access = get_s3_test_access_info_from_env_vars(perm='rw')
         from py2store.stores.s3_store import S3BucketStore, S3BucketStoreNoOverwrites
-        from py2store.delegation_stores import S3Store
+        from py2store.stores.delegation_stores import S3Store
         prefix = 'py_store_tests'
         s = S3Store.from_s3_resource_kwargs(_prefix=prefix, **s3_access)
 
