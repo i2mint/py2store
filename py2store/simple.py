@@ -1,5 +1,5 @@
 """
-This stand alone module is meant to demonstrate the functionality of py2store without all the bells and whistles,
+This standalone module is meant to demonstrate the functionality of py2store without all the bells and whistles,
 annotations, comments, heavy documentation, doc tests, etc.
 
 In this module you'll see how one can have the key-value interface of a MutableMapping (thing dicts), but control
@@ -13,6 +13,7 @@ The main classes to check out are:
 And just to show something a bit more complex, we also include:
 * S3Store: Like SimpleFileStore, but stores data in an AWS S3 bucket.
 
+pytest included
 
 """
 
