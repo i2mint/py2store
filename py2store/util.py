@@ -94,8 +94,12 @@ class DelegatedAttribute:
     def __str__(self):
         return ""
 
+    # def __call__(self, instance, *args, **kwargs):
+    #     return self.delegate(instance)(*args, **kwargs)
+
 
 def delegate_as(delegate_cls, to='delegate', include=frozenset(), exclude=frozenset()):
+    raise NotImplementedError("Didn't manage to make this work fully")
     # turn include and ignore into sets, if they aren't already
     include = set(include)
     exclude = set(exclude)

@@ -5,6 +5,8 @@ from py2store.errors import KeyValidationError
 
 # TODO: Define store type so the type is defined by it's methods, not by subclassing.
 class StoreBase(MutableMapping):
+    """ Acts as a MutableMapping abc, but disabling the clear method, and computing __len__ by counting keys"""
+
     def __len__(self):
         count = 0
         for _ in self.__iter__():
@@ -28,6 +30,9 @@ def identity_func(x):
     return x
 
 
+static_identity_method = staticmethod(identity_func)
+
+
 class Store(StoreBase):
     """
     By store we mean key-value store. This could be files in a filesystem, objects in s3, or a database. Where and
@@ -46,19 +51,15 @@ class Store(StoreBase):
     # _data_of_obj = lambda x: x
     # _obj_of_data = lambda x: x
 
-    def __init__(self,
-                 store=None,
-                 _id_of_key=identity_func,
-                 _key_of_id=identity_func,
-                 _data_of_obj=identity_func,
-                 _obj_of_data=identity_func):
+    def __init__(self, store=None):
         if store is None:
             store = dict()
         self.store = store
-        self._id_of_key = _id_of_key
-        self._key_of_id = _key_of_id
-        self._data_of_obj = _data_of_obj
-        self._obj_of_data = _obj_of_data
+
+    _id_of_key = static_identity_method
+    _key_of_id = static_identity_method
+    _data_of_obj = static_identity_method
+    _obj_of_data = static_identity_method
 
     # Read ####################################################################
     def __getitem__(self, k):
@@ -96,7 +97,30 @@ class Store(StoreBase):
                 pass''')
 
 
-class PrefixRelativization:
+class PrefixRelativizationMixin:
+    """A key wrap that allows one to interface with absolute paths through relative paths.
+    The original intent was for local files. Instead of referencing files through an absolute path such as
+        /A/VERY/LONG/ROOT/FOLDER/the/file/we.want
+    we can instead reference the file as
+        the/file/we.want
+
+    But PrefixRelativizationMixin can be used, not only for local paths,
+    but when ever a string reference is involved.
+    In fact, not only strings, but any key object that has a __len__, __add__, and subscripting.
+    """
+
+    @lazyprop
+    def _prefix_length(self):
+        return len(self._prefix)
+
+    def _id_of_key(self, k):
+        return self._prefix + k
+
+    def _key_of_id(self, _id):
+        return _id[self._prefix_length:]
+
+
+class PrefixRelativization(PrefixRelativizationMixin):
     """A key wrap that allows one to interface with absolute paths through relative paths.
     The original intent was for local files. Instead of referencing files through an absolute path such as
         /A/VERY/LONG/ROOT/FOLDER/the/file/we.want
@@ -109,16 +133,6 @@ class PrefixRelativization:
 
     def __init__(self, _prefix=""):
         self._prefix = _prefix
-
-    @lazyprop
-    def _prefix_length(self):
-        return len(self._prefix)
-
-    def _id_of_key(self, k):
-        return self._prefix + k
-
-    def _key_of_id(self, _id):
-        return _id[self._prefix_length:]
 
 
 # class LocalFilePersister(FilepathFormatKeys, LocalFileRWD):
@@ -205,11 +219,11 @@ class SimpleFileStoreBase(StoreBase):
         return iter_filepaths_in_folder_recursively(self.rootdir)
 
 
-class SimpleFileStore(Store):
+class SimpleFileStore(PrefixRelativization, Store):
     def __init__(self, rootdir, mode='t'):
         store = SimpleFileStoreBase(rootdir, mode)
-        key_wrap = PrefixRelativization(_prefix=rootdir)
-        super().__init__(store=store, _id_of_key=key_wrap._id_of_key, _key_of_id=key_wrap._key_of_id)
+        PrefixRelativization.__init__(self, _prefix=rootdir)
+        Store.__init__(self, store=store)
 
 
 # LocalFileStore is a more flexible FileStore with more functionalities. Excluding to not detract from the essentials.
@@ -217,16 +231,20 @@ from py2store.stores.local_store import DFLT_READ_MODE, DFLT_WRITE_MODE, DFLT_DE
 from py2store.stores.local_store import PathFormatPersister
 
 
-class LocalFileStore(Store):
+class PathFormatStore(PathFormatPersister, StoreBase):
+    pass
+
+
+class LocalFileStore(PrefixRelativizationMixin, Store):
     """ A store using local file persistence, with a relative path key interface """
 
     def __init__(self, path_format, read=DFLT_READ_MODE, write=DFLT_WRITE_MODE, delete=DFLT_DELETE_MODE,
                  buffering=-1, encoding=None, errors=None, newline=None, closefd=True, opener=None):
-        store = PathFormatPersister(path_format, read, write, delete,
-                                    buffering=buffering, encoding=encoding, errors=errors,
-                                    newline=newline, closefd=closefd, opener=opener)
-        key_wrap = PrefixRelativization(_prefix=store._prefix)
-        super().__init__(store=store, _id_of_key=key_wrap._id_of_key, _key_of_id=key_wrap._key_of_id)
+        store = PathFormatStore(path_format, read, write, delete,
+                                buffering=buffering, encoding=encoding, errors=errors,
+                                newline=newline, closefd=closefd, opener=opener)
+        super().__init__(store=store)
+        self._prefix = store._prefix
 
 
 class DirReaderBase(StoreBase):
@@ -259,17 +277,14 @@ class DirReaderBase(StoreBase):
         raise NotImplementedError("Setting a directory is not defined.")
 
 
-class DirStore(Store):
+class DirStore(PrefixRelativizationMixin, Store):
     def __init__(self, rootdir):
         rootdir = ensure_slash_suffix(rootdir)
-        self._prefix = rootdir
         store = DirReaderBase(rootdir)
-        key_wrap = PrefixRelativization(_prefix=rootdir)
-        _obj_of_data = DirStore
-        _data_of_obj = lambda x: x._prefix
-        super().__init__(store=store,
-                         _id_of_key=key_wrap._id_of_key, _key_of_id=key_wrap._key_of_id,
-                         _obj_of_data=_obj_of_data, _data_of_obj=_data_of_obj)
+        super().__init__(store=store)
+        self._prefix = self.store._prefix
+        self._obj_of_data = DirStore
+        self._data_of_obj = lambda x: x._prefix
 
     def __repr__(self):
         return f"{self.__class__.__name__}('{self._prefix}')"
@@ -406,17 +421,13 @@ class S3Store(Store):
         def _id_of_key(k):
             return store._s3_bucket.Object(key=key_wrap._id_of_key(k))
 
+        self._id_of_key = _id_of_key
+
         def _key_of_id(_id):
             return key_wrap._key_of_id(_id.key)
+        self._key_of_id = _key_of_id
 
-        super().__init__(store=store,
-                         _id_of_key=_id_of_key,
-                         _key_of_id=_key_of_id,
-                         _data_of_obj=_data_of_obj,
-                         _obj_of_data=_obj_of_data
-                         )
-
-        # super().__init__(store=store, _id_of_key=key_wrap._id_of_key, _key_of_id=key_wrap._key_of_id)
+        super().__init__(store=store)
 
     @classmethod
     def from_s3_resource_kwargs(cls,

@@ -23,7 +23,7 @@ from collections.abc import MutableMapping
 
 
 class Persister(MutableMapping):
-    """ Interface for a Persister
+    """ Interface for a StoreBase
     Essentially, a MutableMapping where __len__ is taken by counting how many elements __iter__ yields,
     and where clear is overridden to raise a NotImplementedError (to protect from bulk deletion).
     """
@@ -196,7 +196,7 @@ def iter_filepaths_in_folder_recursively(root_folder):
 
 
 ########################################################################################################################
-# Local File Persister
+# Local File StoreBase
 
 class SimpleFilePersister(Persister):
     """Read/write (text or binary) data to files under a given rootdir.

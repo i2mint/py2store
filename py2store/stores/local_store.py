@@ -5,7 +5,8 @@ from typing import Callable, Union, Any
 # import soundfile as sf  # TODO: Replace by another wav reader, and move to another module
 
 # from py2store.base import Keys
-from py2store.base import FilteredKeysMixin, StoreBaseMixin, IdentityKvWrapMixin, IterBasedSizedMixin, StoreMutableMapping, KeyValidationABC
+from py2store.base import FilteredKeysMixin, StoreBaseMixin, IdentityKvWrapMixin, IterBasedSizedMixin, \
+    StoreMutableMapping, KeyValidationABC
 from py2store.parse_format import match_re_for_fstring
 from py2store.core import PrefixRelativizationMixin
 
@@ -54,6 +55,14 @@ def iter_filepaths_in_folder_recursively(root_folder):
                 yield full_path
 
 
+def iter_dirpaths_in_folder_recursively(root_folder):
+    for full_path in iter_filepaths_in_folder(root_folder):
+        if os.path.isdir(full_path):
+            yield full_path
+            for entry in iter_dirpaths_in_folder_recursively(full_path):
+                yield entry
+
+
 ########################################################################################################################
 # File system navigation: Classes
 class PrefixedFilepaths:
@@ -84,14 +93,23 @@ class PrefixedFilepathsRecursive(PrefixedFilepaths):
         return iter_filepaths_in_folder_recursively(self._prefix)
 
 
-class FilepathFormatKeys(FilteredKeysMixin, KeyValidationABC, PrefixedFilepathsRecursive, IterBasedSizedMixin):
+class PrefixedDirpathsRecursive(PrefixedFilepaths):
+    """
+    Keys collection for local files, where the keys are full filepaths RECURSIVELY under a given root dir _prefix.
+    This mixin adds iteration (__iter__), length (__len__), and containment (__contains__(k)).
+    """
+
+    def __iter__(self):
+        return iter_dirpaths_in_folder_recursively(self._prefix)
+
+
+class PathFormat:
     def __init__(self, path_format: str):
         """
-
+        A class for pattern-filtered exploration of file paths.
         :param path_format: The f-string format that the fullpath keys of the obj source should have.
             Often, just the root directory whose FILES contain the (full_filepath, content) data
             Also common is to use path_format='{rootdir}/{relative_path}.EXT' to impose a specific extension EXT
-        :param contents_of_file: The function that returns the python object stored at a given key (path)
         """
         self._path_format = path_format  # not intended for use, but keeping in case, for now
 
@@ -114,6 +132,17 @@ class FilepathFormatKeys(FilteredKeysMixin, KeyValidationABC, PrefixedFilepathsR
 
     def is_valid_key(self, k):
         return self._key_filt(k)
+
+
+# class FilepathFormatKeys(FilteredKeysMixin, KeyValidationABC, PrefixedFilepathsRecursive, IterBasedSizedMixin):
+class FilepathFormatKeys(PathFormat, FilteredKeysMixin, KeyValidationABC,
+                         PrefixedFilepathsRecursive, IterBasedSizedMixin):
+    pass
+
+
+class DirpathFormatKeys(PathFormat, FilteredKeysMixin, KeyValidationABC,
+                        PrefixedDirpathsRecursive, IterBasedSizedMixin):
+    pass
 
 
 ########################################################################################################################
@@ -326,3 +355,9 @@ class PathFormatStore(StoreBaseMixin, IdentityKvWrapMixin, PathFormatPersister, 
 
 class RelativePathFormatStore(PrefixRelativizationMixin, PathFormatStore):
     pass
+
+
+class RelativeDirPathFormatKeys(PrefixRelativizationMixin, StoreBaseMixin, IdentityKvWrapMixin, DirpathFormatKeys):
+    pass
+
+

@@ -83,7 +83,8 @@ class ExplicitKeys:
         return k in self._key_collection
 
 
-class ExplicitKeysWithPrefixRelativization(StoreBaseMixin, PrefixRelativizationMixin, IdentityKvWrapMixin, ExplicitKeys):
+class ExplicitKeysWithPrefixRelativization(StoreBaseMixin, PrefixRelativizationMixin,
+                                           IdentityKvWrapMixin, ExplicitKeys):
     """
     py2store.base.Keys implementation that gets it's keys explicitly from a collection given at initialization time.
     The key_collection must be a collections.abc.Collection (such as list, tuple, set, etc.)
