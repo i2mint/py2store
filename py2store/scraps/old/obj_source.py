@@ -5,7 +5,7 @@ import re
 from typing import Callable, Union, Any
 import soundfile as sf  # TODO: Replace by another wav reader, and move to another module
 
-from py2store.base import IterBasedSizedContainerMixin #, AbstractObjReader, AbstractObjSource
+from py2store.mixins import IterBasedSizedContainerMixin
 from py2store.parse_format import match_re_for_fstring
 
 file_sep = os.path.sep

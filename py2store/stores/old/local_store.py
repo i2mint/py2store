@@ -5,8 +5,7 @@ from typing import Callable, Union, Any
 # import soundfile as sf  # TODO: Replace by another wav reader, and move to another module
 
 # from py2store.base import Keys
-# from py2store.base import StoreBaseMixin, IdentityKvWrapMixin, StoreMutableMapping, KeyValidationABC
-from py2store.base import KeyValidationABC, Store, StoreBase
+from py2store.base import StoreBaseMixin, IdentityKvWrapMixin, StoreMutableMapping, KeyValidationABC
 from py2store.mixins import IterBasedSizedMixin, FilteredKeysMixin
 from py2store.parse_format import match_re_for_fstring
 from py2store.core import PrefixRelativizationMixin
@@ -269,7 +268,7 @@ class PathFormatPersister(FilepathFormatKeys, LocalFileRWD):
                               newline=newline, closefd=closefd, opener=opener)
 
 
-class PathFormatStore(PathFormatPersister, StoreBase):
+class PathFormatStore(StoreBaseMixin, IdentityKvWrapMixin, PathFormatPersister, StoreMutableMapping):
     """
     Union of FilepathFormatKeys and LocalFileRWD.
 
@@ -354,122 +353,11 @@ class PathFormatStore(PathFormatPersister, StoreBase):
     pass
 
 
-from functools import wraps
-
-
-class RelativePathFormatStore(PrefixRelativizationMixin, Store):
-    @wraps(PathFormatStore.__init__)
-    def __init__(self, *args, **kwargs):
-        super().__init__(store=PathFormatStore(*args, **kwargs))
-        self._prefix = self.store._prefix
-
-
-class RelativeDirPathFormatKeys(PrefixRelativizationMixin, Store):
-    @wraps(DirpathFormatKeys.__init__)
-    def __init__(self, *args, **kwargs):
-        super().__init__(store=DirpathFormatKeys(*args, **kwargs))
-        self._prefix = self.store._prefix
-
-
-class PathFormatStoreWithPrefix(Store):
-    @wraps(PathFormatStore.__init__)
-    def __init__(self, *args, **kwargs):
-        super().__init__(store=PathFormatStore(*args, **kwargs))
-        self._prefix = self.store._prefix
-
-
-class RelativePathFormatStore2(PrefixRelativizationMixin, PathFormatStoreWithPrefix):
+class RelativePathFormatStore(PrefixRelativizationMixin, PathFormatStore):
     pass
 
 
-# class PathFormatStore(StoreBaseMixin, IdentityKvWrapMixin, PathFormatPersister, StoreMutableMapping):
-#     """
-#     Union of FilepathFormatKeys and LocalFileRWD.
-#
-#     >>> from tempfile import gettempdir
-#     >>> import os
-#     >>>
-#     >>> def write_to_key(fullpath_of_relative_path, relative_path, content):  # a function to write content in files
-#     ...    with open(fullpath_of_relative_path(relative_path), 'w') as fp:
-#     ...        fp.write(content)
-#     >>>
-#     >>> # Preparation: Make a temporary rootdir and write two files in it
-#     >>> rootdir = os.path.join(gettempdir(), 'path_format_store_test' + os.sep)
-#     >>> if not os.path.isdir(rootdir):
-#     ...     os.mkdir(rootdir)
-#     >>> # recreate directory (remove existing files, delete directory, and re-create it)
-#     >>> for f in os.listdir(rootdir):
-#     ...     fullpath = os.path.join(rootdir, f)
-#     ...     if os.path.isfile(fullpath):
-#     ...         os.remove(os.path.join(rootdir, f))
-#     >>> if os.path.isdir(rootdir):
-#     ...     os.rmdir(rootdir)
-#     >>> if not os.path.isdir(rootdir):
-#     ...    os.mkdir(rootdir)
-#     >>>
-#     >>> filepath_of = lambda p: os.path.join(rootdir, p)  # a function to get a fullpath from a relative one
-#     >>> # and make two files in this new dir, with some content
-#     >>> write_to_key(filepath_of, 'a', 'foo')
-#     >>> write_to_key(filepath_of, 'b', 'bar')
-#     >>>
-#     >>> # point the obj source to the rootdir
-#     >>> s = PathFormatStore(path_format=rootdir)
-#     >>>
-#     >>> # assert things...
-#     >>> assert s._prefix == rootdir  # the _rootdir is the one given in constructor
-#     >>> assert s[filepath_of('a')] == 'foo'  # (the filepath for) 'a' contains 'foo'
-#     >>>
-#     >>> # two files under rootdir (as long as the OS didn't create it's own under the hood)
-#     >>> len(s)
-#     2
-#     >>> assert list(s) == [filepath_of('a'), filepath_of('b')]  # there's two files in s
-#     >>> filepath_of('a') in s  # rootdir/a is in s
-#     True
-#     >>> filepath_of('not_there') in s  # rootdir/not_there is not in s
-#     False
-#     >>> filepath_of('not_there') not in s  # rootdir/not_there is not in s
-#     True
-#     >>> assert list(s.keys()) == [filepath_of('a'), filepath_of('b')]  # the keys (filepaths) of s
-#     >>> sorted(list(s.values())) # the values of s (contents of files)
-#     ['bar', 'foo']
-#     >>> assert list(s.items()) == [(filepath_of('a'), 'foo'), (filepath_of('b'), 'bar')]  # the (path, content) items
-#     >>> assert s.get('this key is not there', None) is None  # trying to get the val of a non-existing key returns None
-#     >>> s.get('this key is not there', 'some default value')  # ... or whatever you say
-#     'some default value'
-#     >>>
-#     >>> # add more files to the same folder
-#     >>> write_to_key(filepath_of, 'this.txt', 'this')
-#     >>> write_to_key(filepath_of, 'that.txt', 'blah')
-#     >>> write_to_key(filepath_of, 'the_other.txt', 'bloo')
-#     >>> # see that you now have 5 files
-#     >>> len(s)
-#     5
-#     >>> # and these files contain values:
-#     >>> sorted(s.values())
-#     ['bar', 'blah', 'bloo', 'foo', 'this']
-#     >>>
-#     >>> # but if we make an obj source to only take files whose extension is '.txt'...
-#     >>> s = PathFormatStore(path_format=rootdir + '{}.txt')
-#     >>>
-#     >>> rootdir_2 = os.path.join(gettempdir(), 'obj_source_test_2') # get another rootdir
-#     >>> if not os.path.isdir(rootdir_2):
-#     ...    os.mkdir(rootdir_2)
-#     >>> filepath_of_2 = lambda p: os.path.join(rootdir_2, p)
-#     >>> # and make two files in this new dir, with some content
-#     >>> write_to_key(filepath_of, 'this.txt', 'this')
-#     >>> write_to_key(filepath_of, 'that.txt', 'blah')
-#     >>> write_to_key(filepath_of, 'the_other.txt', 'bloo')
-#     >>>
-#     >>> ss = PathFormatStore(path_format=rootdir_2 + '{}.txt')
-#     >>>
-#     >>> assert s != ss  # though pointing to identical content, o and oo are not equal since the paths are not equal!
-#     """
-#     pass
-#
-#
-# class RelativePathFormatStore(PrefixRelativizationMixin, PathFormatStore):
-#     pass
-#
-#
-# class RelativeDirPathFormatKeys(PrefixRelativizationMixin, StoreBaseMixin, IdentityKvWrapMixin, DirpathFormatKeys):
-#     pass
+class RelativeDirPathFormatKeys(PrefixRelativizationMixin, StoreBaseMixin, IdentityKvWrapMixin, DirpathFormatKeys):
+    pass
+
+

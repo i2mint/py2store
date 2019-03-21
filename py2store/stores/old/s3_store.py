@@ -3,8 +3,8 @@ from botocore.exceptions import ClientError
 from botocore.client import Config
 
 # from py2store.base import Keys, AbstractObjReader, AbstractObjWriter, AbstractObjSource, AbstractObjStore
-# from py2store.base import StoreBaseMixin, IdentityKvWrapMixin, IdentityKvWrapMixin
-from py2store.mixins import IterBasedSizedMixin, OverWritesNotAllowedMixin, IdentityKvWrapMixin
+from py2store.base import StoreBaseMixin, IdentityKvWrapMixin, IdentityKvWrapMixin
+from py2store.mixins import IterBasedSizedMixin, OverWritesNotAllowedMixin
 from py2store.core import PrefixRelativizationMixin
 from py2store.errors import NoSuchKeyError
 
@@ -194,15 +194,14 @@ class StringKvWrap(IdentityKvWrapMixin):
 
 
 # StoreInterface, S3BucketCollection, S3BucketRWD, StoreMutableMapping
-# from py2store.base import StoreMutableMapping
+from py2store.base import StoreMutableMapping
 
 
-# class Store(StoreBaseMixin, S3BucketRWD, PrefixRelativizationMixin, S3BucketCollection, IdentityKvWrapMixin):
-#     pass
+class Store(StoreBaseMixin, S3BucketRWD, PrefixRelativizationMixin, S3BucketCollection, IdentityKvWrapMixin):
+    pass
 
-from py2store.base import StoreBase, Store
 
-class S3BucketStoreBase(S3BucketCollection, StoreBaseMixin, StringKvWrap, StoreBase):
+class S3BucketStore(S3BucketCollection, StoreBaseMixin, StringKvWrap, S3BucketRWD, StoreMutableMapping):
     pass
 
 

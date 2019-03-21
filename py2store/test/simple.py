@@ -5,6 +5,7 @@ from tempfile import gettempdir
 from py2store.errors import OverWritesNotAllowedError, DeletionsNotAllowed
 from py2store.test.util import get_s3_test_access_info_from_env_vars
 
+
 # from collections.abc import MutableMapping
 # from py2store.base import AbstractObjStore
 # import typing
@@ -140,46 +141,55 @@ def test_dict_ops():
 #     # store._obj_of_data = partial(str, encoding='utf-8')
 #     _multi_test(store)
 
-
-def test_local_file_ops():
-
+def _test_path_format_local_file_ops(cls):
     rootdir = os.path.join(gettempdir(), 'py_store_tests')
     # empty and recreate rootdir if necessary
     if os.path.isdir(rootdir):
         shutil.rmtree(rootdir)
     os.mkdir(rootdir)
 
-    from py2store.stores.local_store import RelativePathFormatStore
-    store = RelativePathFormatStore(path_format=rootdir)
-    # store._obj_of_data = partial(str, encoding='utf-8')
-    _multi_test(store)
-
-    from py2store.kv import LocalFileStore
-    store = LocalFileStore(path_format=rootdir)
+    store = cls(path_format=rootdir)
     _multi_test(store)
 
 
-def test_s3_ops():
-    from functools import partial
-    encode_as_utf8 = partial(str, encoding='utf-8')
-    try:
-        print("\n----About to test s3 ops\n")
-        s3_access = get_s3_test_access_info_from_env_vars(perm='rw')
-        # from py2store.stores.s3_store import S3BucketStore, S3BucketStoreNoOverwrites
-        # from py2store.stores.delegation_stores import S3Store
-        from py2store.kv import S3Store
-        prefix = 'py_store_tests'
-        s = S3Store.from_s3_resource_kwargs(_prefix=prefix, **s3_access)
-        # s._data_of_obj = encode_as_utf8
-        s._obj_of_data = encode_as_utf8
+def test_local_file_ops():
+    rootdir = os.path.join(gettempdir(), 'py_store_tests')
+    # empty and recreate rootdir if necessary
+    if os.path.isdir(rootdir):
+        shutil.rmtree(rootdir)
+    os.mkdir(rootdir)
 
-        _multi_test(s)
-        print("----Finished testing s3 ops")
+    from py2store.stores.local_store import RelativePathFormatStore as cls
+    _test_path_format_local_file_ops(cls)
 
-    except LookupError as e:
-        msg = "Not going to be able to test with test_s3_ops since I don't have a proper access to s3\n"
-        msg += str(e)
-        print(msg)
+    from py2store.stores.local_store import RelativePathFormatStore2 as cls
+    _test_path_format_local_file_ops(cls)
+
+    # from py2store.kv import LocalFileStore as cls
+    # _test_path_format_local_file_ops(cls)
+
+
+# def test_s3_ops():
+#     from functools import partial
+#     encode_as_utf8 = partial(str, encoding='utf-8')
+#     try:
+#         print("\n----About to test s3 ops\n")
+#         s3_access = get_s3_test_access_info_from_env_vars(perm='rw')
+#         # from py2store.stores.s3_store import S3BucketStore, S3BucketStoreNoOverwrites
+#         # from py2store.stores.delegation_stores import S3Store
+#         from py2store.kv import S3Store
+#         prefix = 'py_store_tests'
+#         s = S3Store.from_s3_resource_kwargs(_prefix=prefix, **s3_access)
+#         # s._data_of_obj = encode_as_utf8
+#         s._obj_of_data = encode_as_utf8
+#
+#         _multi_test(s)
+#         print("----Finished testing s3 ops")
+#
+#     except LookupError as e:
+#         msg = "Not going to be able to test with test_s3_ops since I don't have a proper access to s3\n"
+#         msg += str(e)
+#         print(msg)
 
 
 if __name__ == '__main__':
