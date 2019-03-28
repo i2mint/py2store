@@ -382,6 +382,30 @@ class RelativePathFormatStore2(PrefixRelativizationMixin, PathFormatStoreWithPre
     pass
 
 
+import pickle
+
+
+class PickleStore(RelativePathFormatStore):
+    """
+    Example:
+        ps = PickleStore(path_format=root_folder, read='b', write='b')
+    """
+
+    def __init__(self, path_format, delete=DFLT_DELETE_MODE,
+                 fix_imports=True, protocol=None, pickle_encoding='ASCII', pickle_errors='strict',
+                 buffering=-1, encoding=None, errors=None, newline=None, closefd=True, opener=None):
+        super().__init__(path_format, read='b', write='b', delete=delete,
+                         buffering=buffering, encoding=encoding, errors=errors,
+                         newline=newline, closefd=closefd, opener=opener)
+        self._loads = partial(pickle.loads, fix_imports=fix_imports, encoding=pickle_encoding, errors=pickle_errors)
+        self._dumps = partial(pickle.dumps, protocol=protocol, fix_imports=fix_imports)
+
+    def __getitem__(self, k):
+        return self._loads(super().__getitem__(k))
+
+    def __setitem__(self, k, v):
+        return super().__setitem__(k, self._dumps(v))
+
 # class PathFormatStore(StoreBaseMixin, IdentityKvWrapMixin, PathFormatPersister, StoreMutableMapping):
 #     """
 #     Union of FilepathFormatKeys and LocalFileRWD.
