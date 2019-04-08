@@ -145,6 +145,9 @@ class DictPersister(Persister, UserDict):
 
 
 class DictPickleStore(Store):
+    """Completely useless store on it's own since a dict can store python objects as is, so
+    there's no need to pickle the objects to store them.
+    Yet, this store exists to demonstrate how we can mix a persister and a val wrap"""
     def __init__(self, protocol=None, fix_imports=True):
         persister = DictPersister()
         val_wrap = PickleValWrap(protocol=protocol, fix_imports=fix_imports)

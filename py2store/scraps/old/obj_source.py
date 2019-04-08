@@ -1,4 +1,4 @@
-from py2store.base import Mapping
+from collections.abc import Mapping
 from glob import iglob
 import os
 import re
@@ -358,6 +358,10 @@ class LocalFileObjReaderWithPathCollection(LocalFileObjReader):
             return self._contents_of_file(k)
         except Exception as e:
             raise KeyError("KeyError in {} when trying to __getitem__({}): {}".format(e.__class__.__name__, k, e))
+
+
+class AbstractObjSource(object):
+    pass
 
 
 class LocalFileObjSourceWithPathFormat(AbstractObjSource):

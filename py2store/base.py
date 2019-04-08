@@ -193,6 +193,11 @@ class Store(StoreBase):
     def __contains__(self, k):
         return self.store.__contains__(self._id_of_key(k))
 
+    def head(self):
+        for k, v in self.items():
+            return k, v
+
+
     # Write ####################################################################
     def __setitem__(self, k, v):
         return self.store.__setitem__(self._id_of_key(k), self._data_of_obj(v))

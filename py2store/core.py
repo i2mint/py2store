@@ -1,8 +1,20 @@
 from collections.abc import Collection
+import os
+import re
 
 from py2store.base import Store
 from py2store.util import max_common_prefix
 from py2store.mixins import PrefixRelativizationMixin
+from py2store.parse_format import match_re_for_fstring
+
+file_sep = os.path.sep
+
+
+def ensure_slash_suffix(path):
+    if not path.endswith(file_sep):
+        return path + file_sep
+    else:
+        return path
 
 
 class PrefixRelativization(PrefixRelativizationMixin):
@@ -18,6 +30,37 @@ class PrefixRelativization(PrefixRelativizationMixin):
 
     def __init__(self, _prefix=""):
         self._prefix = _prefix
+
+
+class PathFormat:
+    def __init__(self, path_format: str):
+        """
+        A class for pattern-filtered exploration of file paths.
+        :param path_format: The f-string format that the fullpath keys of the obj source should have.
+            Often, just the root directory whose FILES contain the (full_filepath, content) data
+            Also common is to use path_format='{rootdir}/{relative_path}.EXT' to impose a specific extension EXT
+        """
+        self._path_format = path_format  # not intended for use, but keeping in case, for now
+
+        if '{' not in path_format:
+            rootdir = ensure_slash_suffix(path_format)
+            # if the path_format is equal to the _prefix (i.e. there's no {} formatting)
+            # ... append a formatting element so that the matcher can match all subfiles.
+            path_pattern = path_format + '{}'
+        else:
+            rootdir = ensure_slash_suffix(os.path.dirname(re.match('[^\{]*', path_format).group(0)))
+            path_pattern = path_format
+
+        self._prefix = rootdir
+        self._path_match_re = match_re_for_fstring(path_pattern)
+
+        def _key_filt(k):
+            return bool(self._path_match_re.match(k))
+
+        self._key_filt = _key_filt
+
+    def is_valid_key(self, k):
+        return self._key_filt(k)
 
 
 # TODO: Revisit ExplicitKeys and ExplicitKeysWithPrefixRelativization. Not extendible to full store!

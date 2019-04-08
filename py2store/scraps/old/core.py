@@ -1,7 +1,7 @@
 from collections.abc import Collection
 
 from py2store.util import lazyprop, max_common_prefix
-from py2store.base import StoreBaseMixin, IdentityKvWrapMixin
+from py2store.mixins import StoreBaseMixin, IdentityKvWrapMixin
 
 
 class PrefixRelativizationMixin:
@@ -14,7 +14,7 @@ class PrefixRelativizationMixin:
     When subclassed, should be placed before the class defining _id_of_key an _key_of_id.
     Also, assumes that a (string) _prefix attribute will be available.
 
-    >>> from py2store.base import KeyValidationABC, StoreBaseMixin, IdentityKvWrapMixin
+    >>> from py2store.mixins import KeyValidationABC, StoreBaseMixin, IdentityKvWrapMixin
     >>> from collections import UserDict
     >>>
     >>> class DictStore(PrefixRelativizationMixin, StoreBaseMixin, IdentityKvWrapMixin, UserDict):
