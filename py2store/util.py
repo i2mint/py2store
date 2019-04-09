@@ -41,6 +41,21 @@ class lazyprop:
             return value
 
 
+class Struct:
+    def __init__(self, **attr_val_dict):
+        for attr, val in attr_val_dict.items():
+            setattr(self, attr, val)
+
+
+class MutableStruct(Struct):
+    def extend(self, **attr_val_dict):
+        for attr in attr_val_dict.keys():
+            if hasattr(self, attr):
+                raise AttributeError(f"The attribute {attr} already exists. Delete it if you want to reuse it!")
+        for attr, val in attr_val_dict.items():
+            setattr(self, attr, val)
+
+
 def max_common_prefix(a):
     """
     Given a list of strings (or other sliceable sequences), returns the longest common prefix

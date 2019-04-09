@@ -14,7 +14,7 @@ def mk_serializer_and_deserializer(rootdir: str, ext: str = '', protocol=None, f
 ########################################################################################################################
 # File readers
 
-def _mk_file_reader_for_dflt(mode='r', **kwargs):
+def mk_file_reader_for_dflt(mode='r', **kwargs):
     """
     Makes a function that reads a json file, returning a dict.
 
@@ -23,7 +23,7 @@ def _mk_file_reader_for_dflt(mode='r', **kwargs):
 
     def contents_of_file(filepath):
         """Reads a file.
-        Generated from _mk_file_reader_for_dflt"""  # ({})""".format(
+        Generated from mk_file_reader_for_dflt"""  # ({})""".format(
         # ', '.join(('{}={}'.format(k, v) for k, v in kwargs.items())))
         with open(filepath, mode=mode, **kwargs) as fp:
             return fp.read()
@@ -32,7 +32,7 @@ def _mk_file_reader_for_dflt(mode='r', **kwargs):
 
 
 # @wraps(sf.read)
-def _mk_file_reader_for_wav(dtype='int16', wf_only=True, assert_sr=None, **kwargs):
+def mk_file_reader_for_wav(dtype='int16', wf_only=True, assert_sr=None, **kwargs):
     """
     Makes a function that reads a wav file, returning a waveform (if wf_only=True) or a
     (waveform, samplerate) pair (if wf_only=False), asserting that the samplerate is equal to assert_sr, if given.
@@ -46,7 +46,7 @@ def _mk_file_reader_for_wav(dtype='int16', wf_only=True, assert_sr=None, **kwarg
 
     def contents_of_file(filepath):
         """Reads a wav file.
-        Generated from _mk_file_reader_for_wav"""  # ({})""".format(
+        Generated from mk_file_reader_for_wav"""  # ({})""".format(
         # ', '.join(('{}={}'.format(k, v) for k, v in kwargs.items())))
         wf, sr = sf.read(filepath, dtype=dtype, **kwargs)
         if assert_sr is not None:
@@ -59,7 +59,7 @@ def _mk_file_reader_for_wav(dtype='int16', wf_only=True, assert_sr=None, **kwarg
     return contents_of_file
 
 
-def _mk_file_reader_for_pcm(dtype='int16', wf_only=True, assert_sr=None, **kwargs):
+def mk_file_reader_for_pcm(dtype='int16', wf_only=True, assert_sr=None, **kwargs):
     """
     Makes a function that reads a wav file, returning a waveform (if wf_only=True) or a
     (waveform, samplerate) pair (if wf_only=False), asserting that the samplerate is equal to assert_sr, if given.
@@ -73,7 +73,7 @@ def _mk_file_reader_for_pcm(dtype='int16', wf_only=True, assert_sr=None, **kwarg
 
     def contents_of_file(filepath):
         """Reads a wav file.
-        Generated from _mk_file_reader_for_wav"""  # ({})""".format(
+        Generated from mk_file_reader_for_wav"""  # ({})""".format(
         # ', '.join(('{}={}'.format(k, v) for k, v in kwargs.items())))
         wf, sr = sf.read(filepath, dtype=dtype, **kwargs)
         if assert_sr is not None:
@@ -86,8 +86,8 @@ def _mk_file_reader_for_pcm(dtype='int16', wf_only=True, assert_sr=None, **kwarg
     return contents_of_file
 
 
-def _mk_file_read_for_json(open_kwargs=None, cls=None, object_hook=None, parse_float=None,
-                           parse_int=None, parse_constant=None, object_pairs_hook=None, **kw):
+def mk_file_read_for_json(open_kwargs=None, cls=None, object_hook=None, parse_float=None,
+                          parse_int=None, parse_constant=None, object_pairs_hook=None, **kw):
     """
     Makes a function that reads a json file, returning a dict.
 
@@ -101,7 +101,7 @@ def _mk_file_read_for_json(open_kwargs=None, cls=None, object_hook=None, parse_f
 
     def contents_of_file(filepath):
         """Reads a json file.
-        Generated from _mk_file_read_for_json"""  # ({})""".format(
+        Generated from mk_file_read_for_json"""  # ({})""".format(
         # ', '.join(('{}={}'.format(k, v) for k, v in kwargs.items())))
         return json.load(open(filepath, **open_kwargs),
                          cls=cls, object_hook=object_hook, parse_float=parse_float,
@@ -110,7 +110,7 @@ def _mk_file_read_for_json(open_kwargs=None, cls=None, object_hook=None, parse_f
     return contents_of_file
 
 
-def _mk_file_read_for_pickle(open_kwargs=None, fix_imports=True, encoding='ASCII', errors='strict'):
+def mk_file_read_for_pickle(open_kwargs=None, fix_imports=True, encoding='ASCII', errors='strict'):
     """Makes a function that reads a pickle file, returning a python object.
 
     Signature is that of pickle.load, pasted below:
@@ -126,7 +126,7 @@ def _mk_file_read_for_pickle(open_kwargs=None, fix_imports=True, encoding='ASCII
 
     def contents_of_file(filepath):
         """Reads a pickle file.
-        Generated from _mk_file_read_for_pickle"""  # ({})""".format(
+        Generated from mk_file_read_for_pickle"""  # ({})""".format(
         # ', '.join(('{}={}'.format(k, v) for k, v in kwargs.items())))
         return pickle.load(open(filepath, **open_kwargs),
                            fix_imports=fix_imports, encoding=encoding, errors=errors)
@@ -135,11 +135,11 @@ def _mk_file_read_for_pickle(open_kwargs=None, fix_imports=True, encoding='ASCII
 
 
 _file_reader_for_kind = {
-    'dflt': _mk_file_reader_for_dflt,
-    'wav': _mk_file_reader_for_wav,  # TODO: Deprecate and use wav_wf instead
-    'wav_wf': _mk_file_reader_for_wav,
-    'json': _mk_file_read_for_json,
-    'pickle': _mk_file_read_for_pickle
+    'dflt': mk_file_reader_for_dflt,
+    'wav': mk_file_reader_for_wav,  # TODO: Deprecate and use wav_wf instead
+    'wav_wf': mk_file_reader_for_wav,
+    'json': mk_file_read_for_json,
+    'pickle': mk_file_read_for_pickle
 }
 
 

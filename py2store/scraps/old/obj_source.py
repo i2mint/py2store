@@ -113,7 +113,7 @@ def _mk_file_reader_for_dflt(mode='r', **kwargs):
 
     def contents_of_file(filepath):
         """Reads a file.
-        Generated from _mk_file_reader_for_dflt"""  # ({})""".format(
+        Generated from mk_file_reader_for_dflt"""  # ({})""".format(
         # ', '.join(('{}={}'.format(k, v) for k, v in kwargs.items())))
         with open(filepath, mode=mode, **kwargs) as fp:
             return fp.read()
@@ -134,7 +134,7 @@ def _mk_file_reader_for_wav(dtype='int16', wf_only=True, assert_sr=None, **kwarg
 
     def contents_of_file(filepath):
         """Reads a wav file.
-        Generated from _mk_file_reader_for_wav"""  # ({})""".format(
+        Generated from mk_file_reader_for_wav"""  # ({})""".format(
         # ', '.join(('{}={}'.format(k, v) for k, v in kwargs.items())))
         wf, sr = sf.read(filepath, dtype=dtype, **kwargs)
         if assert_sr is not None:
@@ -162,7 +162,7 @@ def _mk_file_read_for_json(open_kwargs=None, cls=None, object_hook=None, parse_f
 
     def contents_of_file(filepath):
         """Reads a json file.
-        Generated from _mk_file_read_for_json"""  # ({})""".format(
+        Generated from mk_file_read_for_json"""  # ({})""".format(
         # ', '.join(('{}={}'.format(k, v) for k, v in kwargs.items())))
         return json.load(open(filepath, **open_kwargs),
                          cls=cls, object_hook=object_hook, parse_float=parse_float,
@@ -187,7 +187,7 @@ def _mk_file_read_for_pickle(open_kwargs=None, fix_imports=True, encoding='ASCII
 
     def contents_of_file(filepath):
         """Reads a pickle file.
-        Generated from _mk_file_read_for_pickle"""  # ({})""".format(
+        Generated from mk_file_read_for_pickle"""  # ({})""".format(
         # ', '.join(('{}={}'.format(k, v) for k, v in kwargs.items())))
         return pickle.load(open(filepath, **open_kwargs),
                            fix_imports=fix_imports, encoding=encoding, errors=errors)

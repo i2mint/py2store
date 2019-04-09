@@ -1,6 +1,7 @@
 """ Selectors that use the mongo-query interface """
 
 from typing import Iterator
+import pandas as pd  # only used for pd.isnull (other option?)
 
 from py2store.selectors.mongoquery import Query
 
@@ -45,14 +46,45 @@ class FiltSelector(Selector):
 
 
 class MgDfSelector(Selector):
+    """
+    >>> _docs = [
+    ...  {'bt': 0, 'tt': 5, 'tag': 'small'},
+    ...  {'bt': 10, 'tt': 15, 'tag': 'small'},
+    ...  {'bt': 20, 'tt': 25, 'tag': 'small'},
+    ...  {'bt': 30, 'tt': 35, 'tag': 'big'},
+    ...  {'bt': 40, 'tt': 45, 'tag': 'big'},
+    ...  {'bt': 50, 'tt': 55, 'tag': 'big'}]
+    >>> df_selector = MgDfSelector(_docs)
+    >>> len(df_selector)
+    6
+    >>> jdict = df_selector.to_jdict()
+    >>> import json
+    >>> json_str = json.dumps(jdict)
+    >>> df_selector_2 = MgDfSelector(json.loads(json_str))
+    >>> len(df_selector_2)
+    6
+    >>> next(iter(df_selector))
+    {'bt': 0, 'tag': 'small', 'tt': 5}
+    >>> next(iter(df_selector_2))
+    {'bt': 0, 'tag': 'small', 'tt': 5}
+    """
     def __init__(self, _df):
+        if isinstance(_df, list) and isinstance(_df[0], dict):
+            _df = pd.DataFrame(_df)
         self._df = _df
 
     def __iter__(self):
-        return (d.to_dict() for r, d in self._df.iterrows())
+        return ({k: v for k, v in d.items() if not pd.isnull(v)} for r, d in self._df.iterrows())
 
     def __len__(self):
         return len(self._df)
+
+    def __contains__(self, item):
+        item = {k: v for k, v in item.items() if not pd.isnull(v)}
+        for existing_item in self:
+            if existing_item == item:
+                return True
+        return False
 
     def select(self, selector) -> Selector:
         """
@@ -89,6 +121,13 @@ class MgDfSelector(Selector):
         # selection = self.__class__(self._df[lidx])
         # selection._selector = selector
         # return selection
+
+    def to_jdict(self):
+        return list(self.__iter__())
+
+    @classmethod
+    def from_jdict(cls, jdict):
+        return cls(_df=pd.DataFrame(jdict))
 
 
 ########################################################################################################################
@@ -202,4 +241,3 @@ class LidxSelectorDf(LidxSelector):
 
     def _selector_func(self, selector):
         return Query(selector).match
-
