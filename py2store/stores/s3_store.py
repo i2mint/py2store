@@ -200,14 +200,17 @@ class StringKvWrap(IdentityKvWrapMixin):
 # class Store(StoreBaseMixin, S3BucketRWD, PrefixRelativizationMixin, S3BucketCollection, IdentityKvWrapMixin):
 #     pass
 
-from py2store.base import StoreBase, Store
+# from py2store.base import StoreBase, Store
 
-class S3BucketStoreBase(S3BucketCollection, StoreBaseMixin, StringKvWrap, StoreBase):
-    pass
+# class S3BucketStoreBase(S3BucketCollection, StoreBaseMixin, StringKvWrap, StoreBase):
+#     pass
+#
+#
+# class S3BucketStoreNoOverwrites(OverWritesNotAllowedMixin, S3BucketStore):
+#     pass
 
 
-class S3BucketStoreNoOverwrites(OverWritesNotAllowedMixin, S3BucketStore):
-    pass
+
 
 #
 # class RelativePathFormatStore(PrefixRelativizationMixin, PathFormatStore):

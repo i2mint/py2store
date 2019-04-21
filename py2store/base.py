@@ -25,7 +25,16 @@ the storage methods themselves.
 """
 
 from collections.abc import MutableMapping
+from typing import Any, Iterable, Tuple
 
+Key = Any
+Val = Any
+Id = Any
+Data = Any
+Item = Tuple[Key, Val]
+KeyIter = Iterable[Key]
+ValIter = Iterable[Val]
+ItemIter = Iterable[Item]
 
 # TODO: Define store type so the type is defined by it's methods, not by subclassing.
 class StoreBase(MutableMapping):
@@ -173,10 +182,10 @@ class Store(StoreBase):
     _obj_of_data = static_identity_method
 
     # Read ####################################################################
-    def __getitem__(self, k):
+    def __getitem__(self, k: Key) -> Val:
         return self._obj_of_data(self.store.__getitem__(self._id_of_key(k)))
 
-    def get(self, k, default=None):
+    def get(self, k: Key, default=None) -> Val:
         data = self.store.get(self._id_of_key(k), no_such_item)
         if data is not no_such_item:
             return self._obj_of_data(data)
@@ -184,26 +193,26 @@ class Store(StoreBase):
             return default
 
     # Explore ####################################################################
-    def __iter__(self):
+    def __iter__(self) -> KeyIter:
         return map(self._key_of_id, self.store.__iter__())
 
-    def __len__(self):
+    def __len__(self) -> int:
         return self.store.__len__()
 
-    def __contains__(self, k):
+    def __contains__(self, k) -> bool:
         return self.store.__contains__(self._id_of_key(k))
 
-    def head(self):
+    def head(self) -> Item:
         for k, v in self.items():
             return k, v
 
 
     # Write ####################################################################
-    def __setitem__(self, k, v):
+    def __setitem__(self, k: Key, v: Val):
         return self.store.__setitem__(self._id_of_key(k), self._data_of_obj(v))
 
     # Delete ####################################################################
-    def __delitem__(self, k):
+    def __delitem__(self, k: Key):
         return self.store.__delitem__(self._id_of_key(k))
 
     def clear(self):

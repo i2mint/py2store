@@ -1,6 +1,8 @@
 from collections.abc import MutableMapping, Mapping
 from py2store.util import lazyprop
 from py2store.errors import KeyValidationError
+from py2store.mixins import PrefixRelativizationMixin
+from py2store.core import PrefixRelativization
 
 
 # TODO: Define store type so the type is defined by it's methods, not by subclassing.
@@ -95,11 +97,6 @@ class Store(StoreBase):
                     self.popitem()
             except KeyError:
                 pass''')
-
-
-
-
-
 
 
 # class LocalFilePersister(FilepathFormatKeys, LocalFileRWD):
@@ -244,17 +241,59 @@ class DirReaderBase(StoreBase):
         raise NotImplementedError("Setting a directory is not defined.")
 
 
-class DirStore(PrefixRelativizationMixin, Store):
+from py2store.stores.local_store import RelativeDirPathFormatKeys
+
+
+class DirStore(RelativeDirPathFormatKeys):
+    def __getitem__(self, k):
+        return self.__class__(self._id_of_key(k))
+
+    def __repr__(self):
+        return self._prefix
+
+
+class DirStoreLeveled(PrefixRelativizationMixin, Store):
     def __init__(self, rootdir):
         rootdir = ensure_slash_suffix(rootdir)
         store = DirReaderBase(rootdir)
         super().__init__(store=store)
         self._prefix = self.store._prefix
-        self._obj_of_data = DirStore
+        self._obj_of_data = self.__class__
         self._data_of_obj = lambda x: x._prefix
 
     def __repr__(self):
         return f"{self.__class__.__name__}('{self._prefix}')"
+
+    def list_keys_recursively(self):
+        pass
+
+    def print_dirs(self, levels=3, prefix=None, max_dirs_per_level=10, _current_level=0):
+        if prefix is None:
+            indent = ' ' * 3 * _current_level
+        elif prefix == '':
+            prefix = ''
+            indent = prefix
+        elif prefix == 'full':
+            prefix = self._prefix
+            indent = ensure_slash_suffix(prefix)
+        else:
+            indent = ensure_slash_suffix(prefix)
+        for i, (k, v) in enumerate(self.items(), 1):
+            if i <= max_dirs_per_level:
+                # cumul_str += indent + k + '\n'
+                print(indent + k)
+                if levels > 1:
+                    new_prefix = prefix
+                    if new_prefix is not None:
+                        if new_prefix != '':
+                            new_prefix = ensure_slash_suffix(new_prefix)
+                        new_prefix = new_prefix + k
+                    v.print_dirs(levels=levels - 1,
+                                 prefix=new_prefix,
+                                 max_dirs_per_level=max_dirs_per_level,
+                                 _current_level=_current_level + 1)
+            else:
+                print(indent + '...')
 
 
 ########################################################################################################################
@@ -392,6 +431,7 @@ class S3Store(Store):
 
         def _key_of_id(_id):
             return key_wrap._key_of_id(_id.key)
+
         self._key_of_id = _key_of_id
 
         super().__init__(store=store)
