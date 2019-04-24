@@ -117,19 +117,24 @@ def mint_of_callable(f):
     :param f: A callable (function, method, ...)
     :return: A dict containing information about the interface of f, that is, name, module, doc, and
     input and output information.
-
     >>> def test_callable(arg1, arg2: int) -> str:
-    ...     __doc__ = "Some documentaion"
-    ...     '''
-    ...     A testable callable.
-    ...     :param str arg1: A string
-    ...     '''
+    ...     __doc__ = "A testable callable\\n:param str arg1: A string\\n"
     ...     print('calling!')
     ...     print(arg1)
     ...     print(arg2)
     ...     return 'returned'
     ...
-    >>> minted = mint_of_callable(test_callable)
+    >>> mint = mint_of_callable(test_callable)
+    >>> list(mint.keys())
+    ['name', 'module', 'doc', 'description', 'summary', 'tags', 'input', 'output']
+    >>> mint['name']
+    'test_callable'
+    >>> assert mint['module'] == test_callable.__module__, "mint['module'] == test_callable.__module__"
+    >>> mint['input']
+    {'arg1': {}, 'arg2': {'annot': <class 'int'>}}
+    >>> mint['output']
+    {'annot': <class 'str'>}
+    >>> mint
     """
     raw_doc = inspect.getdoc(f)
     parsed_doc = parse_mint_doc(raw_doc)
@@ -155,12 +160,12 @@ def mint_of_callable(f):
             input_specs[arg_name]['default'] = dflt
         if arg_name in doc_inputs:
             doc_input_arg = doc_inputs[arg_name]
-            input_specs[arg_name]['type'] = doc_input_arg['type']
+            input_specs[arg_name]['doc_type'] = doc_input_arg['type']
             input_specs[arg_name]['description'] = doc_input_arg['description']
         if arg_name in annotations:
-            input_specs[arg_name]['type'] = annotations[arg_name]
-        if input_specs[arg_name].get('type', None):
-            input_specs[arg_name]['type'] = types_map.get(input_specs[arg_name]['type'], '{}')
+            input_specs[arg_name]['annot'] = annotations[arg_name]
+        # if input_specs[arg_name].get('type', None):  # NOTE: Note the pymint concern to convert to string
+        #     input_specs[arg_name]['type'] = types_map.get(input_specs[arg_name]['type'], '{}')
 
     mint['input'] = input_specs
 
@@ -168,7 +173,7 @@ def mint_of_callable(f):
     if doc_return:
         mint['output'] = doc_return
     if 'return' in annotations:
-        mint['output']['type'] = annotations['return']
+        mint['output']['annot'] = annotations['return']
 
     return mint
 
@@ -188,6 +193,7 @@ if __name__ == '__main__':
         """
         A testable callable.
         :param str arg1: A string
+        :params float arg2: A number
         """
         print('calling!')
         print(arg1)
