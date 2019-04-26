@@ -383,7 +383,7 @@ class RelativePathFormatStore2(PrefixRelativizationMixin, PathFormatStoreWithPre
 
 
 import pickle
-
+from warnings import warn
 
 class PickleStore(RelativePathFormatStore):
     """
@@ -405,6 +405,25 @@ class PickleStore(RelativePathFormatStore):
 
     def __setitem__(self, k, v):
         return super().__setitem__(k, self._dumps(v))
+
+
+def mk_tmp_quick_store_dirpath(dirname=''):
+    from tempfile import gettempdir
+    temp_root = gettempdir()
+    return os.path.join(temp_root, dirname)
+
+
+class QuickStore(PickleStore):
+    def __init__(self, path_format=None):
+        if path_format is None:
+            path_format = mk_tmp_quick_store_dirpath('quick_store')
+            warn(f"No path_format was given, so taking one from a tmp dir. Namely:\n\t{path_format}")
+        super().__init__(path_format)
+
+    def __setitem__(self, k, v):
+        dirname = os.path.dirname(os.path.join(self._prefix, k))
+        os.makedirs(dirname, exist_ok=1)
+        super().__setitem__(k, v)
 
 # class PathFormatStore(StoreBaseMixin, IdentityKvWrapMixin, PathFormatPersister, StoreMutableMapping):
 #     """
