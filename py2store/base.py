@@ -225,6 +225,10 @@ class Store(StoreBase):
             except KeyError:
                 pass''')
 
+    # Misc ####################################################################
+    def __repr__(self):
+        return self.store.__repr__()
+
 
 from abc import ABCMeta, abstractmethod
 from py2store.errors import KeyValidationError
