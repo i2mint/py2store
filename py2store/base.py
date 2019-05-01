@@ -171,9 +171,9 @@ class Store(StoreBase):
 
     # __slots__ = ('_id_of_key', '_key_of_id', '_data_of_obj', '_obj_of_data')
 
-    def __init__(self, store=None):
-        if store is None:
-            store = dict()
+    def __init__(self, store=dict):
+        if isinstance(store, type):
+            store = store()
         self.store = store
 
     _id_of_key = static_identity_method
