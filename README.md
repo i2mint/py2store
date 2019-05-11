@@ -2,7 +2,7 @@
 Interfacing with stored data through python.
 
 Listing, reading, writing, and deleting data from/in a structured data source/target, 
-through a common interface, as agnostic as possible of the physical particuliarities. 
+through a common interface, as agnostic as possible of the physical particularities. 
 
 It would be tempting to coin py2store as ya(p)orm (yet another (python) object-relational mapping), 
 but that would be wrong. The intent of py2store is not to map objects to db entries, 
