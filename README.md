@@ -12,7 +12,8 @@ Of course, the difference between ORM and DAO can be blurry, so all this should 
 
 Advantages and disadvantages such abstractions are easy to search and find.
 
-I chose to use python's collections.Mapping interface for key-value storage, making the data access 
+Most data interaction mechanisms can be satisfied by a subset of the collections.abc interfaces.
+For example, one can use python's collections.Mapping interface for any key-value storage, making the data access 
 object have the look and feel of a dict, instead of using other popular method name choices such for 
 such as read/write, load/dump, etc. 
 One of the dangers there is that, since the DAO looks and acts like a dict (but is not) a user might underestimate 
