@@ -33,10 +33,12 @@ objects you can manipulate. But with the proper tool, you shouldn't have to do m
 ## Thinking about storage later, if ever
 
 You have a new project or need to write a new app. You'll need to store stuff and read stuff back. 
-Stuff: Different kinds of resources that you'll app will need to function. Some people enjoy thinking 
+Stuff: Different kinds of resources that your app will need to function. Some people enjoy thinking 
 of how to optimize that aspect. I don't. I'll leave it to the experts to do so when the time comes. 
-Often though, the time is later, if even the time comes. So instead, I'd like to just get on with the business 
-logic and write my program. So what I need is an easy way to get some minimal storage functionality. 
+Often though, the time is later, if ever. Few proof of concepts and MVPs ever make it to prod. 
+
+So instead, I'd like to just get on with the business logic and write my program. 
+So what I need is an easy way to get some minimal storage functionality. 
 But when the time comes to optimize, I shouldn't have to change my code, but instead just change the way my 
 DAO does things. What I need is py2store.
 
