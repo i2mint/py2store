@@ -104,6 +104,15 @@ class PrefixedDirpathsRecursive(PrefixedFilepaths):
         return iter_dirpaths_in_folder_recursively(self._prefix)
 
 
+def path_match_regex_from_path_format(path_format):
+    if '{' not in path_format:
+        # if the path_format is equal to the _prefix (i.e. there's no {} formatting)
+        # ... append a formatting element so that the matcher can match all subfiles.
+        path_format = path_format + '{}'
+
+    return match_re_for_fstring(path_format)
+
+
 class PathFormat:
     def __init__(self, path_format: str):
         """
@@ -384,6 +393,7 @@ class RelativePathFormatStore2(PrefixRelativizationMixin, PathFormatStoreWithPre
 
 import pickle
 from warnings import warn
+
 
 class PickleStore(RelativePathFormatStore):
     """

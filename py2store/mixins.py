@@ -218,3 +218,11 @@ class IterBasedSizedContainerMixin(IterBasedSizedMixin, IterBasedContainerMixin)
     Note that usually __len__ and __contains__ should be overridden to more, context-dependent, efficient methods.
     """
     pass
+
+
+class HashableMixin:
+    def __hash__(self):
+        return id(self)
+
+    def __eq__(self, other):
+        return hash(self) == hash(other)
