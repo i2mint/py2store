@@ -372,6 +372,13 @@ class RelativePathFormatStore(PrefixRelativizationMixin, Store):
         super().__init__(store=PathFormatStore(*args, **kwargs))
         self._prefix = self.store._prefix
 
+#
+# class BytesRelativePathFormatStore(PrefixRelativizationMixin, Store):
+#     @wraps(PathFormatStore.__init__)
+#     def __init__(self, *args, **kwargs):
+#         super().__init__(store=PathFormatStore(*args, **kwargs))
+#         self._prefix = self.store._prefix
+
 
 class RelativeDirPathFormatKeys(PrefixRelativizationMixin, Store):
     @wraps(DirpathFormatKeys.__init__)
@@ -424,6 +431,12 @@ def mk_tmp_quick_store_dirpath(dirname=''):
 
 
 class QuickStore(PickleStore):
+    """Make a quick persisting store with minimal (or no) further specification.
+    Will persist in the local file system using relative paths and pickle to serialize.
+    If directories in the path don't exist, they're made automatically.
+    If the root directory for the store isn't given, you'll be given one (but it will be a temporary folder).
+    """
+
     def __init__(self, path_format=None):
         if path_format is None:
             path_format = mk_tmp_quick_store_dirpath('quick_store')
