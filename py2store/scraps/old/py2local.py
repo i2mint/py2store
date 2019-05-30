@@ -1,13 +1,18 @@
 import os
 from typing import Callable
 from glob import iglob
+from typing import Any
 
 import attr
 
 from py2store import file_sep
-from py2store import Obj, Data
+
 from py2store.scraps.old import PathOf, KeyValPersister
 from py2store.scraps.old.obj_source import ObjStore
+
+Path = Any
+Obj = Any
+Data = Any
 
 
 class FilepathOf(PathOf):
