@@ -186,5 +186,6 @@ should be serialized to be stored, and how it should be deserialized to get your
 # Some links
 
 ORM: Object-relational mapping: https://en.wikipedia.org/wiki/Object-relational_mapping
+
 DAO: Data access object: https://en.wikipedia.org/wiki/Data_access_object
 
