@@ -49,7 +49,7 @@ The default store uses a dict as it's backend persister.
 A dict is neither really a backend, nor a persister. But it helps to try things out with no
 footprint.
 
-```
+```python
 from py2store.base import Store
 
 s = Store()
@@ -89,7 +89,7 @@ the objects you're storing and the values (how you serialize and deserialize tho
 
 Take a look at the following example, that adds a layer of key conversion to a store.
 
-```
+```python
 class PrefixedKeyStore(Store):
     prefix = ''
     def _id_of_key(self, key):
@@ -103,7 +103,7 @@ class PrefixedKeyStore(Store):
 
 Try it out:
 
-```    
+```python
 s = PrefixedKeyStore()
 s.prefix = '/ROOT/'
 assert list(s) == []
@@ -131,7 +131,7 @@ Q: Prove it!
 
 A: Okay, let's look under the hood at what the underlying store (a dict) is dealing with:
 
-```
+```python
 assert list(s.store.items()) == [('/ROOT/foo', 'bar'), ('/ROOT/another', 'item')]
 ```
 
@@ -141,13 +141,13 @@ Let's now demo serialization and deserialization.
 
 Say we want to deserialize any text we stored by appending `"hello "` to everything stored.
 
-```
+```python
 class MyFunnyStore(Store):
     def _obj_of_data(self, data):
         return f'hello {data}'
 ```
 
-```
+```python
 s = MyFunnyStore()
 assert list(s) == []
 s['foo'] = 'bar'  # put 'bar' in 'foo'
@@ -161,13 +161,13 @@ assert list(s.values()) == ['hello bar']  # list all the values
 In the following, we want to serialize our text by upper-casing it (and see it as such) 
 when we retrieve the text.
 
-```
+```python
 class MyOtherFunnyStore(Store):
     def _data_of_obj(self, data):
         return data.upper()
 ``` 
     
-```
+```python
 s = MyOtherFunnyStore()
 assert list(s) == []
 s['foo'] = 'bar'  # put 'bar' in 'foo'
