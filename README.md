@@ -4,46 +4,10 @@ Interfacing with stored data through python.
 Listing, reading, writing, and deleting data from/in a structured data source/target, 
 through a common interface, as agnostic as possible of the physical particularities. 
 
-It would be tempting to coin py2store as ya(p)orm (yet another (python) object-relational mapping), 
-but that would be wrong. The intent of py2store is not to map objects to db entries, 
-but rather to offer a consistent interface for basic storage operations. 
-In that sense, py2store is more akin to an implementation of the data access object (DAO) pattern. 
-Of course, the difference between ORM and DAO can be blurry, so all this should be taken with a grain of salt.
 
-Advantages and disadvantages such abstractions are easy to search and find.
+# Just show me examples
 
-Most data interaction mechanisms can be satisfied by a subset of the collections.abc interfaces.
-For example, one can use python's collections.Mapping interface for any key-value storage, making the data access 
-object have the look and feel of a dict, instead of using other popular method name choices such for 
-such as read/write, load/dump, etc. 
-One of the dangers there is that, since the DAO looks and acts like a dict (but is not) a user might underestimate 
-the running-costs of some operations.
-
-
-# Use cases
-
-## Interfacing reads
-
-How many times did someone share some data with you in the form of a zip of some nested folders 
-whose structure and naming choices are fascinatingly obscure? And how much time do you then spend to write code 
-to interface with that freak of nature? Well, one of the intents of py2store is to make that easier to do. 
-You still need to understand the structure of the data store and how to deserialize these datas into python 
-objects you can manipulate. But with the proper tool, you shouldn't have to do much more than that.
-
-## Thinking about storage later, if ever
-
-You have a new project or need to write a new app. You'll need to store stuff and read stuff back. 
-Stuff: Different kinds of resources that your app will need to function. Some people enjoy thinking 
-of how to optimize that aspect. I don't. I'll leave it to the experts to do so when the time comes. 
-Often though, the time is later, if ever. Few proof of concepts and MVPs ever make it to prod. 
-
-So instead, I'd like to just get on with the business logic and write my program. 
-So what I need is an easy way to get some minimal storage functionality. 
-But when the time comes to optimize, I shouldn't have to change my code, but instead just change the way my 
-DAO does things. What I need is py2store.
-
-# Easy Examples
-
+## Looks like a dict
 Below, we make a default store and demo a few basic operations on it.
 The default store uses a dict as it's backend persister. 
 A dict is neither really a backend, nor a persister. But it helps to try things out with no
@@ -87,9 +51,13 @@ In the case of key-value storage, the "how" is defined on the basis of the keys 
 the objects you're storing and the values (how you serialize and deserialize those objects).
  
 
+## Converting keys: Relative paths and absolute paths
 Take a look at the following example, that adds a layer of key conversion to a store.
 
 ```python
+# defining the store
+from py2store.base import Store
+
 class PrefixedKeyStore(Store):
     prefix = ''
     def _id_of_key(self, key):
@@ -99,11 +67,8 @@ class PrefixedKeyStore(Store):
             raise ValueError(f"_id {_id} wasn't prefixed with {self.prefix}")
         else:
             return _id[len(self.prefix):]  # don't show the user the prefix
-```
-
-Try it out:
-
-```python
+            
+# trying the store out            
 s = PrefixedKeyStore()
 s.prefix = '/ROOT/'
 assert list(s) == []
@@ -116,8 +81,9 @@ assert list(s.values()) == ['bar']  # list all the values
 assert len(s) == 1  # Number of items in my store
 s['another'] = 'item'  # store another item
 assert len(s) == 2  # Now I have two!
-assert list(s) == ['foo', 'another']  # here they are
+assert list(s) == ['foo', 'another']  # here they are      
 ```
+
 
 Q: That wasn't impressive! It's just the same as the first Store. What's this prefix all about?
 
@@ -137,17 +103,21 @@ assert list(s.store.items()) == [('/ROOT/foo', 'bar'), ('/ROOT/another', 'item')
 
 You see? The keys that the "backend" is using are actually prefixed with `"/ROOT/"`
 
+## Serialization/Deserialization
+
 Let's now demo serialization and deserialization. 
 
 Say we want to deserialize any text we stored by appending `"hello "` to everything stored.
 
 ```python
+# defining the store
+from py2store.base import Store
+
 class MyFunnyStore(Store):
     def _obj_of_data(self, data):
         return f'hello {data}'
-```
-
-```python
+    
+# trying the store out            
 s = MyFunnyStore()
 assert list(s) == []
 s['foo'] = 'bar'  # put 'bar' in 'foo'
@@ -155,19 +125,21 @@ assert 'foo' in s  # check that 'foo' is in (i.e. a key of) s
 assert s['foo'] == 'hello bar'  # see that the value that 'foo' contains is 'bar'
 assert list(s) == ['foo']  # list all the keys (there's only one)
 assert list(s.items()) == [('foo', 'hello bar')]  # list all the (key, value) pairs
-assert list(s.values()) == ['hello bar']  # list all the values
+assert list(s.values()) == ['hello bar']  # list all the values    
 ```
 
 In the following, we want to serialize our text by upper-casing it (and see it as such) 
 when we retrieve the text.
 
 ```python
+# defining the store
+from py2store.base import Store
+
 class MyOtherFunnyStore(Store):
-    def _data_of_obj(self, data):
-        return data.upper()
-``` 
-    
-```python
+    def _data_of_obj(self, obj):
+        return obj.upper()
+      
+# trying the store out              
 s = MyOtherFunnyStore()
 assert list(s) == []
 s['foo'] = 'bar'  # put 'bar' in 'foo'
@@ -176,12 +148,93 @@ assert s['foo'] == 'BAR'  # see that the value that 'foo' contains is 'bar'
 assert list(s) == ['foo']  # list all the keys (there's only one)
 assert list(s.items()) == [('foo', 'BAR')]  # list all the (key, value) pairs
 assert list(s.values()) == ['BAR']  # list all the values
-```
+``` 
 
 In the last to serialization examples, we only implemented one way transformations. 
+That's all fine if you just want to have a writer (so only need a serializer) or a reader (so only 
+need a deserializer). 
 In most cases though, you will need two way transformations, specifying how the object 
-should be serialized to be stored, and how it should be deserialized to get your object back.
+should be serialized to be stored, and how it should be deserialized to get your object back. 
 
+
+## A pickle store
+
+Say you wanted the store to pickle as your serializer. Here's how this could look like.
+
+```python
+# defining the store
+import pickle
+from py2store.base import Store
+
+
+class PickleStore(Store):
+    protocol = None
+    fix_imports = True
+    encoding = 'ASCII'
+    def _data_of_obj(self, obj):  # serializer
+        return pickle.dumps(obj, protocol=self.protocol, fix_imports=self.fix_imports)
+    def _obj_of_data(self, data):  # deserializer
+        return pickle.loads(data, fix_imports=self.fix_imports, encoding=self.encoding)
+
+# trying the store out              
+s = PickleStore()
+assert list(s) == []
+s['foo'] = 'bar'  # put 'bar' in 'foo'
+assert s['foo'] == 'bar'  # I can get 'bar' back
+# behind the scenes though, it's really a pickle that is stored:
+assert s.store['foo'] == b'\x80\x03X\x03\x00\x00\x00barq\x00.'
+``` 
+
+Again, it doesn't seem that impressive that you can get back a string that you stored in a dict. 
+For two reasons: (1) you don't really need to serialize strings to store them and (2) you don't need to serialize python 
+objects to store them in a dict. 
+But if you (1) were trying to store more complex types and (2) were actually persisting them in a file system or database, 
+then you'll need to serialize.
+The point here is that the serialization and persisting concerns are separated from the storage and retrieval concern. 
+The code still looks like you're working with a dict.
+
+
+# Use cases
+
+## Interfacing reads
+
+How many times did someone share some data with you in the form of a zip of some nested folders 
+whose structure and naming choices are fascinatingly obscure? And how much time do you then spend to write code 
+to interface with that freak of nature? Well, one of the intents of py2store is to make that easier to do. 
+You still need to understand the structure of the data store and how to deserialize these datas into python 
+objects you can manipulate. But with the proper tool, you shouldn't have to do much more than that.
+
+## Thinking about storage later, if ever
+
+You have a new project or need to write a new app. You'll need to store stuff and read stuff back. 
+Stuff: Different kinds of resources that your app will need to function. Some people enjoy thinking 
+of how to optimize that aspect. I don't. I'll leave it to the experts to do so when the time comes. 
+Often though, the time is later, if ever. Few proof of concepts and MVPs ever make it to prod. 
+
+So instead, I'd like to just get on with the business logic and write my program. 
+So what I need is an easy way to get some minimal storage functionality. 
+But when the time comes to optimize, I shouldn't have to change my code, but instead just change the way my 
+DAO does things. What I need is py2store.
+
+# Is a store an ORM? A DAO?
+
+Call it what you want, really.
+
+It would be tempting to coin py2store as ya(p)orm (yet another (python) object-relational mapping), 
+but that would be misleading. The intent of py2store is not to map objects to db entries, 
+but rather to offer a consistent interface for basic storage operations. 
+
+In that sense, py2store is more akin to an implementation of the data access object (DAO) pattern. 
+Of course, the difference between ORM and DAO can be blurry, so all this should be taken with a grain of salt.
+
+Advantages and disadvantages such abstractions are easy to search and find.
+
+Most data interaction mechanisms can be satisfied by a subset of the collections.abc interfaces.
+For example, one can use python's collections.Mapping interface for any key-value storage, making the data access 
+object have the look and feel of a dict, instead of using other popular method name choices such for 
+such as read/write, load/dump, etc. 
+One of the dangers there is that, since the DAO looks and acts like a dict (but is not) a user might underestimate 
+the running-costs of some operations.
 
 # Some links
 
