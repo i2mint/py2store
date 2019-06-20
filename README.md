@@ -1,10 +1,26 @@
 # py2store
-Interfacing with stored data through python.
+Storage CRUD how and where you want it.
 
-Listing, reading, writing, and deleting data from/in a structured data source/target, 
-through a common interface, as agnostic as possible of the physical particularities. 
+List, read, write, and delete data in a structured data source/target, 
+as if manipulating simple python builtins (dicts, lists), or through the interface **you** want to interact with, 
+with configuration or physical particularities out of the way. 
+Also, being able to change these particularities without having to change the business-logic code. 
 
+py2store offers three aspects that you can define or modify to store things where you like and how you like it:
+* **Persistence**: Where things are actually stored (memory, files, DBs, etc.)
+* **Serialization**: Value transformaton. 
+How python objects should be transformed before it is persisted, 
+and how persisted data should be transformed into python objects.
+* **Identification**: Key transformation. How you want to id your data. 
+Full or relative paths. Unique combination of parameters (e.g. (country, city)). Etc.
 
+# The way it works, in one image
+
+![alt text](img/py2store_how_it_works.png)
+
+Note: Where data is actually persisted just depends on what the base CRUD methods 
+(`__getitem__`, `__setitem__`, `__delitem__`, `__iter__`, etc.) define them to be. 
+ 
 # Just show me examples
 
 ## Looks like a dict
@@ -193,6 +209,122 @@ then you'll need to serialize.
 The point here is that the serialization and persisting concerns are separated from the storage and retrieval concern. 
 The code still looks like you're working with a dict.
 
+## But how do you change the persister?
+
+By using (or writing yourself) a persister that persists where you want. 
+You just need to follow the collections.MutableMapping interface. 
+
+Here's a simple example of how to persist in files under a given folder:
+
+```python
+import os
+from collections.abc import MutableMapping
+
+class SimpleFilePersister(MutableMapping):
+    """Read/write (text or binary) data to files under a given rootdir.
+    Keys must be absolute file paths.
+    Paths that don't start with rootdir will be raise a KeyValidationError
+    """
+
+    def __init__(self, rootdir, mode='t'):
+        if not rootdir.endswith(os.path.sep):
+            rootdir = rootdir + os.path.sep
+        self.rootdir = rootdir
+        assert mode in {'t', 'b', ''}, f"mode ({mode}) not valid: Must be 't' or 'b'"
+        self.mode = mode
+
+    def _validate_key(self, k):
+        if not k.startswith(self.rootdir):
+            raise ValueError(f"Path ({k}) not valid. Must begin with {self.rootdir}")
+
+    def __getitem__(self, k):
+        self._validate_key(k)
+        with open(k, 'r' + self.mode) as fp:
+            data = fp.read()
+        return data
+
+    def __setitem__(self, k, v):
+        self._validate_key(k)
+        with open(k, 'w' + self.mode) as fp:
+            fp.write(v)
+
+    def __delitem__(self, k):
+        self._validate_key(k)
+        os.remove(k)
+
+    def __contains__(self, k):
+        self._validate_key(k)
+        return os.path.isfile(k)
+
+    def __iter__(self):
+        yield from filter(os.path.isfile, 
+                          map(lambda x: os.path.join(self.rootdir, x), 
+                              os.listdir(self.rootdir)))
+        
+    def __len__(self):
+        count = 0
+        for _ in self.__iter__():
+            count += 1
+        return count
+    
+```
+
+Now try this out:
+```python
+import os
+# What folder you want to use. Defaulting to the home folder. You can choose another place, but make sure 
+rootdir = os.path.expanduser('~/')  # Defaulting to the home folder. You can choose another place
+
+persister = SimpleFilePersister(rootdir)
+foo_fullpath = os.path.join(rootdir, 'foo')
+persister[foo_fullpath] = 'bar'  # write 'bar' to a file named foo_fullpath
+assert persister[foo_fullpath] == 'bar'  # see that you can read the contents of that file to get your 'bar' back
+assert foo_fullpath in persister  # the full filepath indeed exists in (i.e. "is a key of") the persister
+assert foo_fullpath in list(persister)  # you can list all the contents of the rootdir and file foo_fullpath in it
+```
+
+Don't like this dict-like interface? Want to talk **your own** CRUD language? 
+We got you covered! Just subclass `SimpleFilePersister` and make the changes you want to make:
+
+```python
+class MySimpleFilePersister(SimpleFilePersister):    
+    # If it's just renaming, it's easy
+    read = SimpleFilePersister.__getitem__
+    exists = SimpleFilePersister.__contains__
+    n_files = SimpleFilePersister.__len__
+    
+    # here we want a new method that gives us an actual list of the filepaths in the rootdir
+    list_files = lambda self: list(self.__iter__())
+
+    # And for write we want val and key to be swapped in our interface, 
+    def write(self, val, key):  # note that we wanted val to come first here (as with json.dump and pickle.dump interface)
+        return self.__setitem__(key, val)  
+
+my_persister = MySimpleFilePersister(rootdir)
+
+foo_fullpath = os.path.join(rootdir, 'foo1')
+my_persister.write('bar1', foo_fullpath)  # write 'bar1' to a file named foo_fullpath
+assert my_persister.read(foo_fullpath) == 'bar1'  # see that you can read the contents of that file to get your 'bar1' back
+assert my_persister.exists(foo_fullpath)  # the full filepath indeed exists in (i.e. "is a key of") the persister
+assert foo_fullpath in my_persister.list_files()  # you can list all the contents of the rootdir and file foo_fullpath in it
+```
+
+But dealing with full paths can be annoying, and might couple code too tightly with a particular local system.
+We'd like to use relative paths instead. 
+Easy: Wrap the persister in the `PrefixedKeyStore` defined earlier. 
+
+```python
+s = PrefixedKeyStore(store=persister)  # wrap your persister with the PrefixedKeyStore defined earlier
+if not rootdir.endswith(os.path.sep): 
+    rootdir = rootdir + os.path.sep  # make sure the rootdir ends with slash
+s.prefix = rootdir  # use rootdir as prefix in keys
+
+s['foo2'] = 'bar2'  # write 'bar2' to a file 
+assert s['foo2'] == 'bar2'  # see that you can read the contents of that file to get your 'bar2' back
+assert 'foo2' in s  
+assert 'foo2' in list(s)  
+```
+
 
 # Use cases
 
@@ -204,6 +336,32 @@ to interface with that freak of nature? Well, one of the intents of py2store is 
 You still need to understand the structure of the data store and how to deserialize these datas into python 
 objects you can manipulate. But with the proper tool, you shouldn't have to do much more than that.
 
+## Changing where and how things are stored
+
+Ever have to switch where you persist things (say from file system to S3), or change the way key into your data, 
+or the way that data is serialized? If you use py2store tools to separate the different storage concerns, 
+it'll be quite easy to change, since change will be localized. And if you're dealing with code that was already 
+written, with concerns all mixed up, py2store should still be able to help since you'll be able to
+more easily give the new system a facade that makes it look like the old one. 
+
+All of this can also be applied to data bases as well, in-so-far as the CRUD operations you're using 
+are covered by the base methods.
+
+## Adapters: When the learning curve is in the way of learning
+
+Shinny new storage mechanisms (DBs etc.) are born constantly, and some folks start using them, and we are eventually lead to use them 
+as well if we need to work with those folks' systems. And though we'd love to learn the wonderful new 
+capabilities the new kid on the block has, sometimes we just don't have time for that. 
+
+Wouldn't it be nice if someone wrote an adapter to the new system that had an interface we were familiar with? 
+Talking to SQL as if it were mongo (or visa versa). Talking to S3 as if it were a file system. 
+Now it's not a long term solution: If we're really going to be using the new system intensively, we 
+should learn it. But when you just got to get stuff done, having a familiar facade to something new 
+is a life saver. 
+
+py2store would like to make it easier for you roll out an adapter to be able to talk 
+to the new system in the way **you** are familiar with.
+ 
 ## Thinking about storage later, if ever
 
 You have a new project or need to write a new app. You'll need to store stuff and read stuff back. 
