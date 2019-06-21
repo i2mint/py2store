@@ -43,7 +43,8 @@ class MongoPersister(MutableMapping):
         raise NotImplementedError("clear is disabled by default, for your own protection! "
                                   "Loop and delete if you really want to.")
 
-    def __init__(self, db_name='py2store', collection_name='test', key_fields=('_id',), mongo_client_kwargs=None):
+    def __init__(self, db_name='py2store', collection_name='test', key_fields=('_id',), data_fields=None,
+                 mongo_client_kwargs=None):
         if mongo_client_kwargs is None:
             mongo_client_kwargs = {}
         self._mongo_client = MongoClient(**mongo_client_kwargs)
@@ -52,15 +53,20 @@ class MongoPersister(MutableMapping):
         self._mgc = self._mongo_client[db_name][collection_name]
         if isinstance(key_fields, str):
             key_fields = (key_fields,)
+        if data_fields is None:
+            pass
 
         self._key_projection = {k: True for k in key_fields}
         if '_id' not in key_fields:
             self._key_projection.update(_id=False)  # need to explicitly specify this since mongo includes _id by dflt
-        self._not_key_projection = {k: False for k in key_fields}
+        if data_fields is None:
+            self._data_fields = {k: False for k in key_fields}
+        else:
+            self._data_fields = data_fields
         self._key_fields = key_fields
 
     def __getitem__(self, k):
-        doc = self._mgc.find_one(k, projection=self._not_key_projection)
+        doc = self._mgc.find_one(k, projection=self._data_fields)
         if doc is not None:
             return doc
         else:

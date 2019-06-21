@@ -56,6 +56,10 @@ def mk_file_reader_for_wav(dtype='int16', wf_only=True, assert_sr=None, **kwargs
         else:
             return wf, sr
 
+    contents_of_file._dtype = dtype
+    contents_of_file._wf_only = wf_only
+    contents_of_file._assert_sr = assert_sr
+    contents_of_file._kwargs = kwargs
     return contents_of_file
 
 

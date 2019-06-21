@@ -14,6 +14,10 @@ and how persisted data should be transformed into python objects.
 * **Identification**: Key transformation. How you want to id your data. 
 Full or relative paths. Unique combination of parameters (e.g. (country, city)). Etc.
 
+All of this allows you to do operations such as "store this (value) in there (persitence) as that (key)", 
+moving the tedious particularities of the "in there" as well how the "this" and "that" are transformed to fit 
+in there, all out of the way of the business logic code. The way it should be.
+
 # The way it works, in one image
 
 ![alt text](img/py2store_how_it_works.png)
@@ -211,10 +215,14 @@ The code still looks like you're working with a dict.
 
 ## But how do you change the persister?
 
-By using (or writing yourself) a persister that persists where you want. 
+By using a persister that persists where you want. 
+You can also write your own. All a persister needs to work with py2store is that it follows the interface 
+python's `collections.MutableMapping` (or a subset thereof). More on how to make your own persister later
 You just need to follow the collections.MutableMapping interface. 
 
-Here's a simple example of how to persist in files under a given folder:
+Below a simple example of how to persist in files under a given folder.
+(Warning: If you want a local file store, don't use this, but one of the easier to use, robust and safe stores in the 
+stores folder!)
 
 ```python
 import os
@@ -233,27 +241,22 @@ class SimpleFilePersister(MutableMapping):
         assert mode in {'t', 'b', ''}, f"mode ({mode}) not valid: Must be 't' or 'b'"
         self.mode = mode
 
-    def _validate_key(self, k):
-        if not k.startswith(self.rootdir):
-            raise ValueError(f"Path ({k}) not valid. Must begin with {self.rootdir}")
-
     def __getitem__(self, k):
-        self._validate_key(k)
         with open(k, 'r' + self.mode) as fp:
             data = fp.read()
         return data
 
     def __setitem__(self, k, v):
-        self._validate_key(k)
         with open(k, 'w' + self.mode) as fp:
             fp.write(v)
 
     def __delitem__(self, k):
-        self._validate_key(k)
         os.remove(k)
 
     def __contains__(self, k):
-        self._validate_key(k)
+        """ Implementation of "k in self" check.
+        Note: MutableMapping gives you this for free, using a try/except on __getitem__,
+        but the following uses faster os functionality."""
         return os.path.isfile(k)
 
     def __iter__(self):
@@ -262,11 +265,15 @@ class SimpleFilePersister(MutableMapping):
                               os.listdir(self.rootdir)))
         
     def __len__(self):
+        """Note: There's system-specific faster ways to do this."""
         count = 0
         for _ in self.__iter__():
             count += 1
         return count
     
+    def clear(self):
+        """MutableMapping creates a 'delete all' functionality by default. Better disable it!"""
+        raise NotImplementedError("If you really want to do that, loop on all keys and remove them one by one.")
 ```
 
 Now try this out:
@@ -283,7 +290,9 @@ assert foo_fullpath in persister  # the full filepath indeed exists in (i.e. "is
 assert foo_fullpath in list(persister)  # you can list all the contents of the rootdir and file foo_fullpath in it
 ```
 
-Don't like this dict-like interface? Want to talk **your own** CRUD language? 
+## Talk your own CRUD dialect
+
+Don't like this dict-like interface? Want to talk **your own** CRUD words? 
 We got you covered! Just subclass `SimpleFilePersister` and make the changes you want to make:
 
 ```python
@@ -309,6 +318,8 @@ assert my_persister.exists(foo_fullpath)  # the full filepath indeed exists in (
 assert foo_fullpath in my_persister.list_files()  # you can list all the contents of the rootdir and file foo_fullpath in it
 ```
 
+## Transforming keys
+
 But dealing with full paths can be annoying, and might couple code too tightly with a particular local system.
 We'd like to use relative paths instead. 
 Easy: Wrap the persister in the `PrefixedKeyStore` defined earlier. 
@@ -325,6 +336,126 @@ assert 'foo2' in s
 assert 'foo2' in list(s)  
 ```
 
+# A few persisters you can use
+
+We'll go through a few basic persisters that are ready to use.
+There are more in each category, and we'll be adding new categories, but 
+this should get you started.
+
+Here is a useful function to perform a basic test on a store, given a key and value.
+It doesn't test all store method (see test modules for that), but demos 
+the basic functionality that pretty much every store should be able to do.
+
+```python
+def basic_test(store, k='foo', v='bar'):
+    """ This test performs 
+    Warning: Don't use on a key k that you don't want to loose!"""
+    if k in store:  # deleting all docs in tmp
+        del store[k]
+    assert (k in store) == False  # see that key is not in store (and testing __contains__)
+    orig_length = len(store)  # the length of the store before insertion
+    store[k] = v  # write v to k (testing __setitem__)
+    assert store[k] == v  # see that the value can be retrieved (testing __getitem__, and that __setitem__ worked)
+    assert len(store) == orig_length + 1  # see that the number of items in the store increased by 1
+    assert (k in store) == True  # see that key is in store now (and testing __contains__ again)
+    assert k in list(store)  # testing listing the (key) contents of a store (and seeing if )
+    assert store.get(k) == v  # the get method
+    _ = next(iter(store.keys()))  # get the first key (test keys method)
+    _ = next(iter(store.__iter__()))  # get the first key (through __iter__)
+    k in store.keys()  # test that the __contains__ of store.keys() works
+    
+    try: 
+        _ = next(iter(store.values()))  # get the first value (test values method)
+        _ = next(iter(store.items()))  # get the first (key, val) pair (test items method)
+    except Exception:
+        print("values() (therefore items()) didn't work: Probably testing a persister that had other data in it that your persister doesn't like")
+        
+    assert (k in store) == True # testing __contains__ again
+    del store[k]  # clean up (and test delete)
+```
+## Local Files
+
+There are many choices of local file stores according to what you're trying to do. 
+One general (but not too general) purpose local file store is 
+'py2store.stores.local_store.RelativePathFormatStoreEnforcingFormat'.
+It can do a lot for you, like add a prefix to your keys (so you can talk in relative instead of absolute paths),
+lists all files in subdirectories as well recursively, 
+only show you files that have a given pattern when you list them, 
+and not allow you to write to a key that doesn't fit the pattern. 
+Further, it also has what it takes to create parametrized paths or parse out the parameters of a path. 
+
+```python
+from py2store.stores.local_store import RelativePathFormatStoreEnforcingFormat as LocalFileStore
+import os
+
+rootdir = os.path.expanduser('~/pystore_tests/')  # or replace by the folder you want to use
+os.makedirs(rootdir, exist_ok=True)  # this will make all directories that don't exist. Don't use if you don't want that.
+
+store = LocalFileStore(path_format=rootdir)
+basic_test(store, k='foo', v='bar')
+```
+ 
+The signature of LocalFileStore is:
+```python
+LocalFileStore(path_format, read='', write='', delete=True, 
+                buffering=-1, encoding=None, errors=None, newline=None, closefd=True, opener=None)
+```
+
+Often path_format is just used to specify the rootdir, as above. 
+But you can specify the desired format further.
+For example, the following will only yield .wav files, 
+and only allow you to write to keys that end with .wav:
+```python
+store = LocalFileStore(path_format='/THE/ROOT/DIR/{}.wav')
+```
+
+The following will additional add the restriction that those .wav files have the format 'SOMESTRING_' 
+followed by digits:
+```python
+store = LocalFileStore(path_format='/THE/ROOT/DIR/{:s}_{:d}.wav')
+```
+
+You get the point...
+
+The other arguments of LocalFileStore or more or less those of python's `open` function. 
+The read and write arguments specify the mode of read or write. For example, if you need 
+to read bytes you should specify `read='b`. 
+Set `delete=False` if you want to disable deletes. 
+You can also set `write=False` to (ungracefully) disallow writes.
+
+
+## MongoDB
+
+A MongoDB collection is not as naturally a key-value storage as a file system is.
+MongoDB stores "documents", which are JSONs of data, having many (possibly nested) fields that are not 
+by default enforced by a schema. So in order to talk to mongo as a key-value store, we need to 
+specify what fields should be considered as keys, and what fields should be considered as data. 
+
+By default, the `_id` field (the only field ensured by default to contain unique values) is the single key field, and 
+all other fields are considered to be data fields.
+
+```python
+from py2store.stores.mongo_store import MongoStore
+# The following makes a default MongoStore, the default pymongo.MongoClient settings, 
+# and db_name='py2store', collection_name='test', key_fields=('_id',)
+store = MongoStore()
+basic_test(store, k={'_id': 'foo'}, v={'val': 'bar', 'other_val': 3})
+```
+
+But it can get annoying to specify the key as a dict every time.
+The key schema is fixed, so you should be able to just specify the tuple of values making the keys.
+And you can, with MongoTupleKeyStore
+
+```python
+from py2store.stores.mongo_store import MongoTupleKeyStore
+store = MongoTupleKeyStore(key_fields=('_id', 'name'))
+basic_test(store, k=(1234, 'bob'), v={'age': 42, 'gender': 'unspecified'})
+```
+
+## S3
+
+It works pretty much like LocalStores, but stores in S3. You'll need to have an account with 
+AWS to use this. Find S3 stores in py2store.stores.s3_stores.
 
 # Use cases
 
