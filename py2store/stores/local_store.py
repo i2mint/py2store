@@ -372,6 +372,17 @@ class RelativePathFormatStore(PrefixRelativizationMixin, Store):
         super().__init__(store=PathFormatStore(*args, **kwargs))
         self._prefix = self.store._prefix
 
+
+class RelativePathFormatStoreEnforcingFormat(RelativePathFormatStore):
+    def _id_of_key(self, k):
+        _id = super()._id_of_key(k)
+        if self.store.is_valid_key(_id):
+            return _id
+        else:
+            raise ValueError(f"Key not valid: {k}")
+
+
+
 #
 # class BytesRelativePathFormatStore(PrefixRelativizationMixin, Store):
 #     @wraps(PathFormatStore.__init__)

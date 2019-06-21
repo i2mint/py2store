@@ -1,3 +1,7 @@
+import os
+import shutil
+
+
 class lazyprop:
     """
     A descriptor implementation of lazyprop (cached property) from David Beazley's "Python Cookbook" book.
@@ -132,3 +136,15 @@ def delegate_as(delegate_cls, to='delegate', include=frozenset(), exclude=frozen
         return cls
 
     return inner
+
+
+def move_files_of_folder_to_trash(folder):
+    trash_dir = os.path.join(os.getenv("HOME"), '.Trash')  # works with mac (perhaps linux too?)
+    assert os.path.isdir(trash_dir), f"{trash_dir} directory not found"
+
+    for f in os.listdir(folder):
+        src = os.path.join(folder, f)
+        if os.path.isfile(src):
+            dst = os.path.join(trash_dir, f)
+            print(f"Moving to trash: {src}")
+            shutil.move(src, dst)

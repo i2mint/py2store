@@ -59,10 +59,6 @@ class MongoPersister(MutableMapping):
         self._not_key_projection = {k: False for k in key_fields}
         self._key_fields = key_fields
 
-
-
-
-
     def __getitem__(self, k):
         doc = self._mgc.find_one(k, projection=self._not_key_projection)
         if doc is not None:
@@ -114,6 +110,7 @@ class MongoTupleKeyStore(MongoStore):
     >>> del s[k]
     >>> assert len(s) == orig_length
     """
+
     def _id_of_key(self, k):
         return {field: field_val for field, field_val in zip(self.store._key_fields, k)}
 
@@ -136,6 +133,6 @@ def test_mongo_store(s=MongoStore(), k=None, v=None):
     assert s[k] == v
     assert s.get(k) == v
     assert v in list(s.values())
-    assert (k in s) == True # testing __contains__ again
+    assert (k in s) == True  # testing __contains__ again
     del s[k]
     assert len(s) == 0
