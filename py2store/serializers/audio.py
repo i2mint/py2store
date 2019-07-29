@@ -1,10 +1,12 @@
 from io import BytesIO
 import soundfile as sf
 from py2store.stores.local_store import RelativePathFormatStoreEnforcingFormat
-from py2store.mint import wraps, _empty_func
+
+# from py2store.mint import wraps, _empty_func
 
 DFLT_DTYPE = 'int16'
 DFLT_FORMAT = 'WAV'
+DFLT_N_CHANNELS = 1
 
 # soundfile_signature not used yet, but intended for a future version of this module, that will use minting
 # and signature injection instead of long copy pastes of
@@ -15,8 +17,18 @@ class SampleRateAssertionError(ValueError):
     pass
 
 
-class WfSrSerializatoinMixin:
-    @wraps
+class PcmSerializationMixin:
+    def __init__(self, sr, channels=DFLT_N_CHANNELS, dtype=DFLT_DTYPE, format='RAW', subtype='PCM_16', endian=None):
+        assert isinstance(sr, int), "assert_sr must be an int"
+        self.sr = sr
+        self._rw_kwargs = dict(samplerate=sr, channels=channels,
+                               dtype=dtype, format=format, subtype=subtype, endian=endian)
+
+    def _obj_of_data(self, data):
+        return sf.read(BytesIO(data), **self._rw_kwargs)[0]
+
+
+class WfSrSerializationMixin:
     def __init__(self, dtype=DFLT_DTYPE, format=DFLT_FORMAT, subtype=None, endian=None):
         self._rw_kwargs = dict(dtype=dtype, format=format, subtype=subtype, endian=endian)
 
@@ -31,7 +43,7 @@ class WfSrSerializatoinMixin:
         return b
 
 
-class WavSerializatoinMixin:
+class WavSerializationMixin:
     def __init__(self, assert_sr=None, dtype=DFLT_DTYPE, format=DFLT_FORMAT, subtype=None, endian=None):
         if assert_sr is not None:
             assert isinstance(assert_sr, int), "assert_sr must be an int"
@@ -46,8 +58,8 @@ class WavSerializatoinMixin:
         return wf
 
 
-class WavLocalFileStore(RelativePathFormatStoreEnforcingFormat, WavSerializatoinMixin):
+class WavLocalFileStore(RelativePathFormatStoreEnforcingFormat, WavSerializationMixin):
     def __init__(self, path_format, assert_sr=None, delete=True,
                  dtype=DFLT_DTYPE, format=DFLT_FORMAT, subtype=None, endian=None):
         RelativePathFormatStoreEnforcingFormat.__init__(path_format, read='b', write='b', delete=delete)
-        WavSerializatoinMixin.__init__(assert_sr=assert_sr, dtype=dtype)
+        WavSerializationMixin.__init__(assert_sr=assert_sr, dtype=dtype)
