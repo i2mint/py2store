@@ -11,7 +11,7 @@ py2store offers three aspects that you can define or modify to store things wher
 * **Serialization**: Value transformaton. 
 How python objects should be transformed before it is persisted, 
 and how persisted data should be transformed into python objects.
-* **Index**: Key transformation. How you name/id/index your data. 
+* **Indexing**: Key transformation. How you name/id/index your data. 
 Full or relative paths. Unique combination of parameters (e.g. (country, city)). Etc.
 
 All of this allows you to do operations such as "store this (value) in there (persitence) as that (key)", 
