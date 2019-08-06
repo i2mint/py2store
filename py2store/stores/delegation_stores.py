@@ -213,8 +213,7 @@ class SimpleFileStore(Store):
 
 
 # LocalFileStore is a more flexible FileStore with more functionalities. Excluding to not detract from the essentials.
-from py2store.stores.local_store import DFLT_READ_MODE, DFLT_WRITE_MODE, DFLT_DELETE_MODE
-from py2store.stores.local_store import PathFormatPersister
+from py2store.persisters.local_files import PathFormatPersister, DFLT_READ_MODE, DFLT_WRITE_MODE, DFLT_DELETE_MODE
 
 
 class LocalFileStore(Store):

@@ -36,8 +36,9 @@ KeyIter = Iterable[Key]
 ValIter = Iterable[Val]
 ItemIter = Iterable[Item]
 
-# TODO: Define store type so the type is defined by it's methods, not by subclassing.
-class StoreBase(MutableMapping):
+
+# TODO: Wishful thinking: Define store type so the type is defined by it's methods, not by subclassing.
+class Persister(MutableMapping):
     """ Acts as a MutableMapping abc, but disabling the clear method, and computing __len__ by counting keys"""
 
     def __len__(self):
@@ -73,7 +74,7 @@ class NoSuchItem():
 no_such_item = NoSuchItem()
 
 
-class Store(StoreBase):
+class Store(Persister):
     """
     By store we mean key-value store. This could be files in a filesystem, objects in s3, or a database. Where and
     how the content is stored should be specified, but StoreInterface offers a dict-like interface to this.
@@ -205,7 +206,6 @@ class Store(StoreBase):
     def head(self) -> Item:
         for k, v in self.items():
             return k, v
-
 
     # Write ####################################################################
     def __setitem__(self, k: Key, v: Val):
