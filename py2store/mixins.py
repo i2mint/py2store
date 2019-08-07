@@ -54,6 +54,16 @@ class IdentityKvWrapMixin(IdentityKeysWrapMixin, IdentityValsWrapMixin):
     pass
 
 
+from functools import partial
+
+encode_as_utf8 = partial(str, encoding='utf-8')
+
+
+class StringKvWrap(IdentityKvWrapMixin):
+    def _obj_of_data(self, v):
+        return encode_as_utf8(v)
+
+
 class PrefixRelativizationMixin:
     """
     Mixin that adds a intercepts the _id_of_key an _key_of_id methods, transforming absolute keys to relative ones.
@@ -145,6 +155,15 @@ class ReadOnlyMixin:
 
 
 class OverWritesNotAllowedMixin:
+    """Mixin for only allowing a write to a key if they key doesn't already exist.
+    Note: Should be before the persister in the MRO.
+
+    >>> class TestPersister(OverWritesNotAllowedMixin, dict):
+    ...     pass
+    >>> p = TestPersister()
+    >>> p['foo'] = 'bar'
+    >>> #p['foo'] = 'bar2'  # will raise error
+    """
     def __setitem__(self, k, v):
         if self.__contains__(k):
             raise OverWritesNotAllowedError(

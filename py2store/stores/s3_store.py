@@ -183,16 +183,6 @@ class S3BucketRWD(S3BucketReaderMixin, S3BucketWriterMixin, S3BucketDeleterMixin
 
 
 
-from functools import partial
-
-encode_as_utf8 = partial(str, encoding='utf-8')
-
-
-class StringKvWrap(IdentityKvWrapMixin):
-    def _obj_of_data(self, v):
-        return encode_as_utf8(v)
-
-
 # StoreInterface, S3BucketCollection, S3BucketRWD, StoreMutableMapping
 # from py2store.base import StoreMutableMapping
 

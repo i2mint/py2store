@@ -1,6 +1,7 @@
 from functools import wraps
 from py2store.base import Store
 from py2store.persisters.mongo import MongoPersister
+from py2store.util import lazyprop
 
 
 class MongoStore(Store):
@@ -32,11 +33,15 @@ class MongoTupleKeyStore(MongoStore):
     >>> assert len(s) == orig_length
     """
 
+    @lazyprop
+    def _key_fields(self):
+        return self.store._key_fields
+
     def _id_of_key(self, k):
-        return {field: field_val for field, field_val in zip(self.store._key_fields, k)}
+        return {field: field_val for field, field_val in zip(self._key_fields, k)}
 
     def _key_of_id(self, _id):
-        return tuple(_id.values())
+        return tuple(_id[x] for x in self._key_fields)
 
 
 def test_mongo_store(s=MongoStore(), k=None, v=None):
