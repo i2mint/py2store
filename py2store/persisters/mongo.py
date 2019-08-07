@@ -1,9 +1,8 @@
-from typing import MutableMapping
-
+from py2store.base import Persister
 from pymongo import MongoClient
 
 
-class MongoPersister(MutableMapping):
+class MongoPersister(Persister):
     """
     A basic mongo persister.
     Note that the mongo persister is designed not to overwrite the value of a key if the key already exists.

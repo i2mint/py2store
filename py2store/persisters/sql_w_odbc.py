@@ -108,7 +108,6 @@ def test_sqlserver_persister():
     print(sql_server_persister[3])
     print("=====================")
 
-
     print("Iterating over the records")
     for record in sql_server_persister:
         print(record)
