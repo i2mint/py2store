@@ -35,6 +35,17 @@ class MongoPersister(Persister):
     >>> del s[k]
     >>> len(s)
     0
+    >>>
+    >>> s = MongoPersister(db_name='py2store', collection_name='tmp',
+    ...     key_fields=('name',), data_fields=('yob', 'proj', 'bdfl'))
+    >>> for _id in s:  # deleting all docs in tmp
+    ...     del s[_id]
+    >>> s[{'name': 'guido'}] = {'yob': 1956, 'proj': 'python', 'bdfl': False}
+    >>> s[{'name': 'vitalik'}] = {'yob': 1994, 'proj': 'ethereum', 'bdfl': True}
+    >>> for key, val in s.items():
+    ...     print(f"{key}: {val}")
+    {'name': 'guido'}: {'yob': 1956, 'proj': 'python', 'bdfl': False}
+    {'name': 'vitalik'}: {'yob': 1994, 'proj': 'ethereum', 'bdfl': True}
     """
 
     def clear(self):
@@ -59,8 +70,10 @@ class MongoPersister(Persister):
             self._key_projection.update(_id=False)  # need to explicitly specify this since mongo includes _id by dflt
         if data_fields is None:
             self._data_fields = {k: False for k in key_fields}
-        else:
-            self._data_fields = data_fields
+        elif not isinstance(data_fields, dict):
+            self._data_fields = {k: True for k in data_fields}
+            if '_id' not in data_fields:
+                self._data_fields['_id'] = False
         self._key_fields = key_fields
 
     def __getitem__(self, k):
