@@ -1,8 +1,19 @@
 import logging
 
-from sqlalchemy import create_engine, Column, String
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+try:
+    from sqlalchemy import create_engine, Column, String
+    from sqlalchemy.ext.declarative import declarative_base
+    from sqlalchemy.orm import sessionmaker
+except ImportError as e:
+    raise ImportError(f"""
+    It seems you don't have sqlalchemy, or some extension of it.
+    Try installing it by running
+        pip install SQLAlchemy
+    in your terminal.
+    For more information: https://pypi.org/project/SQLAlchemy/
+    -------- Original error message --------
+    {e}
+    """)
 
 from py2store.base import Persister
 
