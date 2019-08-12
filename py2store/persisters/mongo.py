@@ -1,5 +1,17 @@
 from py2store.base import Persister
-from pymongo import MongoClient
+
+try:
+    from pymongo import MongoClient
+except ImportError as e:
+    raise ImportError(f"""
+    It seems you don't have pymongo (which is required here).
+    Try installing it by running
+        pip install pymongo
+    in your terminal.
+    Or just google it, like everyone...
+    -------- Original error message --------
+    {e}
+    """)
 
 
 class MongoPersister(Persister):

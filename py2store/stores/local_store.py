@@ -147,6 +147,16 @@ import pickle
 from warnings import warn
 
 
+class LocalTextStore(RelativePathFormatStore):
+    def __init__(self, path_format, delete=True):
+        super().__init__(path_format, read='t', write='t', delete=delete)
+
+
+class LocalBinaryStore(RelativePathFormatStore):
+    def __init__(self, path_format, delete=True):
+        super().__init__(path_format, read='b', write='b', delete=delete)
+
+
 class PickleStore(RelativePathFormatStore):
     """
     Example:

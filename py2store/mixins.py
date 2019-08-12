@@ -163,6 +163,12 @@ class OverWritesNotAllowedMixin:
     >>> p = TestPersister()
     >>> p['foo'] = 'bar'
     >>> #p['foo'] = 'bar2'  # will raise error
+    >>> try:
+    ...     p['foo'] = 'this value should not be store'
+    ... except OverWritesNotAllowedError as e:
+    ...     pass  # all is fine: OverWritesNotAllowedError is what we expect
+    ... else:
+    ...     raise RuntimeWarning("Actually, we EXPECT for an OverWritesNotAllowedError to be raised")
     """
     def __setitem__(self, k, v):
         if self.__contains__(k):
