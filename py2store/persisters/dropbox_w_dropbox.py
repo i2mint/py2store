@@ -1,27 +1,21 @@
 from py2store.base import Persister
 
-from dropbox import Dropbox
-from dropbox.files import DownloadError
-from dropbox.files import LookupError as DropboxLookupError
-from dropbox.exceptions import ApiError
-from dropbox.files import WriteMode
-#
-# try:
-#     from dropbox import Dropbox
-#     from dropbox.files import DownloadError
-#     from dropbox.files import LookupError as DropboxLookupError
-#     from dropbox.exceptions import ApiError
-#     from dropbox.files import WriteMode
-# except ImportError as e:
-#     raise ImportError(f"""
-#     It seems you don't have the dropbox package (which is required here).
-#     Try installing it by running
-#         pip install dropbox
-#     in your terminal.
-#     Or just google it, like everyone...
-#     -------- Original error message --------
-#     {e}
-#     """)
+try:
+    from dropbox import Dropbox
+    from dropbox.files import DownloadError
+    from dropbox.files import LookupError as DropboxLookupError
+    from dropbox.exceptions import ApiError
+    from dropbox.files import WriteMode
+except ImportError as e:
+    raise ImportError(f"""
+    It seems you don't have the dropbox package (which is required here).
+    Try installing it by running
+        pip install dropbox
+    in your terminal.
+    Or just google it, like everyone else...
+    -------- Original error message --------
+    {e}
+    """)
 
 
 def _is_file_not_found_error(error_object):
@@ -64,6 +58,7 @@ class DropboxPersister(Persister):
     True
     >>> del s['/py2store_data/test/_can_remove']
     """
+
     def __init__(self, rootdir, oauth2_access_token,
                  connection_kwargs=None, files_upload_kwargs=None,
                  files_list_folder_kwargs=None, rev=None):
