@@ -18,7 +18,7 @@ class CouchDbTupleKeyStore(CouchDbStore):
     """
     CouchDbStore using tuple keys.
 
-    >>> s = CouchDbTupleKeyStore(collection_name='tmp', key_fields=('_id', 'user'))
+    >>> s = CouchDbTupleKeyStore(key_fields=('_id', 'user'))
     >>> k = (1234, 'user')
     >>> v = {'name': 'bob', 'age': 42}
     >>> if k in s:  # deleting all docs in tmp
@@ -65,6 +65,24 @@ def test_couchdb_store(s=CouchDbStore(), k=None, v=None):
     assert (k in s) is True  # testing __contains__ again
     del s[k]
     assert len(s) == 0
+
+    # tuple as key test
+    s = CouchDbTupleKeyStore(key_fields=('_id', 'user'))
+    k = (1234, 'user')
+    v = {'name': 'bob', 'age': 42}
+    if k in s:  # deleting all docs in tmp
+        del s[k]
+    assert (k in s) is False  # see that key is not in store (and testing __contains__)
+    orig_length = len(s)
+    s[k] = v
+    assert len(s) == orig_length + 1
+    assert k in list(s)
+    assert s[k] == v
+    assert s.get(k) == v
+    assert v in list(s.values())
+    assert (k in s) is True # testing __contains__ again
+    del s[k]
+    assert len(s) == orig_length
 
 
 if __name__ == '__main__':
