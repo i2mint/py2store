@@ -119,8 +119,14 @@ class SQLAlchemyPersister(Persister):
         return doc
 
     def __setitem__(self, k, v):
-        doc = self.table(**k, **v)
-        self.session.add(doc)
+        try:
+            doc = self[k]
+        except KeyError:
+            doc = self.table(**k, **v)
+            self.session.add(doc)
+        else:
+            for key, value in v.items():
+                setattr(doc, key, value)
 
         if self.autocommit:
             self.session.commit()
