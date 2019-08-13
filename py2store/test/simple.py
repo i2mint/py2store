@@ -165,6 +165,16 @@ def test_local_file_ops():
     from py2store.stores.local_store import RelativePathFormatStore2 as cls
     _test_path_format_local_file_ops(cls)
 
+
+def test_dropbox():
+    from py2store.stores.dropbox_store import DropboxTextStore
+    import json
+    import os
+
+    configs = json.load(open(os.path.expanduser('~/.py2store_configs.json')))
+    store = DropboxTextStore('/py2store_data/test/', **configs['dropbox']['__init__kwargs'])
+    _multi_test(store)
+
     # from py2store.kv import LocalFileStore as cls
     # _test_path_format_local_file_ops(cls)
 

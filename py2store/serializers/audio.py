@@ -63,3 +63,21 @@ class WavLocalFileStore(RelativePathFormatStoreEnforcingFormat, WavSerialization
                  dtype=DFLT_DTYPE, format=DFLT_FORMAT, subtype=None, endian=None):
         RelativePathFormatStoreEnforcingFormat.__init__(path_format, read='b', write='b', delete=delete)
         WavSerializationMixin.__init__(assert_sr=assert_sr, dtype=dtype)
+
+
+from py2store.stores.local_store import LocalBinaryStore
+from py2store.stores.local_store import MakeMissingDirsStoreMixin
+import os
+
+
+class PcmSourceSessionBlockStore(MakeMissingDirsStoreMixin, LocalBinaryStore):
+    sep = os.path.sep
+    path_depth = 3
+
+    def _id_of_key(self, k):
+        assert len(k) == self.path_depth
+        return super()._id_of_key(self.sep.join(self.path_depth * ['{}']).format(*k))
+
+    def _key_of_id(self, _id):
+        key = super()._key_of_id(_id)
+        return tuple(key.split(self.sep))

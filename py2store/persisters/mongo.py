@@ -1,5 +1,17 @@
 from py2store.base import Persister
-from pymongo import MongoClient
+
+try:
+    from pymongo import MongoClient
+except ImportError as e:
+    raise ImportError(f"""
+    It seems you don't have pymongo (which is required here).
+    Try installing it by running
+        pip install pymongo
+    in your terminal.
+    Or just google it, like everyone...
+    -------- Original error message --------
+    {e}
+    """)
 
 
 class MongoPersister(Persister):
@@ -8,7 +20,7 @@ class MongoPersister(Persister):
     Note that the mongo persister is designed not to overwrite the value of a key if the key already exists.
     You can subclass it and use update_one instead of insert_one if you want to be able to overwrite data.
 
-    >>> s = MongoPersister(collection_name='tmp')
+    >>> s = MongoPersister()  # just use defaults
     >>> for _id in s:  # deleting all docs in tmp
     ...     del s[_id]
     >>> k = {'_id': 'foo'}
@@ -36,16 +48,19 @@ class MongoPersister(Persister):
     >>> len(s)
     0
     >>>
+    >>> # Making a persister whose keys are 2-dimensional and values are 3-dimensional
     >>> s = MongoPersister(db_name='py2store', collection_name='tmp',
-    ...     key_fields=('name',), data_fields=('yob', 'proj', 'bdfl'))
+    ...                     key_fields=('first', 'last'), data_fields=('yob', 'proj', 'bdfl'))
     >>> for _id in s:  # deleting all docs in tmp
     ...     del s[_id]
-    >>> s[{'name': 'guido'}] = {'yob': 1956, 'proj': 'python', 'bdfl': False}
-    >>> s[{'name': 'vitalik'}] = {'yob': 1994, 'proj': 'ethereum', 'bdfl': True}
+    >>> # writing two items
+    >>> s[{'first': 'Guido', 'last': 'van Rossum'}] = {'yob': 1956, 'proj': 'python', 'bdfl': False}
+    >>> s[{'first': 'Vitalik', 'last': 'Buterin'}] = {'yob': 1994, 'proj': 'ethereum', 'bdfl': True}
+    >>> # Seeing that those two items are there
     >>> for key, val in s.items():
-    ...     print(f"{key}: {val}")
-    {'name': 'guido'}: {'yob': 1956, 'proj': 'python', 'bdfl': False}
-    {'name': 'vitalik'}: {'yob': 1994, 'proj': 'ethereum', 'bdfl': True}
+    ...     print(f"{key} --> {val}")
+    {'first': 'Guido', 'last': 'van Rossum'} --> {'yob': 1956, 'proj': 'python', 'bdfl': False}
+    {'first': 'Vitalik', 'last': 'Buterin'} --> {'yob': 1994, 'proj': 'ethereum', 'bdfl': True}
     """
 
     def clear(self):
@@ -69,11 +84,12 @@ class MongoPersister(Persister):
         if '_id' not in key_fields:
             self._key_projection.update(_id=False)  # need to explicitly specify this since mongo includes _id by dflt
         if data_fields is None:
-            self._data_fields = {k: False for k in key_fields}
+            data_fields = {k: False for k in key_fields}
         elif not isinstance(data_fields, dict):
-            self._data_fields = {k: True for k in data_fields}
+            data_fields = {k: True for k in data_fields}
             if '_id' not in data_fields:
-                self._data_fields['_id'] = False
+                data_fields['_id'] = False
+        self._data_fields = data_fields
         self._key_fields = key_fields
 
     def __getitem__(self, k):
