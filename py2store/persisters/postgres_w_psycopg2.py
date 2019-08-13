@@ -1,5 +1,17 @@
 from py2store.base import Persister
-import psycopg2
+
+try:
+    import psycopg2
+except ImportError as e:
+    raise ImportError(f"""
+    It seems you don't have psycopg2 (which is required here).
+    Try installing it by running
+        pip install psycopg2
+    in your terminal.
+    Or just google it, like everyone...
+    -------- Original error message --------
+    {e}
+    """)
 
 raise NotImplementedError("Unfinished module.")
 

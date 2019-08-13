@@ -1,6 +1,17 @@
-from collections.abc import Iterable
 from py2store.base import Persister
-from couchdb import Server
+
+try:
+    from couchdb import Server
+except ImportError as e:
+    raise ImportError(f"""
+    It seems you don't have couchdb (which is required here).
+    Try installing it by running
+        pip install couchdb
+    in your terminal.
+    Or just google it, like everyone...
+    -------- Original error message --------
+    {e}
+    """)
 
 
 class CouchDbPersister(Persister):
@@ -67,7 +78,7 @@ class CouchDbPersister(Persister):
             password='admin',
             url='http://127.0.0.1:5984',
             db_name='py2store',
-            key_fields=('_id', ),
+            key_fields=('_id',),
             couchdb_client_kwargs=None
     ):
         if couchdb_client_kwargs is None:
