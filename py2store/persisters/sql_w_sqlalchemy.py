@@ -27,6 +27,7 @@ class SQLAlchemyPersister(Persister):
             collection_name='py2store_default_table',
             key_fields=('id',),
             data_fields=('data',),
+            autocommit=True,
             **db_kwargs
     ):
         """
@@ -51,24 +52,37 @@ class SQLAlchemyPersister(Persister):
         :param collection_name: name of the table to use, i.e. "my_table".
         :param key_fields: indexed keys columns names.
         :param data_fields: non-indexed data columns names.
+        :param autocommit: whether each data change should be instantly commited, or not.
+            It's off for context manager usecase (tbd).
+
         :param kwargs: any extra kwargs for SQLAlchemy engine to setup.
         """
         self._key_fields = key_fields
         self._data_fields = data_fields
+        self.autocommit = autocommit
 
-        self.db = self.setup_connection(db_uri, db_kwargs)
-        self.table = self.create_table(collection_name)
+        self.connection = None
+        self.table = None
+        self.session = None
+
+        self.setup(db_uri, collection_name, **db_kwargs)
+
+    def setup(self, db_uri, collection_name, **db_kwargs):
+        # Setup connection to our DB:
+        engine = create_engine(db_uri, **db_kwargs)
+        self.connection = engine.connect()
+
+        # Create a table:
+        self.table = self._create_table(collection_name, engine)
 
         # Open ORM session:
-        self.session = sessionmaker(bind=self.db)()
+        self.session = sessionmaker(bind=engine)()
 
-    def setup_connection(self, db_uri, db_kwargs):
-        """ Setup connection to our DB and check it. """
-        db = create_engine(db_uri, **db_kwargs)
-        db.connect()
-        return db
+    def teardown(self):
+        self.session.close()
+        self.connection.close()
 
-    def create_table(self, table_name):
+    def _create_table(self, table_name, engine):
         """ Create our data table (if not there yet). """
         Base = declarative_base()
 
@@ -84,7 +98,7 @@ class SQLAlchemyPersister(Persister):
                 for name in self._data_fields
             ],
         )
-        table.create(bind=self.db, checkfirst=True)
+        table.create(bind=engine, checkfirst=True)
 
         # Lets wrap our Table with Base so we'll be able to use ORM features later.
         class DeclarativeTable(Base):
@@ -92,8 +106,12 @@ class SQLAlchemyPersister(Persister):
 
         return DeclarativeTable
 
+    @property
+    def query(self):
+        return self.session.query(self.table)
+
     def __getitem__(self, k):
-        doc = self.session.query(self.table).filter_by(**k).first()
+        doc = self.query.filter_by(**k).first()
         # todo: think of intuitive way of selecting many by 1 (or some) of many keys
         if not doc:
             raise KeyError(f"No document found for query: {k}")
@@ -101,17 +119,30 @@ class SQLAlchemyPersister(Persister):
         return doc
 
     def __setitem__(self, k, v):
-        doc = self.table(**k, **v)
-        self.session.add(doc)
-        self.session.commit()  # todo: needs optimization.
+        try:
+            doc = self[k]
+        except KeyError:
+            doc = self.table(**k, **v)
+            self.session.add(doc)
+        else:
+            for key, value in v.items():
+                setattr(doc, key, value)
+
+        if self.autocommit:
+            self.session.commit()
 
     def __delitem__(self, k):
         doc = self[k]
         self.session.delete(doc)
-        self.session.commit()
+
+        if self.autocommit:
+            self.session.commit()
 
     def __iter__(self):
-        yield from self.session.query(self.table)
+        yield from self.query
 
     def __len__(self):
-        return self.session.query(self.table).count()
+        return self.query.count()
+
+    def __del__(self):
+        self.teardown()
