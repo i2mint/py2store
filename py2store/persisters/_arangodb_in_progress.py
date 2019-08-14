@@ -33,7 +33,7 @@ class ArangoDbPersister(Persister):
     >>> del s[k]
     >>> len(s)
     0
-    >>> s = ArangoDbPersister(db_name='py2store', key_fields=('name',), data_fields=('yob', 'proj', 'bdfl'))
+    >>> s = ArangoDbPersister(db_name='py2store', key_fields=('name',))
     >>> for _key in s:
     ...     del s[_key]
     ...
@@ -49,11 +49,8 @@ class ArangoDbPersister(Persister):
     {'name': 'vitalik'}: {'yob': 1994, 'proj': 'ethereum', 'bdfl': True}
     """
 
-    def clear(self):
-        raise NotImplementedError(
-            "clear is disabled by default, for your own protection! "
-            "Loop and delete if you really want to."
-        )
+    # reserved by the database fields
+    _reserved = {"_key", "_id", "_rev"}
 
     def __init__(
             self,
@@ -62,8 +59,7 @@ class ArangoDbPersister(Persister):
             url='http://127.0.0.1:8529',
             db_name='py2store',
             collection_name='test',
-            key_fields=('key',), # _id, _key and _rev are reserved by db
-            data_fields=None
+            key_fields=('key',)  # _id, _key and _rev are reserved by db
     ):
         self._connection = Connection(arangoURL=url, username=user, password=password)
         self._db_name = db_name
@@ -81,30 +77,22 @@ class ArangoDbPersister(Persister):
 
         if isinstance(key_fields, str):
             key_fields = (key_fields,)
-        if data_fields is None:
-            pass
-
-        # filter out _rev field on output
-        if data_fields is None:
-            self._data_fields = {k: False for k in key_fields}
-            if '_rev' not in key_fields:
-                self._data_fields['_rev'] = False
-        elif not isinstance(data_fields, dict) and isinstance(data_fields, Iterable):
-            self._data_fields = {k: True for k in data_fields}
-            if '_id' not in data_fields:
-                self._data_fields['_id'] = False
-            if '_rev' not in self._data_fields:
-                self._data_fields['_rev'] = False
 
         self._key_fields = key_fields
 
-    def __getitem__(self, k):
-        reserved = {"_key", "_id", "_rev"}
+    def __fetchitem__(self, k):
         f = self._collection.fetchFirstExample(k)
         if f is not None and len(f) == 1:
-            d = f[0].getStore()
+            return f[0]
+
+        return None
+
+    def __getitem__(self, k):
+        f = self.__fetchitem__(k)
+        if f is not None:
+            d = f.getStore()
             # exclude reserved keys and corresponded values
-            d = {x: d[x] for x in d if x not in reserved and x not in self._key_fields}
+            d = {x: d[x] for x in d if x not in self._reserved and x not in self._key_fields}
             return d
         else:
             raise KeyError(f"No document found for query: {k}")
@@ -115,22 +103,16 @@ class ArangoDbPersister(Persister):
 
     def __delitem__(self, k):
         if len(k) > 0:
-            f = self._collection.fetchFirstExample(k)
+            f = self.__fetchitem__(k)
             if f is not None:
-                return f[0].delete()
-            else:
-                raise KeyError(f"You can't removed that key: {k}")
-        else:
-            raise KeyError(f"You can't removed that key: {k}")
+                return f.delete()
+
+        raise KeyError(f"You can't removed that key: {k}")
 
     def __iter__(self):
         docs = self._collection.fetchAll()
-        k = []
-        for d in docs:
-            k = k + [{x: d[x] for x in d.getStore() if x in self._key_fields}]
 
-        yield from k
-        # yield from [{x: d[x] for d in docs for x in d.getStore() if x in self._key_fields}]
+        yield from [{x: d[x] for x in d.getStore() if x in self._key_fields} for d in docs]
 
     def __len__(self):
         return self._collection.count()
