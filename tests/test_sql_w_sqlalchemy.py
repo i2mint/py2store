@@ -1,6 +1,6 @@
 import os
 
-from py2store.stores.sql_w_sqlalchemy import SQLAlchemyStore
+from py2store.stores.sql_w_sqlalchemy import SQLAlchemyTupleStore
 from tests.base_test import BaseStoreTest
 
 SQLITE_DB_PATH = 'test.db'
@@ -36,7 +36,7 @@ class TestSQLAlchemyTupleStore(BaseStoreTest):
         clean_db_path()
 
     def test_crud(self):
-        store = SQLAlchemyStore(
+        store = SQLAlchemyTupleStore(
             db_uri=SQLITE_DB_URI,
             collection_name=SQLITE_TABLE_NAME,
             key_fields=list(self.key_dict.keys()),

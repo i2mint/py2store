@@ -11,6 +11,8 @@ class SQLAlchemyStore(Store):
         persister = SQLAlchemyPersister(*args, **kwargs)
         super().__init__(persister)
 
+
+class SQLAlchemyTupleStore(SQLAlchemyStore):
     @lazyprop
     def _key_fields(self):
         return self.store._key_fields
