@@ -1,4 +1,4 @@
-from collections.abc import MutableMapping
+from py2store.base import Persister
 from paramiko import *
 import os.path
 import stat
@@ -28,8 +28,7 @@ def remote_mkdir(sftp, remote_directory):
     return False
 
 
-
-class SshPersister(MutableMapping):
+class SshPersister(Persister):
     """
     A basic ssh persister.
     Keys must be names of files.
@@ -44,13 +43,13 @@ class SshPersister(MutableMapping):
     0
     >>> s[k] = v
     >>> s[k]
-    b'bar'
+    'bar'
     >>> s.get(k)
-    b'bar'
+    'bar'
     >>> len(s)
     1
     >>> list(s.values())
-    [b'bar']
+    ['bar']
     >>> k in s
     True
     >>> del s[k]
@@ -71,24 +70,25 @@ class SshPersister(MutableMapping):
                  password='stud',
                  url='10.1.103.201',
                  rootdir='./py2store',
-
+                 encoding='utf8'
     ):
         self._ssh = SSHClient()
         self._ssh.set_missing_host_key_policy(AutoAddPolicy())
         self._ssh.connect(url, username=user, password=password)
         self._sftp = self._ssh.open_sftp()
         self._rootdir = rootdir
+        self._encoding = encoding
         remote_mkdir(self._sftp, self._rootdir)
 
 
     def __getitem__(self, k):
         remote_file = self._sftp.file(k, mode='r')
-        data = remote_file.read()
+        data = remote_file.read().decode(self._encoding)
         return data
 
     def __setitem__(self, k, v):
         remote_file = self._sftp.file(k, mode='w')
-        remote_file.write(v)
+        remote_file.write(str(v).encode(self._encoding))
 
     def __delitem__(self, k):
         if len(k) > 0:
