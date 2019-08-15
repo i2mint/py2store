@@ -8,8 +8,10 @@ Also, being able to change these particularities without having to change the bu
 
 # Quickstart
 
-Think of type of storage you want to use and just go ahead, like you're using a dict. 
-Here's an example for local storage:
+Install it (e.g. `pip install py2store`).
+
+Think of type of storage you want to use and just go ahead, like you're using a dict.
+Here's an example for local storage (use string keys only):
 
 ```python
 >>> from py2store.stores.local_store import LocalStore
