@@ -1,8 +1,10 @@
 import os
-from functools import partial
+from functools import partial, wraps
 from py2store.base import Store, Persister
-from py2store.core import PrefixRelativizationMixin
-from py2store.persisters.local_files import PathFormatPersister, DFLT_DELETE_MODE, DirpathFormatKeys
+from py2store.key_mappers.paths import PrefixRelativizationMixin
+from py2store.persisters.local_files import PathFormatPersister, DirpathFormatKeys
+import pickle
+from warnings import warn
 
 
 class PathFormatStore(PathFormatPersister, Persister):
@@ -90,10 +92,9 @@ class PathFormatStore(PathFormatPersister, Persister):
     pass
 
 
-from functools import wraps
-
-
 class RelativePathFormatStore(PrefixRelativizationMixin, Store):
+    """Local file store using templated relative paths.
+    """
     @wraps(PathFormatStore.__init__)
     def __init__(self, *args, **kwargs):
         super().__init__(store=PathFormatStore(*args, **kwargs))
@@ -101,6 +102,10 @@ class RelativePathFormatStore(PrefixRelativizationMixin, Store):
 
 
 class RelativePathFormatStoreEnforcingFormat(RelativePathFormatStore):
+    """A RelativePathFormatStore, but that won't allow one to use a key that is not valid
+    (according to the self.store.is_valid_key boolean method).
+    """
+
     def _id_of_key(self, k):
         _id = super()._id_of_key(k)
         if self.store.is_valid_key(_id):
@@ -110,19 +115,15 @@ class RelativePathFormatStoreEnforcingFormat(RelativePathFormatStore):
 
 
 class MakeMissingDirsStoreMixin:
+    """Will make a local file store automatically create the directories needed to create a file.
+    Should be placed before the concrete perisister in the mro but in such a manner so that it receives full paths.
+    """
+
     def __setitem__(self, k, v):
         _id = self._id_of_key(k)
         dirname = os.path.dirname(_id)
         os.makedirs(dirname, exist_ok=1)
         super().__setitem__(k, v)
-
-
-#
-# class BytesRelativePathFormatStore(PrefixRelativizationMixin, Store):
-#     @wraps(PathFormatStore.__init__)
-#     def __init__(self, *args, **kwargs):
-#         super().__init__(store=PathFormatStore(*args, **kwargs))
-#         self._prefix = self.store._prefix
 
 
 class RelativeDirPathFormatKeys(PrefixRelativizationMixin, Store):
@@ -143,32 +144,25 @@ class RelativePathFormatStore2(PrefixRelativizationMixin, PathFormatStoreWithPre
     pass
 
 
-import pickle
-from warnings import warn
-
-
 class LocalTextStore(RelativePathFormatStore):
-    def __init__(self, path_format, delete=True):
-        super().__init__(path_format, read='t', write='t', delete=delete)
+    def __init__(self, path_format):
+        super().__init__(path_format, mode='t')
 
 
 class LocalBinaryStore(RelativePathFormatStore):
-    def __init__(self, path_format, delete=True):
-        super().__init__(path_format, read='b', write='b', delete=delete)
+    def __init__(self, path_format):
+        super().__init__(path_format, mode='b')
 
 
 class PickleStore(RelativePathFormatStore):
     """
-    Example:
-        ps = PickleStore(path_format=root_folder, read='b', write='b')
+    A local files pickle store
     """
 
-    def __init__(self, path_format, delete=DFLT_DELETE_MODE,
+    def __init__(self, path_format,
                  fix_imports=True, protocol=None, pickle_encoding='ASCII', pickle_errors='strict',
-                 buffering=-1, encoding=None, errors=None, newline=None, closefd=True, opener=None):
-        super().__init__(path_format, read='b', write='b', delete=delete,
-                         buffering=buffering, encoding=encoding, errors=errors,
-                         newline=newline, closefd=closefd, opener=opener)
+                 **open_kwargs):
+        super().__init__(path_format, mode='b', **open_kwargs)
         self._loads = partial(pickle.loads, fix_imports=fix_imports, encoding=pickle_encoding, errors=pickle_errors)
         self._dumps = partial(pickle.dumps, protocol=protocol, fix_imports=fix_imports)
 
