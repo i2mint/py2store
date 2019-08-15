@@ -1,5 +1,7 @@
 import os
-from functools import partial
+import pickle
+from functools import partial, wraps
+from warnings import warn
 
 from py2store.base import Store, Persister
 from py2store.core import PrefixRelativizationMixin

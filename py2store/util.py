@@ -1,7 +1,5 @@
 import os
 import shutil
-import inspect
-import itertools
 
 
 def fill_with_dflts(d, dflt_dict=None):
