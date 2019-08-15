@@ -1,17 +1,8 @@
 from py2store.base import Persister
+from py2store.util import ModuleNotFoundErrorNiceMessage
 
-try:
+with ModuleNotFoundErrorNiceMessage():
     from couchdb import Server
-except ImportError as e:
-    raise ImportError(f"""
-    It seems you don't have couchdb (which is required here).
-    Try installing it by running
-        pip install couchdb
-    in your terminal.
-    Or just google it, like everyone...
-    -------- Original error message --------
-    {e}
-    """)
 
 
 class CouchDbPersister(Persister):

@@ -1,6 +1,7 @@
-from collections.abc import MutableMapping, Mapping
-from py2store.util import lazyprop
+from collections.abc import MutableMapping
+
 from py2store.errors import KeyValidationError
+from py2store.util import lazyprop
 
 
 # TODO: Define store type so the type is defined by it's methods, not by subclassing.

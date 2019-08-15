@@ -1,7 +1,12 @@
-from py2store.base import Persister
-from paramiko import *
 import os.path
 import stat
+
+from py2store.util import ModuleNotFoundErrorNiceMessage
+
+with ModuleNotFoundErrorNiceMessage():
+    import paramiko
+
+from py2store.base import Persister
 
 
 def remote_mkdir(sftp, remote_directory):
@@ -17,11 +22,11 @@ def remote_mkdir(sftp, remote_directory):
         # top-level relative directory must exist
         return False
     try:
-        sftp.chdir(remote_directory) # sub-directory exists
+        sftp.chdir(remote_directory)  # sub-directory exists
     except IOError:
         dirname, basename = os.path.split(remote_directory.rstrip('/'))
-        remote_mkdir(sftp, dirname) # make parent directories
-        sftp.mkdir(basename) # sub-directory missing, so created it
+        remote_mkdir(sftp, dirname)  # make parent directories
+        sftp.mkdir(basename)  # sub-directory missing, so created it
         sftp.chdir(basename)
         return True
 
@@ -59,27 +64,21 @@ class SshPersister(Persister):
     0
     """
 
-    def clear(self):
-        raise NotImplementedError(
-            "clear is disabled by default, for your own protection! "
-            "Loop and delete if you really want to."
-        )
-
-    def __init__(self,
-                 user='stud',
-                 password='stud',
-                 url='10.1.103.201',
-                 rootdir='./py2store',
-                 encoding='utf8'
-    ):
-        self._ssh = SSHClient()
-        self._ssh.set_missing_host_key_policy(AutoAddPolicy())
+    def __init__(
+            self,
+            user='stud',
+            password='stud',
+            url='10.1.103.201',
+            rootdir='./py2store',
+            encoding='utf8'
+        ):
+        self._ssh = paramiko.SSHClient()
+        self._ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         self._ssh.connect(url, username=user, password=password)
         self._sftp = self._ssh.open_sftp()
         self._rootdir = rootdir
         self._encoding = encoding
         remote_mkdir(self._sftp, self._rootdir)
-
 
     def __getitem__(self, k):
         remote_file = self._sftp.file(k, mode='r')

@@ -150,3 +150,20 @@ def move_files_of_folder_to_trash(folder):
             dst = os.path.join(trash_dir, f)
             print(f"Moving to trash: {src}")
             shutil.move(src, dst)
+
+
+class ModuleNotFoundErrorNiceMessage:
+    def __enter__(self):
+        pass
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if exc_type is ModuleNotFoundError:
+            raise ModuleNotFoundError(f"""
+It seems you don't have requred `{exc_val.name}` package for this Store.
+Try installing it by running:
+
+    pip install {exc_val.name}
+    
+in your terminal.
+For more information: https://pypi.org/project/{exc_val.name}
+            """)

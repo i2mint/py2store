@@ -1,7 +1,11 @@
 from functools import partial
-from botocore.client import Config
-from botocore.exceptions import ClientError
-import boto3
+
+from py2store.util import ModuleNotFoundErrorNiceMessage
+
+with ModuleNotFoundErrorNiceMessage():
+    from botocore.client import Config
+    from botocore.exceptions import ClientError
+    import boto3
 
 from py2store.base import Persister
 

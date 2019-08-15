@@ -1,8 +1,8 @@
 from functools import wraps
 
-from py2store.persisters.dropbox_w_dropbox import DropboxPersister
-from py2store.mixins import PrefixRelativizationMixin
 from py2store.base import Store
+from py2store.mixins import PrefixRelativizationMixin
+from py2store.persisters.dropbox_w_dropbox import DropboxPersister
 
 
 class DropboxBinaryStore(PrefixRelativizationMixin, Store, DropboxPersister):

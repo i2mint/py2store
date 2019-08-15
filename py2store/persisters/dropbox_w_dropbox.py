@@ -1,21 +1,13 @@
 from py2store.base import Persister
 
-try:
+from py2store.util import ModuleNotFoundErrorNiceMessage
+
+with ModuleNotFoundErrorNiceMessage():
     from dropbox import Dropbox
     from dropbox.files import DownloadError
     from dropbox.files import LookupError as DropboxLookupError
     from dropbox.exceptions import ApiError
     from dropbox.files import WriteMode
-except ImportError as e:
-    raise ImportError(f"""
-    It seems you don't have the dropbox package (which is required here).
-    Try installing it by running
-        pip install dropbox
-    in your terminal.
-    Or just google it, like everyone else...
-    -------- Original error message --------
-    {e}
-    """)
 
 
 def _is_file_not_found_error(error_object):

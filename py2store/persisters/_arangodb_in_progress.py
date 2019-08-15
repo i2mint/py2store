@@ -1,6 +1,8 @@
-from collections.abc import Iterable
 from py2store.base import Persister
-from pyArango.connection import Connection
+from py2store.util import ModuleNotFoundErrorNiceMessage
+
+with ModuleNotFoundErrorNiceMessage():
+    from pyArango.connection import Connection
 
 
 class ArangoDbPersister(Persister):

@@ -1,4 +1,5 @@
 from functools import wraps
+
 from py2store.base import Store
 from py2store.persisters._arangodb_in_progress import ArangoDbPersister
 from py2store.util import lazyprop

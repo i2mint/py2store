@@ -1,11 +1,11 @@
-import boto3
-from botocore.exceptions import ClientError
-from botocore.client import Config
+from py2store.util import ModuleNotFoundErrorNiceMessage
 
-# from py2store.base import Keys, AbstractObjReader, AbstractObjWriter, AbstractObjSource, AbstractObjStore
-# from py2store.base import StoreBaseMixin, IdentityKvWrapMixin, IdentityKvWrapMixin
-from py2store.mixins import IterBasedSizedMixin, OverWritesNotAllowedMixin, IdentityKvWrapMixin
-from py2store.core import PrefixRelativizationMixin
+with ModuleNotFoundErrorNiceMessage():
+    import boto3
+    from botocore.exceptions import ClientError
+    from botocore.client import Config
+
+from py2store.mixins import IterBasedSizedMixin
 from py2store.errors import NoSuchKeyError
 
 DFLT_AWS_S3_ENDPOINT = "https://s3.amazonaws.com"

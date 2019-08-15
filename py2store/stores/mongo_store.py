@@ -1,6 +1,8 @@
 from functools import wraps
+
+from py2store.persisters.mongo_w_pymongo import MongoPersister
+
 from py2store.base import Store
-from py2store.persisters.mongo import MongoPersister
 from py2store.util import lazyprop
 
 

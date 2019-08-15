@@ -1,6 +1,10 @@
 from io import BytesIO
-import soundfile as sf
 from py2store.stores.local_store import RelativePathFormatStoreEnforcingFormat
+
+from py2store.util import ModuleNotFoundErrorNiceMessage
+
+with ModuleNotFoundErrorNiceMessage():
+    import soundfile as sf
 
 # from py2store.mint import wraps, _empty_func
 

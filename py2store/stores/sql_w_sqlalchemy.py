@@ -1,8 +1,8 @@
 from functools import wraps
 
+from py2store.base import Store
 from py2store.persisters.sql_w_sqlalchemy import SQLAlchemyPersister
 from py2store.util import lazyprop
-from py2store.base import Store
 
 
 class SQLAlchemyStore(Store):

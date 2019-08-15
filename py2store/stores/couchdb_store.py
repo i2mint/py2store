@@ -1,6 +1,7 @@
 from functools import wraps
+
 from py2store.base import Store
-from py2store.persisters.couchdb import CouchDbPersister
+from py2store.persisters.couchdb_w_couchdb import CouchDbPersister
 from py2store.util import lazyprop
 
 

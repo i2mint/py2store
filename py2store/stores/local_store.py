@@ -1,5 +1,6 @@
 import os
 from functools import partial
+
 from py2store.base import Store, Persister
 from py2store.core import PrefixRelativizationMixin
 from py2store.persisters.local_files import PathFormatPersister, DFLT_DELETE_MODE, DirpathFormatKeys

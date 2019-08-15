@@ -1,7 +1,11 @@
 """ Selectors that use the mongo-query interface """
 
 from typing import Iterator
-import pandas as pd  # only used for pd.isnull (other option?)
+
+from py2store.util import ModuleNotFoundErrorNiceMessage
+
+with ModuleNotFoundErrorNiceMessage():
+    import pandas as pd  # only used for pd.isnull (other option?)
 
 from py2store.selectors.mongoquery import Query
 
