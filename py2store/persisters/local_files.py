@@ -8,9 +8,7 @@ from py2store.errors import ReadsNotAllowed, WritesNotAllowed, DeletionsNotAllow
 from py2store.mixins import FilteredKeysMixin, IterBasedSizedMixin
 from py2store.parse_format import match_re_for_fstring
 
-DFLT_READ_MODE = ''
-DFLT_WRITE_MODE = ''
-DFLT_DELETE_MODE = True
+DFLT_OPEN_MODE = ''
 
 file_sep = os.path.sep
 
@@ -34,6 +32,14 @@ def pattern_filter(pattern):
     return _pattern_filter
 
 
+def paths_in_dir_with_slash_suffix_for_dirs(rootdir):
+    for f in iglob(ensure_slash_suffix(rootdir) + '*'):
+        if os.path.isdir(f):
+            yield ensure_slash_suffix(f)
+        else:
+            yield f
+
+
 def iter_relative_files_and_folder(root_folder):
     root_folder = ensure_slash_suffix(root_folder)
     return map(lambda x: x.replace(root_folder, ''), iglob(root_folder + '*'))
@@ -43,8 +49,20 @@ def iter_filepaths_in_folder(root_folder):
     return (os.path.join(root_folder, name) for name in iter_relative_files_and_folder(root_folder))
 
 
+def paths_in_dir(rootdir):
+    return iglob(ensure_slash_suffix(rootdir) + '*')
+
+
+def filepaths_in_dir(rootdir):
+    return filter(os.path.isfile, iglob(ensure_slash_suffix(rootdir) + '*'))
+
+
+def dirpaths_in_dir(rootdir):
+    return filter(os.path.isdir, iglob(ensure_slash_suffix(rootdir) + '*'))
+
+
 def iter_filepaths_in_folder_recursively(root_folder):
-    for full_path in iter_filepaths_in_folder(root_folder):
+    for full_path in paths_in_dir(root_folder):
         if os.path.isdir(full_path):
             for entry in iter_filepaths_in_folder_recursively(full_path):
                 yield entry
@@ -54,7 +72,7 @@ def iter_filepaths_in_folder_recursively(root_folder):
 
 
 def iter_dirpaths_in_folder_recursively(root_folder):
-    for full_path in iter_filepaths_in_folder(root_folder):
+    for full_path in paths_in_dir(root_folder):
         if os.path.isdir(full_path):
             yield full_path
             for entry in iter_dirpaths_in_folder_recursively(full_path):
@@ -141,7 +159,43 @@ class PathFormat:
         return self._key_filt(k)
 
 
-# class FilepathFormatKeys(FilteredKeysMixin, KeyValidationABC, PrefixedFilepathsRecursive, IterBasedSizedMixin):
+########################################################################################################################
+# Local File Persistence : Classes
+
+
+class LocalFileRWD:
+    """
+    A class providing get, set and delete functionality using local files as the storage backend.
+    """
+
+    def __init__(self, mode='', **open_kwargs):
+        if mode not in {'', 'b', 't'}:
+            raise ValueError("mode should be '', 'b', or 't'")
+
+        read_mode = open_kwargs.pop('read_mode', 'r' + mode)
+        write_mode = open_kwargs.pop('write_mode', 'w' + mode)
+        self._open_kwargs_for_read = dict(open_kwargs, mode=read_mode)
+        self._open_kwargs_for_write = dict(open_kwargs, mode=write_mode)
+
+    def __getitem__(self, k):
+        try:
+            with open(k, **self._open_kwargs_for_read) as fp:
+                data = fp.read()
+            return data
+        except FileNotFoundError as e:
+            raise KeyError("{}: {}".format(type(e).__name__, e))
+
+    def __setitem__(self, k, v):
+        with open(k, **self._open_kwargs_for_write) as fp:
+            fp.write(v)
+
+    def __delitem__(self, k):
+        try:
+            return os.remove(k)
+        except FileNotFoundError as e:
+            raise KeyError("{}: {}".format(type(e).__name__, e))
+
+
 class FilepathFormatKeys(PathFormat, FilteredKeysMixin, KeyValidationABC,
                          PrefixedFilepathsRecursive, IterBasedSizedMixin):
     pass
@@ -152,129 +206,10 @@ class DirpathFormatKeys(PathFormat, FilteredKeysMixin, KeyValidationABC,
     pass
 
 
-########################################################################################################################
-# Local File Persistence : Utils
-
-
-def _specific_open(mode, buffering=-1, encoding=None, errors=None, newline=None, closefd=True, opener=None):
-    return partial(open, mode=mode, buffering=buffering, encoding=encoding,
-                   errors=errors, newline=newline, closefd=closefd, opener=opener)
-
-
-def mk_file_reader(mode_suffix='', buffering=-1, encoding=None, errors=None, newline=None, closefd=True, opener=None):
-    specific_open = _specific_open(mode='r' + mode_suffix, buffering=buffering, encoding=encoding,
-                                   errors=errors, newline=newline, closefd=closefd, opener=opener)
-
-    def read_file(filepath):
-        with specific_open(filepath) as fp:
-            return fp.read()
-
-    return read_file
-
-
-def mk_file_writer(mode_suffix='', buffering=-1, encoding=None, errors=None, newline=None, closefd=True, opener=None):
-    specific_open = _specific_open(mode='w' + mode_suffix, buffering=buffering, encoding=encoding,
-                                   errors=errors, newline=newline, closefd=closefd, opener=opener)
-
-    def write_to_file(filepath, data):
-        with specific_open(filepath) as fp:
-            return fp.write(data)
-
-    return write_to_file
-
-
-########################################################################################################################
-# Local File Persistence : Classes
-
-
-class LocalFileReader:
-    def __init__(self, read_mode=DFLT_READ_MODE,
-                 buffering=-1, encoding=None, errors=None, newline=None, closefd=True, opener=None):
-        if read_mode is False:
-            def _read_file(k):
-                raise ReadsNotAllowed("Read permissions were disabled for this data accessor")
-
-            self._read_file = _read_file
-        else:
-            read_mode = read_mode or ''
-            self._read_file = mk_file_reader(read_mode, buffering=buffering, encoding=encoding,
-                                             errors=errors, newline=newline, closefd=closefd, opener=opener)
-
-    def __getitem__(self, k):
-        try:
-            return self._read_file(k)
-        except FileNotFoundError as e:
-            raise KeyError("{}: {}".format(type(e).__name__, e))
-
-
-class LocalFileWriter:
-    def __init__(self, write_mode=DFLT_WRITE_MODE,
-                 buffering=-1, encoding=None, errors=None, newline=None, closefd=True, opener=None):
-        if write_mode is False:
-            def _write_to_file(k):
-                raise WritesNotAllowed("Write permissions were disabled for this data accessor")
-
-            self._write_to_file = _write_to_file
-        else:
-            write_mode = write_mode or ''
-            self._write_to_file = mk_file_writer(write_mode, buffering=buffering, encoding=encoding,
-                                                 errors=errors, newline=newline, closefd=closefd, opener=opener)
-
-    def __setitem__(self, k, v):
-        return self._write_to_file(k, v)
-
-
-class LocalFileDeleter:
-    def __init__(self, deletion_mode=DFLT_DELETE_MODE):
-        if deletion_mode is False:
-            def _delete_file(k):
-                raise DeletionsNotAllowed("Delete permissions were disabled for this data accessor")
-
-            self._delete_file = _delete_file
-        else:
-            def _delete_file(k):
-                os.remove(k)
-
-            self._delete_file = _delete_file
-
-    def __delitem__(self, k):
-        try:
-            return self._delete_file(k)
-        except FileNotFoundError as e:
-            raise KeyError("{}: {}".format(type(e).__name__, e))
-
-
-class LocalFileRWD(LocalFileReader, LocalFileWriter, LocalFileDeleter):
-    """
-    A class providing get, set and delete functionality using local files as the storage backend.
-    """
-
-    def __init__(self, read=DFLT_READ_MODE, write=DFLT_WRITE_MODE, delete=DFLT_DELETE_MODE,
-                 buffering=-1, encoding=None, errors=None, newline=None, closefd=True, opener=None):
-        rw_kwargs = dict(buffering=buffering, encoding=encoding, errors=errors,
-                         newline=newline, closefd=closefd, opener=opener)
-        if not isinstance(read, dict):
-            read = dict(rw_kwargs, read_mode=read)
-        if not isinstance(write, dict):
-            write = dict(rw_kwargs, write_mode=write)
-
-        LocalFileReader.__init__(self, **read)
-        LocalFileWriter.__init__(self, **write)
-        LocalFileDeleter.__init__(self, delete)
-
-
-class FilepathFormatKeys(PathFormat, FilteredKeysMixin, KeyValidationABC,
-                         PrefixedFilepathsRecursive, IterBasedSizedMixin):
-    pass
-
-
 class PathFormatPersister(FilepathFormatKeys, LocalFileRWD):
-    def __init__(self, path_format, read=DFLT_READ_MODE, write=DFLT_WRITE_MODE, delete=DFLT_DELETE_MODE,
-                 buffering=-1, encoding=None, errors=None, newline=None, closefd=True, opener=None):
+    def __init__(self, path_format, mode=DFLT_OPEN_MODE, **open_kwargs):
         FilepathFormatKeys.__init__(self, path_format)
-        LocalFileRWD.__init__(self, read, write, delete,
-                              buffering=buffering, encoding=encoding, errors=errors,
-                              newline=newline, closefd=closefd, opener=opener)
+        LocalFileRWD.__init__(self, mode, **open_kwargs)
 
 
 class PrefixedFilepaths:
@@ -313,3 +248,9 @@ class PrefixedDirpathsRecursive(PrefixedFilepaths):
 
     def __iter__(self):
         return iter_dirpaths_in_folder_recursively(self._prefix)
+
+#
+# if __name__ == '__main__':
+#     from py2store.test.simple import test_local_file_ops
+#
+#     test_local_file_ops()

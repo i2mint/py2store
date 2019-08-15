@@ -4,7 +4,7 @@ import re
 
 from py2store.base import Store
 from py2store.util import max_common_prefix
-from py2store.mixins import PrefixRelativizationMixin
+from py2store.key_mappers.paths import PrefixRelativizationMixin
 from py2store.parse_format import match_re_for_fstring
 
 file_sep = os.path.sep

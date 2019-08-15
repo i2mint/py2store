@@ -5,7 +5,7 @@ from botocore.client import Config
 # from py2store.base import Keys, AbstractObjReader, AbstractObjWriter, AbstractObjSource, AbstractObjStore
 from py2store.base import StoreBaseMixin, IdentityKvWrapMixin, IdentityKvWrapMixin
 from py2store.mixins import IterBasedSizedMixin, OverWritesNotAllowedMixin
-from py2store.core import PrefixRelativizationMixin
+from py2store.key_mappers.paths import PrefixRelativizationMixin
 from py2store.errors import NoSuchKeyError
 
 DFLT_AWS_S3_ENDPOINT = "https://s3.amazonaws.com"

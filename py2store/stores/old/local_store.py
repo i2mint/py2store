@@ -8,7 +8,7 @@ from typing import Callable, Union, Any
 from py2store.base import StoreBaseMixin, IdentityKvWrapMixin, StoreMutableMapping, KeyValidationABC
 from py2store.mixins import IterBasedSizedMixin, FilteredKeysMixin
 from py2store.parse_format import match_re_for_fstring
-from py2store.core import PrefixRelativizationMixin
+from py2store.key_mappers.paths import PrefixRelativizationMixin
 
 DFLT_READ_MODE = ''
 DFLT_WRITE_MODE = ''

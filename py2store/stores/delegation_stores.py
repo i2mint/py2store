@@ -213,17 +213,14 @@ class SimpleFileStore(Store):
 
 
 # LocalFileStore is a more flexible FileStore with more functionalities. Excluding to not detract from the essentials.
-from py2store.persisters.local_files import PathFormatPersister, DFLT_READ_MODE, DFLT_WRITE_MODE, DFLT_DELETE_MODE
+from py2store.persisters.local_files import PathFormatPersister, DFLT_OPEN_MODE
 
 
 class LocalFileStore(Store):
     """ A store using local file persistence, with a relative path key interface """
 
-    def __init__(self, path_format, read=DFLT_READ_MODE, write=DFLT_WRITE_MODE, delete=DFLT_DELETE_MODE,
-                 buffering=-1, encoding=None, errors=None, newline=None, closefd=True, opener=None):
-        store = PathFormatPersister(path_format, read, write, delete,
-                                    buffering=buffering, encoding=encoding, errors=errors,
-                                    newline=newline, closefd=closefd, opener=opener)
+    def __init__(self, path_format, mode=DFLT_OPEN_MODE, **open_kwargs):
+        store = PathFormatPersister(path_format, mode=mode, **open_kwargs)
         key_wrap = PrefixRelativization(_prefix=store._prefix)
         super().__init__(store=store, _id_of_key=key_wrap._id_of_key, _key_of_id=key_wrap._key_of_id)
 
