@@ -8,7 +8,7 @@ def readme():
 
 setup(
     name='py2store',
-    version='0.0.1',
+    version='0.0.2',
     description='Interfacing with stored data through python.',
     long_description=readme(),
     long_description_content_type="text/markdown",
@@ -19,8 +19,7 @@ setup(
     install_requires=[],
     include_package_data=True,
     zip_safe=False,
-
-    download_url='https://github.com/i2mint/py2store/archive/v0.0.1.zip',
+    download_url='https://github.com/i2mint/py2store/archive/v0.0.2.zip',
     keywords=['storage', 'interface'],
     classifiers=[
         'Development Status :: 3 - Alpha',
