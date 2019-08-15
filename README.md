@@ -397,7 +397,7 @@ basic_test(store, k='foo', v='bar')
  
 The signature of LocalFileStore is:
 ```python
-LocalFileStore(path_format, read='', write='', delete=True, 
+LocalFileStore(path_format, mode='',
                 buffering=-1, encoding=None, errors=None, newline=None, closefd=True, opener=None)
 ```
 
@@ -417,12 +417,11 @@ store = LocalFileStore(path_format='/THE/ROOT/DIR/{:s}_{:d}.wav')
 
 You get the point...
 
-The other arguments of LocalFileStore or more or less those of python's `open` function. 
-The read and write arguments specify the mode of read or write. For example, if you need 
-to read bytes you should specify `read='b`. 
-Set `delete=False` if you want to disable deletes. 
-You can also set `write=False` to (ungracefully) disallow writes.
-
+The other arguments of LocalFileStore or more or less those of python's `open` function.
+The slight difference is that here the `mode` argument applies both to read and write. 
+If `mode='b'` for example, the file will be opened with `mode='rb'` when opened to read and
+with `mode='wb'` when opened to write. For assymetrical read/write modes, the 
+user can specify a `read_mode` and `write_mode` (in this case the `mode` argument is ignored).
 
 ## MongoDB
 

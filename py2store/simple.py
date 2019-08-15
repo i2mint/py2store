@@ -148,6 +148,7 @@ class DictPickleStore(Store):
     """Completely useless store on it's own since a dict can store python objects as is, so
     there's no need to pickle the objects to store them.
     Yet, this store exists to demonstrate how we can mix a persister and a val wrap"""
+
     def __init__(self, protocol=None, fix_imports=True):
         persister = DictPersister()
         val_wrap = PickleValWrap(protocol=protocol, fix_imports=fix_imports)
@@ -179,17 +180,12 @@ def ensure_slash_suffix(path):
         return path
 
 
-def iter_relative_files_and_folder(root_folder):
-    root_folder = ensure_slash_suffix(root_folder)
-    return map(lambda x: x.replace(root_folder, ''), iglob(root_folder + '*'))
-
-
-def iter_filepaths_in_folder(root_folder):
-    return (os.path.join(root_folder, name) for name in iter_relative_files_and_folder(root_folder))
+def filepaths_in_dir(rootdir):
+    return iglob(ensure_slash_suffix(rootdir) + '*')
 
 
 def iter_filepaths_in_folder_recursively(root_folder):
-    for full_path in iter_filepaths_in_folder(root_folder):
+    for full_path in filepaths_in_dir(root_folder):
         if os.path.isdir(full_path):
             for entry in iter_filepaths_in_folder_recursively(full_path):
                 yield entry
@@ -212,8 +208,11 @@ class SimpleFilePersister(Persister):
         assert mode in {'t', 'b', ''}, f"mode ({mode}) not valid: Must be 't' or 'b'"
         self.mode = mode
 
+    def _is_valid_key(self, k):
+        return k.startswith(self.rootdir)
+
     def _validate_key(self, k):
-        if not k.startswith(self.rootdir):
+        if not self._is_valid_key(k):
             raise KeyValidationError(f"Path ({k}) not valid. Must begin with {self.rootdir}")
 
     def __getitem__(self, k):
@@ -236,7 +235,7 @@ class SimpleFilePersister(Persister):
         return os.path.isfile(k)
 
     def __iter__(self):
-        return iter_filepaths_in_folder_recursively(self.rootdir)
+        yield from filter(self._is_valid_key, iter_filepaths_in_folder_recursively(self.rootdir))
 
 
 ########################################################################################################################
@@ -266,7 +265,6 @@ class PickleFileStore(Store):
         super().__init__(persister=persister,
                          _id_of_key=key_wrap._id_of_key, _key_of_id=key_wrap._key_of_id,
                          _data_of_obj=val_wrap._data_of_obj, _obj_of_data=val_wrap._obj_of_data)
-
 
 
 ########################################################################################################################

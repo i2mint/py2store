@@ -4,6 +4,49 @@ import inspect
 import itertools
 
 
+def fill_with_dflts(d, dflt_dict=None):
+    """
+    Fed up with multiline handling of dict arguments?
+    Fed up of repeating the if d is None: d = {} lines ad nauseam (because defaults can't be dicts as a default
+    because dicts are mutable blah blah, and the python kings don't seem to think a mutable dict is useful enough)?
+    Well, my favorite solution would be a built-in handling of the problem of complex/smart defaults,
+    that is visible in the code and in the docs. But for now, here's one of the tricks I use.
+
+    Main use is to handle defaults of function arguments. Say you have a function `func(d=None)` and you want
+    `d` to be a dict that has at least the keys `foo` and `bar` with default values 7 and 42 respectively.
+    Then, in the beginning of your function code you'll say:
+
+        d = fill_with_dflts(d, {'a': 7, 'b': 42})
+
+    See examples to know how to use it.
+
+    ATTENTION: A shallow copy of the dict is made. Know how that affects you (or not).
+    ATTENTION: This is not recursive: It won't be filling any nested fields with defaults.
+
+    Args:
+        d: The dict you want to "fill"
+        dflt_dict: What to fill it with (a {k: v, ...} dict where if k is missing in d, you'll get a new field k, with
+            value v.
+
+    Returns:
+        a dict with the new key:val entries (if the key was missing in d).
+
+    >>> fill_with_dflts(None)
+    {}
+    >>> fill_with_dflts(None, {'a': 7, 'b': 42})
+    {'a': 7, 'b': 42}
+    >>> fill_with_dflts({}, {'a': 7, 'b': 42})
+    {'a': 7, 'b': 42}
+    >>> fill_with_dflts({'b': 1000}, {'a': 7, 'b': 42})
+    {'a': 7, 'b': 1000}
+    """
+    if d is None:
+        d = {}
+    if dflt_dict is None:
+        dflt_dict = {}
+    return dict(dflt_dict, **d)
+
+
 class lazyprop:
     """
     A descriptor implementation of lazyprop (cached property) from David Beazley's "Python Cookbook" book.

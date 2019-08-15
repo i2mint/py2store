@@ -65,7 +65,7 @@ class WavSerializationMixin:
 class WavLocalFileStore(RelativePathFormatStoreEnforcingFormat, WavSerializationMixin):
     def __init__(self, path_format, assert_sr=None, delete=True,
                  dtype=DFLT_DTYPE, format=DFLT_FORMAT, subtype=None, endian=None):
-        RelativePathFormatStoreEnforcingFormat.__init__(path_format, read='b', write='b', delete=delete)
+        RelativePathFormatStoreEnforcingFormat.__init__(path_format, mode='b')
         WavSerializationMixin.__init__(assert_sr=assert_sr, dtype=dtype)
 
 
