@@ -11,6 +11,7 @@ setup(
     version='0.0.1',
     description='Interfacing with stored data through python.',
     long_description=readme(),
+    long_description_content_type="text/markdown",
     url='https://github.com/i2mint/py2store',
     author='Thor Whalen',
     license='Apache',
