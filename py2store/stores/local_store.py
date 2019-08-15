@@ -197,3 +197,6 @@ class QuickStore(PickleStore):
         dirname = os.path.dirname(os.path.join(self._prefix, k))
         os.makedirs(dirname, exist_ok=1)
         super().__setitem__(k, v)
+
+
+LocalStore = QuickStore  # alias

@@ -6,26 +6,24 @@ as if manipulating simple python builtins (dicts, lists), or through the interfa
 with configuration or physical particularities out of the way. 
 Also, being able to change these particularities without having to change the business-logic code. 
 
-py2store offers three aspects that you can define or modify to store things where you like and how you like it:
-* **Persistence**: Where things are actually stored (memory, files, DBs, etc.)
-* **Serialization**: Value transformaton. 
-How python objects should be transformed before it is persisted, 
-and how persisted data should be transformed into python objects.
-* **Indexing**: Key transformation. How you name/id/index your data. 
-Full or relative paths. Unique combination of parameters (e.g. (country, city)). Etc.
+# Quickstart
 
-All of this allows you to do operations such as "store this (value) in there (persitence) as that (key)", 
-moving the tedious particularities of the "in there" as well how the "this" and "that" are transformed to fit 
-in there, all out of the way of the business logic code. The way it should be.
+Think of type of storage you want to use and just go ahead, like you're using a dict. 
+Here's an example for local storage:
 
-# The way it works, in one image
+```python
+>>> from py2store.stores.local_store import LocalStore
 
-![alt text](img/py2store_how_it_works.png)
+>>> local_store = LocalStore()
+>>> local_store['foo'] = 'baz'
+>>> local_store['foo']
+'baz'
 
-Note: Where data is actually persisted just depends on what the base CRUD methods 
-(`__getitem__`, `__setitem__`, `__delitem__`, `__iter__`, etc.) define them to be. 
- 
-# Just show me examples
+>>> 'foo' in local_store
+True
+```
+
+# More examples
 
 ## Looks like a dict
 Below, we make a default store and demo a few basic operations on it.
@@ -336,6 +334,25 @@ assert 'foo2' in s
 assert 'foo2' in list(s)  
 ```
 
+# How it works
+
+py2store offers three aspects that you can define or modify to store things where you like and how you like it:
+* **Persistence**: Where things are actually stored (memory, files, DBs, etc.)
+* **Serialization**: Value transformaton. 
+How python objects should be transformed before it is persisted, 
+and how persisted data should be transformed into python objects.
+* **Indexing**: Key transformation. How you name/id/index your data. 
+Full or relative paths. Unique combination of parameters (e.g. (country, city)). Etc.
+
+All of this allows you to do operations such as "store this (value) in there (persitence) as that (key)", 
+moving the tedious particularities of the "in there" as well how the "this" and "that" are transformed to fit 
+in there, all out of the way of the business logic code. The way it should be.
+
+![alt text](img/py2store_how_it_works.png)
+
+Note: Where data is actually persisted just depends on what the base CRUD methods 
+(`__getitem__`, `__setitem__`, `__delitem__`, `__iter__`, etc.) define them to be. 
+ 
 # A few persisters you can use
 
 We'll go through a few basic persisters that are ready to use.
