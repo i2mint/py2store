@@ -99,7 +99,7 @@ class DropboxPersister(Persister):
     def __delitem__(self, k):
         return self._con.files_delete_v2(k, self._rev)
 
-#
+
 # def _entry_is_dir(entry):
 #     return not hasattr(entry, 'is_downloadable')
 #
@@ -144,3 +144,6 @@ class DropboxPersister(Persister):
 #     def _get_path_gen_from_cursor(self, cursor, path):
 #         path_gen = self._con.files_list_folder_continue(cursor)
 #         yield from self._yield_from_files_list_folder(path, path_gen)
+#
+#     def __iter__(self):
+#         yield from self._get_path_gen_from_path(path='')
