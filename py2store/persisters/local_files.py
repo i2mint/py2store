@@ -1,16 +1,71 @@
 import os
 import re
-from functools import partial
 from glob import iglob
 
 from py2store.base import KeyValidationABC
-from py2store.errors import ReadsNotAllowed, WritesNotAllowed, DeletionsNotAllowed
 from py2store.mixins import FilteredKeysMixin, IterBasedSizedMixin
 from py2store.parse_format import match_re_for_fstring
+from py2store.base import Persister
+from py2store.errors import KeyValidationError
 
 DFLT_OPEN_MODE = ''
 
 file_sep = os.path.sep
+
+
+########################################################################################################################
+# A simple file persister
+
+def file_filt(p):
+    return os.path.isfile(p) and not p.startswith('.')
+
+
+def filepaths_under_root(rootdir):
+    if not rootdir.endswith(os.sep):
+        rootdir += os.sep
+    return filter(file_filt, iglob(rootdir + '**', recursive=True))
+
+
+class SimpleFilePersister(Persister):
+    """Read/write (text or binary) data to files under a given rootdir.
+    Keys must be absolute file paths.
+    Paths that don't start with rootdir will be raise a KeyValidationError.
+    Not the most efficient persister, but has the advantage of being simple.
+    """
+
+    def __init__(self, rootdir, mode='t'):
+        self.rootdir = ensure_slash_suffix(rootdir)
+        assert mode in {'t', 'b', ''}, f"mode ({mode}) not valid: Must be 't' or 'b'"
+        self.mode = mode
+
+    def _is_valid_key(self, k):
+        return k.startswith(self.rootdir)
+
+    def _validate_key(self, k):
+        if not self._is_valid_key(k):
+            raise KeyValidationError(f"Path ({k}) not valid. Must begin with {self.rootdir}")
+
+    def __getitem__(self, k):
+        self._validate_key(k)
+        with open(k, 'r' + self.mode) as fp:
+            data = fp.read()
+        return data
+
+    def __setitem__(self, k, v):
+        self._validate_key(k)
+        with open(k, 'w' + self.mode) as fp:
+            fp.write(v)
+
+    def __delitem__(self, k):
+        self._validate_key(k)
+        os.remove(k)
+
+    def __contains__(self, k):
+        self._validate_key(k)
+        return os.path.isfile(k)
+
+    def __iter__(self):
+        yield from filter(self._is_valid_key, filepaths_under_root(self.rootdir))
 
 
 ########################################################################################################################
@@ -79,8 +134,6 @@ def iter_dirpaths_in_folder_recursively(root_folder):
                 yield entry
 
 
-########################################################################################################################
-# File system navigation: Classes
 class PrefixedFilepaths:
     """
     Keys collection for local files, where the keys are full filepaths DIRECTLY under a given root dir _prefix.

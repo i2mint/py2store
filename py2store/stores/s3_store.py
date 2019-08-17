@@ -1,4 +1,8 @@
+from py2store.base import Store
 from py2store.util import ModuleNotFoundErrorNiceMessage
+from py2store.persisters.s3_w_boto3 import S3BucketPersister
+# from py2store.persisters.s3_w_boto3 import
+from functools import wraps
 
 with ModuleNotFoundErrorNiceMessage():
     import boto3
@@ -12,6 +16,24 @@ DFLT_AWS_S3_ENDPOINT = "https://s3.amazonaws.com"
 DFLT_BOTO_CLIENT_VERIFY = None
 DFLT_SIGNATURE_VERSION = 's3v4'
 DFLT_CONFIG = Config(signature_version=DFLT_SIGNATURE_VERSION)
+
+
+class S3BinaryStore(Store):
+    @wraps(S3BucketPersister.from_s3_resource_kwargs)
+    def __init__(self, bucket_name, _prefix: str = '', resource_kwargs=None):
+        persister = S3BucketPersister.from_s3_resource_kwargs(bucket_name, _prefix, resource_kwargs)
+        super().__init__(persister)
+
+    def _id_of_key(self, k):
+        return self.store._s3_bucket.Object(key=k)
+
+    def _key_of_id(self, _id):
+        return _id.key
+
+
+class S3StringStore(S3BinaryStore):
+    def _obj_of_data(self, data):
+        return data.decode()
 
 
 def get_s3_resource(aws_access_key_id,
@@ -181,8 +203,6 @@ class S3BucketRWD(S3BucketReaderMixin, S3BucketWriterMixin, S3BucketDeleterMixin
         s3_bucket = s3_resource.Bucket(bucket_name)
         return cls(bucket_name, s3_bucket, _prefix=_prefix)
 
-
-
 # StoreInterface, S3BucketCollection, S3BucketRWD, StoreMutableMapping
 # from py2store.base import StoreMutableMapping
 
@@ -198,8 +218,6 @@ class S3BucketRWD(S3BucketReaderMixin, S3BucketWriterMixin, S3BucketDeleterMixin
 #
 # class S3BucketStoreNoOverwrites(OverWritesNotAllowedMixin, S3BucketStore):
 #     pass
-
-
 
 
 #

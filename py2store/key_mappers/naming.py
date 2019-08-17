@@ -173,7 +173,7 @@ def mk_prefix_templates_dicts(template):
     return prefix_template_dict_including_name, prefix_template_dict_excluding_name
 
 
-def process_info_dict_for_example(info_dict):
+def process_info_dict_for_example(**info_dict):
     if 's_ums' in info_dict:
         info_dict['s_ums'] = int(info_dict['s_ums'])
     if 'e_ums' in info_dict:
@@ -224,6 +224,21 @@ naming_kwargs_for_kind = dict(
 )
 
 
+def mk_kwargs_trans(**trans_func_for_key):
+    """ Make a dict transformer from functions that depends solely on keys (of the dict to be transformed)
+    Used to easily make process_kwargs and process_info_dict arguments for LinearNaming.
+    """
+    assert all(map(callable, trans_func_for_key.values())), "all argument values must be callable"
+
+    def key_based_val_trans(**kwargs):
+        for k, v in kwargs.items():
+            if k in trans_func_for_key:
+                kwargs[k] = trans_func_for_key[k](v)
+        return kwargs
+
+    return key_based_val_trans
+
+
 class LinearNaming(object):
     def __init__(self, template, format_dict=None,
                  process_kwargs=None, process_info_dict=None):
@@ -248,6 +263,7 @@ class LinearNaming(object):
             extract_pattern[name] = mk_extract_pattern(template, format_dict, named_capture_patterns, name)
 
         self.names = names
+        self.n_names = len(names)
         self.format_dict = format_dict
         self.named_capture_patterns = named_capture_patterns
         self.pattern = pattern
@@ -262,6 +278,9 @@ class LinearNaming(object):
             [x.format(**self.format_dict) for x in sorted(list(self.prefix_template_including_name.values()), key=len)])
         _prefix_pattern += '$'
         self.prefix_pattern = re.compile(_prefix_pattern)
+
+    def __call__(self, *args, **kwargs):
+        return self.mk(*args, **kwargs)
 
     @classmethod
     def for_kind(cls, kind):
@@ -336,9 +355,13 @@ class LinearNaming(object):
         if m:
             info_dict = m.groupdict()
             if self.process_info_dict:
-                return self.process_info_dict(info_dict)
+                return self.process_info_dict(**info_dict)
             else:
                 return info_dict
+
+    def info_tuple(self, sref):
+        info_dict = self.info_dict(sref)
+        return tuple(info_dict[x] for x in self.names)
 
     def extract(self, item, sref):
         """
@@ -361,7 +384,7 @@ class LinearNaming(object):
         """
         return self.extract_pattern[item].match(sref).group(1)
 
-    def mk_prefix(self, **kwargs):
+    def mk_prefix(self, *args, **kwargs):
         """
         Make a prefix for an uploads sref that has has the path up to the first None argument.
         :return: A string that is the prefix of a valid sref
@@ -397,6 +420,8 @@ class LinearNaming(object):
         >>> self.mk_prefix(group='GROUP', user='USER', day='DAY', subuser='SUBUSER')
         's3://uploads/GROUP/upload/files/USER/DAY/SUBUSER/'
         """
+        assert len(args) + len(kwargs) <= self.n_names, "You have too many arguments"
+        kwargs = dict({k: v for k, v in zip(self.names, args)}, **kwargs)
         if self.process_kwargs is not None:
             kwargs = self.process_kwargs(**kwargs)
 
@@ -411,7 +436,7 @@ class LinearNaming(object):
 
         return self.prefix_template_including_name[last_name].format(**keep_kwargs)
 
-    def mk(self, **kwargs):
+    def mk(self, *args, **kwargs):
         """
         Make a full sref with given kwargs. All required name=val must be present (or infered by self.process_kwargs
         function.
@@ -428,6 +453,8 @@ class LinearNaming(object):
         ... s_ums=1485272231982, e_ums=1485261448469)
         's3://bucket-GROUP/example/files/USER/SUBUSER/2017-01-24/1485272231982_1485261448469'
         """
+        assert len(args) + len(kwargs) == self.n_names, "You're missing, or have too many arguments"
+        kwargs = dict({k: v for k, v in zip(self.names, args)}, **kwargs)
         if self.process_kwargs is not None:
             kwargs = self.process_kwargs(**kwargs)
         return self.template.format(**kwargs)

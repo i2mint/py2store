@@ -190,7 +190,7 @@ class QuickStore(PickleStore):
     def __init__(self, path_format=None):
         if path_format is None:
             path_format = mk_tmp_quick_store_dirpath('quick_store')
-            warn(f"No path_format was given, so taking one from a tmp dir. Namely:\n\t{path_format}")
+            print(f"No path_format was given, so taking one from a tmp dir. Namely:\n\t{path_format}")
         super().__init__(path_format)
 
     def __setitem__(self, k, v):

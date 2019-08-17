@@ -85,8 +85,8 @@ class S3BucketPersister(Persister):
                 raise
 
     @classmethod
-    def from_s3_resource_kwargs(cls, bucket_name, _prefix: str = '', **kwargs):
-        s3_resource = get_s3_resource(**kwargs)
+    def from_s3_resource_kwargs(cls, bucket_name, _prefix: str = '', resource_kwargs=None):
+        s3_resource = get_s3_resource(**(resource_kwargs or {}))
         return cls.from_s3_resource(bucket_name, s3_resource, _prefix=_prefix)
 
     @classmethod
@@ -97,3 +97,4 @@ class S3BucketPersister(Persister):
                          ):
         s3_bucket = s3_resource.Bucket(bucket_name)
         return cls(bucket_name, s3_bucket, _prefix=_prefix)
+

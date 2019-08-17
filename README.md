@@ -11,19 +11,40 @@ Also, being able to change these particularities without having to change the bu
 Install it (e.g. `pip install py2store`).
 
 Think of type of storage you want to use and just go ahead, like you're using a dict.
-Here's an example for local storage (use string keys only):
+Here's an example for local storage (you must you string keys only here). 
 
-```python
->>> from py2store.stores.local_store import LocalStore
-
->>> local_store = LocalStore()
->>> local_store['foo'] = 'baz'
->>> local_store['foo']
-'baz'
-
->>> 'foo' in local_store
-True
 ```
+>>> from py2store import QuickStore
+>>>
+>>> store = QuickStore()  # will print what (tmp) rootdir it is choosing
+>>> # Write something and then read it out again
+>>> store['foo'] = 'baz'
+>>> store['foo']
+'baz'
+>>> 
+>>> # Go see that there is now a file in the rootdir, named 'foo'!
+>>> 
+>>> # Write something more complicated
+>>> store['hello/world'] = [1, 'flew', {'over': 'a', "cuckoo's": map}]
+>>> store['hello/world'] == [1, 'flew', {'over': 'a', "cuckoo's": map}]
+True
+>>>
+>>> # do you have the key 'foo' in your store?
+>>> 'foo' in store
+True
+>>> # how many items do you have now?
+>>> assert len(store) >= 2  # can't be sure there were no elements before, so can't assert == 2
+>>> 
+>>> # delete the stuff you've written
+>>> del store['foo']
+>>> del store['hello/world']
+```
+
+`QuickStore` will by default store things in local files, using pickle as the serializer.
+If a root directory is not specified, 
+it will use a tmp directory it will create (the first time you try to store something) 
+It will create any directories that need to be created to satisfy any/key/that/contains/slashes.
+Of course, everything is configurable.
 
 # More examples
 
