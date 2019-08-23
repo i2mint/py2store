@@ -69,13 +69,12 @@ def validate_kwargs(kwargs_to_validate,
     >>> try:
     ...     validate_kwargs({'system': 'windows'}, validation_dict)
     ... except AssertionError as e:
-    ...     print(e)
-    system must be in set(['darwin', 'linux'])
+    ...     assert str(e).startswith('system must be in')  # omitting the set because inconsistent order
     >>> try:
     ...     validate_kwargs({'fv_version': 9.9}, validation_dict)
     ... except AssertionError as e:
     ...     print(e)
-    fv_version must be a <type 'int'>
+    fv_version must be a <class 'int'>
     >>> try:
     ...     validate_kwargs({'fv_version': 4}, validation_dict)
     ... except AssertionError as e:
@@ -84,7 +83,7 @@ def validate_kwargs(kwargs_to_validate,
     >>> validate_kwargs({'fv_version': 6}, validation_dict)
     True
     """
-    validation_funs = dict(base_validation_funs or {}, **validation_funs)
+    validation_funs = dict(base_validation_funs or {}, **(validation_funs or {}))
     for var, val in kwargs_to_validate.items():  # for every (var, val) pair of kwargs
         if var in validation_dict:  # if var is in the validation_dict
             for check, check_val in validation_dict[var].items():  # for every (key, val) of this dict
