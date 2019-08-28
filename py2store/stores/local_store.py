@@ -4,8 +4,8 @@ from functools import partial, wraps
 from warnings import warn
 
 from py2store.base import Store, Persister
-from py2store.core import PrefixRelativizationMixin
-from py2store.persisters.local_files import PathFormatPersister, DirpathFormatKeys
+from py2store.core import PrefixRelativizationMixin, PrefixRelativization
+from py2store.persisters.local_files import PathFormatPersister, DirpathFormatKeys, DirReader, ensure_slash_suffix
 
 
 class PathFormatStore(PathFormatPersister, Persister):
@@ -96,6 +96,7 @@ class PathFormatStore(PathFormatPersister, Persister):
 class RelativePathFormatStore(PrefixRelativizationMixin, Store):
     """Local file store using templated relative paths.
     """
+
     @wraps(PathFormatStore.__init__)
     def __init__(self, *args, **kwargs):
         super().__init__(store=PathFormatStore(*args, **kwargs))
@@ -125,13 +126,6 @@ class MakeMissingDirsStoreMixin:
         dirname = os.path.dirname(_id)
         os.makedirs(dirname, exist_ok=1)
         super().__setitem__(k, v)
-
-
-class RelativeDirPathFormatKeys(PrefixRelativizationMixin, Store):
-    @wraps(DirpathFormatKeys.__init__)
-    def __init__(self, *args, **kwargs):
-        super().__init__(store=DirpathFormatKeys(*args, **kwargs))
-        self._prefix = self.store._prefix
 
 
 class PathFormatStoreWithPrefix(Store):
@@ -200,3 +194,35 @@ class QuickStore(PickleStore):
 
 
 LocalStore = QuickStore  # alias
+
+
+class DirStore(Store):
+    """
+    Store whose keys are directory names and values are subdirectory names.
+
+    >>> from py2store import __file__
+    >>> import os
+    >>> root = os.path.dirname(__file__)
+    >>> s = DirStore(root)
+    >>> assert set(s).issuperset({'stores', 'persisters', 'serializers', 'key_mappers'})
+    """
+    def __init__(self, rootdir):
+        rootdir = ensure_slash_suffix(rootdir)
+        super().__init__(store=DirReader(rootdir))
+        self._prefix = rootdir
+
+        key_wrap = PrefixRelativization(_prefix=rootdir)
+        self._id_of_key = lambda k: key_wrap._id_of_key(k) + os.sep
+        self._key_of_id = lambda k: key_wrap._key_of_id(k)[:-1]
+
+        # TODO: Look into alternatives for the raison d'etre of _new_node and _class_name
+        # (They are there, because using self.__class__ directly goes to super)
+        self.store._new_node = self.__class__
+        self.store._class_name = self.__class__.__name__
+
+
+class RelativeDirPathFormatKeys(PrefixRelativizationMixin, Store):
+    @wraps(DirpathFormatKeys.__init__)
+    def __init__(self, *args, **kwargs):
+        super().__init__(store=DirpathFormatKeys(*args, **kwargs))
+        self._prefix = self.store._prefix

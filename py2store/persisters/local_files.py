@@ -1,6 +1,9 @@
 import os
 import re
 from glob import iglob
+from collections.abc import Mapping
+
+from py2store.errors import NoSuchKeyError
 
 from py2store.base import KeyValidationABC
 from py2store.mixins import FilteredKeysMixin, IterBasedSizedMixin
@@ -301,6 +304,52 @@ class PrefixedDirpathsRecursive(PrefixedFilepaths):
 
     def __iter__(self):
         return iter_dirpaths_in_folder_recursively(self._prefix)
+
+
+def extend_prefix(prefix, new_prefix):
+    return ensure_slash_suffix(os.path.join(prefix, new_prefix))
+
+
+class DirReader(Mapping):
+    """ KV Reader whose keys (AND VALUES) are directory full paths of the subdirectories of _prefix rootdir.
+    Though this is a KV Reader, deletes are permitted, but only empty directories can be deleted.
+    """
+
+    def __init__(self, _prefix):
+        self._prefix = ensure_slash_suffix(_prefix)
+        # TODO: Look into alternatives for the raison d'etre of _new_node and _class_name
+        # (They are there, because using self.__class__ directly goes to super)
+        self._new_node = self.__class__
+        self._class_name = self.__class__.__name__
+
+    def _extended_prefix(self, new_prefix):
+        return extend_prefix(self._prefix, new_prefix)
+
+    def __contains__(self, k):
+        return k.startswith(self._prefix) and os.path.isdir(k)
+
+    def __iter__(self):
+        return filter(os.path.isdir,  # (3) filter out any non-directories
+                      map(self._extended_prefix,  # (2) extend prefix with sub-path name
+                          os.listdir(self._prefix)))  # (1) list file names under _prefix
+
+    def __getitem__(self, k):
+        if os.path.isdir(k):
+            return self._new_node(k)
+        else:
+            raise NoSuchKeyError(f"No such key (perhaps it's not a directory, or was deleted?): {k}")
+
+    def __len__(self):
+        c = 0
+        for _ in self.__iter__():
+            c += 1
+        return c
+
+    def head(self):
+        return next(iter(self.items()))
+
+    def __repr__(self):
+        return f"{self._class_name}('{self._prefix}')"
 
 #
 # if __name__ == '__main__':

@@ -5,7 +5,7 @@ from py2store.util import lazyprop
 
 
 # TODO: Define store type so the type is defined by it's methods, not by subclassing.
-class StoreBase(MutableMapping):
+class Persister(MutableMapping):
     def __len__(self):
         count = 0
         for _ in self.__iter__():
@@ -29,7 +29,7 @@ def identity_func(x):
     return x
 
 
-class Store(StoreBase):
+class Store(Persister):
     """
     By store we mean key-value store. This could be files in a filesystem, objects in s3, or a database. Where and
     how the content is stored should be specified, but StoreInterface offers a dict-like interface to this.
@@ -177,7 +177,7 @@ def iter_filepaths_in_folder_recursively(root_folder):
 ########################################################################################################################
 # Local File stores
 
-class SimpleFileStoreBase(StoreBase):
+class SimpleFilePersister(Persister):
     def __init__(self, rootdir, mode='t'):
         self.rootdir = ensure_slash_suffix(rootdir)
         assert mode in {'t', 'b', ''}, f"mode ({mode}) not valid: Must be 't' or 'b'"
@@ -208,7 +208,7 @@ class SimpleFileStoreBase(StoreBase):
 
 class SimpleFileStore(Store):
     def __init__(self, rootdir, mode='t'):
-        store = SimpleFileStoreBase(rootdir, mode)
+        store = SimpleFilePersister(rootdir, mode)
         key_wrap = PrefixRelativization(_prefix=rootdir)
         super().__init__(store=store, _id_of_key=key_wrap._id_of_key, _key_of_id=key_wrap._key_of_id)
 
@@ -225,51 +225,54 @@ class LocalFileStore(Store):
         key_wrap = PrefixRelativization(_prefix=store._prefix)
         super().__init__(store=store, _id_of_key=key_wrap._id_of_key, _key_of_id=key_wrap._key_of_id)
 
-
-class DirReaderBase(StoreBase):
-    """ StoreBase that """
-
-    def __init__(self, _prefix):
-        self._prefix = ensure_slash_suffix(_prefix)
-
-    def __contains__(self, k):
-        return k.startswith(self._prefix) and os.path.isdir(k)
-
-    def __iter__(self):
-        return filter(os.path.isdir, map(lambda x: os.path.join(self._prefix, x), os.listdir(self._prefix)))
-
-    def __getitem__(self, k):
-        if os.path.isdir(k):
-            return k
-        else:
-            raise NoSuchKeyError(f"No such key (perhaps it's not a directory, or was deleted?): {k}")
-
-    def __repr__(self):
-        return f"{self.__class__.__name__}('{self._prefix}')"
-
-    def __delitem__(self, k):
-        """ Remove empty directory k """
-        os.rmdir(k)
-
-    def __setitem__(self, k, v):
-        """ Remove empty directory k """
-        raise NotImplementedError("Setting a directory is not defined.")
-
-
-class DirStore(Store):
-    def __init__(self, rootdir):
-        rootdir = ensure_slash_suffix(rootdir)
-        self._prefix = rootdir
-        store = DirReaderBase(rootdir)
-        key_wrap = PrefixRelativization(_prefix=rootdir)
-        _obj_of_data = DirStore
-        _data_of_obj = lambda x: x._prefix
-        super().__init__(store=store,
-                         _id_of_key=key_wrap._id_of_key, _key_of_id=key_wrap._key_of_id,
-                         _obj_of_data=_obj_of_data, _data_of_obj=_data_of_obj)
-
-    def __repr__(self):
-        return f"{self.__class__.__name__}('{self._prefix}')"
+# NOTE: Moved DirStore to stores.local_store
+#
+# class DirReaderBase(Persister):
+#     """ KV Reader whose keys (AND VALUES) are directory full paths of the subdirectories of _prefix rootdir.
+#     Though this is a KV Reader, deletes are permitted, but only empty directories can be deleted.
+#     """
+#
+#     def __init__(self, _prefix):
+#         self._prefix = ensure_slash_suffix(_prefix)
+#
+#     def __contains__(self, k):
+#         return k.startswith(self._prefix) and os.path.isdir(k)
+#
+#     def __iter__(self):
+#         return filter(os.path.isdir, map(lambda x: os.path.join(self._prefix, x), os.listdir(self._prefix)))
+#
+#     def __getitem__(self, k):
+#         if os.path.isdir(k):
+#             return k
+#         else:
+#             raise NoSuchKeyError(f"No such key (perhaps it's not a directory, or was deleted?): {k}")
+#
+#     def __repr__(self):
+#         return f"{self.__class__.__name__}('{self._prefix}')"
+#
+#     def __delitem__(self, k):
+#         """ Remove empty directory k """
+#         os.rmdir(k)
+#
+#     def __setitem__(self, k, v):
+#         """ Remove empty directory k """
+#         raise NotImplementedError("Setting a directory is not defined.")
+#
+#
+# class DirStore(Store):
+#     def __init__(self, rootdir):
+#         rootdir = ensure_slash_suffix(rootdir)
+#         self._prefix = rootdir
+#         store = DirReaderBase(rootdir)
+#         key_wrap = PrefixRelativization(_prefix=rootdir)
+#         _obj_of_data = DirStore
+#         _data_of_obj = lambda x: x._prefix
+#         super().__init__(store=store,
+#                          _id_of_key=key_wrap._id_of_key, _key_of_id=key_wrap._key_of_id,
+#                          _obj_of_data=_obj_of_data, _data_of_obj=_data_of_obj)
+#
+#     def __repr__(self):
+#         return f"{self.__class__.__name__}('{self._prefix}')"
 
 
 ########################################################################################################################
@@ -286,7 +289,7 @@ DFLT_S3_OBJ_OF_DATA = encode_as_utf8
 from py2store.errors import NoSuchKeyError
 
 
-class S3BucketStoreBase(StoreBase):
+class S3BucketPersister(Persister):
     def __init__(self, bucket_name: str, _s3_bucket, _prefix: str = ''):
         """
         S3 Bucket accessor.
@@ -397,7 +400,7 @@ class S3BucketStoreBase(StoreBase):
 class S3Store(Store):
     def __init__(self, bucket_name: str, _s3_bucket, _prefix: str = '',
                  _data_of_obj=lambda x: x, _obj_of_data=DFLT_S3_OBJ_OF_DATA):
-        store = S3BucketStoreBase(bucket_name, _s3_bucket, _prefix)
+        store = S3BucketPersister(bucket_name, _s3_bucket, _prefix)
         key_wrap = PrefixRelativization(_prefix=store._prefix)
 
         def _id_of_key(k):
