@@ -6,11 +6,11 @@ To run all (from root project path):
 
 To run specific ones:
 
-    $ pytest -t [test path]::[test class]::[test method]
+    $ pytest [test path]::[test class]::[test method]
     
 For example:
 
-    $ pytest -t tests/test_forms.py::TestMyForm::test_validate_smth
+    $ pytest tests/test_forms.py::TestMyForm::test_validate_smth
 
 Other useful params:
  - `--capture=no`    - Always show live logs/prints, not only on errors. Use it, if you want to debug with `pdb`/`ipdb`.
