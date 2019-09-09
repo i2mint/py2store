@@ -75,6 +75,7 @@ import os
 
 
 class PcmSourceSessionBlockStore(MakeMissingDirsStoreMixin, LocalBinaryStore):
+    raise DeprecationWarning("Deprecated")
     sep = os.path.sep
     path_depth = 3
 

@@ -1,3 +1,8 @@
+def _assert_condition(condition, err_msg='', err_cls=AssertionError):
+    if not condition:
+        raise err_cls(err_msg)
+
+
 class KeyValidationError(ValueError):
     """Error to raise when a key is not valid"""
     pass
