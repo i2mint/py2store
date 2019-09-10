@@ -3,7 +3,10 @@ import random
 import string
 
 from py2store.key_mappers.tuples import dict_of_tuple, str_of_tuple, dsv_of_list
-from py2store.key_mappers.str_utils import n_format_params_in_str_format
+from py2store.key_mappers.str_utils import n_format_params_in_str_format, empty_arg_and_kwargs_for_format
+
+# Note: Probably want to use another package for generation of fake data.
+#   For example, https://github.com/joke2k/faker
 
 lower_case_letters = string.ascii_lowercase
 alphanumeric = string.digits + lower_case_letters
@@ -15,6 +18,15 @@ def random_string(length=7, character_set=lower_case_letters):
 
 
 def random_string_gen(word_size_range=(1, 10), character_set=lower_case_letters, n=100):
+    """Random string generator
+    Args:
+        word_size_range: An int, 2-tuple of ints, or list-like object that defines the choices of word sizes
+        character_set: A string or iterable defining the alphabet to draw from
+        n: The number of elements the generator will yield
+
+    Returns:
+        Random string generator
+    """
     if isinstance(word_size_range, int):
         word_size_range = range(1, word_size_range + 1)
     elif not isinstance(word_size_range, range):
@@ -26,25 +38,75 @@ def random_string_gen(word_size_range=(1, 10), character_set=lower_case_letters,
 
 
 def random_tuple_gen(tuple_length=3, word_size_range=(1, 10), character_set=lower_case_letters, n: int = 100):
-    for _ in range(tuple_length):
-        yield tuple(random_string_gen(word_size_range, character_set, n))
+    """Random tuple (of strings) generator
+
+    Args:
+        tuple_length: The length of the tuples generated
+        word_size_range: An int, 2-tuple of ints, or list-like object that defines the choices of word sizes
+        character_set: A string or iterable defining the alphabet to draw from
+        n: The number of elements the generator will yield
+
+    Returns:
+        Random tuple (of strings) generator
+    """
+    for _ in range(n):
+        yield tuple(random_string_gen(word_size_range, character_set, tuple_length))
 
 
-def random_dict_gen(fields=('a', 'b', 'c'), word_size_range=(1, 10), character_set=lower_case_letters, n=100):
+def random_dict_gen(fields=('a', 'b', 'c'), word_size_range=(1, 10), character_set=lower_case_letters, n: int = 100):
+    """Random dict (of strings) generator
+
+    Args:
+        fields: Field names for the random dicts
+        word_size_range: An int, 2-tuple of ints, or list-like object that defines the choices of word sizes
+        character_set: A string or iterable defining the alphabet to draw from
+        n: The number of elements the generator will yield
+
+    Returns:
+        Random dict (of strings) generator
+    """
     tuple_length = len(fields)
     yield from (dict_of_tuple(x, fields)
                 for x in random_tuple_gen(tuple_length, word_size_range, character_set, n))
 
 
 def random_formatted_str_gen(format_string='root/{}/{}_{}.test',
-                           word_size_range=(1, 10), character_set=lower_case_letters, n=100):
-    n = n_format_params_in_str_format(format_string)
+                             word_size_range=(1, 10), character_set=lower_case_letters, n=100):
+    """Random formatted string generator
 
+    Args:
+        format_string: A format string
+        word_size_range: An int, 2-tuple of ints, or list-like object that defines the choices of word sizes
+        character_set: A string or iterable defining the alphabet to draw from
+        n: The number of elements the generator will yield
 
+    Returns:
+        Yields random strings of the format defined by format_string
 
-    # tuple_length = len(fields)
-    # yield from (str_of_tuple(x, fields)
-    #             for x in random_tuple_gen(tuple_length, word_size_range, character_set, n))
+    Examples:
+        # >>> list(random_formatted_str_gen('root/{}/{}_{}.test', (2, 5), 'abc', n=5))
+        [('root/acba/bb_abc.test',),
+         ('root/abcb/cbbc_ca.test',),
+         ('root/ac/ac_cc.test',),
+         ('root/aacc/ccbb_ab.test',),
+         ('root/aab/abb_cbab.test',)]
+
+    >>> # The following will be made not random (by restricting the constraints to "no choice"
+    >>> # ... this is so that we get consistent outputs to assert for the doc test.
+    >>>
+    >>> # Example with automatic specification
+    >>> list(random_formatted_str_gen('root/{}/{}_{}.test', (3, 4), 'a', n=2))
+    [('root/aaa/aaa_aaa.test',), ('root/aaa/aaa_aaa.test',)]
+    >>>
+    >>> # Example with manual specification
+    >>> list(random_formatted_str_gen('indexed field: {0}: named field: {name}', (2, 3), 'z', n=1))
+    [('indexed field: zz: named field: zz',)]
+    """
+    args_template, kwargs_template = empty_arg_and_kwargs_for_format(format_string)
+    n_args = len(args_template)
+    args_gen = random_tuple_gen(n_args, word_size_range, character_set, n)
+    kwargs_gen = random_dict_gen(kwargs_template.keys(), word_size_range, character_set, n)
+    yield from zip(format_string.format(*args, **kwargs) for args, kwargs in zip(args_gen, kwargs_gen))
 
 
 ########################################################################################################################
