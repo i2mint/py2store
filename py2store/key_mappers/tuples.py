@@ -129,9 +129,9 @@ def _test_dsv_of_list(n_tests=100, max_n_elements=10, max_sep_length=3):
         return ''.join(random.choice(character_set) for _ in range(length))
 
     for i in range(n_tests):
-        for n_elements in random.choice(range(max_n_elements)):
+        for n_elements in random.choice(range(1, max_n_elements + 1)):
             words = [x for x in random_string(n_elements, alphanumeric)]
-            sep_length = random.choice(range(max_sep_length))
+            sep_length = random.choice(range(1, max_sep_length + 1))
             sep = random_string(sep_length, non_alphanumeric)
             dsv_line = dsv_of_list(words, sep)
             dsv_words = list_of_dsv(dsv_line, sep)
