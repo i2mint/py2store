@@ -1,6 +1,8 @@
 import os
 import random
 import string
+from functools import reduce
+from operator import add
 
 from py2store.key_mappers.tuples import dict_of_tuple, str_of_tuple, dsv_of_list
 from py2store.key_mappers.str_utils import n_format_params_in_str_format, empty_arg_and_kwargs_for_format
@@ -13,15 +15,42 @@ alphanumeric = string.digits + lower_case_letters
 non_alphanumeric = ''.join(set(string.printable).difference(alphanumeric))
 
 
-def random_string(length=7, character_set=lower_case_letters):
-    return ''.join(random.choice(character_set) for _ in range(length))
+def random_word(length, alphabet, concat_func=add):
+    """Make a random word by concatenating randomly drawn elements from alphabet together
+    Args:
+        length: Length of the word
+        alphabet: Alphabet to draw from
+        concat_func: The concatenation function (e.g. + for strings and lists)
+
+    Note: Repeated elements in alphabet will have more chances of being drawn.
+
+    Returns:
+        A word (whose type depends on what concatenating elements from alphabet produces).
+
+    # Not making this a proper doctest because I don't know how to seed the global random temporarily
+    >>> random_word(4, 'abcde')  # e.g. 'acae'
+    >>> random_word(5, ['a', 'b', 'c'])  # e.g. 'cabba'
+    >>> random_word(4, [[1, 2, 3], [40, 50], [600], [7000]])  # e.g. [40, 50, 7000, 7000, 1, 2, 3]
+    >>> random_word(random_word(4, [1, 2, 3, 4]))  # e.g. 13 (because adding numbers...)
+    >>> # ... sometimes it's what you want:
+    >>> random_word(4, [2 ** x for x in range(8)])  # e.g. 105 (binary combination)
+    >>> random_word(4, [1, 2, 3, 4], concat_func=lambda x, y: str(x) + str(y))  # e.g. '4213'
+    >>> random_word(4, [1, 2, 3, 4], concat_func=lambda x, y: int(str(x) + str(y)))  # e.g. 3432
+    """
+    return reduce(concat_func, (random.choice(alphabet) for _ in range(length)))
 
 
-def random_string_gen(word_size_range=(1, 10), character_set=lower_case_letters, n=100):
+def random_string(length=7, alphabet=lower_case_letters):
+    """Same as random_word, but it optimized for strings
+    (5-10% faster for words of length 7, 25-30% faster for words of size 1000)"""
+    return ''.join(random.choice(alphabet) for _ in range(length))
+
+
+def random_word_gen(word_size_range=(1, 10), alphabet=lower_case_letters, n=100):
     """Random string generator
     Args:
         word_size_range: An int, 2-tuple of ints, or list-like object that defines the choices of word sizes
-        character_set: A string or iterable defining the alphabet to draw from
+        alphabet: A string or iterable defining the alphabet to draw from
         n: The number of elements the generator will yield
 
     Returns:
@@ -33,33 +62,33 @@ def random_string_gen(word_size_range=(1, 10), character_set=lower_case_letters,
         word_size_range = range(*word_size_range)
 
     for _ in range(n):
-        n_characters = random.choice(word_size_range)
-        yield random_string(n_characters, character_set)
+        length = random.choice(word_size_range)
+        yield random_word(length, alphabet)
 
 
-def random_tuple_gen(tuple_length=3, word_size_range=(1, 10), character_set=lower_case_letters, n: int = 100):
+def random_tuple_gen(tuple_length=3, word_size_range=(1, 10), alphabet=lower_case_letters, n: int = 100):
     """Random tuple (of strings) generator
 
     Args:
         tuple_length: The length of the tuples generated
         word_size_range: An int, 2-tuple of ints, or list-like object that defines the choices of word sizes
-        character_set: A string or iterable defining the alphabet to draw from
+        alphabet: A string or iterable defining the alphabet to draw from
         n: The number of elements the generator will yield
 
     Returns:
         Random tuple (of strings) generator
     """
     for _ in range(n):
-        yield tuple(random_string_gen(word_size_range, character_set, tuple_length))
+        yield tuple(random_word_gen(word_size_range, alphabet, tuple_length))
 
 
-def random_dict_gen(fields=('a', 'b', 'c'), word_size_range=(1, 10), character_set=lower_case_letters, n: int = 100):
+def random_dict_gen(fields=('a', 'b', 'c'), word_size_range=(1, 10), alphabet=lower_case_letters, n: int = 100):
     """Random dict (of strings) generator
 
     Args:
         fields: Field names for the random dicts
         word_size_range: An int, 2-tuple of ints, or list-like object that defines the choices of word sizes
-        character_set: A string or iterable defining the alphabet to draw from
+        alphabet: A string or iterable defining the alphabet to draw from
         n: The number of elements the generator will yield
 
     Returns:
@@ -67,17 +96,17 @@ def random_dict_gen(fields=('a', 'b', 'c'), word_size_range=(1, 10), character_s
     """
     tuple_length = len(fields)
     yield from (dict_of_tuple(x, fields)
-                for x in random_tuple_gen(tuple_length, word_size_range, character_set, n))
+                for x in random_tuple_gen(tuple_length, word_size_range, alphabet, n))
 
 
 def random_formatted_str_gen(format_string='root/{}/{}_{}.test',
-                             word_size_range=(1, 10), character_set=lower_case_letters, n=100):
+                             word_size_range=(1, 10), alphabet=lower_case_letters, n=100):
     """Random formatted string generator
 
     Args:
         format_string: A format string
         word_size_range: An int, 2-tuple of ints, or list-like object that defines the choices of word sizes
-        character_set: A string or iterable defining the alphabet to draw from
+        alphabet: A string or iterable defining the alphabet to draw from
         n: The number of elements the generator will yield
 
     Returns:
@@ -104,8 +133,8 @@ def random_formatted_str_gen(format_string='root/{}/{}_{}.test',
     """
     args_template, kwargs_template = empty_arg_and_kwargs_for_format(format_string)
     n_args = len(args_template)
-    args_gen = random_tuple_gen(n_args, word_size_range, character_set, n)
-    kwargs_gen = random_dict_gen(kwargs_template.keys(), word_size_range, character_set, n)
+    args_gen = random_tuple_gen(n_args, word_size_range, alphabet, n)
+    kwargs_gen = random_dict_gen(kwargs_template.keys(), word_size_range, alphabet, n)
     yield from zip(format_string.format(*args, **kwargs) for args, kwargs in zip(args_gen, kwargs_gen))
 
 
