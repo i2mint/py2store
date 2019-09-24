@@ -392,6 +392,33 @@ class LinearNaming(object):
         return s
 
 
+from py2store.base import Store
+
+
+class StoreWithTupleKeys(Store):
+    def __init__(self, store, linear_naming=None):
+        super().__init__(store)
+        self._linear_naming = linear_naming
+
+    def _id_of_key(self, key):
+        return self._linear_naming.mk(*key)
+
+    def _key_of_id(self, _id):
+        return self._linear_naming.info_tuple(_id)
+
+
+class StoreWithDictKeys(Store):
+    def __init__(self, store, linear_naming=None):
+        super().__init__(store)
+        self._linear_naming = linear_naming
+
+    def _id_of_key(self, key):
+        return self._linear_naming.mk(**key)
+
+    def _key_of_id(self, _id):
+        return self._linear_naming.info_dict(_id)
+
+
 class NamingInterface(object):
     def __init__(self,
                  params=None,

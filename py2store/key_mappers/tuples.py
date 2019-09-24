@@ -29,6 +29,20 @@ def dict_of_tuple(d, fields):
 
 
 def str_of_tuple(d, str_format):
+    """Convert tuple to str.
+    It's just str_format.format(*d). Why even write such a function?
+    (1) To have a consistent interface for key conversions
+    (2) We want a KeyValidationError to occur here
+    Args:
+        d: tuple if params to str_format
+        str_format: Auto fields format string. If you have manual fields, consider auto_field_format_str to convert.
+
+    Returns:
+        parametrized string
+
+    >>> str_of_tuple(('hello', 'world'), "Well, {} dear {}!")
+    'Well, hello dear world!'
+    """
     try:
         return str_format.format(*d)
     except Exception as e:
@@ -56,6 +70,54 @@ def dict_of_str(d, compiled_regex):
         return m.groupdict()
     else:
         raise KeyValidationError(f"The string {d} didn't match the pattern {compiled_regex}")
+
+
+def mk_str_of_obj(attrs):
+    """Make a function that transforms objects to strings, using specific attributes of object.
+
+    Args:
+        attrs: Attributes that should be read off of the object to make the parameters of the stribg
+
+    Returns:
+        A transformation function
+
+    >>> from dataclasses import dataclass
+    >>> @dataclass
+    ... class A:
+    ...     foo: int
+    ...     bar: str
+    >>> a = A(foo=0, bar='rin')
+    >>> a
+    A(foo=0, bar='rin')
+    >>>
+    >>> str_from_obj = mk_str_of_obj(['foo', 'bar'])
+    >>> str_from_obj(a, 'ST{foo}/{bar}/G')
+    'ST0/rin/G'
+    """
+    dict_of_obj = lambda o: {k: getattr(o, k) for k in attrs}
+
+    def str_of_obj(d, str_format):
+        return str_of_dict(dict_of_obj(d), str_format)
+
+    return str_of_obj
+
+
+def mk_obj_of_str(constructor):
+    """Make a function that transforms a string to an object. The factory making inverses of what mk_str_from_obj makes.
+
+    Args:
+        constructor: The function (or class) that will be used to make objects from the **kwargs parsed out of the
+            string.
+
+    Returns:
+        A function factory.
+
+    """
+
+    def obj_of_str(d, compiled_regex):
+        constructor(**dict_of_str(d, compiled_regex))
+
+    return obj_of_str
 
 
 def dsv_of_list(d, sep=','):

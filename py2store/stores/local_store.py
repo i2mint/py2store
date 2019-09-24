@@ -1,7 +1,7 @@
 import os
 import pickle
 from functools import partial, wraps
-from warnings import warn
+import json
 
 from py2store.base import Store, Persister
 from py2store.core import PrefixRelativizationMixin, PrefixRelativization
@@ -141,12 +141,14 @@ class RelativePathFormatStore2(PrefixRelativizationMixin, PathFormatStoreWithPre
 
 class LocalTextStore(RelativePathFormatStore):
     """Local files store for text data"""
+
     def __init__(self, path_format):
         super().__init__(path_format, mode='t')
 
 
 class LocalBinaryStore(RelativePathFormatStore):
     """Local files store for binary data"""
+
     def __init__(self, path_format):
         super().__init__(path_format, mode='b')
 
@@ -195,6 +197,18 @@ class QuickLocalStoreMixin:
 
 class QuickTextStore(QuickLocalStoreMixin, LocalTextStore):
     __doc__ = str(LocalTextStore.__doc__) + QuickLocalStoreMixin._docsuffix
+
+
+class QuickJsonStore(QuickTextStore):
+    """Make a quick store with simple json serialization.
+    Useful to store and retrieve
+    """
+
+    def _obj_of_data(self, data):
+        return json.loads(data)
+
+    def _data_of_obj(self, obj):
+        return json.dumps(obj)
 
 
 class QuickBinaryStore(QuickLocalStoreMixin, LocalBinaryStore):
