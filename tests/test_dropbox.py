@@ -37,3 +37,8 @@ class TestDropboxLinkPersister(TestDropboxPersister):
         # Read-a-file test only, since LinkPersister has a read-only access.
         self._create_test_file()
         self._test_read()
+
+        all_objects = list(self.db)
+        key = all_objects[0]
+        assert self.db[key]
+
