@@ -2,6 +2,109 @@ import string
 
 dflt_formatter = string.Formatter()
 
+
+def compile_str_from_parsed(parsed):
+    """The (quasi-)inverse of string.Formatter.parse.
+
+    Args:
+        parsed: iterator of (literal_text, field_name, format_spec, conversion) tuples,
+        as yield by string.Formatter.parse
+
+    Returns:
+        A format string that would produce such a parsed input.
+
+    >>> s =  "ROOT/{}/{0!r}/{1!i:format}/hello{:0.02f}TAIL"
+    >>> assert compile_str_from_parsed(string.Formatter().parse(s)) == s
+    >>>
+    >>> # Or, if you want to see more details...
+    >>> parsed = list(string.Formatter().parse(s))
+    >>> for p in parsed:
+    ...     print(p)
+    ('ROOT/', '', '', None)
+    ('/', '0', '', 'r')
+    ('/', '1', 'format', 'i')
+    ('/hello', '', '0.02f', None)
+    ('TAIL', None, None, None)
+    >>> compile_str_from_parsed(parsed)
+    'ROOT/{}/{0!r}/{1!i:format}/hello{:0.02f}TAIL'
+    """
+    result = ''
+    for literal_text, field_name, format_spec, conversion in parsed:
+        # output the literal text
+        if literal_text:
+            result += literal_text
+
+        # if there's a field, output it
+        if field_name is not None:
+            result += '{'
+            if field_name != '':
+                result += field_name
+            if conversion:
+                result += '!' + conversion
+            if format_spec:
+                result += ':' + format_spec
+            result += '}'
+    return result
+
+
+def transform_format_str(format_str, parsed_tuple_trans_func):
+    return compile_str_from_parsed(
+        map(lambda args: parsed_tuple_trans_func(*args), dflt_formatter.parse(format_str)))
+
+
+def _empty_field_name(literal_text, field_name, format_spec, conversion):
+    if field_name is not None:
+        return literal_text, '', format_spec, conversion
+    else:
+        return literal_text, field_name, format_spec, conversion
+
+
+def auto_field_format_str(format_str):
+    """Get an auto field version of the format_str
+
+    Args:
+        format_str: A format string
+
+    Returns:
+        A transformed format_str
+    >>> auto_field_format_str('R/{0}/{one}/{}/{two}/T')
+    'R/{}/{}/{}/{}/T'
+    """
+    return transform_format_str(format_str, _empty_field_name)
+
+
+def _mk_naming_trans_func(names=None):
+    if names is None:
+        names = map(str, range(99999))
+    _names = iter(names)
+
+    def trans_func(literal_text, field_name, format_spec, conversion):
+        if field_name is not None:
+            return literal_text, next(_names), format_spec, conversion
+        else:
+            return literal_text, field_name, format_spec, conversion
+
+    return trans_func
+
+
+def name_fields_in_format_str(format_str, field_names=None):
+    """Get a manual field version of the format_str
+
+    Args:
+        format_str: A format string
+        names: An iterable that produces enough strings to fill all of format_str fields
+
+    Returns:
+        A transformed format_str
+    >>> name_fields_in_format_str('R/{0}/{one}/{}/{two}/T')
+    'R/{0}/{1}/{2}/{3}/T'
+    >>> # Note here that we use the field name to inject a field format as well
+    >>> name_fields_in_format_str('R/{foo}/{0}/{}/T', ['42', 'hi:03.0f', 'world'])
+    'R/{42}/{hi:03.0f}/{world}/T'
+    """
+    return transform_format_str(format_str, _mk_naming_trans_func(field_names))
+
+
 no_hybrid_format_error = ValueError("cannot switch from manual field specification (i.e. {{number}} or {{name}}) "
                                     "to automatic (i.e. {{}}) field numbering.")
 

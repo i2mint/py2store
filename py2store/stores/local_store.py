@@ -1,7 +1,7 @@
 import os
 import pickle
 from functools import partial, wraps
-from warnings import warn
+import json
 
 from py2store.base import Store, Persister
 from py2store.core import PrefixRelativizationMixin, PrefixRelativization
@@ -140,19 +140,21 @@ class RelativePathFormatStore2(PrefixRelativizationMixin, PathFormatStoreWithPre
 
 
 class LocalTextStore(RelativePathFormatStore):
+    """Local files store for text data"""
+
     def __init__(self, path_format):
         super().__init__(path_format, mode='t')
 
 
 class LocalBinaryStore(RelativePathFormatStore):
+    """Local files store for binary data"""
+
     def __init__(self, path_format):
         super().__init__(path_format, mode='b')
 
 
 class PickleStore(RelativePathFormatStore):
-    """
-    A local files pickle store
-    """
+    """Local files store with pickle serialization"""
 
     def __init__(self, path_format,
                  fix_imports=True, protocol=None, pickle_encoding='ASCII', pickle_errors='strict',
@@ -174,12 +176,12 @@ def mk_tmp_quick_store_dirpath(dirname=''):
     return os.path.join(temp_root, dirname)
 
 
-class QuickStore(PickleStore):
-    """Make a quick persisting store with minimal (or no) further specification.
-    Will persist in the local file system using relative paths and pickle to serialize.
-    If directories in the path don't exist, they're made automatically.
-    If the root directory for the store isn't given, you'll be given one (but it will be a temporary folder).
+class QuickLocalStoreMixin:
+    """A mixin that will choose a path_format if none given, and will create directories under the (temp) root,
+    at write time, as needed.
     """
+
+    _docsuffix = ' with default temp root and auto dir generation on write.'
 
     def __init__(self, path_format=None):
         if path_format is None:
@@ -191,6 +193,30 @@ class QuickStore(PickleStore):
         dirname = os.path.dirname(os.path.join(self._prefix, k))
         os.makedirs(dirname, exist_ok=1)
         super().__setitem__(k, v)
+
+
+class QuickTextStore(QuickLocalStoreMixin, LocalTextStore):
+    __doc__ = str(LocalTextStore.__doc__) + QuickLocalStoreMixin._docsuffix
+
+
+class QuickJsonStore(QuickTextStore):
+    """Make a quick store with simple json serialization.
+    Useful to store and retrieve
+    """
+
+    def _obj_of_data(self, data):
+        return json.loads(data)
+
+    def _data_of_obj(self, obj):
+        return json.dumps(obj)
+
+
+class QuickBinaryStore(QuickLocalStoreMixin, LocalBinaryStore):
+    __doc__ = str(LocalBinaryStore.__doc__) + QuickLocalStoreMixin._docsuffix
+
+
+class QuickStore(QuickLocalStoreMixin, PickleStore):
+    __doc__ = str(PickleStore.__doc__) + QuickLocalStoreMixin._docsuffix
 
 
 LocalStore = QuickStore  # alias
@@ -206,6 +232,7 @@ class DirStore(Store):
     >>> s = DirStore(root)
     >>> assert set(s).issuperset({'stores', 'persisters', 'serializers', 'key_mappers'})
     """
+
     def __init__(self, rootdir):
         rootdir = ensure_slash_suffix(rootdir)
         super().__init__(store=DirReader(rootdir))

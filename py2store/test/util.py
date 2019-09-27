@@ -37,7 +37,15 @@ def random_word(length, alphabet, concat_func=add):
     >>> random_word(4, [1, 2, 3, 4], concat_func=lambda x, y: str(x) + str(y))  # e.g. '4213'
     >>> random_word(4, [1, 2, 3, 4], concat_func=lambda x, y: int(str(x) + str(y)))  # e.g. 3432
     """
+    if isinstance(alphabet, bytes) or isinstance(alphabet[0], bytes):
+        # convert to list of bytes, or the function will return ints instead of bytes
+        alphabet = _list_of_bytes_singletons(alphabet)
     return reduce(concat_func, (random.choice(alphabet) for _ in range(length)))
+
+
+def _list_of_bytes_singletons(bytes_alphabet):
+    """Convert to list of bytes, or the function will return ints instead of bytes"""
+    return list(map(lambda x: bytes([x]), bytes_alphabet))
 
 
 def random_string(length=7, alphabet=lower_case_letters):
