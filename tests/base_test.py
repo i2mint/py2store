@@ -41,6 +41,10 @@ class BaseTest:
         default_value = object()
         assert self.db.get(self.inexistent_key, default_value) is default_value
 
+        all_objects = list(self.db)
+        key = all_objects[0]
+        assert self.db[key]
+
     def _test_update(self):
         self.db[self.key] = self.data_updated
         self._assert_eq(self.db[self.key], self.data_updated)
