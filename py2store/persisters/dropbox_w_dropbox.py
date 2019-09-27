@@ -1,4 +1,5 @@
 from py2store.base import Persister
+from py2store.mixins import ReadOnlyMixin
 
 from py2store.util import ModuleNotFoundErrorNiceMessage
 
@@ -111,7 +112,7 @@ def _extend_path(path, extension):
     return extend_path
 
 
-class DropboxLinkPersister(DropboxPersister):
+class DropboxLinkPersister(ReadOnlyMixin, DropboxPersister):
     def __init__(self, url, oauth2_access_token):
         self._con = Dropbox(oauth2_access_token)
         self.url = url
@@ -124,7 +125,7 @@ class DropboxLinkPersister(DropboxPersister):
         """
         for x in path_gen.entries:
             if _entry_is_file(x):
-                yield x.name
+                yield x.path_display
             else:
                 folder_path = _extend_path(path, x.name)
                 yield from self._get_path_gen_from_path(path=folder_path)
