@@ -1,3 +1,26 @@
+   * [py2store](#py2store)
+   * [Quickstart](#quickstart)
+   * [More examples](#more-examples)
+      * [Looks like a dict](#looks-like-a-dict)
+      * [Converting keys: Relative paths and absolute paths](#converting-keys-relative-paths-and-absolute-paths)
+      * [Serialization/Deserialization](#serializationdeserialization)
+      * [A pickle store](#a-pickle-store)
+      * [But how do you change the persister?](#but-how-do-you-change-the-persister)
+      * [Talk your own CRUD dialect](#talk-your-own-crud-dialect)
+      * [Transforming keys](#transforming-keys)
+   * [How it works](#how-it-works)
+   * [A few persisters you can use](#a-few-persisters-you-can-use)
+      * [Local Files](#local-files)
+      * [MongoDB](#mongodb)
+      * [S3](#s3)
+   * [Use cases](#use-cases)
+      * [Interfacing reads](#interfacing-reads)
+      * [Changing where and how things are stored](#changing-where-and-how-things-are-stored)
+      * [Adapters: When the learning curve is in the way of learning](#adapters-when-the-learning-curve-is-in-the-way-of-learning)
+      * [Thinking about storage later, if ever](#thinking-about-storage-later-if-ever)
+   * [Is a store an ORM? A DAO?](#is-a-store-an-orm-a-dao)
+   * [Some links](#some-links)
+   
 # py2store
 Storage CRUD how and where you want it.
 
