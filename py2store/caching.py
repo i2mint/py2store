@@ -47,6 +47,7 @@ def mk_cached_store(caching_store, store_cls_you_want_to_cache):
 
 
 import itertools
+import time
 
 
 def let_through(gen):
@@ -55,6 +56,16 @@ def let_through(gen):
 
 def key_count(gen, start=0):
     yield from enumerate(gen, start=start)
+
+
+def join_byte_values_and_key_as_current_utc_milliseconds(gen):
+    k = int(time.time() * 1000)
+    yield k, b''.join(gen)
+
+
+def join_string_values_and_key_as_current_utc_milliseconds(gen):
+    k = int(time.time() * 1000)
+    yield k, ''.join(gen)
 
 
 def mk_kv_from_keygen(keygen=itertools.count()):
@@ -178,7 +189,7 @@ class WriteCache:
         self.store = store
         self.cache_to_kv = cache_to_kv
         self._mk_cache = mk_cache
-        self.cache = mk_cache()
+        self.cache = mk_cache()  # Note: Better a cache factory, or the same object with an empty() method.
 
     def __setitem__(self, k, v):
         self.cache.append((k, v))
@@ -193,11 +204,17 @@ class WriteCache:
 
 
 class WriteCacheWithAutoFlush(WriteCache):
-    def __init__(self, store, cache_to_kv=let_through, mk_cache=list, flush_cache_condition=len):
+    def __init__(self, store, cache_to_kv=infinite_keycount_kvs, mk_cache=list,
+                 flush_cache_condition=lambda x: len(x) > 0):
         super().__init__(store, cache_to_kv, mk_cache)
         self.flush_cache_condition = flush_cache_condition
 
     def __setitem__(self, k, v):
         super().__setitem__(k, v)
+        if self.flush_cache_condition(self.cache):
+            self.flush()
+
+    def append(self, item):
+        super().append(item)
         if self.flush_cache_condition(self.cache):
             self.flush()
