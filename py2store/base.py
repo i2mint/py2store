@@ -24,7 +24,7 @@ This means that you don't have to implement these as all, and can choose to impl
 the storage methods themselves.
 """
 
-from collections.abc import MutableMapping
+from collections.abc import Mapping, MutableMapping
 from typing import Any, Iterable, Tuple
 
 Key = Any
@@ -37,15 +37,19 @@ ValIter = Iterable[Val]
 ItemIter = Iterable[Item]
 
 
-# TODO: Wishful thinking: Define store type so the type is defined by it's methods, not by subclassing.
-class Persister(MutableMapping):
-    """ Acts as a MutableMapping abc, but disabling the clear method, and computing __len__ by counting keys"""
+class Reader(Mapping):
+    """ Acts as a Mapping abc, but computing __len__ by counting keys"""
 
     def __len__(self):
         count = 0
         for _ in self.__iter__():
             count += 1
         return count
+
+
+# TODO: Wishful thinking: Define store type so the type is defined by it's methods, not by subclassing.
+class Persister(Reader, MutableMapping):
+    """ Acts as a MutableMapping abc, but disabling the clear method, and computing __len__ by counting keys"""
 
     def clear(self):
         raise NotImplementedError('''
