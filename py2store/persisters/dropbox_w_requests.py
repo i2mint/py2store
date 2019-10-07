@@ -1,7 +1,7 @@
 import os
 import zipfile
-
-from py2store.base import Persister
+import tempfile
+from py2store.base import Reader
 from py2store.mixins import ReadOnlyMixin
 from py2store.util import ModuleNotFoundErrorNiceMessage
 
@@ -9,8 +9,10 @@ with ModuleNotFoundErrorNiceMessage():
     import requests
 
 
-class DropboxSharedFolderPersister(ReadOnlyMixin, Persister):
-    def __init__(self, url, path=os.getcwd()):
+class DropboxFolderCopyReader(Reader):
+    """Makes a full local copy of the folder (by default, to a local temp folder) and gives access to it.
+    """
+    def __init__(self, url, path=tempfile.gettempdir()):
         self.url = url
         self.path = path
 
@@ -48,7 +50,7 @@ class DropboxSharedFolderPersister(ReadOnlyMixin, Persister):
             self._files = zip_ref.namelist()
 
 
-class DropboxSharedFilePersister(ReadOnlyMixin, Persister):
+class DropboxFileCopyReader(Reader):
     def __init__(self, url, path=None):
         self.url = url
         self.path = path or self._get_filename_from_url()
