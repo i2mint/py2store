@@ -2,7 +2,7 @@ import pickle
 from py2store.base import Store
 from py2store.util import ModuleNotFoundErrorNiceMessage
 from py2store.persisters.s3_w_boto3 import S3BucketPersister
-from functools import wraps
+from py2store.key_mappers.paths import mk_relative_path_store
 
 with ModuleNotFoundErrorNiceMessage():
     from botocore.client import Config
@@ -13,7 +13,7 @@ DFLT_SIGNATURE_VERSION = 's3v4'
 DFLT_CONFIG = Config(signature_version=DFLT_SIGNATURE_VERSION)
 
 
-class S3BinaryStore(Store):
+class S3AbsPathBinaryStore(Store):
     # @wraps(S3BucketPersister.from_s3_resource_kwargs)
     def __init__(self, bucket_name, _prefix: str = '', resource_kwargs=None):
         persister = S3BucketPersister.from_s3_resource_kwargs(bucket_name, _prefix, resource_kwargs)
@@ -25,6 +25,9 @@ class S3BinaryStore(Store):
 
     def _key_of_id(self, _id):
         return _id.key
+
+
+S3BinaryStore = mk_relative_path_store(S3AbsPathBinaryStore, 'S3BinaryStore')
 
 
 class S3StringStore(S3BinaryStore):

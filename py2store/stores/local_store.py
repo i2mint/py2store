@@ -105,6 +105,7 @@ RelPathLocalFileStoreEnforcingFormat.__doc__ = \
 # aliases for back compatibility
 RelativePathFormatStore = RelPathLocalFileStore
 RelativePathFormatStoreEnforcingFormat = RelPathLocalFileStoreEnforcingFormat
+
 # Old version it replaces
 # class RelativePathFormatStore(PrefixRelativizationMixin, Store):
 #     """Local file store using templated relative paths.
