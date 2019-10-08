@@ -56,7 +56,7 @@ class PrefixRelativizationMixin:
         return _id[self._prefix_length:]
 
 
-def mk_relative_path_store(store_cls, with_key_validation=False, name=None):
+def mk_relative_path_store(store_cls, name=None, with_key_validation=False):
     if name is None:
         name = 'RelPath' + store_cls.__name__
 
