@@ -47,6 +47,9 @@ class Reader(Mapping):
         return count
 
 
+KvReader = Reader  # alias with explict name
+
+
 # TODO: Wishful thinking: Define store type so the type is defined by it's methods, not by subclassing.
 class Persister(Reader, MutableMapping):
     """ Acts as a MutableMapping abc, but disabling the clear method, and computing __len__ by counting keys"""
@@ -60,6 +63,9 @@ class Persister(Reader, MutableMapping):
                     self.popitem()
             except KeyError:
                 pass''')
+
+
+KvPersister = Persister  # alias with explict name
 
 
 # TODO: Make identity_func "identifiable". If we use the following one, we can use == to detect it's use,
@@ -233,6 +239,8 @@ class Store(Persister):
     def __repr__(self):
         return self.store.__repr__()
 
+
+KvStore = Store  # alias with explict name
 
 from abc import ABCMeta, abstractmethod
 from py2store.errors import KeyValidationError
