@@ -1,3 +1,5 @@
+from functools import wraps
+from py2store.base import Store
 from py2store.util import lazyprop
 
 
@@ -52,3 +54,45 @@ class PrefixRelativizationMixin:
 
     def _key_of_id(self, _id):
         return _id[self._prefix_length:]
+
+
+def mk_relative_path_store(store_cls, with_key_validation=False, name=None):
+    if name is None:
+        name = 'RelPath' + store_cls.__name__
+
+    cls = type(name, (PrefixRelativizationMixin, Store), {})
+
+    @wraps(store_cls.__init__)
+    def __init__(self, *args, **kwargs):
+        super(cls, self).__init__(store=store_cls(*args, **kwargs))
+        self._prefix = self.store._prefix
+
+    cls.__init__ = __init__
+
+    if with_key_validation:
+        def _id_of_key(self, k):
+            _id = super(cls, self)._id_of_key(k)
+            if self.store.is_valid_key(_id):
+                return _id
+            else:
+                raise KeyError(f"Key not valid: {k}")
+
+        cls._id_of_key = _id_of_key
+
+    return cls
+
+
+
+## Alternative to mk_relative_path_store that doesn't make lint complain (but the repr shows MyStore, not name)
+# def mk_relative_path_store_alt(store_cls, name=None):
+#     if name is None:
+#         name = 'RelPath' + store_cls.__name__
+#
+#     class MyStore(PrefixRelativizationMixin, Store):
+#         @wraps(store_cls.__init__)
+#         def __init__(self, *args, **kwargs):
+#             super().__init__(store=store_cls(*args, **kwargs))
+#             self._prefix = self.store._prefix
+#     MyStore.__name__ = name
+#
+#     return MyStore

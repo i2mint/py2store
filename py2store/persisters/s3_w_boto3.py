@@ -45,6 +45,32 @@ def get_s3_resource(aws_access_key_id,
                           config=config)
 
 
+def get_s3_bucket(name,
+                  aws_access_key_id,
+                  aws_secret_access_key,
+                  endpoint_url=DFLT_AWS_S3_ENDPOINT,
+                  verify=DFLT_BOTO_CLIENT_VERIFY,
+                  config=DFLT_CONFIG):
+    s3 = get_s3_resource(endpoint_url=endpoint_url,
+                         aws_access_key_id=aws_access_key_id,
+                         aws_secret_access_key=aws_secret_access_key,
+                         verify=verify,
+                         config=config)
+    return s3.Bucket(name)
+
+
+# TODO: I wanted boto3.resources.factory.s3.ObjectSummary but couldn't find it
+from boto3.resources.base import ServiceResource
+
+
+def isdir(obj_summary: ServiceResource):
+    return obj_summary.size == 0 and obj_summary.key.endswith
+
+
+def isfile(obj_summary: ServiceResource):
+    return not isdir(obj_summary)
+
+
 class S3BucketPersister(Persister):
     def __init__(self, bucket_name: str, _s3_bucket, _prefix: str = ''):
         self.bucket_name = bucket_name
@@ -70,7 +96,7 @@ class S3BucketPersister(Persister):
             raise  # if you got so far
 
     def __iter__(self):
-        return iter(self._s3_bucket.objects.filter(Prefix=self._prefix))
+        return filter(isfile, self._s3_bucket.objects.filter(Prefix=self._prefix))
 
     def __contains__(self, k):
         try:
@@ -98,3 +124,15 @@ class S3BucketPersister(Persister):
         s3_bucket = s3_resource.Bucket(bucket_name)
         return cls(bucket_name, s3_bucket, _prefix=_prefix)
 
+
+# Experimental functions to be used to enhance methods for file system stores
+# See File
+try:
+    from boto3.resources.base import ServiceResource
+
+
+    def isdir(obj_summary: ServiceResource):
+        return obj_summary.size == 0 and obj_summary.key.endswith
+
+except:
+    pass

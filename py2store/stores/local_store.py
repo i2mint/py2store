@@ -5,6 +5,7 @@ import json
 
 from py2store.base import Store, Persister
 from py2store.core import PrefixRelativizationMixin, PrefixRelativization
+from py2store.key_mappers.paths import mk_relative_path_store
 from py2store.persisters.local_files import PathFormatPersister, DirpathFormatKeys, DirReader, ensure_slash_suffix
 
 
@@ -93,27 +94,39 @@ class PathFormatStore(PathFormatPersister, Persister):
     pass
 
 
-class RelativePathFormatStore(PrefixRelativizationMixin, Store):
-    """Local file store using templated relative paths.
-    """
+RelPathLocalFileStore = mk_relative_path_store(PathFormatPersister)
+RelPathLocalFileStore.__doc__ = """Local file store using templated relative paths."""
 
-    @wraps(PathFormatStore.__init__)
-    def __init__(self, *args, **kwargs):
-        super().__init__(store=PathFormatStore(*args, **kwargs))
-        self._prefix = self.store._prefix
+RelPathLocalFileStoreEnforcingFormat = mk_relative_path_store(PathFormatPersister)
+RelPathLocalFileStoreEnforcingFormat.__doc__ = \
+    """A RelativePathFormatStore, but that won't allow one to use a key that is not valid 
+    (according to the self.store.is_valid_key boolean method)"""
 
-
-class RelativePathFormatStoreEnforcingFormat(RelativePathFormatStore):
-    """A RelativePathFormatStore, but that won't allow one to use a key that is not valid
-    (according to the self.store.is_valid_key boolean method).
-    """
-
-    def _id_of_key(self, k):
-        _id = super()._id_of_key(k)
-        if self.store.is_valid_key(_id):
-            return _id
-        else:
-            raise ValueError(f"Key not valid: {k}")
+# aliases for back compatibility
+RelativePathFormatStore = RelPathLocalFileStore
+RelativePathFormatStoreEnforcingFormat = RelPathLocalFileStoreEnforcingFormat
+# Old version it replaces
+# class RelativePathFormatStore(PrefixRelativizationMixin, Store):
+#     """Local file store using templated relative paths.
+#     """
+#
+#     @wraps(PathFormatStore.__init__)
+#     def __init__(self, *args, **kwargs):
+#         super().__init__(store=PathFormatStore(*args, **kwargs))
+#         self._prefix = self.store._prefix
+#
+#
+# class RelativePathFormatStoreEnforcingFormat(RelativePathFormatStore):
+#     """A RelativePathFormatStore, but that won't allow one to use a key that is not valid
+#     (according to the self.store.is_valid_key boolean method).
+#     """
+#
+#     def _id_of_key(self, k):
+#         _id = super()._id_of_key(k)
+#         if self.store.is_valid_key(_id):
+#             return _id
+#         else:
+#             raise KeyError(f"Key not valid: {k}")
 
 
 class MakeMissingDirsStoreMixin:

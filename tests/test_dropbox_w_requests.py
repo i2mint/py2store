@@ -3,7 +3,7 @@ import shutil
 
 import pytest
 
-from py2store.persisters.dropbox_w_requests import DropboxSharedFolderPersister, DropboxSharedFilePersister
+from py2store.persisters.dropbox_w_requests import DropboxFolderCopyReader, DropboxFileCopyReader
 
 SHARED_FOLDER_URL = 'https://www.dropbox.com/sh/0ru09jmk0w9tdnr/AAA-PPON2sYmwUUoGQpBQh1Ia?dl=1'
 SHARED_FILE_URL = 'https://www.dropbox.com/s/wx9j4zm7zv9zffd/0b98e2af76c94a0a9cc2808866dd62de?dl=0'
@@ -12,7 +12,7 @@ SHARED_FILE_URL = 'https://www.dropbox.com/s/wx9j4zm7zv9zffd/0b98e2af76c94a0a9cc
 @pytest.fixture()
 def shared_folder_persister():
     path = 'tests/data/path'
-    persister = DropboxSharedFolderPersister(
+    persister = DropboxFolderCopyReader(
         url=SHARED_FOLDER_URL,
         path=path,
     )
@@ -32,7 +32,7 @@ class TestDropboxSharedFolderPersister:
 
 @pytest.fixture()
 def shared_file_persister():
-    persister = DropboxSharedFilePersister(SHARED_FILE_URL)
+    persister = DropboxFileCopyReader(SHARED_FILE_URL)
     yield persister
     try:
         os.remove(persister.path)
