@@ -44,8 +44,7 @@ def add_append_functionality_to_store_cls(store_cls, item2kv, new_store_name=Non
     [(('go', 'let'), {'I': 'it'})]
     """
 
-    if new_store_name is None:
-        new_store_name = 'Appendable' + store_cls.__name__
+    new_store_name = new_store_name or ('Appendable' + store_cls.__name__)
 
     def append(self, item):
         k, v = item2kv(item)

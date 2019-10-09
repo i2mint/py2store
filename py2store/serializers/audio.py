@@ -1,5 +1,6 @@
 from io import BytesIO
 from py2store.stores.local_store import RelativePathFormatStoreEnforcingFormat
+from py2store.stores.local_store import LocalBinaryStore
 
 from py2store.util import ModuleNotFoundErrorNiceMessage
 
@@ -17,8 +18,7 @@ DFLT_N_CHANNELS = 1
 soundfile_signature = dict(dtype=DFLT_DTYPE, format=DFLT_FORMAT, subtype=None, endian=None)
 
 
-class SampleRateAssertionError(ValueError):
-    pass
+class SampleRateAssertionError(ValueError): ...
 
 
 class PcmSerializationMixin:
@@ -53,36 +53,53 @@ class WavSerializationMixin:
             assert isinstance(assert_sr, int), "assert_sr must be an int"
         self.assert_sr = assert_sr
         self._rw_kwargs = dict(dtype=dtype, format=format, subtype=subtype, endian=endian)
+        self._read_kwargs = dict(dtype=dtype)
 
     def _obj_of_data(self, data):
-        wf, sr = sf.read(BytesIO(data), **self._rw_kwargs)
+        wf, sr = sf.read(BytesIO(data), **self._read_kwargs)
         if self.assert_sr != sr:
             if self.assert_sr is not None:  # Putting None check here because less common, so more efficient on avg
                 raise SampleRateAssertionError(f"sr was {sr}, should be {self.assert_sr}")
         return wf
 
 
-class WavLocalFileStore(RelativePathFormatStoreEnforcingFormat, WavSerializationMixin):
-    def __init__(self, path_format, assert_sr=None, delete=True,
-                 dtype=DFLT_DTYPE, format=DFLT_FORMAT, subtype=None, endian=None):
-        RelativePathFormatStoreEnforcingFormat.__init__(path_format, mode='b')
-        WavSerializationMixin.__init__(assert_sr=assert_sr, dtype=dtype)
+from py2store.base import Store
+from functools import wraps
 
 
-from py2store.stores.local_store import LocalBinaryStore
+class WavLocalFileStore(Store):
+    @wraps(LocalBinaryStore.__init__)
+    def __init__(self, path_format, assert_sr=None,
+                 dtype=DFLT_DTYPE, format='WAV', subtype=None, endian=None):
+        persister = LocalBinaryStore(path_format)
+        super().__init__(persister)
+        t = WavSerializationMixin(assert_sr=assert_sr, dtype=dtype, format=format,
+                                  subtype=subtype, endian=endian)
+        self._obj_of_data = t._obj_of_data
+
+
+class WavLocalFileStore2(WavSerializationMixin, LocalBinaryStore):
+    def __init__(self, path_format, assert_sr=None,
+                 dtype=DFLT_DTYPE, format='WAV', subtype=None, endian=None):
+        RelativePathFormatStoreEnforcingFormat.__init__(self, path_format)
+        WavSerializationMixin.__init__(self, assert_sr=assert_sr, dtype=dtype, format=format,
+                                       subtype=subtype, endian=endian)
+
+
 from py2store.stores.local_store import MakeMissingDirsStoreMixin
 import os
 
 
 class PcmSourceSessionBlockStore(MakeMissingDirsStoreMixin, LocalBinaryStore):
-    raise DeprecationWarning("Deprecated")
     sep = os.path.sep
     path_depth = 3
 
     def _id_of_key(self, k):
+        raise DeprecationWarning("Deprecated")
         assert len(k) == self.path_depth
         return super()._id_of_key(self.sep.join(self.path_depth * ['{}']).format(*k))
 
     def _key_of_id(self, _id):
+        raise DeprecationWarning("Deprecated")
         key = super()._key_of_id(_id)
         return tuple(key.split(self.sep))

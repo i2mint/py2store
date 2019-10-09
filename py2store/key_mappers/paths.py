@@ -57,8 +57,18 @@ class PrefixRelativizationMixin:
 
 
 def mk_relative_path_store(store_cls, name=None, with_key_validation=False):
-    if name is None:
-        name = 'RelPath' + store_cls.__name__
+    """
+
+    Args:
+        store_cls: The base store to wrap (subclass)
+        name: The name of the new store (by default 'RelPath' + store_cls.__name__)
+        with_key_validation: Whether keys should be validated upon access (store_cls must have an is_valid_key method
+
+    Returns: A new class that uses relative paths (i.e. where _prefix is automatically added to incoming keys,
+        and the len(_prefix) first characters are removed from outgoing keys.
+
+    """
+    name = name or ('RelPath' + store_cls.__name__)
 
     cls = type(name, (PrefixRelativizationMixin, Store), {})
 
@@ -80,8 +90,6 @@ def mk_relative_path_store(store_cls, name=None, with_key_validation=False):
         cls._id_of_key = _id_of_key
 
     return cls
-
-
 
 ## Alternative to mk_relative_path_store that doesn't make lint complain (but the repr shows MyStore, not name)
 # def mk_relative_path_store_alt(store_cls, name=None):
