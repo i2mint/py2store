@@ -24,6 +24,7 @@ This means that you don't have to implement these as all, and can choose to impl
 the storage methods themselves.
 """
 
+from functools import wraps
 from collections.abc import Mapping, MutableMapping
 from typing import Any, Iterable, Tuple
 
@@ -221,6 +222,9 @@ class Store(Persister):
     def __setitem__(self, k: Key, v: Val):
         return self.store.__setitem__(self._id_of_key(k), self._data_of_obj(v))
 
+    # def update(self, *args, **kwargs):
+    #     return self.store.update(*args, **kwargs)
+
     # Delete ####################################################################
     def __delitem__(self, k: Key):
         return self.store.__delitem__(self._id_of_key(k))
@@ -241,6 +245,19 @@ class Store(Persister):
 
 
 KvStore = Store  # alias with explict name
+
+
+def has_kv_store_interface(o):
+    """Check if object has the KvStore interface (that is, has the kv wrapper methods
+    Args:
+        o: object (class or instance)
+
+    Returns: True if kv has the four key (in/out) and value (in/out) transformation methods
+
+    """
+    return hasattr(o, '_id_of_key') and hasattr(o, '_key_of_id') \
+           and hasattr(o, '_data_of_obj') and hasattr(o, '_obj_of_data')
+
 
 from abc import ABCMeta, abstractmethod
 from py2store.errors import KeyValidationError
