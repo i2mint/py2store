@@ -1,5 +1,10 @@
    * [py2store](#py2store)
    * [Quickstart](#quickstart)
+   * [Use cases](#use-cases)
+      * [Interfacing reads](#interfacing-reads)
+      * [Changing where and how things are stored](#changing-where-and-how-things-are-stored)
+      * [Adapters: When the learning curve is in the way of learning](#adapters-when-the-learning-curve-is-in-the-way-of-learning)
+      * [Thinking about storage later, if ever](#thinking-about-storage-later-if-ever)
    * [More examples](#more-examples)
       * [Looks like a dict](#looks-like-a-dict)
       * [Converting keys: Relative paths and absolute paths](#converting-keys-relative-paths-and-absolute-paths)
@@ -13,14 +18,12 @@
       * [Local Files](#local-files)
       * [MongoDB](#mongodb)
       * [S3](#s3)
-   * [Use cases](#use-cases)
-      * [Interfacing reads](#interfacing-reads)
-      * [Changing where and how things are stored](#changing-where-and-how-things-are-stored)
-      * [Adapters: When the learning curve is in the way of learning](#adapters-when-the-learning-curve-is-in-the-way-of-learning)
-      * [Thinking about storage later, if ever](#thinking-about-storage-later-if-ever)
-   * [Is a store an ORM? A DAO?](#is-a-store-an-orm-a-dao)
+   * [Philosophical FAQs](#philosophical-faqs)
+      * [Is a store an ORM? A DAO?](#is-a-store-an-orm-a-dao)
+      * [Should storage transform the data?](#should-storage-transform-the-data)
    * [Some links](#some-links)
    
+
 # py2store
 Storage CRUD how and where you want it.
 
@@ -28,6 +31,13 @@ List, read, write, and delete data in a structured data source/target,
 as if manipulating simple python builtins (dicts, lists), or through the interface **you** want to interact with, 
 with configuration or physical particularities out of the way. 
 Also, being able to change these particularities without having to change the business-logic code. 
+
+If you're not a "read from top to bottom" kinda person, here are some tips: 
+[Quickstart](#quickstart) will show you a simple example of how it looks and feels. 
+[Use cases](#use-cases) will give you an idea of how py2store can be useful to you, if at all, 
+and [How it works](#how-it-works) will give you a sense of how it works.
+[More examples](#more-examples) will give you a taste of how you can adapt the three main aspects of 
+storage (persistence, serialization, and indexing) to your needs.
 
 # Quickstart
 
@@ -42,19 +52,20 @@ Here's an example for local storage (you must you string keys only here).
 >>> store = QuickStore()  # will print what (tmp) rootdir it is choosing
 >>> # Write something and then read it out again
 >>> store['foo'] = 'baz'
->>> store['foo']
+>>> 'foo' in store  # do you have the key 'foo' in your store?
+True
+>>> store['foo']  # what is the value for 'foo'?
 'baz'
->>> 
->>> # Go see that there is now a file in the rootdir, named 'foo'!
+>>>
+>>> # Okay, it behaves like a dict, but go have a look in your file system,  
+>>> # and see that there is now a file in the rootdir, named 'foo'!
 >>> 
 >>> # Write something more complicated
 >>> store['hello/world'] = [1, 'flew', {'over': 'a', "cuckoo's": map}]
->>> store['hello/world'] == [1, 'flew', {'over': 'a', "cuckoo's": map}]
+>>> stored_val = store['hello/world']
+>>> stored_val == [1, 'flew', {'over': 'a', "cuckoo's": map}]  # was it retrieved correctly?
 True
 >>>
->>> # do you have the key 'foo' in your store?
->>> 'foo' in store
-True
 >>> # how many items do you have now?
 >>> assert len(store) >= 2  # can't be sure there were no elements before, so can't assert == 2
 >>> 
@@ -68,6 +79,54 @@ If a root directory is not specified,
 it will use a tmp directory it will create (the first time you try to store something) 
 It will create any directories that need to be created to satisfy any/key/that/contains/slashes.
 Of course, everything is configurable.
+
+# Use cases
+
+## Interfacing reads
+
+How many times did someone share some data with you in the form of a zip of some nested folders 
+whose structure and naming choices are fascinatingly obscure? And how much time do you then spend to write code 
+to interface with that freak of nature? Well, one of the intents of py2store is to make that easier to do. 
+You still need to understand the structure of the data store and how to deserialize these datas into python 
+objects you can manipulate. But with the proper tool, you shouldn't have to do much more than that.
+
+## Changing where and how things are stored
+
+Ever have to switch where you persist things (say from file system to S3), or change the way key into your data, 
+or the way that data is serialized? If you use py2store tools to separate the different storage concerns, 
+it'll be quite easy to change, since change will be localized. And if you're dealing with code that was already 
+written, with concerns all mixed up, py2store should still be able to help since you'll be able to
+more easily give the new system a facade that makes it look like the old one. 
+
+All of this can also be applied to data bases as well, in-so-far as the CRUD operations you're using 
+are covered by the base methods.
+
+## Adapters: When the learning curve is in the way of learning
+
+Shinny new storage mechanisms (DBs etc.) are born constantly, and some folks start using them, and we are eventually lead to use them 
+as well if we need to work with those folks' systems. And though we'd love to learn the wonderful new 
+capabilities the new kid on the block has, sometimes we just don't have time for that. 
+
+Wouldn't it be nice if someone wrote an adapter to the new system that had an interface we were familiar with? 
+Talking to SQL as if it were mongo (or visa versa). Talking to S3 as if it were a file system. 
+Now it's not a long term solution: If we're really going to be using the new system intensively, we 
+should learn it. But when you just got to get stuff done, having a familiar facade to something new 
+is a life saver. 
+
+py2store would like to make it easier for you roll out an adapter to be able to talk 
+to the new system in the way **you** are familiar with.
+ 
+## Thinking about storage later, if ever
+
+You have a new project or need to write a new app. You'll need to store stuff and read stuff back. 
+Stuff: Different kinds of resources that your app will need to function. Some people enjoy thinking 
+of how to optimize that aspect. I don't. I'll leave it to the experts to do so when the time comes. 
+Often though, the time is later, if ever. Few proof of concepts and MVPs ever make it to prod. 
+
+So instead, I'd like to just get on with the business logic and write my program. 
+So what I need is an easy way to get some minimal storage functionality. 
+But when the time comes to optimize, I shouldn't have to change my code, but instead just change the way my 
+DAO does things. What I need is py2store.
 
 # More examples
 
@@ -186,12 +245,15 @@ s = MyFunnyStore()
 assert list(s) == []
 s['foo'] = 'bar'  # put 'bar' in 'foo'
 assert 'foo' in s  # check that 'foo' is in (i.e. a key of) s
-assert s['foo'] == 'hello bar'  # see that the value that 'foo' contains is 'bar'
+assert s['foo'] == 'hello bar'  # the value that 'foo' contains SEEMS to be 'hello bar'
 assert list(s) == ['foo']  # list all the keys (there's only one)
 assert list(s.items()) == [('foo', 'hello bar')]  # list all the (key, value) pairs
 assert list(s.values()) == ['hello bar']  # list all the values    
 ```
 
+Note: This is an easy example to demo on-load transformation of data (i.e. deserialization), 
+but wouldn't be considered "deserialization" by all. See discussion below.
+ 
 In the following, we want to serialize our text by upper-casing it (and see it as such) 
 when we retrieve the text.
 
@@ -519,55 +581,10 @@ basic_test(store, k=(1234, 'bob'), v={'age': 42, 'gender': 'unspecified'})
 It works pretty much like LocalStores, but stores in S3. You'll need to have an account with 
 AWS to use this. Find S3 stores in py2store.stores.s3_stores.
 
-# Use cases
 
-## Interfacing reads
+# Philosophical FAQs
 
-How many times did someone share some data with you in the form of a zip of some nested folders 
-whose structure and naming choices are fascinatingly obscure? And how much time do you then spend to write code 
-to interface with that freak of nature? Well, one of the intents of py2store is to make that easier to do. 
-You still need to understand the structure of the data store and how to deserialize these datas into python 
-objects you can manipulate. But with the proper tool, you shouldn't have to do much more than that.
-
-## Changing where and how things are stored
-
-Ever have to switch where you persist things (say from file system to S3), or change the way key into your data, 
-or the way that data is serialized? If you use py2store tools to separate the different storage concerns, 
-it'll be quite easy to change, since change will be localized. And if you're dealing with code that was already 
-written, with concerns all mixed up, py2store should still be able to help since you'll be able to
-more easily give the new system a facade that makes it look like the old one. 
-
-All of this can also be applied to data bases as well, in-so-far as the CRUD operations you're using 
-are covered by the base methods.
-
-## Adapters: When the learning curve is in the way of learning
-
-Shinny new storage mechanisms (DBs etc.) are born constantly, and some folks start using them, and we are eventually lead to use them 
-as well if we need to work with those folks' systems. And though we'd love to learn the wonderful new 
-capabilities the new kid on the block has, sometimes we just don't have time for that. 
-
-Wouldn't it be nice if someone wrote an adapter to the new system that had an interface we were familiar with? 
-Talking to SQL as if it were mongo (or visa versa). Talking to S3 as if it were a file system. 
-Now it's not a long term solution: If we're really going to be using the new system intensively, we 
-should learn it. But when you just got to get stuff done, having a familiar facade to something new 
-is a life saver. 
-
-py2store would like to make it easier for you roll out an adapter to be able to talk 
-to the new system in the way **you** are familiar with.
- 
-## Thinking about storage later, if ever
-
-You have a new project or need to write a new app. You'll need to store stuff and read stuff back. 
-Stuff: Different kinds of resources that your app will need to function. Some people enjoy thinking 
-of how to optimize that aspect. I don't. I'll leave it to the experts to do so when the time comes. 
-Often though, the time is later, if ever. Few proof of concepts and MVPs ever make it to prod. 
-
-So instead, I'd like to just get on with the business logic and write my program. 
-So what I need is an easy way to get some minimal storage functionality. 
-But when the time comes to optimize, I shouldn't have to change my code, but instead just change the way my 
-DAO does things. What I need is py2store.
-
-# Is a store an ORM? A DAO?
+## Is a store an ORM? A DAO?
 
 Call it what you want, really.
 
@@ -578,7 +595,8 @@ but rather to offer a consistent interface for basic storage operations.
 In that sense, py2store is more akin to an implementation of the data access object (DAO) pattern. 
 Of course, the difference between ORM and DAO can be blurry, so all this should be taken with a grain of salt.
 
-Advantages and disadvantages such abstractions are easy to search and find.
+Advantages and disadvantages such abstractions are easy to search and find, but in most cases the 
+pros probably outweigh the cons. 
 
 Most data interaction mechanisms can be satisfied by a subset of the collections.abc interfaces.
 For example, one can use python's collections.Mapping interface for any key-value storage, making the data access 
@@ -587,9 +605,126 @@ such as read/write, load/dump, etc.
 One of the dangers there is that, since the DAO looks and acts like a dict (but is not) a user might underestimate 
 the running-costs of some operations.
 
+## Should storage transform the data?
+
+When does "storing data" **not** transform data? The answer is that storage almost always transforms data in some way.
+But some of these transformations are taken for granted, because there's so often "attached" 
+(i.e. "co-occur") with the raw process of storing. In py2store, the data transformation is attached to (but not entangled with) the store object. 
+This means you have a specific place where you can check or change that aspect of storage.
+
+Having a consistent and simple interface to storage is useful. Being able to attach key and value 
+transformations to this interface is also very useful. But though you get a lot for cheap, it's 
+not free: Mapping the many (storage systems operations) to the one (consistent interface) means 
+that, through habit, you might project some misaligned expectations. 
+This is one of the known disadvantages of Data Access Objects (DAOs))
+
+Have a look at this surreal behavior:
+
+```python
+# defining the store
+from py2store.base import Store
+
+class MyFunnyStore(Store):
+    def _obj_of_data(self, data):
+        return f'hello {data}'
+    
+# trying the store out            
+s = MyFunnyStore()
+s['foo'] = 'bar'  # put 'bar' in 'foo'
+assert s['foo'] == 'hello bar'  # the value that 'foo' contains SEEMS to be 'hello bar'
+# so look how surreal that can be:
+s['foo'] = s['foo']  # retrieve what's under 'foo' and store it back into 'foo'
+assert s['foo'] == 'hello hello bar'  # what the...
+s['foo'] = s['foo']  # retrieve what's under 'foo' and store it back into 'foo'
+assert s['foo'] == 'hello hello hello bar'  # No no no! I do not like green eggs and ham!
+```
+
+This happens, because though you've said `s['foo'] = 'bar'`, the value returned by `s['foo']` is 
+actually `'hello bar'`. Why? Because though you've stored `'bar'`, you're transforming the data when you
+read it (that's what `_obj_of_data` does). 
+
+Is that a desirable behavior? Transforming the stored data before handing it to the user? 
+Well, this is such a common pattern that it has it's own acronym and tools named after the acronym: ETL.
+Extract, Transform, Load. 
+What is happening here is that we composed extraction and transformation. Is that acceptable? 
+
+Say I have a big store of tagged audio files of various formats but only want to work with 
+files containing the 'gunshot' tag and lasting no more than 10s, and further get the data as a 
+waveform (a sequence of samples).   
+
+You'd probably find this acceptable:
+
+```python
+audio_file_type=type_of(file)
+with open(file, 'wb') as fp:
+    file_bytes = fp.read()
+wf = convert_to_waveform(file_bytes)
+```
+
+Or this:
+```python
+filt = mk_file_filter(tag='gunshot', max_size_s=10)
+for file in filter(filt, audio_source):
+    with open(file, 'wb') as fp:
+        file_bytes = fp.read()
+    wf = convert_to_waveform(file_bytes, audio_file_type=type_of(file))
+    send_wf_for_analysis(wf)
+```
+
+You might even find it acceptable to put such code in a functions called `get_waveform_from_file`, 
+or `generator_of_waveforms_of_filtered_files`. 
+
+So why is it harder to accept something where you make a store that encompasses your needs. 
+You do `s = WfStore(audio_source, filt)` and then
+
+```python
+wf = s[some_file]  # get a waveform
+```
+
+or
+
+```python
+for wf in s.values():  # iterate over all waveforms
+    send_wf_for_analysis(wf)
+```
+
+
+Stores allow you to compose extraction and transformation, or transformation and loading, 
+and further specifying filter, caching, indexing, and many other aspects related to storage. 
+Those, py2store helps you create the perspective you want, or need. 
+
+That said, one needs to be careful that the simplicity thus created doesn't induce misuse. 
+For example, in the `MyFunnyStore` example above, we may want to use a different store to persist 
+and to read, and perhaps reflect their function in their names. For example:
+
+```python
+# defining the store
+from py2store.base import Store
+
+
+class ExtractAndTransform(Store):
+    def _obj_of_data(self, data):
+        return f'hello {data}'
+             
+store = Store()
+extract_and_transform = ExtractAndTransform(store)
+store['foo'] = 'bar'  # put 'bar' in 'foo'
+assert store['foo'] == 'bar'  # the value that store contains for 'foo' is 'bar'
+assert extract_and_transform['foo'] == 'hello bar'  # the value that extract_and_transform gives you is 'bar'
+```
+
 # Some links
+
+Presentation at PyBay 2019: https://www.youtube.com/watch?v=6lx0A6oVM5E
+
+ETL: Extract, Transform, Load: https://en.wikipedia.org/wiki/Extract,_transform,_load
 
 ORM: Object-relational mapping: https://en.wikipedia.org/wiki/Object-relational_mapping
 
 DAO: Data access object: https://en.wikipedia.org/wiki/Data_access_object
 
+DRY: https://en.wikipedia.org/wiki/Don%27t_repeat_yourself
+
+SOC: Separation Of Concerns: https://en.wikipedia.org/wiki/Separation_of_concerns
+
+COC: Convention Over Configuration: https://en.wikipedia.org/wiki/Convention_over_configuration
