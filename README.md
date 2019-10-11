@@ -252,7 +252,8 @@ assert list(s.values()) == ['hello bar']  # list all the values
 ```
 
 Note: This is an easy example to demo on-load transformation of data (i.e. deserialization), 
-but wouldn't be considered "deserialization" by all. See discussion below.
+but wouldn't be considered "deserialization" by all. 
+See the [Should storage transform the data?](#should-storage-transform-the-data) discussion below.
  
 In the following, we want to serialize our text by upper-casing it (and see it as such) 
 when we retrieve the text.
@@ -718,7 +719,6 @@ assert extract_and_transform['foo'] == 'hello bar'  # the value that extract_and
 Presentation at PyBay 2019: https://www.youtube.com/watch?v=6lx0A6oVM5E
 
 ETL: Extract, Transform, Load: https://en.wikipedia.org/wiki/Extract,_transform,_load
-
 ORM: Object-relational mapping: https://en.wikipedia.org/wiki/Object-relational_mapping
 
 DAO: Data access object: https://en.wikipedia.org/wiki/Data_access_object
