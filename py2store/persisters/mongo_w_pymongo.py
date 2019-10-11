@@ -55,12 +55,17 @@ class MongoPersister(Persister):
     {'first': 'Vitalik', 'last': 'Buterin'} --> {'yob': 1994, 'proj': 'ethereum', 'bdfl': True}
     """
 
-    def __init__(self, db_name='py2store', collection_name='test', key_fields=('_id',), data_fields=None,
-                 mongo_client_kwargs=None):
-        if mongo_client_kwargs is None:
-            mongo_client_kwargs = {}
-        self._mongo_client = MongoClient(**mongo_client_kwargs)
+
+    def __init__(
+            self,
+            uri,
+            collection='test',
+            key_fields=('_id',),
+            data_fields=None,
+    ):
+        db_name = uri.pop('db_name')
         self._db_name = db_name
+        self._mongo_client = MongoClient(**uri)
         self._collection_name = collection
         self._mgc = self._mongo_client[db_name][collection]
         if isinstance(key_fields, str):
