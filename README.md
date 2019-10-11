@@ -689,6 +689,10 @@ for wf in s.values():  # iterate over all waveforms
     send_wf_for_analysis(wf)
 ```
 
+It's harder to accept precisely because of the simplicity and consistency (with dict operations). 
+We're used to `s[some_file]` meaning "give me THE value stored in s, in the 'some_file' slot". 
+We're not used to `s[some_file]` meaning 
+"go get the data stored in `some_file` and give it to me in a format more convenient for my use".
 
 Stores allow you to compose extraction and transformation, or transformation and loading, 
 and further specifying filter, caching, indexing, and many other aspects related to storage. 
