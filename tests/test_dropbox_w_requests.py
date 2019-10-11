@@ -13,8 +13,8 @@ SHARED_FILE_URL = 'https://www.dropbox.com/s/wx9j4zm7zv9zffd/0b98e2af76c94a0a9cc
 def shared_folder_persister():
     path = 'tests/data/path'
     persister = DropboxFolderCopyReader(
-        url=SHARED_FOLDER_URL,
-        path=path,
+        uri=SHARED_FOLDER_URL,
+        collection=path,
     )
     yield persister
     try:

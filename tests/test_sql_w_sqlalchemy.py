@@ -1,6 +1,6 @@
 from py2store.persisters.sql_w_sqlalchemy import SQLAlchemyPersister
-from py2store.stores.sql_w_sqlalchemy import SQLAlchemyTupleStore, SQLAlchemyStore
-from tests.base_test import BaseStoreTest, BasePersisterTest, BaseKeyTupleStoreTest, BaseTupleStoreTest
+from py2store.stores.sql_w_sqlalchemy import SQLAlchemyTupleStore
+from tests.base_test import BasePersisterTest, BaseTupleStoreTest
 
 SQLITE_DB_URI = 'sqlite:///:memory:'
 SQLITE_TABLE_NAME = 'test_table'
@@ -8,8 +8,8 @@ SQLITE_TABLE_NAME = 'test_table'
 
 class TestSQLAlchemyPersister(BasePersisterTest):
     db = SQLAlchemyPersister(
-        db_uri=SQLITE_DB_URI,
-        collection_name=SQLITE_TABLE_NAME,
+        uri=SQLITE_DB_URI,
+        collection=SQLITE_TABLE_NAME,
         key_fields=list(BasePersisterTest.key.keys()),
         data_fields=list(BasePersisterTest.data.keys()),
     )
