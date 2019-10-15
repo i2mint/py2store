@@ -1,11 +1,11 @@
 import os
-import pickle
-from functools import partial, wraps
+from functools import wraps
 import json
 
 from py2store.base import Store, Persister
 from py2store.core import PrefixRelativizationMixin, PrefixRelativization
 from py2store.key_mappers.paths import mk_relative_path_store
+from py2store.serializers.pickled import mk_pickle_rw_funcs
 from py2store.persisters.local_files import PathFormatPersister, DirpathFormatKeys, DirReader, ensure_slash_suffix
 
 
@@ -106,6 +106,7 @@ RelPathLocalFileStoreEnforcingFormat.__doc__ = \
 RelativePathFormatStore = RelPathLocalFileStore
 RelativePathFormatStoreEnforcingFormat = RelPathLocalFileStoreEnforcingFormat
 
+
 # Old version it replaces
 # class RelativePathFormatStore(PrefixRelativizationMixin, Store):
 #     """Local file store using templated relative paths.
@@ -174,8 +175,7 @@ class PickleStore(RelativePathFormatStore):
                  fix_imports=True, protocol=None, pickle_encoding='ASCII', pickle_errors='strict',
                  **open_kwargs):
         super().__init__(path_format, mode='b', **open_kwargs)
-        self._loads = partial(pickle.loads, fix_imports=fix_imports, encoding=pickle_encoding, errors=pickle_errors)
-        self._dumps = partial(pickle.dumps, protocol=protocol, fix_imports=fix_imports)
+        self._loads, self._dumps = mk_pickle_rw_funcs(fix_imports, protocol, pickle_encoding, pickle_errors)
 
     def __getitem__(self, k):
         return self._loads(super().__getitem__(k))

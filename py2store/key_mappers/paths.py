@@ -1,6 +1,7 @@
 from functools import wraps
 from py2store.base import Store
 from py2store.util import lazyprop
+from py2store.dig import recursive_get_attr
 
 
 class PrefixRelativizationMixin:
@@ -67,6 +68,23 @@ def mk_relative_path_store(store_cls, name=None, with_key_validation=False):
     Returns: A new class that uses relative paths (i.e. where _prefix is automatically added to incoming keys,
         and the len(_prefix) first characters are removed from outgoing keys.
 
+    >>> # The dynamic way (if you try this at home, be aware of the pitfalls of the dynamic way
+    >>> # -- but don't just believe the static dogmas).
+    >>> MyStore = mk_relative_path_store(dict)  # wrap our favorite store: A dict.
+    >>> s = MyStore()  # make such a store
+    >>> s._prefix = '/ROOT/'
+    >>> s['foo'] = 'bar'
+    >>> dict(s.items())  # gives us what you would expect
+    {'foo': 'bar'}
+    >>>  # but underthe hood, the dict we wrapped actually contains the '/ROOT/' prefix
+    >>> dict(s.store)
+    {'/ROOT/foo': 'bar'}
+    >>>
+    >>> # The static way: Make a class that will integrate the _prefix at construction time.
+    >>> class MyStore(mk_relative_path_store(dict)):  # Indeed, mk_relative_path_store(dict) is a class you can subclass
+    ...     def __init__(self, _prefix, *args, **kwargs):
+    ...         self._prefix = _prefix
+
     """
     name = name or ('RelPath' + store_cls.__name__)
 
@@ -75,7 +93,7 @@ def mk_relative_path_store(store_cls, name=None, with_key_validation=False):
     @wraps(store_cls.__init__)
     def __init__(self, *args, **kwargs):
         super(cls, self).__init__(store=store_cls(*args, **kwargs))
-        self._prefix = self.store._prefix
+        self._prefix = recursive_get_attr(self.store, '_prefix', '')  # TODO: Might need descriptor to enable assignment
 
     cls.__init__ = __init__
 
@@ -90,6 +108,8 @@ def mk_relative_path_store(store_cls, name=None, with_key_validation=False):
         cls._id_of_key = _id_of_key
 
     return cls
+
+# mk_relative_path_store_cls = mk_relative_path_store  # alias
 
 ## Alternative to mk_relative_path_store that doesn't make lint complain (but the repr shows MyStore, not name)
 # def mk_relative_path_store_alt(store_cls, name=None):

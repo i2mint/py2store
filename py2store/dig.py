@@ -1,14 +1,18 @@
 from functools import partial
 
 
-def re_get_attr(store, attr, default=None):
+def recursive_get_attr(store, attr, default=None):
     a = getattr(store, attr, None)
     if a is not None:
         return a
     elif hasattr(store, 'store'):
-        return re_get_attr(store.store, attr, default)
+        return recursive_get_attr(store.store, attr, default)
     else:
         return default
+
+
+re_get_attr = recursive_get_attr
+dig_up = recursive_get_attr
 
 
 def store_trans_path(store, arg, method):
