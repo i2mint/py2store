@@ -21,6 +21,13 @@ soundfile_signature = dict(dtype=DFLT_DTYPE, format=DFLT_FORMAT, subtype=None, e
 class SampleRateAssertionError(ValueError): ...
 
 
+class ReadAudioFileMixin:
+    read_kwargs = {}
+
+    def _obj_of_data(self, data):
+        return sf.read(BytesIO(data), **self.read_kwargs)
+
+
 class PcmSerializationMixin:
     def __init__(self, sr, channels=DFLT_N_CHANNELS, dtype=DFLT_DTYPE, format='RAW', subtype='PCM_16', endian=None):
         assert isinstance(sr, int), "assert_sr must be an int"
