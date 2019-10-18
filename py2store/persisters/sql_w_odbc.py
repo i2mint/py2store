@@ -2,21 +2,40 @@ import platform
 import subprocess
 from collections.abc import MutableMapping
 
+from py2store.util import ModuleNotFoundErrorNiceMessage
+
+with ModuleNotFoundErrorNiceMessage():
+    import pyodbc
+
 
 class SQLServerPersister(MutableMapping):
-    def __init__(self, conn_protocol='tcp', host='localhost', port='1433', db_username='SA', db_pass='Admin123x',
-                 db_name='py2store', table_name='person', primary_key='id', data_fields=('name',)):
-
+    def __init__(
+            self,
+            uri,
+            # Example: dict(
+            #   conn_protocol='tcp',
+            #   host='localhost',
+            #   port='1433',
+            #   db_username='SA',
+            #   db_pass='Admin123x',
+            #   db_name='py2store',
+            # )
+            collection='py2store_default_table',
+            primary_key='id',
+            data_fields=('name',)
+    ):
         self.__check_dependencies()
-        self._sql_server_client = pyodbc.connect('DRIVER={{ODBC Driver 17 for SQL Server}};'
-                                                 'SERVER={}:{},{};'
-                                                 'DATABASE={};'
-                                                 'UID={};'
-                                                 'PWD={}'
-                                                 .format(conn_protocol, host, port, db_name, db_username, db_pass))
+        self._sql_server_client = pyodbc.connect(
+            'DRIVER={{ODBC Driver 17 for SQL Server}};'
+            'SERVER={conn_protocol}:{host},{port};'
+            'DATABASE={db_name};'
+            'UID={db_username};'
+            'PWD={db_pass}'
+            .format(**uri)
+        )
 
         self._cursor = self._sql_server_client.cursor()
-        self._table_name = table_name
+        self._table_name = collection
         self._primary_key = primary_key
 
         self._select_all_query = "SELECT * from {table};".format(table=self._table_name)
@@ -28,16 +47,6 @@ class SQLServerPersister(MutableMapping):
 
     @staticmethod
     def __check_dependencies():
-        import pkg_resources
-        installed_packages = [pkg.project_name for pkg in pkg_resources.working_set]
-        if 'pyodbc' not in installed_packages:
-            raise ModuleNotFoundError("'SQLServerPersister' depends on the module 'pyodbc' which is not installed. "
-                                      "Try installing dependency using 'pip install pyodbc'.")
-
-        # import pyodbc globally
-        global pyodbc
-        import pyodbc
-
         if 'ubuntu' in platform.platform().lower():
             result = subprocess.Popen(["dpkg", "-s", "msodbcsql17"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             out, err = result.communicate()
@@ -115,6 +124,3 @@ def test_sqlserver_persister():
 
     print("Getting the length")
     print(len(sql_server_persister))
-
-
-test_sqlserver_persister()

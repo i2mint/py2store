@@ -15,15 +15,15 @@ class SQLAlchemyPersister(Persister):
 
     def __init__(
             self,
-            db_uri='sqlite:///my_sqlite.db',
-            collection_name='py2store_default_table',
+            uri='sqlite:///my_sqlite.db',
+            collection='py2store_default_table',
             key_fields=('id',),
             data_fields=('data',),
             autocommit=True,
             **db_kwargs
     ):
         """
-        :param db_uri: Uniform Resource Identifier of a database you would like to use.
+        :param uri: Uniform Resource Identifier of a database you would like to use.
             Unix/Mac (note the four leading slashes)
                 sqlite:////absolute/path/to/foo.db
 
@@ -41,7 +41,7 @@ class SQLAlchemyPersister(Persister):
             I.e. in general:
                 dialect+driver://username:password@host:port/database
 
-        :param collection_name: name of the table to use, i.e. "my_table".
+        :param collection: name of the table to use, i.e. "my_table".
         :param key_fields: indexed keys columns names.
         :param data_fields: non-indexed data columns names.
         :param autocommit: whether each data change should be instantly commited, or not.
@@ -57,15 +57,15 @@ class SQLAlchemyPersister(Persister):
         self.table = None
         self.session = None
 
-        self.setup(db_uri, collection_name, **db_kwargs)
+        self.setup(uri, collection, **db_kwargs)
 
-    def setup(self, db_uri, collection_name, **db_kwargs):
+    def setup(self, uri, collection, **db_kwargs):
         # Setup connection to our DB:
-        engine = create_engine(db_uri, **db_kwargs)
+        engine = create_engine(uri, **db_kwargs)
         self.connection = engine.connect()
 
         # Create a table:
-        self.table = self._create_table(collection_name, engine)
+        self.table = self._create_table(collection, engine)
 
         # Open ORM session:
         self.session = sessionmaker(bind=engine)()

@@ -1,7 +1,8 @@
 from py2store.base import Persister
 from ftplib import FTP, all_errors
 import os.path
-from io import  BytesIO
+from io import BytesIO
+
 
 def remote_mkdir(ftp, remote_directory):
     """
@@ -16,7 +17,7 @@ def remote_mkdir(ftp, remote_directory):
         # top-level relative directory must exist
         return False
     try:
-        ftp.cwd(remote_directory) # sub-directory exists
+        ftp.cwd(remote_directory)  # sub-directory exists
     except all_errors:
         dirname, basename = os.path.split(remote_directory.rstrip('/'))
         remote_mkdir(ftp, dirname)  # make parent directories
@@ -58,15 +59,19 @@ class FtpPersister(Persister):
     0
     """
 
-    def __init__(self,
-                 user='dlpuser@dlptest.com',
-                 password='fLDScD4Ynth0p4OJ6bW6qCxjh',
-                 url='ftp.dlptest.com',
-                 rootdir='./py2store',
-                 encoding='utf8'
-                 ):
-        self._ftp = FTP(host=url, user=user, passwd=password)
-        self._rootdir = rootdir
+    def __init__(
+            self,
+            uri,
+            # Example dict(
+            #   user='dlpuser@dlptest.com',
+            #   password='fLDScD4Ynth0p4OJ6bW6qCxjh',
+            #   url='ftp.dlptest.com',
+            # )
+            collection='./py2store',
+            encoding='utf8'
+    ):
+        self._ftp = FTP(**uri)
+        self._rootdir = collection
         self._encoding = encoding
         self._ftp.encoding = encoding
         remote_mkdir(self._ftp, self._rootdir)

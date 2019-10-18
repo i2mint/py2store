@@ -57,22 +57,19 @@ class ArangoDbPersister(Persister):
 
     def __init__(
             self,
-            user='root',
-            password='root',
-            url='http://127.0.0.1:8529',
-            db_name='py2store',
-            collection_name='test',
+            uri,  # Example dict(
+            #   user='root',
+            #   password='root',
+            #   url='http://127.0.0.1:8529',
+            #   db_name='py2store',
+            # )
+            collection='test',
             key_fields=('key',),  # _id, _key and _rev are reserved by db
             key_fields_separator='::',
     ):
-        self._connection = Connection(
-            arangoURL=url,
-            username=user,
-            password=password,
-        )
-
-        self._db_name = db_name
-        self._collection_name = collection_name
+        self._db_name = uri.pop('db_name')
+        self._connection = Connection(**uri)
+        self._collection_name = collection
 
         # If DB not created:
         if not self._connection.hasDatabase(self._db_name):

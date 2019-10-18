@@ -12,9 +12,9 @@ with ModuleNotFoundErrorNiceMessage():
 class DropboxFolderCopyReader(Reader):
     """Makes a full local copy of the folder (by default, to a local temp folder) and gives access to it.
     """
-    def __init__(self, url, path=tempfile.gettempdir()):
-        self.url = url
-        self.path = path
+    def __init__(self, uri, collection=tempfile.gettempdir()):
+        self.url = uri
+        self.path = collection
 
         os.makedirs(self.path, exist_ok=True)
         self._zip_filepath = os.path.join(self.path, 'shared_folder.zip')
@@ -51,9 +51,9 @@ class DropboxFolderCopyReader(Reader):
 
 
 class DropboxFileCopyReader(Reader):
-    def __init__(self, url, path=None):
-        self.url = url
-        self.path = path or self._get_filename_from_url()
+    def __init__(self, uri, collection=None):
+        self.url = uri
+        self.path = collection or self._get_filename_from_url()
 
         download_from_dropbox(self.url, self.path, as_zip=False)
         self.file = open(self.path, 'r')

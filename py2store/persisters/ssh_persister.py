@@ -66,17 +66,36 @@ class SshPersister(Persister):
 
     def __init__(
             self,
-            user='stud',
-            password='stud',
-            url='10.1.103.201',
-            rootdir='./py2store',
-            encoding='utf8'
-        ):
+            uri,  # Example: dict(url='10.1.103.201', user='stud', password='stud')
+            collection='./py2store',
+            encoding='utf8',
+    ):
+        """
+        :param uri: A dict of the following key-values:
+            :param str hostname: the server to connect to, REQUIRED, others are optional
+            :param int port: the server port to connect to
+            :param str username:
+                the username to authenticate as (defaults to the current local
+                username)
+            :param str password:
+                Used for password authentication; is also used for private key
+                decryption if ``passphrase`` is not given.
+            :param str passphrase:
+                Used for decrypting private keys.
+            :param .PKey pkey: an optional private key to use for authentication
+            :param str key_filename:
+                the filename, or list of filenames, of optional private key(s)
+                and/or certs to try for authentication
+            :param float timeout:
+                an optional timeout (in
+        :param collection: root direction
+        :param encoding:
+        """
         self._ssh = paramiko.SSHClient()
         self._ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        self._ssh.connect(url, username=user, password=password)
+        self._ssh.connect(**uri)
         self._sftp = self._ssh.open_sftp()
-        self._rootdir = rootdir
+        self._rootdir = collection
         self._encoding = encoding
         remote_mkdir(self._sftp, self._rootdir)
 

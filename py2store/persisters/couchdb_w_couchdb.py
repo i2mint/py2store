@@ -65,27 +65,20 @@ class CouchDbPersister(Persister):
 
     def __init__(
             self,
-            user='admin',
-            password='admin',
-            url='http://127.0.0.1:5984',
-            db_name='py2store',
+            uri,  # Example: "https://username:password@example.com:5984/"
+            collection='py2store',
             key_fields=('_id',),
             couchdb_client_kwargs=None
     ):
         if couchdb_client_kwargs is None:
             couchdb_client_kwargs = {}
-        if user and password:
-            # put credentials in url if provided like https://username:password@example.com:5984/
-            if '//' in url:  # if scheme present
-                url = f'{url.split("//")[0]}//{user}:{password}@{url.split("//")[1]}'
-            else:
-                url = f'http//{user}:{password}@{url}'
-        self._couchdb_server = Server(url=url, **couchdb_client_kwargs)
-        self._db_name = db_name
+
+        self._couchdb_server = Server(url=uri, **couchdb_client_kwargs)
+        self._db_name = collection
         # if db not created
-        if db_name not in self._couchdb_server:
-            self._couchdb_server.create(db_name)
-        self._cdb = self._couchdb_server[db_name]
+        if collection not in self._couchdb_server:
+            self._couchdb_server.create(collection)
+        self._cdb = self._couchdb_server[collection]
         if isinstance(key_fields, str):
             key_fields = (key_fields,)
 

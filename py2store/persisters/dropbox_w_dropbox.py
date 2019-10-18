@@ -49,9 +49,15 @@ class DropboxPersister(Persister):
     >>> del s['/py2store_data/test/_can_remove']
     """
 
-    def __init__(self, rootdir, oauth2_access_token,
-                 connection_kwargs=None, files_upload_kwargs=None,
-                 files_list_folder_kwargs=None, rev=None):
+    def __init__(
+            self,
+            rootdir,
+            oauth2_access_token,
+            connection_kwargs=None,
+            files_upload_kwargs=None,
+            files_list_folder_kwargs=None,
+            rev=None,
+    ):
 
         if connection_kwargs is None:
             connection_kwargs = {}
