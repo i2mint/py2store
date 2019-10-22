@@ -1,4 +1,5 @@
-from py2store.caching import WriteCacheWithAutoFlush, join_byte_values_and_key_as_current_utc_milliseconds
+from py2store.utils.cumul_aggreg_write import join_byte_values_and_key_as_current_utc_milliseconds, \
+    CumulAggregWriteWithAutoFlush
 
 
 def append_and_print_state(store, data):
@@ -7,10 +8,10 @@ def append_and_print_state(store, data):
 
 
 def timestamp_on_store():
-    s = WriteCacheWithAutoFlush(store={},
-                                cache_to_kv=join_byte_values_and_key_as_current_utc_milliseconds,
-                                flush_cache_condition=lambda x: len(x) >= 3
-                               )
+    s = CumulAggregWriteWithAutoFlush(store={},
+                                      cache_to_kv=join_byte_values_and_key_as_current_utc_milliseconds,
+                                      flush_cache_condition=lambda x: len(x) >= 3
+                                      )
 
     append_and_print_state(s, b'Hello')
     append_and_print_state(s, b'World')
@@ -35,11 +36,11 @@ def timestamp_on_cache_and_concatenate_all_values():
         join_char = sorted_items[0][1][0:0]  # better way to get '' or b'' according to data type?
         yield k, join_char.join(x[1] for x in sorted_items)
 
-    s = WriteCacheWithAutoFlush(store={},
-                                cache_to_kv=min_key_joined_values,
-                                flush_cache_condition=lambda x: len(x) >= 3,
-                                mk_cache=TimestampedItemsCache
-                                )
+    s = CumulAggregWriteWithAutoFlush(store={},
+                                      cache_to_kv=min_key_joined_values,
+                                      flush_cache_condition=lambda x: len(x) >= 3,
+                                      mk_cache=TimestampedItemsCache
+                                      )
 
     append_and_print_state(s, b'Hello');
     time.sleep(0.1);

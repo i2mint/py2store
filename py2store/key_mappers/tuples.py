@@ -76,7 +76,7 @@ def mk_str_of_obj(attrs):
     """Make a function that transforms objects to strings, using specific attributes of object.
 
     Args:
-        attrs: Attributes that should be read off of the object to make the parameters of the stribg
+        attrs: Attributes that should be read off of the object to make the parameters of the string
 
     Returns:
         A transformation function
@@ -94,7 +94,9 @@ def mk_str_of_obj(attrs):
     >>> str_from_obj(a, 'ST{foo}/{bar}/G')
     'ST0/rin/G'
     """
-    dict_of_obj = lambda o: {k: getattr(o, k) for k in attrs}
+
+    def dict_of_obj(o):
+        return {k: getattr(o, k) for k in attrs}
 
     def str_of_obj(d, str_format):
         return str_of_dict(dict_of_obj(d), str_format)

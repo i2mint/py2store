@@ -8,6 +8,53 @@ See add_append_functionality_to_store_cls docs for examples.
 """
 
 import time
+import types
+
+
+def define_extend_as_seq_of_appends(obj):
+    """Inject an extend method in obj that will used append method.
+
+    Args:
+        obj: Class (type) or instance of an object that has an "append" method.
+
+    Returns: The obj, but with that extend method.
+
+    >>> class A:
+    ...     def __init__(self):
+    ...         self.t = list()
+    ...     def append(self, item):
+    ...         self.t.append(item)
+    ...
+    >>> AA = define_extend_as_seq_of_appends(A)
+    >>> a = AA()
+    >>> a.extend([1,2,3])
+    >>> a.t
+    [1, 2, 3]
+    >>> a.extend([10, 20])
+    >>> a.t
+    [1, 2, 3, 10, 20]
+    >>> a = A()
+    >>> a = define_extend_as_seq_of_appends(a)
+    >>> a.extend([1,2,3])
+    >>> a.t
+    [1, 2, 3]
+    >>> a.extend([10, 20])
+    >>> a.t
+    [1, 2, 3, 10, 20]
+
+    """
+    assert hasattr(obj, 'append'), f"Your object needs to have an append method! Object was: {obj}"
+
+    def extend(self, items):
+        for item in items:
+            self.append(item)
+
+    if isinstance(obj, type):
+        obj = type(obj.__name__, (obj,), {})
+        obj.extend = extend
+    else:
+        obj.extend = types.MethodType(extend, obj)
+    return obj
 
 
 def add_append_functionality_to_store_cls(store_cls, item2kv, new_store_name=None):
@@ -91,12 +138,12 @@ class mk_item2kv_for:
     >>> item_to_kv = mk_item2kv_for.fields(('G', 'L'), key_as_tuple=True)  # but ('G', 'L') order is respected here
     >>> item_to_kv({'L': 'let', 'I': 'it', 'G': 'go'})
     (('go', 'let'), {'I': 'it'})
-
     """
 
     @staticmethod
     def item_to_key(item2key):
-        """Make item2kv from a item2key function (the value will be the item itself)
+        """Make item2kv from a item2key function (the value will be the item itself).
+
         Args:
             item2key: an item -> key function
 
