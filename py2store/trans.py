@@ -1,4 +1,5 @@
 from functools import wraps
+import types
 from py2store.base import has_kv_store_interface, Store
 
 
@@ -181,12 +182,96 @@ _method_name_for = {
 }
 
 
-def insert_aliases(store, write=None, read=None, delete=None, list=None, count=None):
+def _insert_alias(store, method_name, alias=None):
+    if isinstance(alias, str) and hasattr(store, method_name):
+        setattr(store, alias, getattr(store, method_name))
+
+
+def insert_aliases(store, *, write=None, read=None, delete=None, list=None, count=None):
+    """Insert method aliases of CRUD operations of a store (class or instance).
+    If store is a class, you'll get a copy of the class with those methods added.
+    If store is an instance, the methods will be added in place (no copy will be made).
+
+    Note: If an operation (write, read, delete, list, count) is not specified, no alias will be created for
+    that operation.
+
+    IMPORTANT NOTE: The signatures of the methods the aliases will point to will not change.
+    We say this because, you can call the write method "dump", but you'll have to use it as
+    `store.dump(key, val)`, not `store.dump(val, key)`, which is the signature you're probably used to
+    (it's the one used by json.dump or pickle.dump for example). If you want that familiar interface,
+    using the insert_load_dump_aliases function.
+
+    Args:
+        store: The store to extend with aliases.
+        write: Desired method name for __setitem__
+        read: Desired method name for __getitem__
+        delete: Desired method name for __delitem__
+        list: Desired method name for __iter__
+        count: Desired method name for __len__
+
+    Returns: A store with the desired aliases.
+
+    >>> # Example of extending a class
+    >>> mydict = insert_aliases(dict, write='dump', read='load', delete='rm', list='peek', count='size')
+    >>> s = mydict(true='love')
+    >>> s.dump('friends', 'forever')
+    >>> s
+    {'true': 'love', 'friends': 'forever'}
+    >>> s.load('true')
+    'love'
+    >>> list(s.peek())
+    ['true', 'friends']
+    >>> s.size()
+    2
+    >>> s.rm('true')
+    >>> s
+    {'friends': 'forever'}
+    >>>
+    >>> # Example of extending an instance
+    >>> from collections import UserDict
+    >>> s = UserDict(true='love')  # make (and instance) of a UserDict (can't modify a dict instance)
+    >>> # make aliases of note that you don't need
+    >>> s = insert_aliases(s, write='put', read='retrieve', count='num_of_items')
+    >>> s.put('friends', 'forever')
+    >>> s
+    {'true': 'love', 'friends': 'forever'}
+    >>> s.retrieve('true')
+    'love'
+    >>> s.num_of_items()
+    2
+    """
+    if isinstance(store, type):
+        store = type(store.__name__, (store,), {})
     for alias, method_name in _method_name_for.items():
         _insert_alias(store, method_name, alias=locals().get(alias))
     return store
 
 
-def _insert_alias(store, method_name, alias=None):
-    if isinstance(alias, str) and hasattr(store, method_name):
-        setattr(store, alias, getattr(store, method_name))
+def insert_load_dump_aliases(store, delete=None, list=None, count=None):
+    """Insert load and dump methods, with familiar dump(obj, location) signature.
+
+    Args:
+        store: The store to extend with aliases.
+        delete: Desired method name for __delitem__
+        list: Desired method name for __iter__
+        count: Desired method name for __len__
+
+    Returns: A store with the desired aliases.
+
+    >>> mydict = insert_load_dump_aliases(dict)
+    >>> s = mydict()
+    >>> s.dump(obj='love', key='true')
+    >>> s
+    {'true': 'love'}
+    """
+    store = insert_aliases(store, read='load', delete=delete, list=list, count=count)
+
+    def dump(self, obj, key):
+        return self.__setitem__(key, obj)
+
+    if isinstance(store, type):
+        store.dump = dump
+    else:
+        store.dump = types.MethodType(dump, store)
+
+    return store
