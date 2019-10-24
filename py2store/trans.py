@@ -170,3 +170,23 @@ def wrap_kvs(store_cls, name=None, *, key_of_id=None, id_of_key=None, obj_of_dat
     # MyStore.__name__ = name
     #
     # return MyStore
+
+
+_method_name_for = {
+    'write': '__setitem__',
+    'read': '__getitem__',
+    'delete': '__delitem__',
+    'list': '__iter__',
+    'count': '__len__'
+}
+
+
+def insert_aliases(store, write=None, read=None, delete=None, list=None, count=None):
+    for alias, method_name in _method_name_for.items():
+        _insert_alias(store, method_name, alias=locals().get(alias))
+    return store
+
+
+def _insert_alias(store, method_name, alias=None):
+    if isinstance(alias, str) and hasattr(store, method_name):
+        setattr(store, alias, getattr(store, method_name))
