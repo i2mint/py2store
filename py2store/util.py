@@ -1,5 +1,80 @@
 import os
 import shutil
+import re
+
+var_str_p = re.compile('\W|^(?=\d)')
+
+
+def str_to_var_str(s: str) -> str:
+    """Make a valid python variable string from the input string.
+    Left untouched if already valid.
+
+    >>> str_to_var_str('this_is_a_valid_var_name')
+    'this_is_a_valid_var_name'
+    >>> str_to_var_str('not valid  #)*(&434')
+    'not_valid_______434'
+    >>> str_to_var_str('99_ballons')
+    '_99_ballons'
+    """
+    return var_str_p.sub('_', s)
+
+
+class DictAttr:
+    """Convenience class to hold Key-Val pairs with both a dict-like and struct-like interface.
+    The dict-like interface has just the basic get/set/del/iter/len
+    (all "dunders": none visible as methods). There is no get, update, etc.
+    This is on purpose, so that the only visible attributes (those you get by tab-completion for instance)
+    are the those you injected.
+
+    >>> da = DictAttr(foo='bar', life=42)
+    >>> da.foo
+    'bar'
+    >>> da['life']
+    42
+    >>> da.true = 'love'
+    >>> len(da)  # count the number of fields
+    3
+    >>> da['friends'] = 'forever'  # write as dict
+    >>> da.friends  # read as attribute
+    'forever'
+    >>> list(da)  # list fields (i.e. keys i.e. attributes)
+    ['foo', 'life', 'true', 'friends']
+    >>> del da['friends']  # delete as dict
+    >>> del da.foo # delete as attribute
+    >>> list(da)
+    ['life', 'true']
+    >>> da._dict  # the hidden dict that is wrapped
+    {'life': 42, 'true': 'love'}
+    """
+    _dict = None
+
+    def __init__(self, **kwargs):
+        super().__setattr__('_dict', {})
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+
+    def __getitem__(self, k):
+        return self._dict[k]
+
+    def __setitem__(self, k, v):
+        setattr(self, k, v)
+
+    def __delitem__(self, k):
+        delattr(self, k)
+
+    def __iter__(self):
+        return iter(self._dict.keys())
+
+    def __len__(self):
+        return len(self._dict)
+
+    def __setattr__(self, k, v):
+        self._dict[k] = v
+        super().__setattr__(k, v)
+
+    def __delattr__(self, k):
+        del self._dict[k]
+        super().__delattr__(k)
 
 
 def fill_with_dflts(d, dflt_dict=None):
