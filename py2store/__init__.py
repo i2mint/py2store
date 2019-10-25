@@ -4,6 +4,7 @@ import os
 from py2store.stores.local_store import LocalStore, LocalBinaryStore, LocalTextStore
 from py2store.stores.local_store import QuickStore, QuickBinaryStore, QuickTextStore
 from py2store.base import Store
+from py2store.trans import wrap_kvs
 
 file_sep = os.path.sep
 
