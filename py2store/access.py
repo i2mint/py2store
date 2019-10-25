@@ -17,6 +17,7 @@ respectively.
 import os
 from py2store.util import DictAttr, str_to_var_str
 
+
 def getenv(name, default=None):
     """Like os.getenv, but removes a suffix \\r character if present (problem with some env var systems)"""
     v = os.getenv(name, default)
@@ -48,4 +49,3 @@ except Exception as e:
     from warnings import warn
 
     warn(f"There was an exception when trying to get configs and defaults: {e}")
-
