@@ -9,7 +9,7 @@ with ModuleNotFoundErrorNiceMessage():
 class ArangoDbPersister(Persister):
     """
     A basic ArangoDB persister.
-    >>> from py2store.persisters._arangodb_in_progress import ArangoDbPersister
+    >>> from py2store.persisters.arangodb_w_pyarango import ArangoDbPersister
     >>> s = ArangoDbPersister()
     >>> k = {'key': '777'} # Each collection will happily accept user-defined _key values.
     >>> v = {'val': 'bar'}

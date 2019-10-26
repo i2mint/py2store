@@ -27,15 +27,15 @@ def random_word(length, alphabet, concat_func=add):
     Returns:
         A word (whose type depends on what concatenating elements from alphabet produces).
 
-    # Not making this a proper doctest because I don't know how to seed the global random temporarily
-    >>> random_word(4, 'abcde')  # e.g. 'acae'
-    >>> random_word(5, ['a', 'b', 'c'])  # e.g. 'cabba'
-    >>> random_word(4, [[1, 2, 3], [40, 50], [600], [7000]])  # e.g. [40, 50, 7000, 7000, 1, 2, 3]
-    >>> random_word(random_word(4, [1, 2, 3, 4]))  # e.g. 13 (because adding numbers...)
+    Not making this a proper doctest because I don't know how to seed the global random temporarily
+    >>> t = random_word(4, 'abcde');  # e.g. 'acae'
+    >>> t = random_word(5, ['a', 'b', 'c']);  # e.g. 'cabba'
+    >>> t = random_word(4, [[1, 2, 3], [40, 50], [600], [7000]]);  # e.g. [40, 50, 7000, 7000, 1, 2, 3]
+    >>> t = random_word(4, [1, 2, 3, 4]);  # e.g. 13 (because adding numbers...)
     >>> # ... sometimes it's what you want:
-    >>> random_word(4, [2 ** x for x in range(8)])  # e.g. 105 (binary combination)
-    >>> random_word(4, [1, 2, 3, 4], concat_func=lambda x, y: str(x) + str(y))  # e.g. '4213'
-    >>> random_word(4, [1, 2, 3, 4], concat_func=lambda x, y: int(str(x) + str(y)))  # e.g. 3432
+    >>> t = random_word(4, [2 ** x for x in range(8)]);  # e.g. 105 (binary combination)
+    >>> t = random_word(4, [1, 2, 3, 4], concat_func=lambda x, y: str(x) + str(y));  # e.g. '4213'
+    >>> t = random_word(4, [1, 2, 3, 4], concat_func=lambda x, y: int(str(x) + str(y)));  # e.g. 3432
     """
     if isinstance(alphabet, bytes) or isinstance(alphabet[0], bytes):
         # convert to list of bytes, or the function will return ints instead of bytes

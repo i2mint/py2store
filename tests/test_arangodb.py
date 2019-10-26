@@ -6,25 +6,29 @@ docker run -e ARANGO_ROOT_PASSWORD=somepassword -p 8529:8529 -d --name arangodb-
 sleep 10 && \
 pytest tests/test_arangodb.py
 """
-from py2store.persisters._arangodb_in_progress import ArangoDbPersister
-from py2store.stores.arangodb_store import ArangoDbTupleKeyStore
-from tests.base_test import BasePersisterTest, BaseKeyTupleStoreTest
+from py2store.util import ModuleNotFoundWarning
 
-DB_URL = 'http://127.0.0.1:8529'
-DB_PASSWORD = 'somepassword'
+with ModuleNotFoundWarning(f"{__file__}: One of the needed modules can't be found. Will skip this test."):
+    from py2store.persisters.arangodb_w_pyarango import ArangoDbPersister
+    from py2store.stores.arangodb_store import ArangoDbTupleKeyStore
 
+    from tests.base_test import BasePersisterTest, BaseKeyTupleStoreTest
 
-class TestArangoDbPersister(BasePersisterTest):
-    db = ArangoDbPersister(
-        url=DB_URL,
-        password=DB_PASSWORD,
-        key_fields=list(BasePersisterTest.key.keys()),
-    )
+    DB_URL = 'http://127.0.0.1:8529'
+    DB_PASSWORD = 'somepassword'
 
 
-class TestArangoDbTupleKeyStore(BaseKeyTupleStoreTest):
-    db = ArangoDbTupleKeyStore(
-        url=DB_URL,
-        password=DB_PASSWORD,
-        key_fields=BaseKeyTupleStoreTest.key_fields,
-    )
+    class TestArangoDbPersister(BasePersisterTest):
+        db = ArangoDbPersister(
+            url=DB_URL,
+            password=DB_PASSWORD,
+            key_fields=list(BasePersisterTest.key.keys()),
+        )
+
+
+    class TestArangoDbTupleKeyStore(BaseKeyTupleStoreTest):
+        db = ArangoDbTupleKeyStore(
+            url=DB_URL,
+            password=DB_PASSWORD,
+            key_fields=BaseKeyTupleStoreTest.key_fields,
+        )

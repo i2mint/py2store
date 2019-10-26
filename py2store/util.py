@@ -1,6 +1,7 @@
 import os
 import shutil
 import re
+from warnings import warn
 
 var_str_p = re.compile('\W|^(?=\d)')
 
@@ -275,7 +276,7 @@ class ModuleNotFoundErrorNiceMessage:
     def __exit__(self, exc_type, exc_val, exc_tb):
         if exc_type is ModuleNotFoundError:
             raise ModuleNotFoundError(f"""
-It seems you don't have requred `{exc_val.name}` package for this Store.
+It seems you don't have required `{exc_val.name}` package for this Store.
 Try installing it by running:
 
     pip install {exc_val.name}
@@ -283,3 +284,29 @@ Try installing it by running:
 in your terminal.
 For more information: https://pypi.org/project/{exc_val.name}
             """)
+
+
+class ModuleNotFoundWarning:
+    def __init__(self, msg="It seems you don't have a required package."):
+        self.msg = msg
+
+    def __enter__(self):
+        pass
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if exc_type is ModuleNotFoundError:
+            warn(self.msg)
+#             if exc_val is not None and getattr(exc_val, 'name', None) is not None:
+#                 warn(f"""
+# It seems you don't have required `{exc_val.name}` package for this Store.
+# This is just a warning: The process goes on...
+# (But, hey, if you really need that package, try installing it by running:
+#
+#     pip install {exc_val.name}
+#
+# in your terminal.
+# For more information: https://pypi.org/project/{exc_val.name}, or google around...
+#                 """)
+#             else:
+#                 print("It seems you don't have a required package")
+            return True
