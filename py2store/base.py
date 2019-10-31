@@ -39,13 +39,18 @@ ItemIter = Iterable[Item]
 
 
 class Reader(Mapping):
-    """ Acts as a Mapping abc, but computing __len__ by counting keys"""
+    """Acts as a Mapping abc, but with default __len__ (implemented by counting keys)
+    and head method to get the first (k, v) item of the store"""
 
     def __len__(self):
         count = 0
         for _ in self.__iter__():
             count += 1
         return count
+
+    def head(self):
+        return next(iter(self.items()))
+
 
 
 KvReader = Reader  # alias with explict name

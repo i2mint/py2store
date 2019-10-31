@@ -30,9 +30,12 @@ class S3AbsPathBinaryStore(Store):
 S3BinaryStore = mk_relative_path_store(S3AbsPathBinaryStore, 'S3BinaryStore')
 
 
-class S3StringStore(S3BinaryStore):
+class S3TextStore(S3BinaryStore):
     def _obj_of_data(self, data):
         return data.decode()
+
+
+S3StringStore = S3TextStore
 
 
 class S3PickleStore(S3BinaryStore):

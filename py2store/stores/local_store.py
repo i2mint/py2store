@@ -1,12 +1,12 @@
 import os
 from functools import wraps
-import json
 
 from py2store.base import Store, Persister
 from py2store.core import PrefixRelativizationMixin, PrefixRelativization
 from py2store.key_mappers.paths import mk_relative_path_store
 from py2store.serializers.pickled import mk_pickle_rw_funcs
 from py2store.persisters.local_files import PathFormatPersister, DirpathFormatKeys, DirReader, ensure_slash_suffix
+from py2store.mixins import SimpleJsonMixin
 
 
 class PathFormatStore(PathFormatPersister, Persister):
@@ -168,7 +168,7 @@ class LocalBinaryStore(RelativePathFormatStore):
         super().__init__(path_format, mode='b')
 
 
-class PickleStore(RelativePathFormatStore):
+class LocalPickleStore(RelativePathFormatStore):
     """Local files store with pickle serialization"""
 
     def __init__(self, path_format,
@@ -182,6 +182,9 @@ class PickleStore(RelativePathFormatStore):
 
     def __setitem__(self, k, v):
         return super().__setitem__(k, self._dumps(v))
+
+
+PickleStore = LocalPickleStore  # alias
 
 
 def mk_tmp_quick_store_dirpath(dirname=''):
@@ -206,33 +209,26 @@ class QuickLocalStoreMixin:
     def __setitem__(self, k, v):
         dirname = os.path.dirname(os.path.join(self._prefix, k))
         os.makedirs(dirname, exist_ok=1)
-        super().__setitem__(k, v)
+        return super().__setitem__(k, v)
 
 
 class QuickTextStore(QuickLocalStoreMixin, LocalTextStore):
     __doc__ = str(LocalTextStore.__doc__) + QuickLocalStoreMixin._docsuffix
 
 
-class QuickJsonStore(QuickTextStore):
-    """Make a quick store with simple json serialization.
-    Useful to store and retrieve
-    """
-
-    def _obj_of_data(self, data):
-        return json.loads(data)
-
-    def _data_of_obj(self, obj):
-        return json.dumps(obj)
-
-
 class QuickBinaryStore(QuickLocalStoreMixin, LocalBinaryStore):
     __doc__ = str(LocalBinaryStore.__doc__) + QuickLocalStoreMixin._docsuffix
 
 
-class QuickStore(QuickLocalStoreMixin, PickleStore):
+class QuickJsonStore(SimpleJsonMixin, QuickTextStore):
+    __doc__ = str(QuickTextStore.__doc__) + SimpleJsonMixin._docsuffix
+
+
+class QuickPickleStore(QuickLocalStoreMixin, PickleStore):
     __doc__ = str(PickleStore.__doc__) + QuickLocalStoreMixin._docsuffix
 
 
+QuickStore = QuickPickleStore  # alias
 LocalStore = QuickStore  # alias
 
 

@@ -8,67 +8,12 @@ from py2store.errors import NoSuchKeyError
 from py2store.base import KeyValidationABC
 from py2store.mixins import FilteredKeysMixin, IterBasedSizedMixin
 from py2store.parse_format import match_re_for_fstring
-from py2store.base import Persister
+from py2store.base import Persister, KvReader
 from py2store.errors import KeyValidationError
 
 DFLT_OPEN_MODE = ''
 
 file_sep = os.path.sep
-
-
-########################################################################################################################
-# A simple file persister
-
-def file_filt(p):
-    return os.path.isfile(p) and not p.startswith('.')
-
-
-def filepaths_under_root(rootdir):
-    if not rootdir.endswith(os.sep):
-        rootdir += os.sep
-    return filter(file_filt, iglob(rootdir + '**', recursive=True))
-
-
-class SimpleFilePersister(Persister):
-    """Read/write (text or binary) data to files under a given rootdir.
-    Keys must be absolute file paths.
-    Paths that don't start with rootdir will be raise a KeyValidationError.
-    Not the most efficient persister, but has the advantage of being simple.
-    """
-
-    def __init__(self, rootdir, mode='t'):
-        self.rootdir = ensure_slash_suffix(rootdir)
-        assert mode in {'t', 'b', ''}, f"mode ({mode}) not valid: Must be 't' or 'b'"
-        self.mode = mode
-
-    def _is_valid_key(self, k):
-        return k.startswith(self.rootdir)
-
-    def _validate_key(self, k):
-        if not self._is_valid_key(k):
-            raise KeyValidationError(f"Path ({k}) not valid. Must begin with {self.rootdir}")
-
-    def __getitem__(self, k):
-        self._validate_key(k)
-        with open(k, 'r' + self.mode) as fp:
-            data = fp.read()
-        return data
-
-    def __setitem__(self, k, v):
-        self._validate_key(k)
-        with open(k, 'w' + self.mode) as fp:
-            fp.write(v)
-
-    def __delitem__(self, k):
-        self._validate_key(k)
-        os.remove(k)
-
-    def __contains__(self, k):
-        self._validate_key(k)
-        return os.path.isfile(k)
-
-    def __iter__(self):
-        yield from filter(self._is_valid_key, filepaths_under_root(self.rootdir))
 
 
 ########################################################################################################################
@@ -310,9 +255,8 @@ def extend_prefix(prefix, new_prefix):
     return ensure_slash_suffix(os.path.join(prefix, new_prefix))
 
 
-class DirReader(Mapping):
+class DirReader(KvReader):
     """ KV Reader whose keys (AND VALUES) are directory full paths of the subdirectories of _prefix rootdir.
-    Though this is a KV Reader, deletes are permitted, but only empty directories can be deleted.
     """
 
     def __init__(self, _prefix):
@@ -339,14 +283,37 @@ class DirReader(Mapping):
         else:
             raise NoSuchKeyError(f"No such key (perhaps it's not a directory, or was deleted?): {k}")
 
-    def __len__(self):
-        c = 0
-        for _ in self.__iter__():
-            c += 1
-        return c
+    def __repr__(self):
+        return f"{self._class_name}('{self._prefix}')"
 
-    def head(self):
-        return next(iter(self.items()))
+
+class FileReader(KvReader):
+    """ KV Reader whose keys (AND VALUES) are file full paths of _prefix (rootdir).
+    """
+
+    def __init__(self, _prefix):
+        self._prefix = ensure_slash_suffix(_prefix)
+        # TODO: Look into alternatives for the raison d'etre of _new_node and _class_name
+        # (They are there, because using self.__class__ directly goes to super)
+        self._new_node = self.__class__
+        self._class_name = self.__class__.__name__
+
+    def _extended_prefix(self, new_prefix):
+        return extend_prefix(self._prefix, new_prefix)
+
+    def __contains__(self, k):
+        return k.startswith(self._prefix) and os.path.isdir(k)
+
+    def __iter__(self):
+        return filter(os.path.isdir,  # (3) filter out any non-directories
+                      map(self._extended_prefix,  # (2) extend prefix with sub-path name
+                          os.listdir(self._prefix)))  # (1) list file names under _prefix
+
+    def __getitem__(self, k):
+        if os.path.isdir(k):
+            return self._new_node(k)
+        else:
+            raise NoSuchKeyError(f"No such key (perhaps it's not a directory, or was deleted?): {k}")
 
     def __repr__(self):
         return f"{self._class_name}('{self._prefix}')"

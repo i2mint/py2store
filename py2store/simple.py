@@ -195,12 +195,52 @@ def iter_filepaths_in_folder_recursively(root_folder):
 
 
 ########################################################################################################################
-# Local File StoreBase
+# A simple file persister: This is just for illustrations/edmo sake.
+
+class VerySimpleFilePersister(Persister):
+    """Read/write (text or binary) data to files under a given rootdir.
+    Keys must be absolute file paths.
+    No protection of writing to other places but under rootdir.
+    Only lists files under rootdir (not recursive)
+    """
+
+    def __init__(self, rootdir):
+        self.rootdir = ensure_slash_suffix(rootdir)
+
+    def __getitem__(self, k):
+        with open(k, 'r') as fp:
+            data = fp.read()
+        return data
+
+    def __setitem__(self, k, v):
+        with open(k, 'w') as fp:
+            fp.write(v)
+
+    def __delitem__(self, k):
+        return os.remove(k)
+
+    def __contains__(self, k):
+        return os.path.isfile(k)
+
+    def __iter__(self):
+        yield from filter(os.path.isfile, os.listdir(self.rootdir))
+
+
+def file_filt(p):
+    return os.path.isfile(p) and not p.startswith('.')
+
+
+def filepaths_under_root(rootdir):
+    if not rootdir.endswith(os.sep):
+        rootdir += os.sep
+    return filter(file_filt, iglob(rootdir + '**', recursive=True))
+
 
 class SimpleFilePersister(Persister):
     """Read/write (text or binary) data to files under a given rootdir.
     Keys must be absolute file paths.
-    Paths that don't start with rootdir will be raise a KeyValidationError
+    Paths that don't start with rootdir will be raise a KeyValidationError.
+    Not the most efficient persister, but has the advantage of being simple.
     """
 
     def __init__(self, rootdir, mode='t'):
@@ -235,7 +275,7 @@ class SimpleFilePersister(Persister):
         return os.path.isfile(k)
 
     def __iter__(self):
-        yield from filter(self._is_valid_key, iter_filepaths_in_folder_recursively(self.rootdir))
+        yield from filter(self._is_valid_key, filepaths_under_root(self.rootdir))
 
 
 ########################################################################################################################
