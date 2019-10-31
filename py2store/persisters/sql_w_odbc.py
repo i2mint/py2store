@@ -3,35 +3,36 @@ import subprocess
 from collections.abc import MutableMapping
 
 from py2store.util import ModuleNotFoundErrorNiceMessage
+from py2store.utils.uri_parsing import parse_uri, build_uri
 
 with ModuleNotFoundErrorNiceMessage():
     import pyodbc
 
 
 class SQLServerPersister(MutableMapping):
-    def __init__(
-            self,
-            uri,
-            # Example: dict(
-            #   conn_protocol='tcp',
-            #   host='localhost',
-            #   port='1433',
-            #   db_username='SA',
-            #   db_pass='Admin123x',
-            #   db_name='py2store',
-            # )
-            collection='py2store_default_table',
-            primary_key='id',
-            data_fields=('name',)
-    ):
+    def __init__(self, uri, collection='py2store_default_table', primary_key='id', data_fields=('name',)):
+        """
+        :param uri: Uniform Resource Identifier of a database you would like to use.
+                tcp://user:password@localhost:1433/my_db
+                    or
+                user:password@localhost:1433/my_db
+                    or even just
+                user:password/my_db
+
+        :param collection: name of the table to use, i.e. "my_table".
+        :param primary_key: primary key column name.
+        :param data_fields: data columns names.
+        """
         self.__check_dependencies()
+
+        uri_parsed = parse_uri(uri)
         self._sql_server_client = pyodbc.connect(
             'DRIVER={{ODBC Driver 17 for SQL Server}};'
-            'SERVER={conn_protocol}:{host},{port};'
-            'DATABASE={db_name};'
-            'UID={db_username};'
-            'PWD={db_pass}'
-            .format(**uri)
+            'SERVER={scheme}:{host},{port};'
+            'DATABASE={database};'
+            'UID={username};'
+            'PWD={password}'
+            .format(**uri_parsed)
         )
 
         self._cursor = self._sql_server_client.cursor()
@@ -44,6 +45,11 @@ class SQLServerPersister(MutableMapping):
             table=self._table_name, primary_key=self._primary_key)
         self._del_query = "DELETE from {table} where {primary_key} = {{value}};".format(table=self._table_name,
                                                                                         primary_key=self._primary_key)
+
+    @classmethod
+    def from_kwargs(cls, database, username, password, host='localhost', port=1433, conn_protocol='tcp', **kwargs):
+        uri = build_uri(conn_protocol, database, username, password, host, port)
+        return cls(uri, **kwargs)
 
     @staticmethod
     def __check_dependencies():

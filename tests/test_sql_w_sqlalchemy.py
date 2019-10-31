@@ -21,10 +21,20 @@ class TestSQLAlchemyPersister(BasePersisterTest):
             assert val_from_db == data_val
 
 
+class TestSQLAlchemyPersisterInitedFromKwargs(TestSQLAlchemyPersister):
+    db = SQLAlchemyPersister.from_kwargs(
+        scheme='sqlite',
+        database='test2.db',
+        collection=SQLITE_TABLE_NAME,
+        key_fields=list(BasePersisterTest.key.keys()),
+        data_fields=list(BasePersisterTest.data.keys()),
+    )
+
+
 class TestSQLAlchemyTupleStore(BaseTupleStoreTest):
     db = SQLAlchemyTupleStore(
-        db_uri=SQLITE_DB_URI,
-        collection_name=SQLITE_TABLE_NAME,
+        uri=SQLITE_DB_URI,
+        collection=SQLITE_TABLE_NAME,
         key_fields=BaseTupleStoreTest.key_fields,
         data_fields=BaseTupleStoreTest.data_fields,
     )

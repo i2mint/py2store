@@ -3,6 +3,8 @@ from ftplib import FTP, all_errors
 import os.path
 from io import BytesIO
 
+from py2store.utils.uri_parsing import build_uri, parse_uri
+
 
 def remote_mkdir(ftp, remote_directory):
     """
@@ -62,19 +64,25 @@ class FtpPersister(Persister):
     def __init__(
             self,
             uri,
-            # Example dict(
-            #   user='dlpuser@dlptest.com',
-            #   password='fLDScD4Ynth0p4OJ6bW6qCxjh',
-            #   url='ftp.dlptest.com',
-            # )
             collection='./py2store',
             encoding='utf8'
     ):
-        self._ftp = FTP(**uri)
+        uri_parsed = parse_uri(uri)
+
+        self._ftp = FTP(
+            host=uri_parsed['host'],
+            user=uri_parsed['username'],
+            passwd=uri_parsed['password'],
+        )
         self._rootdir = collection
         self._encoding = encoding
         self._ftp.encoding = encoding
         remote_mkdir(self._ftp, self._rootdir)
+
+    @classmethod
+    def from_kwargs(cls, host, port=21, username='', password='', scheme='tcp', **kwargs):
+        uri = build_uri(scheme, username=username, password=password, host=host, port=port)
+        return cls(uri, **kwargs)
 
     def __getitem__(self, k):
         bio = BytesIO()

@@ -1,6 +1,7 @@
 from py2store.base import Persister
 
 from py2store.util import ModuleNotFoundErrorNiceMessage
+from py2store.utils.uri_parsing import build_uri, parse_uri
 
 with ModuleNotFoundErrorNiceMessage():
     from pymongo import MongoClient
@@ -55,7 +56,6 @@ class MongoPersister(Persister):
     {'first': 'Vitalik', 'last': 'Buterin'} --> {'yob': 1994, 'proj': 'ethereum', 'bdfl': True}
     """
 
-
     def __init__(
             self,
             uri,
@@ -63,15 +63,17 @@ class MongoPersister(Persister):
             key_fields=('_id',),
             data_fields=None,
     ):
-        db_name = uri.pop('db_name')
+        # db_name = uri.pop('db_name')
+        uri, db_name = uri.rsplit('/', 1)
+        uri_parsed = parse_uri(uri)
+
         self._db_name = db_name
-        self._mongo_client = MongoClient(**uri)
+        self._mongo_client = MongoClient(**uri_parsed)
         self._collection_name = collection
         self._mgc = self._mongo_client[db_name][collection]
+
         if isinstance(key_fields, str):
             key_fields = (key_fields,)
-        if data_fields is None:
-            pass
 
         self._key_projection = {k: True for k in key_fields}
         if '_id' not in key_fields:
@@ -85,6 +87,11 @@ class MongoPersister(Persister):
 
         self._data_fields = data_fields
         self._key_fields = key_fields
+
+    @classmethod
+    def from_kwargs(cls, database, username, password, host='localhost', port=1433, scheme='mongodb', **kwargs):
+        uri = build_uri(scheme, database, username, password, host, port)
+        return cls(uri, **kwargs)
 
     def __getitem__(self, k):
         doc = self._mgc.find_one(k, projection=self._data_fields)

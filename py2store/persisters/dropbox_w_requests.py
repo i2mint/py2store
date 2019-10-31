@@ -22,6 +22,10 @@ class DropboxFolderCopyReader(Reader):
         self._files = []
         self._get_folder()
 
+    @classmethod
+    def from_kwargs(cls, **kwargs):
+        return cls(**kwargs)
+
     def __getitem__(self, rel_path):
         real_path = os.path.join(self.path, rel_path)
         try:
@@ -57,6 +61,10 @@ class DropboxFileCopyReader(Reader):
 
         download_from_dropbox(self.url, self.path, as_zip=False)
         self.file = open(self.path, 'r')
+
+    @classmethod
+    def from_kwargs(cls, **kwargs):
+        return cls(**kwargs)
 
     def __getitem__(self, index):
         self.file.seek(0)

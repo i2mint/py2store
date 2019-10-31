@@ -1,5 +1,6 @@
 from py2store.base import Persister
 from py2store.util import ModuleNotFoundErrorNiceMessage
+from py2store.utils.uri_parsing import build_uri
 
 with ModuleNotFoundErrorNiceMessage():
     from couchdb import Server
@@ -83,6 +84,11 @@ class CouchDbPersister(Persister):
             key_fields = (key_fields,)
 
         self._key_fields = key_fields
+
+    @classmethod
+    def from_kwargs(cls, username, password, host='localhost', port=5984, scheme='http', database='', **kwargs):
+        uri = build_uri(scheme, database, username, password, host, port)
+        return cls(uri, **kwargs)
 
     def __get_item_internal(self, k):
         # some methods need original couch docs, so __getitem__ is divided on two methods

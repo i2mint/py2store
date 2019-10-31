@@ -51,14 +51,13 @@ class DropboxPersister(Persister):
 
     def __init__(
             self,
-            rootdir,
-            oauth2_access_token,
+            uri='oauth2_access_token',
+            collection='my/root/dir',
             connection_kwargs=None,
             files_upload_kwargs=None,
             files_list_folder_kwargs=None,
             rev=None,
     ):
-
         if connection_kwargs is None:
             connection_kwargs = {}
         if files_upload_kwargs is None:
@@ -66,8 +65,11 @@ class DropboxPersister(Persister):
         if files_list_folder_kwargs is None:
             files_list_folder_kwargs = {'recursive': True, 'include_non_downloadable_files': False}
 
-        self._prefix = rootdir
-        self._con = Dropbox(oauth2_access_token, **connection_kwargs)
+        self._con = Dropbox(
+            uri,  # OAuth token here
+            **connection_kwargs
+        )
+        self._prefix = collection  # aka root dir
         self._connection_kwargs = connection_kwargs
         self._files_upload_kwargs = files_upload_kwargs
         self._files_list_folder_kwargs = files_list_folder_kwargs

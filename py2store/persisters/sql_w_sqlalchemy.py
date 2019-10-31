@@ -1,4 +1,5 @@
 from py2store.util import ModuleNotFoundErrorNiceMessage
+from py2store.utils.uri_parsing import build_uri
 
 with ModuleNotFoundErrorNiceMessage():
     from sqlalchemy import create_engine, Column, String, Table
@@ -24,14 +25,14 @@ class SQLAlchemyPersister(Persister):
     ):
         """
         :param uri: Uniform Resource Identifier of a database you would like to use.
-            Unix/Mac (note the four leading slashes)
+            Unix/Mac
                 sqlite:////absolute/path/to/foo.db
 
-            Windows (note 3 leading forward slashes and backslash escapes)
+            Windows
                 sqlite:///C:\\absolute\\path\\to\\foo.db
 
             Or go for in-memory DB with NO PERSISTANCE:
-            sqlite:///:memory:
+                sqlite:///:memory:
 
             Other options:
                 postgresql://user:password@localhost:5432/my_db
@@ -39,13 +40,13 @@ class SQLAlchemyPersister(Persister):
                 oracle://user:password:tiger@localhost:1521/sidname
 
             I.e. in general:
-                dialect+driver://username:password@host:port/database
+                scheme://username:password@host:port/database
 
         :param collection: name of the table to use, i.e. "my_table".
         :param key_fields: indexed keys columns names.
         :param data_fields: non-indexed data columns names.
-        :param autocommit: whether each data change should be instantly commited, or not.
-            It's off for context manager usecase (tbd).
+        :param autocommit: whether each data change should be instantly
+            commited, or not. It's off for context manager usecase (tbd).
 
         :param kwargs: any extra kwargs for SQLAlchemy engine to setup.
         """
@@ -58,6 +59,17 @@ class SQLAlchemyPersister(Persister):
         self.session = None
 
         self.setup(uri, collection, **db_kwargs)
+
+    @classmethod
+    def from_kwargs(cls, scheme='sqlite', database='my_sqlite.db',
+                    username=None, password=None,
+                    host='localhost', port=None, **kwargs):
+        if scheme == 'sqlite':
+            uri = f'sqlite:///{database}'
+        else:
+            uri = build_uri(scheme, database, username, password, host, port)
+
+        return cls(uri, **kwargs)
 
     def setup(self, uri, collection, **db_kwargs):
         # Setup connection to our DB:
