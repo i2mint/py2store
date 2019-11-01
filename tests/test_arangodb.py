@@ -1,5 +1,5 @@
 """
-How to run a test ArangoDB instance locally with a Docker container:
+How to run a test of ArangoDB instance locally with a Docker container:
 
 docker rm -f arangodb-test
 docker run -e ARANGO_ROOT_PASSWORD=somepassword -p 8529:8529 -d --name arangodb-test arangodb

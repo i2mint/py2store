@@ -1,5 +1,5 @@
 """
-How to run a test MongoDB instance locally with a Docker container:
+How to run a test of MongoDB instance locally with a Docker container:
 
 docker rm -f mongo-test
 docker run -d -p 27017:27017 --name mongo-test mongo

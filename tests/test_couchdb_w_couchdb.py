@@ -1,5 +1,5 @@
 """
-How to run a test CouchDB instance locally with a Docker container:
+How to run a test of CouchDB instance locally with a Docker container:
 
 docker rm -f couchdb-test
 docker run -d -p 5984:5984 --name couchdb-test couchdb

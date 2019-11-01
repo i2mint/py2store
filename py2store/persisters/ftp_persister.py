@@ -70,7 +70,7 @@ class FtpPersister(Persister):
         uri_parsed = parse_uri(uri)
 
         self._ftp = FTP(
-            host=uri_parsed['host'],
+            host=uri_parsed['hostname'],
             user=uri_parsed['username'],
             passwd=uri_parsed['password'],
         )
