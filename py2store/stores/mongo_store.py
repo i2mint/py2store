@@ -17,7 +17,8 @@ class MongoTupleKeyStore(MongoStore):
     """
     MongoStore using tuple keys.
 
-    >>> s = MongoTupleKeyStore(collection_name='tmp', key_fields=('_id', 'user'))
+    >>> s = MongoTupleKeyStore(db_name='py2store_tests', collection_name='tmp', key_fields=('_id', 'user'))
+    >>> for k in s: del s[k]
     >>> k = (1234, 'user')
     >>> v = {'name': 'bob', 'age': 42}
     >>> if k in s:  # deleting all docs in tmp
@@ -44,6 +45,44 @@ class MongoTupleKeyStore(MongoStore):
 
     def _key_of_id(self, _id):
         return tuple(_id[x] for x in self._key_fields)
+
+
+# TODO: Finish
+class MongoAnyKeyStore(MongoStore):
+    """
+    MongoStore using tuple keys.
+
+    >>> s = MongoAnyKeyStore(db_name='py2store_tests', collection_name='tmp', )
+    >>> for k in s: del s[k]
+    >>> s['foo'] = {'must': 'be', 'a': 'dict'}
+    >>> assert s['foo']
+    {'must': 'be', 'a': 'dict'}
+    >>> ss = MongoStore()
+    >>> ss[{'_id': 'foo'}]  # see that 'foo' was actually put in the _id field
+    >>>
+    """
+
+    @wraps(MongoStore.__init__)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        assert isinstance(self._key_fields, tuple), "key_fields should be a tuple or a string"
+        assert len(self._key_fields) == 1, "key_fields must have one and only one element (a string)"
+        self._key_field = self._key_fields[0]
+
+    @lazyprop
+    def _key_fields(self):
+        return self.store._key_fields
+
+    def _id_of_key(self, k):
+        return {self._key_field: k}
+
+    def _key_of_id(self, _id):
+        return _id[self._key_field]
+
+    def __setitem__(self, k, v):
+        if k in self:
+            del self[k]
+        super().__setitem__(k, v)
 
 
 def test_mongo_store(s=MongoStore(), k=None, v=None):

@@ -15,6 +15,7 @@ By default, they are:
 respectively.
 """
 import os
+from warnings import warn
 from py2store.util import DictAttr, str_to_var_str
 
 
@@ -35,10 +36,30 @@ user_defaults = None
 try:
     import json
 
-    user_configs_filepath = os.path.expanduser(getenv('PY2STORE_CONFIGS_JSON_FILEPATH', '~/.py2store_configs.json'))
-    if os.path.isfile(user_configs_filepath):
-        user_configs_dict = json.load(open(user_configs_filepath))
-        user_configs = DictAttr(**{str_to_var_str(k): v for k, v in user_configs_dict.items()})
+    user_configs_dirpath = os.path.expanduser(getenv('PY2STORE_CONFIGS_DIR', '~/.py2store_configs'))
+    if os.path.isdir(user_configs_dirpath):
+        def directory_json_items():
+            for f in filter(lambda x: x.endswith('.json'), os.listdir(user_configs_dirpath)):
+                filepath = os.path.join(user_configs_dirpath, f)
+                name, _ = os.path.splitext(f)
+                try:
+                    d = json.load(open(filepath))
+                    yield str_to_var_str(name), d
+                except json.JSONDecodeError:
+                    warn(f"This json file couldn't be json-decoded: {filepath}")
+                except Exception:
+                    warn(f"Unknown error when trying to json.load this file: {filepath}")
+
+
+        user_configs = DictAttr(**{k: v for k, v in directory_json_items()})
+
+    else:
+        warn(f"The configs directory wasn't found (please make it): {user_configs_dirpath}")
+        warn("Configs in a single json is being deprecated")
+        user_configs_filepath = os.path.expanduser(getenv('PY2STORE_CONFIGS_JSON_FILEPATH', '~/.py2store_configs.json'))
+        if os.path.isfile(user_configs_filepath):
+            user_configs_dict = json.load(open(user_configs_filepath))
+            user_configs = DictAttr(**{str_to_var_str(k): v for k, v in user_configs_dict.items()})
 
     user_defaults_filepath = os.path.expanduser(getenv('PY2STORE_DEFAULTS_JSON_FILEPATH', '~/.py2store_defaults.json'))
     if os.path.isfile(user_defaults_filepath):
@@ -46,6 +67,4 @@ try:
         user_defaults = DictAttr(**{str_to_var_str(k): v for k, v in user_defaults_dict.items()})
 
 except Exception as e:
-    from warnings import warn
-
     warn(f"There was an exception when trying to get configs and defaults: {e}")
