@@ -28,7 +28,7 @@ class SQLServerPersister(MutableMapping):
         uri_parsed = parse_uri(uri)
         self._sql_server_client = pyodbc.connect(
             'DRIVER={{ODBC Driver 17 for SQL Server}};'
-            'SERVER={scheme}:{host},{port};'
+            'SERVER={scheme}:{hostname},{port};'
             'DATABASE={database};'
             'UID={username};'
             'PWD={password}'
