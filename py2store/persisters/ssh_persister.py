@@ -82,7 +82,7 @@ class SshPersister(Persister):
         self._ssh = paramiko.SSHClient()
         self._ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         self._ssh.connect(
-            hostname=parsed_uri['host'],
+            hostname=parsed_uri['hostname'],
             port=parsed_uri.get('port', 22),
             username=parsed_uri.get('username'),
             password=parsed_uri.get('password'),
