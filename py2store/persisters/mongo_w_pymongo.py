@@ -63,14 +63,10 @@ class MongoPersister(Persister):
             key_fields=('_id',),
             data_fields=None,
     ):
-        # db_name = uri.pop('db_name')
-        uri, db_name = uri.rsplit('/', 1)
-        uri_parsed = parse_uri(uri)
-
-        self._db_name = db_name
-        self._mongo_client = MongoClient(**uri_parsed)
+        uri, self._db_name = uri.rsplit('/', 1)
+        self._mongo_client = MongoClient(uri)
         self._collection_name = collection
-        self._mgc = self._mongo_client[db_name][collection]
+        self._mgc = self._mongo_client[self._db_name][collection]
 
         if isinstance(key_fields, str):
             key_fields = (key_fields,)
