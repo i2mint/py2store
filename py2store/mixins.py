@@ -1,4 +1,19 @@
+import json
 from py2store.errors import WritesNotAllowed, DeletionsNotAllowed, OverWritesNotAllowedError
+
+
+class SimpleJsonMixin:
+    """simple json serialization.
+    Useful to store and retrieve
+    """
+    _docsuffix = "Data is assumed to be a JSON string, and is loaded with json.loads and dumped with json.dumps"
+
+    def _obj_of_data(self, data):
+        return json.loads(data)
+
+    def _data_of_obj(self, obj):
+        return json.dumps(obj)
+
 
 
 class IdentityKeysWrapMixin:
@@ -116,6 +131,7 @@ class OverWritesNotAllowedMixin:
     ... else:
     ...     raise RuntimeWarning("Actually, we EXPECT for an OverWritesNotAllowedError to be raised")
     """
+
     def __setitem__(self, k, v):
         if self.__contains__(k):
             raise OverWritesNotAllowedError(

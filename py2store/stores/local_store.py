@@ -1,11 +1,12 @@
 import os
-import pickle
-from functools import partial, wraps
-from warnings import warn
+from functools import wraps
 
 from py2store.base import Store, Persister
 from py2store.core import PrefixRelativizationMixin, PrefixRelativization
+from py2store.key_mappers.paths import mk_relative_path_store
+from py2store.serializers.pickled import mk_pickle_rw_funcs
 from py2store.persisters.local_files import PathFormatPersister, DirpathFormatKeys, DirReader, ensure_slash_suffix
+from py2store.mixins import SimpleJsonMixin
 
 
 class PathFormatStore(PathFormatPersister, Persister):
@@ -93,27 +94,41 @@ class PathFormatStore(PathFormatPersister, Persister):
     pass
 
 
-class RelativePathFormatStore(PrefixRelativizationMixin, Store):
-    """Local file store using templated relative paths.
-    """
+RelPathLocalFileStore = mk_relative_path_store(PathFormatPersister)
+RelPathLocalFileStore.__doc__ = """Local file store using templated relative paths."""
 
-    @wraps(PathFormatStore.__init__)
-    def __init__(self, *args, **kwargs):
-        super().__init__(store=PathFormatStore(*args, **kwargs))
-        self._prefix = self.store._prefix
+RelPathLocalFileStoreEnforcingFormat = mk_relative_path_store(PathFormatPersister)
+RelPathLocalFileStoreEnforcingFormat.__doc__ = \
+    """A RelativePathFormatStore, but that won't allow one to use a key that is not valid 
+    (according to the self.store.is_valid_key boolean method)"""
+
+# aliases for back compatibility
+RelativePathFormatStore = RelPathLocalFileStore
+RelativePathFormatStoreEnforcingFormat = RelPathLocalFileStoreEnforcingFormat
 
 
-class RelativePathFormatStoreEnforcingFormat(RelativePathFormatStore):
-    """A RelativePathFormatStore, but that won't allow one to use a key that is not valid
-    (according to the self.store.is_valid_key boolean method).
-    """
-
-    def _id_of_key(self, k):
-        _id = super()._id_of_key(k)
-        if self.store.is_valid_key(_id):
-            return _id
-        else:
-            raise ValueError(f"Key not valid: {k}")
+# Old version it replaces
+# class RelativePathFormatStore(PrefixRelativizationMixin, Store):
+#     """Local file store using templated relative paths.
+#     """
+#
+#     @wraps(PathFormatStore.__init__)
+#     def __init__(self, *args, **kwargs):
+#         super().__init__(store=PathFormatStore(*args, **kwargs))
+#         self._prefix = self.store._prefix
+#
+#
+# class RelativePathFormatStoreEnforcingFormat(RelativePathFormatStore):
+#     """A RelativePathFormatStore, but that won't allow one to use a key that is not valid
+#     (according to the self.store.is_valid_key boolean method).
+#     """
+#
+#     def _id_of_key(self, k):
+#         _id = super()._id_of_key(k)
+#         if self.store.is_valid_key(_id):
+#             return _id
+#         else:
+#             raise KeyError(f"Key not valid: {k}")
 
 
 class MakeMissingDirsStoreMixin:
@@ -140,26 +155,27 @@ class RelativePathFormatStore2(PrefixRelativizationMixin, PathFormatStoreWithPre
 
 
 class LocalTextStore(RelativePathFormatStore):
+    """Local files store for text data"""
+
     def __init__(self, path_format):
         super().__init__(path_format, mode='t')
 
 
 class LocalBinaryStore(RelativePathFormatStore):
+    """Local files store for binary data"""
+
     def __init__(self, path_format):
         super().__init__(path_format, mode='b')
 
 
-class PickleStore(RelativePathFormatStore):
-    """
-    A local files pickle store
-    """
+class LocalPickleStore(RelativePathFormatStore):
+    """Local files store with pickle serialization"""
 
     def __init__(self, path_format,
                  fix_imports=True, protocol=None, pickle_encoding='ASCII', pickle_errors='strict',
                  **open_kwargs):
         super().__init__(path_format, mode='b', **open_kwargs)
-        self._loads = partial(pickle.loads, fix_imports=fix_imports, encoding=pickle_encoding, errors=pickle_errors)
-        self._dumps = partial(pickle.dumps, protocol=protocol, fix_imports=fix_imports)
+        self._loads, self._dumps = mk_pickle_rw_funcs(fix_imports, protocol, pickle_encoding, pickle_errors)
 
     def __getitem__(self, k):
         return self._loads(super().__getitem__(k))
@@ -168,18 +184,21 @@ class PickleStore(RelativePathFormatStore):
         return super().__setitem__(k, self._dumps(v))
 
 
+PickleStore = LocalPickleStore  # alias
+
+
 def mk_tmp_quick_store_dirpath(dirname=''):
     from tempfile import gettempdir
     temp_root = gettempdir()
     return os.path.join(temp_root, dirname)
 
 
-class QuickStore(PickleStore):
-    """Make a quick persisting store with minimal (or no) further specification.
-    Will persist in the local file system using relative paths and pickle to serialize.
-    If directories in the path don't exist, they're made automatically.
-    If the root directory for the store isn't given, you'll be given one (but it will be a temporary folder).
+class QuickLocalStoreMixin:
+    """A mixin that will choose a path_format if none given, and will create directories under the (temp) root,
+    at write time, as needed.
     """
+
+    _docsuffix = ' with default temp root and auto dir generation on write.'
 
     def __init__(self, path_format=None):
         if path_format is None:
@@ -190,9 +209,26 @@ class QuickStore(PickleStore):
     def __setitem__(self, k, v):
         dirname = os.path.dirname(os.path.join(self._prefix, k))
         os.makedirs(dirname, exist_ok=1)
-        super().__setitem__(k, v)
+        return super().__setitem__(k, v)
 
 
+class QuickTextStore(QuickLocalStoreMixin, LocalTextStore):
+    __doc__ = str(LocalTextStore.__doc__) + QuickLocalStoreMixin._docsuffix
+
+
+class QuickBinaryStore(QuickLocalStoreMixin, LocalBinaryStore):
+    __doc__ = str(LocalBinaryStore.__doc__) + QuickLocalStoreMixin._docsuffix
+
+
+class QuickJsonStore(SimpleJsonMixin, QuickTextStore):
+    __doc__ = str(QuickTextStore.__doc__) + SimpleJsonMixin._docsuffix
+
+
+class QuickPickleStore(QuickLocalStoreMixin, PickleStore):
+    __doc__ = str(PickleStore.__doc__) + QuickLocalStoreMixin._docsuffix
+
+
+QuickStore = QuickPickleStore  # alias
 LocalStore = QuickStore  # alias
 
 
@@ -206,6 +242,7 @@ class DirStore(Store):
     >>> s = DirStore(root)
     >>> assert set(s).issuperset({'stores', 'persisters', 'serializers', 'key_mappers'})
     """
+
     def __init__(self, rootdir):
         rootdir = ensure_slash_suffix(rootdir)
         super().__init__(store=DirReader(rootdir))

@@ -1,5 +1,81 @@
 import os
 import shutil
+import re
+from warnings import warn
+
+var_str_p = re.compile('\W|^(?=\d)')
+
+
+def str_to_var_str(s: str) -> str:
+    """Make a valid python variable string from the input string.
+    Left untouched if already valid.
+
+    >>> str_to_var_str('this_is_a_valid_var_name')
+    'this_is_a_valid_var_name'
+    >>> str_to_var_str('not valid  #)*(&434')
+    'not_valid_______434'
+    >>> str_to_var_str('99_ballons')
+    '_99_ballons'
+    """
+    return var_str_p.sub('_', s)
+
+
+class DictAttr:
+    """Convenience class to hold Key-Val pairs with both a dict-like and struct-like interface.
+    The dict-like interface has just the basic get/set/del/iter/len
+    (all "dunders": none visible as methods). There is no get, update, etc.
+    This is on purpose, so that the only visible attributes (those you get by tab-completion for instance)
+    are the those you injected.
+
+    >>> da = DictAttr(foo='bar', life=42)
+    >>> da.foo
+    'bar'
+    >>> da['life']
+    42
+    >>> da.true = 'love'
+    >>> len(da)  # count the number of fields
+    3
+    >>> da['friends'] = 'forever'  # write as dict
+    >>> da.friends  # read as attribute
+    'forever'
+    >>> list(da)  # list fields (i.e. keys i.e. attributes)
+    ['foo', 'life', 'true', 'friends']
+    >>> del da['friends']  # delete as dict
+    >>> del da.foo # delete as attribute
+    >>> list(da)
+    ['life', 'true']
+    >>> da._dict  # the hidden dict that is wrapped
+    {'life': 42, 'true': 'love'}
+    """
+    _dict = None
+
+    def __init__(self, **kwargs):
+        super().__setattr__('_dict', {})
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+
+    def __getitem__(self, k):
+        return self._dict[k]
+
+    def __setitem__(self, k, v):
+        setattr(self, k, v)
+
+    def __delitem__(self, k):
+        delattr(self, k)
+
+    def __iter__(self):
+        return iter(self._dict.keys())
+
+    def __len__(self):
+        return len(self._dict)
+
+    def __setattr__(self, k, v):
+        self._dict[k] = v
+        super().__setattr__(k, v)
+
+    def __delattr__(self, k):
+        del self._dict[k]
+        super().__delattr__(k)
 
 
 def fill_with_dflts(d, dflt_dict=None):
@@ -200,7 +276,7 @@ class ModuleNotFoundErrorNiceMessage:
     def __exit__(self, exc_type, exc_val, exc_tb):
         if exc_type is ModuleNotFoundError:
             raise ModuleNotFoundError(f"""
-It seems you don't have requred `{exc_val.name}` package for this Store.
+It seems you don't have required `{exc_val.name}` package for this Store.
 Try installing it by running:
 
     pip install {exc_val.name}
@@ -208,3 +284,39 @@ Try installing it by running:
 in your terminal.
 For more information: https://pypi.org/project/{exc_val.name}
             """)
+
+
+class ModuleNotFoundWarning:
+    def __init__(self, msg="It seems you don't have a required package."):
+        self.msg = msg
+
+    def __enter__(self):
+        pass
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if exc_type is ModuleNotFoundError:
+            warn(self.msg)
+            #             if exc_val is not None and getattr(exc_val, 'name', None) is not None:
+            #                 warn(f"""
+            # It seems you don't have required `{exc_val.name}` package for this Store.
+            # This is just a warning: The process goes on...
+            # (But, hey, if you really need that package, try installing it by running:
+            #
+            #     pip install {exc_val.name}
+            #
+            # in your terminal.
+            # For more information: https://pypi.org/project/{exc_val.name}, or google around...
+            #                 """)
+            #             else:
+            #                 print("It seems you don't have a required package")
+            return True
+
+
+class ModuleNotFoundIgnore:
+    def __enter__(self):
+        pass
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if exc_type is ModuleNotFoundError:
+            pass
+        return True

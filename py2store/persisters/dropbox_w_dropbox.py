@@ -1,4 +1,5 @@
 from py2store.base import Persister
+from py2store.mixins import ReadOnlyMixin
 
 from py2store.util import ModuleNotFoundErrorNiceMessage
 
@@ -18,9 +19,6 @@ def _is_file_not_found_error(error_object):
                 return True
     return False
 
-
-# TODO: Not tested significantly. Need to test with larger folders and bigger files.
-# TODO: Lots of better exception handling to do.
 
 class DropboxPersister(Persister):
     """
@@ -82,16 +80,16 @@ class DropboxPersister(Persister):
     def __getitem__(self, k):
         try:
             metadata, contents_response = self._con.files_download(k)
-        except ApiError as err:
-            if _is_file_not_found_error(err):
+        except ApiError as e:
+            if _is_file_not_found_error(e):
                 raise KeyError(f"Key doesn't exist: {k}")
-            else:
-                raise ValueError("Some unknown error happened (sorry, the lazy dev didn't tell me more than that).")
-        if contents_response.status_code:
-            return contents_response.content
-        else:
+            raise
+
+        if not contents_response.status_code:
             raise ValueError(
                 "Response code wasn't 200 when trying to download a file (yet the file seems to exist).")
+
+        return contents_response.content
 
     def __setitem__(self, k, v):
         return self._con.files_upload(v, k, **self._files_upload_kwargs)
@@ -100,50 +98,48 @@ class DropboxPersister(Persister):
         return self._con.files_delete_v2(k, self._rev)
 
 
-# def _entry_is_dir(entry):
-#     return not hasattr(entry, 'is_downloadable')
-#
-#
-# def _entry_is_file(entry):
-#     return hasattr(entry, 'is_downloadable')
-#
-#
-# def _extend_path(path, extension):
-#     extend_path = '/' + path + '/' + extension + '/'
-#     extend_path.replace('//', '/')
-#     return extend_path
-#
-#
-# class DropboxLinkPersister(DropboxPersister):
-#     def __init__(self, url, oauth2_access_token):
-#         self._con = Dropbox(oauth2_access_token)
-#         self.url = url
-#         self.shared_link = SharedLink(url=url)
-#
-#     def _yield_from_files_list_folder(self, path, path_gen):
-#         """
-#         yield paths from path_gen, which can be a files_list_folder or a files_list_folder_continue,
-#         in a depth search manner.
-#         """
-#         for x in path_gen.entries:
-#             try:
-#                 if _entry_is_file(x):
-#                     yield x.name
-#                 else:
-#                     folder_path = _extend_path(path, x.name)
-#                     yield from self._get_path_gen_from_path(path=folder_path)
-#             except Exception as e:
-#                 print(e)
-#         if path_gen.has_more:
-#             yield from self._get_path_gen_from_cursor(path_gen.cursor, path=path)
-#
-#     def _get_path_gen_from_path(self, path):
-#         path_gen = self._con.files_list_folder(path=path, recursive=False, shared_link=self.shared_link)
-#         yield from self._yield_from_files_list_folder(path, path_gen)
-#
-#     def _get_path_gen_from_cursor(self, cursor, path):
-#         path_gen = self._con.files_list_folder_continue(cursor)
-#         yield from self._yield_from_files_list_folder(path, path_gen)
-#
-#     def __iter__(self):
-#         yield from self._get_path_gen_from_path(path='')
+def _entry_is_dir(entry):
+    return not hasattr(entry, 'is_downloadable')
+
+
+def _entry_is_file(entry):
+    return hasattr(entry, 'is_downloadable')
+
+
+def _extend_path(path, extension):
+    extend_path = '/' + path + '/' + extension + '/'
+    extend_path.replace('//', '/')
+    return extend_path
+
+
+class DropboxLinkPersister(ReadOnlyMixin, DropboxPersister):
+    def __init__(self, url, oauth2_access_token):
+        self._con = Dropbox(oauth2_access_token)
+        self.url = url
+        self.shared_link = SharedLink(url=url)
+
+    def _yield_from_files_list_folder(self, path, path_gen):
+        """
+        yield paths from path_gen, which can be a files_list_folder or a files_list_folder_continue,
+        in a depth search manner.
+        """
+        for x in path_gen.entries:
+            if _entry_is_file(x):
+                yield x.path_display
+            else:
+                folder_path = _extend_path(path, x.name)
+                yield from self._get_path_gen_from_path(path=folder_path)
+
+        if path_gen.has_more:
+            yield from self._get_path_gen_from_cursor(path_gen.cursor, path=path)
+
+    def _get_path_gen_from_path(self, path):
+        path_gen = self._con.files_list_folder(path=path, recursive=False, shared_link=self.shared_link)
+        yield from self._yield_from_files_list_folder(path, path_gen)
+
+    def _get_path_gen_from_cursor(self, cursor, path):
+        path_gen = self._con.files_list_folder_continue(cursor)
+        yield from self._yield_from_files_list_folder(path, path_gen)
+
+    def __iter__(self):
+        yield from self._get_path_gen_from_path(path='')

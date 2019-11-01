@@ -172,57 +172,6 @@ def mk_prefix_templates_dicts(template):
     return prefix_template_dict_including_name, prefix_template_dict_excluding_name
 
 
-def process_info_dict_for_example(**info_dict):
-    if 's_ums' in info_dict:
-        info_dict['s_ums'] = int(info_dict['s_ums'])
-    if 'e_ums' in info_dict:
-        info_dict['e_ums'] = int(info_dict['e_ums'])
-    return info_dict
-
-
-def example_process_kwargs(**kwargs):
-    from datetime import datetime
-    from ut.util.time import second_ms, utcnow_ms
-    if 's_ums' in kwargs:
-        kwargs['s_ums'] = int(kwargs['s_ums'])
-    if 'e_ums' in kwargs:
-        kwargs['e_ums'] = int(kwargs['e_ums'])
-
-    if 'day' in kwargs:
-        day = kwargs['day']
-        # get the day in the expected format
-        if isinstance(day, str):
-            if day == 'now':
-                day = datetime.utcfromtimestamp(int(utcnow_ms() / second_ms)).strftime(day_format)
-            elif day == 'from_s_ums':
-                assert 's_ums' in kwargs, "need to have s_ums argument"
-                day = datetime.utcfromtimestamp(int(kwargs['s_ums'] / second_ms)).strftime(day_format)
-            else:
-                assert day_format_pattern.match(day)
-        elif isinstance(day, datetime):
-            day = day.strftime(day_format)
-        elif 's_ums' in kwargs:  # if day is neither a string nor a datetime
-            day = datetime.utcfromtimestamp(int(kwargs['s_ums'] / second_ms)).strftime(day_format)
-
-        kwargs['day'] = day
-
-    return kwargs
-
-
-naming_kwargs_for_kind = dict(
-    example=dict(
-        template='s3://bucket-{group}/example/files/{user}/{subuser}/{day}/{s_ums}_{e_ums}',
-        format_dict={'s_ums': '\d+', 'e_ums': '\d+', 'day': "[^/]+"},
-        process_kwargs=example_process_kwargs,
-        process_info_dict=process_info_dict_for_example
-    ),
-    uploads=dict(
-        template='s3://uploads/{group}/upload/files/{user}/{day}/{subuser}/{filename}',
-        format_dict={'day': "[^/]+", 'filepath': '.+'}
-    )
-)
-
-
 def mk_kwargs_trans(**trans_func_for_key):
     """ Make a dict transformer from functions that depends solely on keys (of the dict to be transformed)
     Used to easily make process_kwargs and process_info_dict arguments for LinearNaming.
@@ -241,7 +190,54 @@ def mk_kwargs_trans(**trans_func_for_key):
 class LinearNaming(object):
     def __init__(self, template, format_dict=None,
                  process_kwargs=None, process_info_dict=None):
+        """
 
+        Args:
+            template: The string format template
+            format_dict: A {field_name: field_value_format_regex, ...} dict
+            process_kwargs: A function taking the field=value pairs and producing a dict of processed
+                {field: value,...} dict (where both fields and values could have been processed.
+                This is useful when we need to process (format, default, etc.) fields, or their values,
+                according to the other fields of values in the collection.
+                A specification of {field: function_to_process_this_value,...} wouldn't allow the full powers
+                we are allowing here.
+            process_info_dict: A sort of converse of format_dict.
+                This is a {field_name: field_conversion_func, ...} dict that is used to convert info_dict values
+                before returning them.
+
+        >>> ln = LinearNaming('/home/{user}/fav/{num}.txt',
+        ...	                  format_dict={'user': '[^/]+', 'num': '\d+'},
+        ...	                  process_info_dict={'num': int}
+        ...	                 )
+        >>> ln.is_valid('/home/USER/fav/123.txt')
+        True
+        >>> ln.is_valid('/home/US/ER/fav/123.txt')
+        False
+        >>> ln.is_valid('/home/US/ER/fav/not_a_number.txt')
+        False
+        >>> ln.mk('USER', num=123)  # making a string (with args or kwargs)
+        '/home/USER/fav/123.txt'
+        >>> # Note: but ln.mk('USER', num='not_a_number') would fail because num is not valid
+        >>> ln.info_dict('/home/USER/fav/123.txt')  # note in the output, 123 is an int, not a string
+        {'user': 'USER', 'num': 123}
+        >>>
+        >>> ####### prefix methods #######
+        >>> ln.is_valid_prefix('/home/USER/fav/')
+        True
+        >>> ln.is_valid_prefix('/home/USER/fav/12')
+        False  # too long
+        >>> ln.is_valid_prefix('/home/USER/fav')
+        False  # too short
+        >>> ln.is_valid_prefix('/home/')
+        True  # just right
+        >>> ln.is_valid_prefix('/home/USER/fav/123.txt')  # full path, so output same as is_valid() method
+        True
+        >>>
+        >>> ln.mk_prefix('ME')
+        '/home/ME/fav/'
+        >>> ln.mk_prefix(user='YOU', num=456)  # full specification, so output same as same as mk() method
+        '/home/YOU/fav/456.txt'
+        """
         if format_dict is None:
             format_dict = {}
 
@@ -260,6 +256,12 @@ class LinearNaming(object):
         extract_pattern = {}
         for name in names:
             extract_pattern[name] = mk_extract_pattern(template, format_dict, named_capture_patterns, name)
+
+        if isinstance(process_info_dict, dict):
+            _processor_for_kw = process_info_dict
+
+            def process_info_dict(**info_dict):
+                return {k: _processor_for_kw.get(k, lambda x: x)(v) for k, v in info_dict.items()}
 
         self.names = names
         self.n_names = len(names)
@@ -281,33 +283,12 @@ class LinearNaming(object):
     def __call__(self, *args, **kwargs):
         return self.mk(*args, **kwargs)
 
-    @classmethod
-    def for_kind(cls, kind):
-        """
-        Returns a LinearNaming object for the given kind of sref.
-        :param kind: the kind of sref naming object you want (e.g. example, uploads, audio_file, or otocom_a)
-        :return:
-        """
-        self = cls(**naming_kwargs_for_kind[kind])
-        self.kind = kind
-        return self
-
     def is_valid(self, sref):
         """
         Check if the name has the "upload format" (i.e. the kind of srefs that are _ids of fv_mgc, and what
         sref means in most of the iatis system.
         :param sref: the sref (string) to check
         :return: True iff sref has the upload format
-        >>> self = LinearNaming.for_kind('example')
-        >>> upload_sref = 's3://bucket-GROUP/example/files/USER/SUBUSER/2017-01-24/1485272231982_1485261448469'
-        >>> uploads_sref = "s3://uploads/GROUP/upload/files/USER/2017-01-24/SUBUSER/a_file.wav"
-        >>> self.is_valid(upload_sref)
-        True
-        >>> self.is_valid(uploads_sref)
-        False
-        >>> self = LinearNaming.for_kind('uploads')
-        >>> self.is_valid(uploads_sref)
-        True
         """
         return bool(self.pattern.match(sref))
 
@@ -316,21 +297,6 @@ class LinearNaming(object):
         Check if sref is a valid prefix.
         :param sref: a string (that might be a valid sref prefix)
         :return: True iff sref is a valid prefix
-        >>> self = LinearNaming.for_kind('example')
-        >>> self.is_valid_prefix('s3://bucket-')
-        True
-        >>> self.is_valid_prefix('s3://bucket-GROUP')
-        False
-        >>> self.is_valid_prefix('s3://bucket-GROUP/example/')
-        False
-        >>> self.is_valid_prefix('s3://bucket-GROUP/example/files')
-        False
-        >>> self.is_valid_prefix('s3://bucket-GROUP/example/files/')
-        True
-        >>> self.is_valid_prefix('s3://bucket-GROUP/example/files/USER/SUBUSER/2017-01-24/')
-        True
-        >>> self.is_valid_prefix('s3://bucket-GROUP/example/files/USER/SUBUSER/2017-01-24/0_0')
-        True
         """
         return bool(self.prefix_pattern.match(sref))
 
@@ -339,16 +305,6 @@ class LinearNaming(object):
         Get a dict with the arguments of an sref (for example group, user, subuser, etc.)
         :param sref:
         :return: a dict holding the argument names and values
-        >>> self = LinearNaming.for_kind('example')
-        >>> upload_sref = 's3://bucket-GROUP/example/files/USER/SUBUSER/2017-01-24/1485272231982_1485261448469'
-        >>> self.info_dict(upload_sref)  # see that utc_ms args were cast to ints
-        {'group': 'GROUP', 'user': 'USER', 'subuser': 'SUBUSER', 'day': '2017-01-24', 's_ums': 1485272231982, 'e_ums': 1485261448469}
-        >>> uploads_sref = "s3://uploads/GROUP/upload/files/USER/2017-01-24/SUBUSER/a_file.wav"
-        >>> self.info_dict(uploads_sref)  # returns None (because self was made for example!
-        >>>
-        >>> self = LinearNaming.for_kind('uploads')  # but if you make an object for uploads, it will work
-        >>> self.info_dict(uploads_sref)
-        {'group': 'GROUP', 'user': 'USER', 'day': '2017-01-24', 'subuser': 'SUBUSER', 'filename': 'a_file.wav'}
         """
         m = self.pattern.match(sref)
         if m:
@@ -368,18 +324,6 @@ class LinearNaming(object):
         :param item: item of the item to extract
         :param sref: the sref from which to extract it
         :return: the value for name
-        >>> self = LinearNaming.for_kind('example')
-        >>> chk_sref = "s3://bucket-GROUP/example/files/USER/SUBUSER/2017-01-24/1485272231982_1485261448469"
-        >>> self.extract('group', chk_sref)
-        'GROUP'
-        >>> self.extract('user', chk_sref)
-        'USER'
-        >>> self = LinearNaming.for_kind('uploads')
-        >>> uploads_sref = "s3://uploads/ANOTHER_GROUP/upload/files/ANOTHER_USER/2017-01-24/SUBUSER/a_file.wav"
-        >>> self.extract('group', uploads_sref)
-        'ANOTHER_GROUP'
-        >>> self.extract('user', uploads_sref)
-        'ANOTHER_USER'
         """
         return self.extract_pattern[item].match(sref).group(1)
 
@@ -387,37 +331,6 @@ class LinearNaming(object):
         """
         Make a prefix for an uploads sref that has has the path up to the first None argument.
         :return: A string that is the prefix of a valid sref
-        >>> self = LinearNaming.for_kind('example')
-        >>> self.mk_prefix()
-        's3://bucket-'
-        >>> self.mk_prefix(group='GROUP')
-        's3://bucket-GROUP/example/files/'
-        >>> self.mk_prefix(group='GROUP', user='USER')
-        's3://bucket-GROUP/example/files/USER/'
-        >>> self.mk_prefix(group='GROUP', user='USER', subuser='SUBUSER')
-        's3://bucket-GROUP/example/files/USER/SUBUSER/'
-        >>> self.mk_prefix(group='GROUP', user='USER', subuser='SUBUSER', day='0000-00-00')
-        's3://bucket-GROUP/example/files/USER/SUBUSER/0000-00-00/'
-        >>> self.mk_prefix(group='GROUP', user='USER', subuser='SUBUSER', day='0000-00-00',
-        ... s_ums=1485272231982)
-        's3://bucket-GROUP/example/files/USER/SUBUSER/0000-00-00/1485272231982_'
-        >>> self.mk_prefix(group='GROUP', user='USER', subuser='SUBUSER', day='0000-00-00',
-        ... s_ums=1485272231982, e_ums=1485261448469)
-        's3://bucket-GROUP/example/files/USER/SUBUSER/0000-00-00/1485272231982_1485261448469'
-        >>>
-        >>> self = LinearNaming.for_kind('uploads')
-        >>> self.mk_prefix()
-        's3://uploads/'
-        >>> self.mk_prefix(group='GROUP')
-        's3://uploads/GROUP/upload/files/'
-        >>> self.mk_prefix(group='GROUP', user='USER')
-        's3://uploads/GROUP/upload/files/USER/'
-        >>> self.mk_prefix(group='GROUP', user='USER', day='DAY')
-        's3://uploads/GROUP/upload/files/USER/DAY/'
-        >>> self.mk_prefix(group='GROUP', user='USER', day='DAY')
-        's3://uploads/GROUP/upload/files/USER/DAY/'
-        >>> self.mk_prefix(group='GROUP', user='USER', day='DAY', subuser='SUBUSER')
-        's3://uploads/GROUP/upload/files/USER/DAY/SUBUSER/'
         """
         assert len(args) + len(kwargs) <= self.n_names, "You have too many arguments"
         kwargs = dict({k: v for k, v in zip(self.names, args)}, **kwargs)
@@ -443,14 +356,6 @@ class LinearNaming(object):
         Does NOT check for validity of the vals.
         :param kwargs: The name=val arguments needed to construct a valid sref
         :return: an sref
-        >>> self = LinearNaming.for_kind('example')
-        >>> self.mk(group='GROUP', user='USER', subuser='SUBUSER', day='0000-00-00',
-        ... s_ums=1485272231982, e_ums=1485261448469)
-        's3://bucket-GROUP/example/files/USER/SUBUSER/0000-00-00/1485272231982_1485261448469'
-        >>> self = LinearNaming.for_kind('example')
-        >>> self.mk(group='GROUP', user='USER', subuser='SUBUSER', day='from_s_ums',
-        ... s_ums=1485272231982, e_ums=1485261448469)
-        's3://bucket-GROUP/example/files/USER/SUBUSER/2017-01-24/1485272231982_1485261448469'
         """
         assert len(args) + len(kwargs) == self.n_names, "You're missing, or have too many arguments"
         kwargs = dict({k: v for k, v in zip(self.names, args)}, **kwargs)
@@ -464,10 +369,6 @@ class LinearNaming(object):
         :param sref: the sref to replace
         :param elements_kwargs: the arguments to replace (and their values)
         :return: a new sref
-        >>> self = LinearNaming.for_kind('example')
-        >>> sref = 's3://bucket-redrum/example/files/oopsy@domain.com/ozeip/2008-11-04/1225779243969_1225779246969'
-        >>> self.replace_sref_elements(sref, user='NEW_USER', group='NEW_GROUP')
-        's3://bucket-NEW_GROUP/example/files/NEW_USER/ozeip/2008-11-04/1225779243969_1225779246969'
         """
         sref_info_dict = self.info_dict(sref)
         for k, v in elements_kwargs.items():
@@ -489,6 +390,33 @@ class LinearNaming(object):
                 v = v.pattern
             s += "  * {}: {}\n\n".format(k, v)
         return s
+
+
+from py2store.base import Store
+
+
+class StoreWithTupleKeys(Store):
+    def __init__(self, store, linear_naming=None):
+        super().__init__(store)
+        self._linear_naming = linear_naming
+
+    def _id_of_key(self, key):
+        return self._linear_naming.mk(*key)
+
+    def _key_of_id(self, _id):
+        return self._linear_naming.info_tuple(_id)
+
+
+class StoreWithDictKeys(Store):
+    def __init__(self, store, linear_naming=None):
+        super().__init__(store)
+        self._linear_naming = linear_naming
+
+    def _id_of_key(self, key):
+        return self._linear_naming.mk(**key)
+
+    def _key_of_id(self, _id):
+        return self._linear_naming.info_dict(_id)
 
 
 class NamingInterface(object):
@@ -549,3 +477,154 @@ class NamingInterface(object):
 
     def is_valid_name(self, name):
         raise NotImplementedError("Interface method: Method needs to be implemented")
+
+
+class BigDocTest():
+    """
+    >>>
+    >>> e_name = BigDocTest.mk_e_naming()
+    >>> u_name = BigDocTest.mk_u_naming()
+    >>> e_sref = 's3://bucket-GROUP/example/files/USER/SUBUSER/2017-01-24/1485272231982_1485261448469'
+    >>> u_sref = "s3://uploads/GROUP/upload/files/USER/2017-01-24/SUBUSER/a_file.wav"
+    >>> u_sref_2 = "s3://uploads/ANOTHER_GROUP/upload/files/ANOTHER_USER/2017-01-24/SUBUSER/a_file.wav"
+    >>>
+    >>> ####### is_valid(self, sref): ######
+    >>> e_name.is_valid(e_sref)
+    True
+    >>> e_name.is_valid(u_sref)
+    False
+    >>> u_name.is_valid(u_sref)
+    True
+    >>>
+    >>> ####### is_valid_prefix(self, sref): ######
+    >>> e_name.is_valid_prefix('s3://bucket-')
+    True
+    >>> e_name.is_valid_prefix('s3://bucket-GROUP')
+    False
+    >>> e_name.is_valid_prefix('s3://bucket-GROUP/example/')
+    False
+    >>> e_name.is_valid_prefix('s3://bucket-GROUP/example/files')
+    False
+    >>> e_name.is_valid_prefix('s3://bucket-GROUP/example/files/')
+    True
+    >>> e_name.is_valid_prefix('s3://bucket-GROUP/example/files/USER/SUBUSER/2017-01-24/')
+    True
+    >>> e_name.is_valid_prefix('s3://bucket-GROUP/example/files/USER/SUBUSER/2017-01-24/0_0')
+    True
+    >>>
+    >>> ####### info_dict(self, sref): ######
+    >>> e_name.info_dict(e_sref)  # see that utc_ms args were cast to ints
+    {'group': 'GROUP', 'user': 'USER', 'subuser': 'SUBUSER', 'day': '2017-01-24', 's_ums': 1485272231982, 'e_ums': 1485261448469}
+    >>> u_name.info_dict(u_sref)  # returns None (because self was made for example!
+    {'group': 'GROUP', 'user': 'USER', 'day': '2017-01-24', 'subuser': 'SUBUSER', 'filename': 'a_file.wav'}
+    >>> # but with a u_name, it will work
+    >>> u_name.info_dict(u_sref)
+    {'group': 'GROUP', 'user': 'USER', 'day': '2017-01-24', 'subuser': 'SUBUSER', 'filename': 'a_file.wav'}
+    >>>
+    >>> ####### extract(self, item, sref): ######
+    >>> e_name.extract('group', e_sref)
+    'GROUP'
+    >>> e_name.extract('user', e_sref)
+    'USER'
+    >>> u_name.extract('group', u_sref_2)
+    'ANOTHER_GROUP'
+    >>> u_name.extract('user', u_sref_2)
+    'ANOTHER_USER'
+    >>>
+    >>> ####### mk_prefix(self, *args, **kwargs): ######
+    >>> e_name.mk_prefix()
+    's3://bucket-'
+    >>> e_name.mk_prefix(group='GROUP')
+    's3://bucket-GROUP/example/files/'
+    >>> e_name.mk_prefix(group='GROUP', user='USER')
+    's3://bucket-GROUP/example/files/USER/'
+    >>> e_name.mk_prefix(group='GROUP', user='USER', subuser='SUBUSER')
+    's3://bucket-GROUP/example/files/USER/SUBUSER/'
+    >>> e_name.mk_prefix(group='GROUP', user='USER', subuser='SUBUSER', day='0000-00-00')
+    's3://bucket-GROUP/example/files/USER/SUBUSER/0000-00-00/'
+    >>> e_name.mk_prefix(group='GROUP', user='USER', subuser='SUBUSER', day='0000-00-00',
+    ... s_ums=1485272231982)
+    's3://bucket-GROUP/example/files/USER/SUBUSER/0000-00-00/1485272231982_'
+    >>> e_name.mk_prefix(group='GROUP', user='USER', subuser='SUBUSER', day='0000-00-00',
+    ... s_ums=1485272231982, e_ums=1485261448469)
+    's3://bucket-GROUP/example/files/USER/SUBUSER/0000-00-00/1485272231982_1485261448469'
+    >>>
+    >>> u_name.mk_prefix()
+    's3://uploads/'
+    >>> u_name.mk_prefix(group='GROUP')
+    's3://uploads/GROUP/upload/files/'
+    >>> u_name.mk_prefix(group='GROUP', user='USER')
+    's3://uploads/GROUP/upload/files/USER/'
+    >>> u_name.mk_prefix(group='GROUP', user='USER', day='DAY')
+    's3://uploads/GROUP/upload/files/USER/DAY/'
+    >>> u_name.mk_prefix(group='GROUP', user='USER', day='DAY')
+    's3://uploads/GROUP/upload/files/USER/DAY/'
+    >>> u_name.mk_prefix(group='GROUP', user='USER', day='DAY', subuser='SUBUSER')
+    's3://uploads/GROUP/upload/files/USER/DAY/SUBUSER/'
+    >>>
+    >>> ####### mk(self, *args, **kwargs): ######
+    >>> e_name.mk(group='GROUP', user='USER', subuser='SUBUSER', day='0000-00-00',
+    ...             s_ums=1485272231982, e_ums=1485261448469)
+    's3://bucket-GROUP/example/files/USER/SUBUSER/0000-00-00/1485272231982_1485261448469'
+    >>> e_name.mk(group='GROUP', user='USER', subuser='SUBUSER', day='from_s_ums',
+    ...             s_ums=1485272231982, e_ums=1485261448469)
+    's3://bucket-GROUP/example/files/USER/SUBUSER/2017-01-24/1485272231982_1485261448469'
+    >>>
+    >>> ####### replace_sref_elements(self, *args, **kwargs): ######
+    >>> sref = 's3://bucket-redrum/example/files/oopsy@domain.com/ozeip/2008-11-04/1225779243969_1225779246969'
+    >>> e_name.replace_sref_elements(sref, user='NEW_USER', group='NEW_GROUP')
+    's3://bucket-NEW_GROUP/example/files/NEW_USER/ozeip/2008-11-04/1225779243969_1225779246969'
+    """
+
+    @staticmethod
+    def process_info_dict_for_example(**info_dict):
+        if 's_ums' in info_dict:
+            info_dict['s_ums'] = int(info_dict['s_ums'])
+        if 'e_ums' in info_dict:
+            info_dict['e_ums'] = int(info_dict['e_ums'])
+        return info_dict
+
+    @staticmethod
+    def example_process_kwargs(**kwargs):
+        from datetime import datetime
+        from ut.util.time import second_ms, utcnow_ms
+        if 's_ums' in kwargs:
+            kwargs['s_ums'] = int(kwargs['s_ums'])
+        if 'e_ums' in kwargs:
+            kwargs['e_ums'] = int(kwargs['e_ums'])
+
+        if 'day' in kwargs:
+            day = kwargs['day']
+            # get the day in the expected format
+            if isinstance(day, str):
+                if day == 'now':
+                    day = datetime.utcfromtimestamp(int(utcnow_ms() / second_ms)).strftime(day_format)
+                elif day == 'from_s_ums':
+                    assert 's_ums' in kwargs, "need to have s_ums argument"
+                    day = datetime.utcfromtimestamp(int(kwargs['s_ums'] / second_ms)).strftime(day_format)
+                else:
+                    assert day_format_pattern.match(day)
+            elif isinstance(day, datetime):
+                day = day.strftime(day_format)
+            elif 's_ums' in kwargs:  # if day is neither a string nor a datetime
+                day = datetime.utcfromtimestamp(int(kwargs['s_ums'] / second_ms)).strftime(day_format)
+
+            kwargs['day'] = day
+
+        return kwargs
+
+    @staticmethod
+    def mk_e_naming():
+        return LinearNaming(
+            template='s3://bucket-{group}/example/files/{user}/{subuser}/{day}/{s_ums}_{e_ums}',
+            format_dict={'s_ums': '\d+', 'e_ums': '\d+', 'day': "[^/]+"},
+            process_kwargs=BigDocTest.example_process_kwargs,
+            process_info_dict=BigDocTest.process_info_dict_for_example
+        )
+
+    @staticmethod
+    def mk_u_naming():
+        return LinearNaming(
+            template='s3://uploads/{group}/upload/files/{user}/{day}/{subuser}/{filename}',
+            format_dict={'day': "[^/]+", 'filepath': '.+'}
+        )

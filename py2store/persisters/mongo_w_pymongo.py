@@ -55,10 +55,6 @@ class MongoPersister(Persister):
     {'first': 'Vitalik', 'last': 'Buterin'} --> {'yob': 1994, 'proj': 'ethereum', 'bdfl': True}
     """
 
-    def clear(self):
-        raise NotImplementedError("clear is disabled by default, for your own protection! "
-                                  "Loop and delete if you really want to.")
-
     def __init__(self, db_name='py2store', collection_name='test', key_fields=('_id',), data_fields=None,
                  mongo_client_kwargs=None):
         if mongo_client_kwargs is None:
@@ -105,3 +101,16 @@ class MongoPersister(Persister):
 
     def __len__(self):
         return self._mgc.count_documents({})
+
+
+class MongoInsertPersister(MongoPersister):
+
+    def __init__(self, db_name='py2store', collection_name='test', data_fields=None, mongo_client_kwargs=None):
+        super().__init__(db_name=db_name, collection_name=collection_name, data_fields=data_fields,
+                         key_fields=('_id',), mongo_client_kwargs=mongo_client_kwargs)
+
+    def append(self, v):
+        return self._mgc.insert_one(v)
+
+    def extend(self, items):
+        return self._mgc.insert_many(items)

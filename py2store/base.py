@@ -24,7 +24,7 @@ This means that you don't have to implement these as all, and can choose to impl
 the storage methods themselves.
 """
 
-from collections.abc import MutableMapping
+from collections.abc import Collection, Mapping, MutableMapping
 from typing import Any, Iterable, Tuple
 
 Key = Any
@@ -37,15 +37,51 @@ ValIter = Iterable[Val]
 ItemIter = Iterable[Item]
 
 
-# TODO: Wishful thinking: Define store type so the type is defined by it's methods, not by subclassing.
-class Persister(MutableMapping):
-    """ Acts as a MutableMapping abc, but disabling the clear method, and computing __len__ by counting keys"""
+class KvCollection(Collection):
 
-    def __len__(self):
+    def __contains__(self, k: Key) -> bool:
+        """
+        Check if collection of keys contains k.
+        Note: This method actually fetches the contents for k, returning False if there's a key error trying to do so
+        Therefore it may not be efficient, and in most cases, a method specific to the case should be used.
+        :return: True if k is in the collection, and False if not
+        """
+        try:
+            self.__getitem__(k)
+            return True
+        except KeyError:
+            return False
+
+    def __len__(self) -> int:
+        """
+        Number of elements in collection of keys.
+        Note: This method iterates over all elements of the collection and counts them.
+        Therefore it is not efficient, and in most cases should be overridden with a more efficient version.
+        :return: The number (int) of elements in the collection of keys.
+        """
+        # TODO: some other means to more quickly count files?
+        # Note: Found that sum(1 for _ in self.__iter__()) was slower for small, slightly faster for big inputs.
         count = 0
         for _ in self.__iter__():
             count += 1
         return count
+
+    def head(self):
+        return next(iter(self.items()))
+
+
+class KvReader(KvCollection, Mapping):
+    """Acts as a Mapping abc, but with default __len__ (implemented by counting keys)
+    and head method to get the first (k, v) item of the store"""
+    pass
+
+
+Reader = KvReader  # alias
+
+
+# TODO: Wishful thinking: Define store type so the type is defined by it's methods, not by subclassing.
+class Persister(Reader, MutableMapping):
+    """ Acts as a MutableMapping abc, but disabling the clear method, and computing __len__ by counting keys"""
 
     def clear(self):
         raise NotImplementedError('''
@@ -56,6 +92,9 @@ class Persister(MutableMapping):
                     self.popitem()
             except KeyError:
                 pass''')
+
+
+KvPersister = Persister  # alias with explict name
 
 
 # TODO: Make identity_func "identifiable". If we use the following one, we can use == to detect it's use,
@@ -211,6 +250,9 @@ class Store(Persister):
     def __setitem__(self, k: Key, v: Val):
         return self.store.__setitem__(self._id_of_key(k), self._data_of_obj(v))
 
+    # def update(self, *args, **kwargs):
+    #     return self.store.update(*args, **kwargs)
+
     # Delete ####################################################################
     def __delitem__(self, k: Key):
         return self.store.__delitem__(self._id_of_key(k))
@@ -228,6 +270,21 @@ class Store(Persister):
     # Misc ####################################################################
     def __repr__(self):
         return self.store.__repr__()
+
+
+KvStore = Store  # alias with explict name
+
+
+def has_kv_store_interface(o):
+    """Check if object has the KvStore interface (that is, has the kv wrapper methods
+    Args:
+        o: object (class or instance)
+
+    Returns: True if kv has the four key (in/out) and value (in/out) transformation methods
+
+    """
+    return hasattr(o, '_id_of_key') and hasattr(o, '_key_of_id') \
+           and hasattr(o, '_data_of_obj') and hasattr(o, '_obj_of_data')
 
 
 from abc import ABCMeta, abstractmethod
