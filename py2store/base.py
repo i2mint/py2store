@@ -24,8 +24,7 @@ This means that you don't have to implement these as all, and can choose to impl
 the storage methods themselves.
 """
 
-from functools import wraps
-from collections.abc import Mapping, MutableMapping
+from collections.abc import Collection, Mapping, MutableMapping
 from typing import Any, Iterable, Tuple
 
 Key = Any
@@ -38,11 +37,30 @@ ValIter = Iterable[Val]
 ItemIter = Iterable[Item]
 
 
-class Reader(Mapping):
-    """Acts as a Mapping abc, but with default __len__ (implemented by counting keys)
-    and head method to get the first (k, v) item of the store"""
+class KvCollection(Collection):
 
-    def __len__(self):
+    def __contains__(self, k: Key) -> bool:
+        """
+        Check if collection of keys contains k.
+        Note: This method actually fetches the contents for k, returning False if there's a key error trying to do so
+        Therefore it may not be efficient, and in most cases, a method specific to the case should be used.
+        :return: True if k is in the collection, and False if not
+        """
+        try:
+            self.__getitem__(k)
+            return True
+        except KeyError:
+            return False
+
+    def __len__(self) -> int:
+        """
+        Number of elements in collection of keys.
+        Note: This method iterates over all elements of the collection and counts them.
+        Therefore it is not efficient, and in most cases should be overridden with a more efficient version.
+        :return: The number (int) of elements in the collection of keys.
+        """
+        # TODO: some other means to more quickly count files?
+        # Note: Found that sum(1 for _ in self.__iter__()) was slower for small, slightly faster for big inputs.
         count = 0
         for _ in self.__iter__():
             count += 1
@@ -52,8 +70,13 @@ class Reader(Mapping):
         return next(iter(self.items()))
 
 
+class KvReader(KvCollection, Mapping):
+    """Acts as a Mapping abc, but with default __len__ (implemented by counting keys)
+    and head method to get the first (k, v) item of the store"""
+    pass
 
-KvReader = Reader  # alias with explict name
+
+Reader = KvReader  # alias
 
 
 # TODO: Wishful thinking: Define store type so the type is defined by it's methods, not by subclassing.

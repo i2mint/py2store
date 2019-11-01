@@ -90,8 +90,10 @@ def kv_wrap_persister_cls(persister_cls, name=None):
     return cls
 
 
-def wrap_kvs(store_cls, name=None, *, key_of_id=None, id_of_key=None, obj_of_data=None, data_of_obj=None):
-    """
+def wrap_kvs(store_cls, name=None, *,
+             key_of_id=None, id_of_key=None, obj_of_data=None, data_of_obj=None, postget=None
+             ):
+    """Make a Store that is wrapped with the given key/val transformers
 
     Args:
         store_cls:
@@ -100,6 +102,7 @@ def wrap_kvs(store_cls, name=None, *, key_of_id=None, id_of_key=None, obj_of_dat
         id_of_key:
         obj_of_data:
         data_of_obj:
+        postget: postget(k, v) function that is called (and output returned) after retrieving the v for k
 
     Returns:
 
@@ -127,6 +130,14 @@ def wrap_kvs(store_cls, name=None, *, key_of_id=None, id_of_key=None, obj_of_dat
     ['KEY']
     >>> list(a.items())  # and the values are those we put there.
     [('KEY', 3)]
+    >>>
+    >>> # And now this: Showing how to condition the value transform (like obj_of_data), but conditioned on key.
+    >>> B = wrap_kvs(dict, postget=lambda k, v: f'upper {v}' if k[0].isupper() else f'lower {v}')
+    >>> b = B()
+    >>> b['BIG'] = 'letters'
+    >>> b['small'] = 'text'
+    >>> list(b.items())
+    [('BIG', 'upper letters'), ('small', 'lower text')]
     """
     if not has_kv_store_interface(store_cls):
         store_cls = kv_wrap_persister_cls(store_cls, name=name)
@@ -157,6 +168,12 @@ def wrap_kvs(store_cls, name=None, *, key_of_id=None, id_of_key=None, obj_of_dat
             return super(store_cls, self)._data_of_obj(data_of_obj(obj))
 
         store_cls._data_of_obj = _data_of_obj
+
+    if postget is not None:
+        def __getitem__(self, k):
+            return postget(k, super(store_cls, self).__getitem__(k))
+
+        store_cls.__getitem__ = __getitem__
 
     return store_cls
 

@@ -14,7 +14,7 @@ from py2store.errors import KeyValidationError
 DFLT_OPEN_MODE = ''
 
 file_sep = os.path.sep
-
+inf = float('infinity')
 
 ########################################################################################################################
 # File system navigation: Utils
@@ -64,11 +64,12 @@ def dirpaths_in_dir(rootdir):
     return filter(os.path.isdir, iglob(ensure_slash_suffix(rootdir) + '*'))
 
 
-def iter_filepaths_in_folder_recursively(root_folder):
+def iter_filepaths_in_folder_recursively(root_folder, max_levels=inf, _current_level=0):
     for full_path in paths_in_dir(root_folder):
         if os.path.isdir(full_path):
-            for entry in iter_filepaths_in_folder_recursively(full_path):
-                yield entry
+            if _current_level < max_levels:
+                for entry in iter_filepaths_in_folder_recursively(full_path, max_levels, _current_level + 1):
+                    yield entry
         else:
             if os.path.isfile(full_path):
                 yield full_path
@@ -317,6 +318,21 @@ class FileReader(KvReader):
 
     def __repr__(self):
         return f"{self._class_name}('{self._prefix}')"
+
+
+from py2store.base import KvCollection
+
+
+class FileCollection(KvCollection):
+    def __init__(self, _prefix, max_levels=inf):
+        self._prefix = ensure_slash_suffix(_prefix)
+        self._max_levels = max_levels
+
+    def __iter__(self):
+        yield from iter_filepaths_in_folder_recursively(self._prefix, max_levels=self._max_levels)
+
+    def __contains__(self, k):
+        return k.startswith(self._prefix) and os.path.isfile(k)
 
 #
 # if __name__ == '__main__':
