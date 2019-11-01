@@ -1,9 +1,9 @@
 """
 How to run a test MongoDB instance locally with a Docker container:
 
-docker rm -f mongo-test && \
-docker run -d -p 27017:27017 --name mongo-test mongo && \
-sleep 10 && \
+docker rm -f mongo-test
+docker run -d -p 27017:27017 --name mongo-test mongo
+sleep 10
 pytest tests/test_mongo_w_pymongo.py
 """
 from py2store.persisters.mongo_w_pymongo import MongoPersister

@@ -1,9 +1,11 @@
+
 from py2store.base import Persister
 from py2store.util import ModuleNotFoundErrorNiceMessage
 from py2store.utils.uri_parsing import build_uri
 
 with ModuleNotFoundErrorNiceMessage():
     from couchdb import Server
+    from couchdb.client import DEFAULT_BASE_URL
 
 
 class CouchDbPersister(Persister):
@@ -66,7 +68,7 @@ class CouchDbPersister(Persister):
 
     def __init__(
             self,
-            uri,  # Example: "https://username:password@example.com:5984/"
+            uri=DEFAULT_BASE_URL,
             collection='py2store',
             key_fields=('_id',),
             couchdb_client_kwargs=None
