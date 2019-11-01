@@ -55,11 +55,8 @@ class MongoAnyKeyStore(MongoStore):
     >>> s = MongoAnyKeyStore(db_name='py2store_tests', collection_name='tmp', )
     >>> for k in s: del s[k]
     >>> s['foo'] = {'must': 'be', 'a': 'dict'}
-    >>> assert s['foo']
+    >>> s['foo']
     {'must': 'be', 'a': 'dict'}
-    >>> ss = MongoStore()
-    >>> ss[{'_id': 'foo'}]  # see that 'foo' was actually put in the _id field
-    >>>
     """
 
     @wraps(MongoStore.__init__)
