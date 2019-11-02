@@ -1,5 +1,4 @@
 import pickle
-import dill
 import marshal
 from functools import partial
 
@@ -21,22 +20,6 @@ def mk_pickle_rw_funcs(fix_imports=True, protocol=None, pickle_encoding='ASCII',
     )
 
 
-def mk_dill_rw_funcs(ignore=None, protocol=None, byref=None, fmode=None, recurse=None):
-    """Generates a reader and writer using dill. That is, a pair of parametrized loads and dumps
-
-    >>> read, write = mk_dill_rw_funcs()
-    >>> d = {'a': 'simple', 'and': {'a': b'more', 'complex': [1, 2.2, dict]}}
-    >>> serialized_d = write(d)
-    >>> deserialized_d = read(serialized_d)
-    >>> assert d == deserialized_d
-    """
-
-    return (
-        partial(dill.loads, ignore=ignore),
-        partial(dill.dumps, protocol=protocol, byref=byref, fmode=fmode, recurse=recurse)
-    )
-
-
 def mk_marshal_rw_funcs(**kwargs):  # TODO: Check actual arguments for marshal load and dump
     """Generates a reader and writer using marshal. That is, a pair of parametrized loads and dumps
 
@@ -50,6 +33,30 @@ def mk_marshal_rw_funcs(**kwargs):  # TODO: Check actual arguments for marshal l
         partial(marshal.loads, **kwargs),
         partial(marshal.dumps, **kwargs)
     )
+
+
+##### Extras (requiring some third-party packages ######################################################################
+
+from py2store.util import ModuleNotFoundIgnore
+
+with ModuleNotFoundIgnore():
+    import dill
+
+
+    def mk_dill_rw_funcs(ignore=None, protocol=None, byref=None, fmode=None, recurse=None):
+        """Generates a reader and writer using dill. That is, a pair of parametrized loads and dumps
+
+        >>> read, write = mk_dill_rw_funcs()
+        >>> d = {'a': 'simple', 'and': {'a': b'more', 'complex': [1, 2.2, dict]}}
+        >>> serialized_d = write(d)
+        >>> deserialized_d = read(serialized_d)
+        >>> assert d == deserialized_d
+        """
+
+        return (
+            partial(dill.loads, ignore=ignore),
+            partial(dill.dumps, protocol=protocol, byref=byref, fmode=fmode, recurse=recurse)
+        )
 
 # class PickleMixin:
 #     """Local files store with pickle serialization"""
