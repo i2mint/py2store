@@ -134,12 +134,6 @@ def flush_on_exit(cls):
     return new_cls
 
 
-# t = self.flush_cache()
-# if hasattr(store_cls_you_want_to_cache, '__exit__'):
-#     t = super().__exit__(*args, **kwargs)
-# return t
-
-@flush_on_exit
 def mk_write_cached_store(store_cls_you_want_to_cache,
                           w_cache=None,
                           flush_cache_condition=None):
@@ -236,6 +230,7 @@ def mk_write_cached_store(store_cls_you_want_to_cache,
 
     w_cache.clear()
 
+    @flush_on_exit
     class WriteCachedStore(store_cls_you_want_to_cache):
         _w_cache = w_cache
         _flush_cache_condition = staticmethod(flush_cache_condition)
