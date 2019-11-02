@@ -1,20 +1,22 @@
 import os
 import re
 from glob import iglob
-from collections.abc import Mapping
+from pathlib import Path
+from itertools import takewhile
 
 from py2store.errors import NoSuchKeyError
 
 from py2store.base import KeyValidationABC
 from py2store.mixins import FilteredKeysMixin, IterBasedSizedMixin
 from py2store.parse_format import match_re_for_fstring
-from py2store.base import Persister, KvReader
-from py2store.errors import KeyValidationError
+from py2store.base import KvReader
 
 DFLT_OPEN_MODE = ''
 
 file_sep = os.path.sep
 inf = float('infinity')
+
+class FolderNotFoundError(NoSuchKeyError): ...
 
 ########################################################################################################################
 # File system navigation: Utils
@@ -161,6 +163,17 @@ class PathFormat:
         return self._key_filt(k)
 
 
+def _is_not_dir(p):
+    return not p.is_dir()
+
+
+def first_non_existing_parent_dir(dirpath):
+    parent = ''
+    for parent in takewhile(_is_not_dir, Path(dirpath).parents):
+        pass
+    return str(parent)
+
+
 ########################################################################################################################
 # Local File Persistence : Classes
 
@@ -188,8 +201,15 @@ class LocalFileRWD:
             raise KeyError("{}: {}".format(type(e).__name__, e))
 
     def __setitem__(self, k, v):
-        with open(k, **self._open_kwargs_for_write) as fp:
-            fp.write(v)
+        try:
+            with open(k, **self._open_kwargs_for_write) as fp:
+                fp.write(v)
+        except FileNotFoundError:
+            raise FolderNotFoundError(f"The store you're using doesn't create directories for you. "
+                                      f"You have to make the directories needed yourself manually, "
+                                      f"or use a store that does that for you (example QuickStore). "
+                                      f"This is the first directory that didn't exist:\n"
+                                      f"{first_non_existing_parent_dir(k)}")
 
     def __delitem__(self, k):
         try:
