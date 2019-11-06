@@ -283,30 +283,30 @@ class LinearNaming(object):
     def __call__(self, *args, **kwargs):
         return self.mk(*args, **kwargs)
 
-    def is_valid(self, sref):
+    def is_valid(self, name):
         """
-        Check if the name has the "upload format" (i.e. the kind of srefs that are _ids of fv_mgc, and what
-        sref means in most of the iatis system.
-        :param sref: the sref (string) to check
-        :return: True iff sref has the upload format
+        Check if the name has the "upload format" (i.e. the kind of names that are _ids of fv_mgc, and what
+        name means in most of the iatis system.
+        :param name: the name (string) to check
+        :return: True iff name has the upload format
         """
-        return bool(self.pattern.match(sref))
+        return bool(self.pattern.match(name))
 
-    def is_valid_prefix(self, sref):
+    def is_valid_prefix(self, name):
         """
-        Check if sref is a valid prefix.
-        :param sref: a string (that might be a valid sref prefix)
-        :return: True iff sref is a valid prefix
+        Check if name is a valid prefix.
+        :param name: a string (that might be a valid name prefix)
+        :return: True iff name is a valid prefix
         """
-        return bool(self.prefix_pattern.match(sref))
+        return bool(self.prefix_pattern.match(name))
 
-    def info_dict(self, sref):
+    def info_dict(self, name):
         """
-        Get a dict with the arguments of an sref (for example group, user, subuser, etc.)
-        :param sref:
+        Get a dict with the arguments of an name (for example group, user, subuser, etc.)
+        :param name:
         :return: a dict holding the argument names and values
         """
-        m = self.pattern.match(sref)
+        m = self.pattern.match(name)
         if m:
             info_dict = m.groupdict()
             if self.process_info_dict:
@@ -314,23 +314,23 @@ class LinearNaming(object):
             else:
                 return info_dict
 
-    def info_tuple(self, sref):
-        info_dict = self.info_dict(sref)
+    def info_tuple(self, name):
+        info_dict = self.info_dict(name)
         return tuple(info_dict[x] for x in self.names)
 
-    def extract(self, item, sref):
+    def extract(self, item, name):
         """
-        Extract a single item from an sref
+        Extract a single item from an name
         :param item: item of the item to extract
-        :param sref: the sref from which to extract it
+        :param name: the name from which to extract it
         :return: the value for name
         """
-        return self.extract_pattern[item].match(sref).group(1)
+        return self.extract_pattern[item].match(name).group(1)
 
     def mk_prefix(self, *args, **kwargs):
         """
-        Make a prefix for an uploads sref that has has the path up to the first None argument.
-        :return: A string that is the prefix of a valid sref
+        Make a prefix for an uploads name that has has the path up to the first None argument.
+        :return: A string that is the prefix of a valid name
         """
         assert len(args) + len(kwargs) <= self.n_names, "You have too many arguments"
         kwargs = dict({k: v for k, v in zip(self.names, args)}, **kwargs)
@@ -350,12 +350,12 @@ class LinearNaming(object):
 
     def mk(self, *args, **kwargs):
         """
-        Make a full sref with given kwargs. All required name=val must be present (or infered by self.process_kwargs
+        Make a full name with given kwargs. All required name=val must be present (or infered by self.process_kwargs
         function.
         The required names are in self.names.
         Does NOT check for validity of the vals.
-        :param kwargs: The name=val arguments needed to construct a valid sref
-        :return: an sref
+        :param kwargs: The name=val arguments needed to construct a valid name
+        :return: an name
         """
         assert len(args) + len(kwargs) == self.n_names, "You're missing, or have too many arguments"
         kwargs = dict({k: v for k, v in zip(self.names, args)}, **kwargs)
@@ -363,17 +363,17 @@ class LinearNaming(object):
             kwargs = self.process_kwargs(**kwargs)
         return self.template.format(**kwargs)
 
-    def replace_sref_elements(self, sref, **elements_kwargs):
+    def replace_name_elements(self, name, **elements_kwargs):
         """
-        Replace specific sref argument values with others
-        :param sref: the sref to replace
+        Replace specific name argument values with others
+        :param name: the name to replace
         :param elements_kwargs: the arguments to replace (and their values)
-        :return: a new sref
+        :return: a new name
         """
-        sref_info_dict = self.info_dict(sref)
+        name_info_dict = self.info_dict(name)
         for k, v in elements_kwargs.items():
-            sref_info_dict[k] = v
-        return self.mk(**sref_info_dict)
+            name_info_dict[k] = v
+        return self.mk(**name_info_dict)
 
     def __repr__(self):
         kv = self.__dict__.copy()
@@ -382,13 +382,13 @@ class LinearNaming(object):
         for f in exclude:
             kv.pop(f)
         s = ""
-        s += "  * {}: {}\n\n".format('template', kv.pop('template'))
-        s += "  * {}: {}\n\n".format('format_dict', kv.pop('format_dict'))
+        s += "  * {}: {}\n".format('template', kv.pop('template'))
+        s += "  * {}: {}\n".format('format_dict', kv.pop('format_dict'))
 
         for k, v in kv.items():
             if hasattr(v, 'pattern'):
                 v = v.pattern
-            s += "  * {}: {}\n\n".format(k, v)
+            s += "  * {}: {}\n".format(k, v)
         return s
 
 
@@ -484,19 +484,19 @@ class BigDocTest():
     >>>
     >>> e_name = BigDocTest.mk_e_naming()
     >>> u_name = BigDocTest.mk_u_naming()
-    >>> e_sref = 's3://bucket-GROUP/example/files/USER/SUBUSER/2017-01-24/1485272231982_1485261448469'
-    >>> u_sref = "s3://uploads/GROUP/upload/files/USER/2017-01-24/SUBUSER/a_file.wav"
-    >>> u_sref_2 = "s3://uploads/ANOTHER_GROUP/upload/files/ANOTHER_USER/2017-01-24/SUBUSER/a_file.wav"
+    >>> e_name = 's3://bucket-GROUP/example/files/USER/SUBUSER/2017-01-24/1485272231982_1485261448469'
+    >>> u_name = "s3://uploads/GROUP/upload/files/USER/2017-01-24/SUBUSER/a_file.wav"
+    >>> u_name_2 = "s3://uploads/ANOTHER_GROUP/upload/files/ANOTHER_USER/2017-01-24/SUBUSER/a_file.wav"
     >>>
-    >>> ####### is_valid(self, sref): ######
-    >>> e_name.is_valid(e_sref)
+    >>> ####### is_valid(self, name): ######
+    >>> e_name.is_valid(e_name)
     True
-    >>> e_name.is_valid(u_sref)
+    >>> e_name.is_valid(u_name)
     False
-    >>> u_name.is_valid(u_sref)
+    >>> u_name.is_valid(u_name)
     True
     >>>
-    >>> ####### is_valid_prefix(self, sref): ######
+    >>> ####### is_valid_prefix(self, name): ######
     >>> e_name.is_valid_prefix('s3://bucket-')
     True
     >>> e_name.is_valid_prefix('s3://bucket-GROUP')
@@ -512,23 +512,23 @@ class BigDocTest():
     >>> e_name.is_valid_prefix('s3://bucket-GROUP/example/files/USER/SUBUSER/2017-01-24/0_0')
     True
     >>>
-    >>> ####### info_dict(self, sref): ######
-    >>> e_name.info_dict(e_sref)  # see that utc_ms args were cast to ints
+    >>> ####### info_dict(self, name): ######
+    >>> e_name.info_dict(e_name)  # see that utc_ms args were cast to ints
     {'group': 'GROUP', 'user': 'USER', 'subuser': 'SUBUSER', 'day': '2017-01-24', 's_ums': 1485272231982, 'e_ums': 1485261448469}
-    >>> u_name.info_dict(u_sref)  # returns None (because self was made for example!
+    >>> u_name.info_dict(u_name)  # returns None (because self was made for example!
     {'group': 'GROUP', 'user': 'USER', 'day': '2017-01-24', 'subuser': 'SUBUSER', 'filename': 'a_file.wav'}
     >>> # but with a u_name, it will work
-    >>> u_name.info_dict(u_sref)
+    >>> u_name.info_dict(u_name)
     {'group': 'GROUP', 'user': 'USER', 'day': '2017-01-24', 'subuser': 'SUBUSER', 'filename': 'a_file.wav'}
     >>>
-    >>> ####### extract(self, item, sref): ######
-    >>> e_name.extract('group', e_sref)
+    >>> ####### extract(self, item, name): ######
+    >>> e_name.extract('group', e_name)
     'GROUP'
-    >>> e_name.extract('user', e_sref)
+    >>> e_name.extract('user', e_name)
     'USER'
-    >>> u_name.extract('group', u_sref_2)
+    >>> u_name.extract('group', u_name_2)
     'ANOTHER_GROUP'
-    >>> u_name.extract('user', u_sref_2)
+    >>> u_name.extract('user', u_name_2)
     'ANOTHER_USER'
     >>>
     >>> ####### mk_prefix(self, *args, **kwargs): ######
@@ -570,9 +570,9 @@ class BigDocTest():
     ...             s_ums=1485272231982, e_ums=1485261448469)
     's3://bucket-GROUP/example/files/USER/SUBUSER/2017-01-24/1485272231982_1485261448469'
     >>>
-    >>> ####### replace_sref_elements(self, *args, **kwargs): ######
-    >>> sref = 's3://bucket-redrum/example/files/oopsy@domain.com/ozeip/2008-11-04/1225779243969_1225779246969'
-    >>> e_name.replace_sref_elements(sref, user='NEW_USER', group='NEW_GROUP')
+    >>> ####### replace_name_elements(self, *args, **kwargs): ######
+    >>> name = 's3://bucket-redrum/example/files/oopsy@domain.com/ozeip/2008-11-04/1225779243969_1225779246969'
+    >>> e_name.replace_name_elements(name, user='NEW_USER', group='NEW_GROUP')
     's3://bucket-NEW_GROUP/example/files/NEW_USER/ozeip/2008-11-04/1225779243969_1225779246969'
     """
 

@@ -94,10 +94,11 @@ class PathFormatStore(PathFormatPersister, Persister):
     pass
 
 
-RelPathLocalFileStore = mk_relative_path_store(PathFormatPersister)
+RelPathLocalFileStore = mk_relative_path_store(PathFormatPersister, name='RelPathLocalFileStore')
 RelPathLocalFileStore.__doc__ = """Local file store using templated relative paths."""
 
-RelPathLocalFileStoreEnforcingFormat = mk_relative_path_store(PathFormatPersister)
+RelPathLocalFileStoreEnforcingFormat = mk_relative_path_store(PathFormatPersister,
+                                                              name='RelPathLocalFileStoreEnforcingFormat')
 RelPathLocalFileStoreEnforcingFormat.__doc__ = \
     """A RelativePathFormatStore, but that won't allow one to use a key that is not valid 
     (according to the self.store.is_valid_key boolean method)"""
@@ -182,6 +183,10 @@ class LocalPickleStore(RelativePathFormatStore):
 
     def __setitem__(self, k, v):
         return super().__setitem__(k, self._dumps(v))
+
+
+class LocalJsonStore(SimpleJsonMixin, LocalTextStore):
+    __doc__ = str(LocalTextStore.__doc__) + SimpleJsonMixin._docsuffix
 
 
 PickleStore = LocalPickleStore  # alias
