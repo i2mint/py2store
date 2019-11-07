@@ -3,6 +3,9 @@ This module is about generating, validating, and operating on (parametrized) nam
 """
 
 import re
+import os
+
+path_sep = os.path.sep
 
 base_validation_funs = {
     "be a": isinstance,
@@ -22,7 +25,7 @@ dflt_arg_pattern = r'.+'
 day_format = "%Y-%m-%d"
 day_format_pattern = re.compile('\d{4}-\d{2}-\d{2}')
 
-until_slash = "[^/]+"
+until_slash = "[^" + path_sep + "]+"
 until_slash_capture = '(' + until_slash + ')'
 
 capture_template = '({format})'
@@ -140,12 +143,42 @@ def template_to_pattern(mapping_dict, template):
     return p.sub(lambda x: mapping_dict[x.string[(x.start() + 1):(x.end() - 1)]], template)
 
 
-def mk_extract_pattern(template, format_dict, named_capture_patterns, name):
+def mk_extract_pattern(template, format_dict=None, named_capture_patterns=None, name=None):
+    format_dict = format_dict or {}
+    named_capture_patterns = named_capture_patterns or mk_named_capture_patterns(format_dict)
+    assert name is not None
     mapping_dict = dict(format_dict, **{name: named_capture_patterns[name]})
     p = re.compile("{}".format("|".join(
         ['{' + re.escape(x) + '}' for x in list(mapping_dict.keys())])))
 
     return re.compile(p.sub(lambda x: mapping_dict[x.string[(x.start() + 1):(x.end() - 1)]], template))
+
+
+def mk_pattern_from_template_and_format_dict(template, format_dict=None):
+    """Make a compiled regex to match template
+
+    Args:
+        template: A format string
+        format_dict: A dict whose keys are template fields and values are regex strings to capture them
+
+    Returns: a compiled regex
+
+    >>> mk_pattern_from_template_and_format_dict('{here}/and/{there}')
+    re.compile('(?P<here>[^/]+)/and/(?P<there>[^/]+)')
+    >>> p = mk_pattern_from_template_and_format_dict('{here}/and/{there}', {'there': '\d+'})
+    >>> p
+    re.compile('(?P<here>[^/]+)/and/(?P<there>\\\d+)')
+    >>> type(p)
+    <class 're.Pattern'>
+    >>> p.match('HERE/and/1234').groupdict()
+    {'here': 'HERE', 'there': '1234'}
+    """
+    format_dict = format_dict or {}
+
+    names = get_names_from_template(template)
+    format_dict = mk_format_mapping_dict(format_dict, names)
+    named_capture_patterns = mk_named_capture_patterns(format_dict)
+    return re.compile(template_to_pattern(named_capture_patterns, template))
 
 
 def mk_prefix_templates_dicts(template):
@@ -393,13 +426,16 @@ class LinearNaming(object):
 
 
 from py2store.base import Store
+from collections import namedtuple
+from py2store.util import lazyprop
 
-
-class StoreWithTupleKeys(Store):
+class ParametricKeyStore(Store):
     def __init__(self, store, linear_naming=None):
         super().__init__(store)
         self._linear_naming = linear_naming
 
+
+class StoreWithTupleKeys(ParametricKeyStore):
     def _id_of_key(self, key):
         return self._linear_naming.mk(*key)
 
@@ -407,11 +443,7 @@ class StoreWithTupleKeys(Store):
         return self._linear_naming.info_tuple(_id)
 
 
-class StoreWithDictKeys(Store):
-    def __init__(self, store, linear_naming=None):
-        super().__init__(store)
-        self._linear_naming = linear_naming
-
+class StoreWithDictKeys(ParametricKeyStore):
     def _id_of_key(self, key):
         return self._linear_naming.mk(**key)
 
@@ -419,7 +451,38 @@ class StoreWithDictKeys(Store):
         return self._linear_naming.info_dict(_id)
 
 
-class NamingInterface(object):
+class StoreWithNamedTupleKeys(ParametricKeyStore):
+    @lazyprop
+    def NamedTupleKey(self):
+        return namedtuple('NamedTupleKey', field_names=self._linear_naming.names)
+
+    def _id_of_key(self, key):
+        return self._linear_naming.mk(*key)
+
+    def _key_of_id(self, _id):
+        return self.NamedTupleKey(*self._linear_naming.info_tuple(_id))
+
+
+# def mk_parametric_key_store_cls(store_cls, key_type=tuple):
+#     if key_type == tuple:
+#         super_cls = StoreWithTupleKeys
+#     elif key_type == dict:
+#         super_cls = StoreWithDictKeys
+#     else:
+#         raise ValueError("key_type needs to be tuple or dict")
+#
+#     class A(super_cls, store_cls):
+#         def __init__(self, rootdir, subpath='', format_dict=None, process_kwargs=None, process_info_dict=None,
+#                      **extra_store_kwargs):
+#
+#             path_format = os.path.join(rootdir, subpath)
+#             store = store_cls.__init__(self, path_format=path_format, **extra_store_kwargs)
+#             linear_naming = LinearNaming()
+#
+#             # FilepathFormatKeys.__init__(self, path_format)
+
+
+class NamingInterface:
     def __init__(self,
                  params=None,
                  validation_funs=None,
@@ -484,16 +547,16 @@ class BigDocTest():
     >>>
     >>> e_name = BigDocTest.mk_e_naming()
     >>> u_name = BigDocTest.mk_u_naming()
-    >>> e_name = 's3://bucket-GROUP/example/files/USER/SUBUSER/2017-01-24/1485272231982_1485261448469'
-    >>> u_name = "s3://uploads/GROUP/upload/files/USER/2017-01-24/SUBUSER/a_file.wav"
+    >>> e_sref = 's3://bucket-GROUP/example/files/USER/SUBUSER/2017-01-24/1485272231982_1485261448469'
+    >>> u_sref = "s3://uploads/GROUP/upload/files/USER/2017-01-24/SUBUSER/a_file.wav"
     >>> u_name_2 = "s3://uploads/ANOTHER_GROUP/upload/files/ANOTHER_USER/2017-01-24/SUBUSER/a_file.wav"
     >>>
     >>> ####### is_valid(self, name): ######
-    >>> e_name.is_valid(e_name)
+    >>> e_name.is_valid(e_sref)
     True
-    >>> e_name.is_valid(u_name)
+    >>> e_name.is_valid(u_sref)
     False
-    >>> u_name.is_valid(u_name)
+    >>> u_name.is_valid(u_sref)
     True
     >>>
     >>> ####### is_valid_prefix(self, name): ######
@@ -513,18 +576,18 @@ class BigDocTest():
     True
     >>>
     >>> ####### info_dict(self, name): ######
-    >>> e_name.info_dict(e_name)  # see that utc_ms args were cast to ints
+    >>> e_name.info_dict(e_sref)  # see that utc_ms args were cast to ints
     {'group': 'GROUP', 'user': 'USER', 'subuser': 'SUBUSER', 'day': '2017-01-24', 's_ums': 1485272231982, 'e_ums': 1485261448469}
-    >>> u_name.info_dict(u_name)  # returns None (because self was made for example!
+    >>> u_name.info_dict(u_sref)  # returns None (because self was made for example!
     {'group': 'GROUP', 'user': 'USER', 'day': '2017-01-24', 'subuser': 'SUBUSER', 'filename': 'a_file.wav'}
     >>> # but with a u_name, it will work
-    >>> u_name.info_dict(u_name)
+    >>> u_name.info_dict(u_sref)
     {'group': 'GROUP', 'user': 'USER', 'day': '2017-01-24', 'subuser': 'SUBUSER', 'filename': 'a_file.wav'}
     >>>
     >>> ####### extract(self, item, name): ######
-    >>> e_name.extract('group', e_name)
+    >>> e_name.extract('group', e_sref)
     'GROUP'
-    >>> e_name.extract('user', e_name)
+    >>> e_name.extract('user', e_sref)
     'USER'
     >>> u_name.extract('group', u_name_2)
     'ANOTHER_GROUP'
@@ -587,7 +650,13 @@ class BigDocTest():
     @staticmethod
     def example_process_kwargs(**kwargs):
         from datetime import datetime
-        from ut.util.time import second_ms, utcnow_ms
+        epoch = datetime.utcfromtimestamp(0)
+        second_ms = 1000.0
+
+        def utcnow_ms():
+            return (datetime.utcnow() - epoch).total_seconds() * second_ms
+
+        # from ut.util.time import second_ms, utcnow_ms
         if 's_ums' in kwargs:
             kwargs['s_ums'] = int(kwargs['s_ums'])
         if 'e_ums' in kwargs:

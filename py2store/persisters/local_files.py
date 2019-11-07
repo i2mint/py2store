@@ -16,7 +16,9 @@ DFLT_OPEN_MODE = ''
 file_sep = os.path.sep
 inf = float('infinity')
 
+
 class FolderNotFoundError(NoSuchKeyError): ...
+
 
 ########################################################################################################################
 # File system navigation: Utils
@@ -77,12 +79,13 @@ def iter_filepaths_in_folder_recursively(root_folder, max_levels=inf, _current_l
                 yield full_path
 
 
-def iter_dirpaths_in_folder_recursively(root_folder):
+def iter_dirpaths_in_folder_recursively(root_folder, max_levels=inf, _current_level=0):
     for full_path in paths_in_dir(root_folder):
         if os.path.isdir(full_path):
             yield full_path
-            for entry in iter_dirpaths_in_folder_recursively(full_path):
-                yield entry
+            if _current_level < max_levels:
+                for entry in iter_dirpaths_in_folder_recursively(full_path, max_levels, _current_level + 1):
+                    yield entry
 
 
 class PrefixedFilepaths:
@@ -341,18 +344,42 @@ class FileReader(KvReader):
 
 
 from py2store.base import KvCollection
+from py2store.key_mappers.naming import mk_pattern_from_template_and_format_dict
 
 
-class FileCollection(KvCollection):
-    def __init__(self, _prefix, max_levels=inf):
-        self._prefix = ensure_slash_suffix(_prefix)
+class FileSysCollection(KvCollection):
+    def __init__(self, rootdir, subpath='', pattern_for_field=None, max_levels=inf):
+        subpath_implied_min_levels = len(subpath.split(os.path.sep)) - 1
+        assert max_levels >= subpath_implied_min_levels, \
+            f"max_levels is {max_levels}, but subpath {subpath} would imply at least {subpath_implied_min_levels}"
+        pattern_for_field = pattern_for_field or {}
+        self.rootdir = ensure_slash_suffix(rootdir)
+        self.subpath = subpath
+        self._key_pattern = mk_pattern_from_template_and_format_dict(os.path.join(rootdir, subpath), pattern_for_field)
         self._max_levels = max_levels
 
+    def is_valid_key(self, k):
+        return bool(self._key_pattern.match(k))
+
+
+class FileCollection(FileSysCollection):
+
     def __iter__(self):
-        yield from iter_filepaths_in_folder_recursively(self._prefix, max_levels=self._max_levels)
+        yield from filter(self.is_valid_key,
+                          iter_filepaths_in_folder_recursively(self.rootdir, max_levels=self._max_levels))
 
     def __contains__(self, k):
-        return k.startswith(self._prefix) and os.path.isfile(k)
+        return k.startswith(self.rootdir) and os.path.isfile(k) and self.is_valid_key(k)
+
+
+class DirCollection(FileSysCollection):
+
+    def __iter__(self):
+        yield from filter(self.is_valid_key,
+                          iter_dirpaths_in_folder_recursively(self.rootdir, max_levels=self._max_levels))
+
+    def __contains__(self, k):
+        return k.startswith(self.rootdir) and os.path.isdir(k) and self.is_valid_key(k)
 
 #
 # if __name__ == '__main__':
