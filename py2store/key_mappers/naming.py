@@ -1,9 +1,16 @@
 """
-This module is about generating, validating, and operating on (parametrized) names (i.e. stings, e.g. paths).
+This module is about generating, validating, and operating on (parametrized) fields (i.e. stings, e.g. paths).
 """
 
 import re
 import os
+from functools import partial, wraps
+from types import MethodType
+
+from py2store.utils.signatures import set_signature_of_func
+from py2store.errors import KeyValidationError, _assert_condition
+
+assert_condition = partial(_assert_condition, err_cls=KeyValidationError)
 
 path_sep = os.path.sep
 
@@ -25,13 +32,10 @@ dflt_arg_pattern = r'.+'
 day_format = "%Y-%m-%d"
 day_format_pattern = re.compile('\d{4}-\d{2}-\d{2}')
 
-until_slash = "[^" + path_sep + "]+"
-until_slash_capture = '(' + until_slash + ')'
-
 capture_template = '({format})'
 named_capture_template = '(?P<{name}>{format})'
 
-names_re = re.compile('(?<={)[^}]+(?=})')
+fields_re = re.compile('(?<={)[^}]+(?=})')
 
 
 def validate_kwargs(kwargs_to_validate,
@@ -102,23 +106,27 @@ def validate_kwargs(kwargs_to_validate,
     return True
 
 
-def get_names_from_template(template):
+def get_fields_from_template(template):
     """
     Get list from {item} items of template string
     :param template: a "template" string (a string with {item} items
     -- the kind that is used to mark token for str.format)
     :return: a list of the token items of the string, in the order they appear
-    >>> get_names_from_template('this{is}an{example}of{a}template')
+    >>> get_fields_from_template('this{is}an{example}of{a}template')
     ['is', 'example', 'a']
     """
-    return names_re.findall(template)
+    return fields_re.findall(template)
 
 
-def mk_format_mapping_dict(format_dict, required_keys, default_format=until_slash):
+# until_slash = "[^" + path_sep + "]+"
+# until_slash_capture = '(' + until_slash + ')'
+
+def mk_format_mapping_dict(format_dict, required_keys, sep=path_sep):
+    until_sep = "[^" + re.escape(sep) + "]+"
     new_format_dict = format_dict.copy()
     for k in required_keys:
         if k not in new_format_dict:
-            new_format_dict[k] = default_format
+            new_format_dict[k] = until_sep
     return new_format_dict
 
 
@@ -175,31 +183,31 @@ def mk_pattern_from_template_and_format_dict(template, format_dict=None):
     """
     format_dict = format_dict or {}
 
-    names = get_names_from_template(template)
-    format_dict = mk_format_mapping_dict(format_dict, names)
+    fields = get_fields_from_template(template)
+    format_dict = mk_format_mapping_dict(format_dict, fields)
     named_capture_patterns = mk_named_capture_patterns(format_dict)
     return re.compile(template_to_pattern(named_capture_patterns, template))
 
 
 def mk_prefix_templates_dicts(template):
-    names = get_names_from_template(template)
+    fields = get_fields_from_template(template)
     prefix_template_dict_including_name = dict()
-    none_and_names = [None] + names
-    for name in none_and_names:
-        if name == names[-1]:
+    none_and_fields = [None] + fields
+    for name in none_and_fields:
+        if name == fields[-1]:
             prefix_template_dict_including_name[name] = template
         else:
             if name is None:
-                next_name = names[0]
+                next_name = fields[0]
             else:
-                next_name = names[1 + next(i for i, _name in enumerate(names) if _name == name)]
+                next_name = fields[1 + next(i for i, _name in enumerate(fields) if _name == name)]
             p = '{' + next_name + '}'
             template_idx_of_next_name = re.search(p, template).start()
             prefix_template_dict_including_name[name] = template[:template_idx_of_next_name]
 
     prefix_template_dict_excluding_name = dict()
-    for i, name in enumerate(names):
-        prefix_template_dict_excluding_name[name] = prefix_template_dict_including_name[none_and_names[i]]
+    for i, name in enumerate(fields):
+        prefix_template_dict_excluding_name[name] = prefix_template_dict_including_name[none_and_fields[i]]
     prefix_template_dict_excluding_name[None] = template
 
     return prefix_template_dict_including_name, prefix_template_dict_excluding_name
@@ -220,10 +228,64 @@ def mk_kwargs_trans(**trans_func_for_key):
     return key_based_val_trans
 
 
-class LinearNaming(object):
-    def __init__(self, template, format_dict=None,
-                 process_kwargs=None, process_info_dict=None):
-        """
+def _mk(self, *args, **kwargs):
+    """
+    Make a full name with given kwargs. All required name=val must be present (or infered by self.process_kwargs
+    function.
+    The required fields are in self.fields.
+    Does NOT check for validity of the vals.
+    :param kwargs: The name=val arguments needed to construct a valid name
+    :return: an name
+    """
+    n = len(args) + len(kwargs)
+    if n > self.n_fields:
+        raise ValueError(f"You have too many arguments: (args, kwargs) is ({args},{kwargs})")
+    elif n < self.n_fields:
+        raise ValueError(f"You have too few arguments: (args, kwargs) is ({args},{kwargs})")
+    kwargs = dict({k: v for k, v in zip(self.fields, args)}, **kwargs)
+    if self.process_kwargs is not None:
+        kwargs = self.process_kwargs(**kwargs)
+    return self.template.format(**kwargs)
+
+
+def _mk_prefix(self, *args, **kwargs):
+    """
+    Make a prefix for an uploads name that has has the path up to the first None argument.
+    :return: A string that is the prefix of a valid name
+    """
+    assert len(args) + len(kwargs) <= self.n_fields, "You have too many arguments"
+    kwargs = dict({k: v for k, v in zip(self.fields, args)}, **kwargs)
+    if self.process_kwargs is not None:
+        kwargs = self.process_kwargs(**kwargs)
+
+    # ascertain that no fields were skipped (we can leave fields out at the end, but not in the middle)
+    a_name_was_skipped = False
+    for name in self.fields:
+        if name not in kwargs:
+            if a_name_was_skipped == True:
+                raise ValueError("You are making a PREFIX: This means you can't skip any fields. "
+                                 "Once a name is omitted, you need to omit all further fields. "
+                                 f"The name order is {self.fields}. You specified {tuple(kwargs.keys())}")
+            else:
+                a_name_was_skipped = True
+
+    keep_kwargs = {}
+    last_name = None
+    for name in self.fields:
+        if name in kwargs:
+            keep_kwargs[name] = kwargs[name]
+            last_name = name
+        else:
+            break
+
+    return self.prefix_template_including_name[last_name].format(**keep_kwargs)
+
+
+class StrTupleDict(object):
+
+    def __init__(self, template: (str, tuple, list), format_dict=None,
+                 process_kwargs=None, process_info_dict=None, sep: str = path_sep):
+        """Converting from and to strings, tuples, and dicts.
 
         Args:
             template: The string format template
@@ -237,10 +299,12 @@ class LinearNaming(object):
             process_info_dict: A sort of converse of format_dict.
                 This is a {field_name: field_conversion_func, ...} dict that is used to convert info_dict values
                 before returning them.
+            name_separator: Used
 
-        >>> ln = LinearNaming('/home/{user}/fav/{num}.txt',
+        >>> ln = StrTupleDict('/home/{user}/fav/{num}.txt',
         ...	                  format_dict={'user': '[^/]+', 'num': '\d+'},
-        ...	                  process_info_dict={'num': int}
+        ...	                  process_info_dict={'num': int},
+        ...                   sep='/'
         ...	                 )
         >>> ln.is_valid('/home/USER/fav/123.txt')
         True
@@ -254,41 +318,45 @@ class LinearNaming(object):
         >>> ln.info_dict('/home/USER/fav/123.txt')  # note in the output, 123 is an int, not a string
         {'user': 'USER', 'num': 123}
         >>>
-        >>> ####### prefix methods #######
-        >>> ln.is_valid_prefix('/home/USER/fav/')
-        True
-        >>> ln.is_valid_prefix('/home/USER/fav/12')
-        False  # too long
-        >>> ln.is_valid_prefix('/home/USER/fav')
-        False  # too short
-        >>> ln.is_valid_prefix('/home/')
-        True  # just right
-        >>> ln.is_valid_prefix('/home/USER/fav/123.txt')  # full path, so output same as is_valid() method
-        True
-        >>>
-        >>> ln.mk_prefix('ME')
-        '/home/ME/fav/'
-        >>> ln.mk_prefix(user='YOU', num=456)  # full specification, so output same as same as mk() method
-        '/home/YOU/fav/456.txt'
+        >>> # Trying with template given as a tuple, and with different separator
+        >>> ln = StrTupleDict(template=('first', 'last', 'age'),
+        ...                   format_dict={'age': '-*\d+'},
+        ...                   process_info_dict={'age': int},
+        ...                   sep=',')
+        >>> ln.tuple_to_str(('Thor', "Odinson", 1500))
+        'Thor,Odinson,1500'
+        >>> ln.str_to_dict('Loki,Laufeyson,1070')
+        {'first': 'Loki', 'last': 'Laufeyson', 'age': 1070}
+        >>> ln.str_to_tuple('Odin,Himself,-1')
+        ('Odin', 'Himself', -1)
+        >>> ln.tuple_to_dict(('Odin', 'Himself', -1))
+        {'first': 'Odin', 'last': 'Himself', 'age': -1}
+        >>> ln.dict_to_tuple({'first': 'Odin', 'last': 'Himself', 'age': -1})
+        ('Odin', 'Himself', -1)
         """
         if format_dict is None:
             format_dict = {}
 
-        self.template = template
+        self.sep = sep
 
-        names = get_names_from_template(template)
+        if isinstance(template, str):
+            self.template = template
+        else:
+            self.template = self.sep.join([f"{{{x}}}" for x in template])
 
-        format_dict = mk_format_mapping_dict(format_dict, names)
+        fields = get_fields_from_template(self.template)
+
+        format_dict = mk_format_mapping_dict(format_dict, fields)
 
         named_capture_patterns = mk_named_capture_patterns(format_dict)
 
-        pattern = template_to_pattern(named_capture_patterns, template)
+        pattern = template_to_pattern(named_capture_patterns, self.template)
         pattern += '$'
         pattern = re.compile(pattern)
 
         extract_pattern = {}
-        for name in names:
-            extract_pattern[name] = mk_extract_pattern(template, format_dict, named_capture_patterns, name)
+        for name in fields:
+            extract_pattern[name] = mk_extract_pattern(self.template, format_dict, named_capture_patterns, name)
 
         if isinstance(process_info_dict, dict):
             _processor_for_kw = process_info_dict
@@ -296,8 +364,8 @@ class LinearNaming(object):
             def process_info_dict(**info_dict):
                 return {k: _processor_for_kw.get(k, lambda x: x)(v) for k, v in info_dict.items()}
 
-        self.names = names
-        self.n_names = len(names)
+        self.fields = fields
+        self.n_fields = len(fields)
         self.format_dict = format_dict
         self.named_capture_patterns = named_capture_patterns
         self.pattern = pattern
@@ -313,102 +381,74 @@ class LinearNaming(object):
         _prefix_pattern += '$'
         self.prefix_pattern = re.compile(_prefix_pattern)
 
-    def __call__(self, *args, **kwargs):
-        return self.mk(*args, **kwargs)
+        set_signature_of_func(_mk, self.fields)
+        self.mk = MethodType(_mk, self)
 
-    def is_valid(self, name):
-        """
-        Check if the name has the "upload format" (i.e. the kind of names that are _ids of fv_mgc, and what
+    def is_valid(self, s: str):
+        """Check if the name has the "upload format" (i.e. the kind of fields that are _ids of fv_mgc, and what
         name means in most of the iatis system.
-        :param name: the name (string) to check
+        :param s: the string to check
         :return: True iff name has the upload format
         """
-        return bool(self.pattern.match(name))
+        return bool(self.pattern.match(s))
 
-    def is_valid_prefix(self, name):
+    def extract(self, field, s):
+        """Extract a single item from an name
+        :param field: field of the item to extract
+        :param s: the string from which to extract it
+        :return: the value for name
         """
-        Check if name is a valid prefix.
-        :param name: a string (that might be a valid name prefix)
-        :return: True iff name is a valid prefix
-        """
-        return bool(self.prefix_pattern.match(name))
+        return self.extract_pattern[field].match(s).group(1)
 
-    def info_dict(self, name):
+    def str_to_dict(self, s: str):
         """
         Get a dict with the arguments of an name (for example group, user, subuser, etc.)
-        :param name:
-        :return: a dict holding the argument names and values
+        :param s:
+        :return: a dict holding the argument fields and values
         """
-        m = self.pattern.match(name)
+        m = self.pattern.match(s)
         if m:
             info_dict = m.groupdict()
             if self.process_info_dict:
                 return self.process_info_dict(**info_dict)
             else:
                 return info_dict
+        else:
+            raise ValueError(f"Invalid string format: {s}")
 
-    def info_tuple(self, name):
-        info_dict = self.info_dict(name)
-        return tuple(info_dict[x] for x in self.names)
+    def str_to_tuple(self, s: str):
+        info_dict = self.str_to_dict(s)
+        return tuple(info_dict[x] for x in self.fields)
 
-    def extract(self, item, name):
-        """
-        Extract a single item from an name
-        :param item: item of the item to extract
-        :param name: the name from which to extract it
-        :return: the value for name
-        """
-        return self.extract_pattern[item].match(name).group(1)
+    def dict_to_str(self, d):
+        return self.mk(**d)
 
-    def mk_prefix(self, *args, **kwargs):
-        """
-        Make a prefix for an uploads name that has has the path up to the first None argument.
-        :return: A string that is the prefix of a valid name
-        """
-        assert len(args) + len(kwargs) <= self.n_names, "You have too many arguments"
-        kwargs = dict({k: v for k, v in zip(self.names, args)}, **kwargs)
-        if self.process_kwargs is not None:
-            kwargs = self.process_kwargs(**kwargs)
+    def tuple_to_str(self, t):
+        return self.mk(*t)
 
-        keep_kwargs = {}
-        last_name = None
-        for name in self.names:
-            if name in kwargs:
-                keep_kwargs[name] = kwargs[name]
-                last_name = name
-            else:
-                break
+    info_dict = str_to_dict  # alias
+    info_tuple = str_to_tuple  # alias
 
-        return self.prefix_template_including_name[last_name].format(**keep_kwargs)
+    def dict_to_tuple(self, d):
+        assert_condition(len(self.fields) == len(d), f"len(d)={len(d)} but len(fields)={len(self.fields)}")
+        return tuple(d[f] for f in self.fields)
 
-    def mk(self, *args, **kwargs):
-        """
-        Make a full name with given kwargs. All required name=val must be present (or infered by self.process_kwargs
-        function.
-        The required names are in self.names.
-        Does NOT check for validity of the vals.
-        :param kwargs: The name=val arguments needed to construct a valid name
-        :return: an name
-        """
-        assert len(args) + len(kwargs) == self.n_names, "You're missing, or have too many arguments"
-        kwargs = dict({k: v for k, v in zip(self.names, args)}, **kwargs)
-        if self.process_kwargs is not None:
-            kwargs = self.process_kwargs(**kwargs)
-        return self.template.format(**kwargs)
+    def tuple_to_dict(self, t):
+        assert_condition(len(self.fields) == len(t), f"len(d)={len(t)} but len(fields)={len(self.fields)}")
+        return {f: x for f, x in zip(self.fields, t)}
 
-    def replace_name_elements(self, name, **elements_kwargs):
-        """
-        Replace specific name argument values with others
-        :param name: the name to replace
+    def replace_name_elements(self, s: str, **elements_kwargs):
+        """Replace specific name argument values with others
+        :param s: the string to replace
         :param elements_kwargs: the arguments to replace (and their values)
         :return: a new name
         """
-        name_info_dict = self.info_dict(name)
+        name_info_dict = self.info_dict(s)
         for k, v in elements_kwargs.items():
             name_info_dict[k] = v
         return self.mk(**name_info_dict)
 
-    def __repr__(self):
+    def _info_str(self):
         kv = self.__dict__.copy()
         exclude = ['process_kwargs', 'extract_pattern', 'prefix_pattern',
                    'prefix_template_including_name', 'prefix_template_excluding_name']
@@ -416,18 +456,82 @@ class LinearNaming(object):
             kv.pop(f)
         s = ""
         s += "  * {}: {}\n".format('template', kv.pop('template'))
+        s += "  * {}: {}\n".format('template', kv.pop('sep'))
         s += "  * {}: {}\n".format('format_dict', kv.pop('format_dict'))
 
         for k, v in kv.items():
             if hasattr(v, 'pattern'):
                 v = v.pattern
             s += "  * {}: {}\n".format(k, v)
+
         return s
 
+    def _print_info_str(self):
+        print(self._info_str())
+
+
+class StrTupleDictWithPrefix(StrTupleDict):
+    """Converting from and to strings, tuples, and dicts, but with partial "prefix" specs allowed.
+
+    Args:
+        template: The string format template
+        format_dict: A {field_name: field_value_format_regex, ...} dict
+        process_kwargs: A function taking the field=value pairs and producing a dict of processed
+            {field: value,...} dict (where both fields and values could have been processed.
+            This is useful when we need to process (format, default, etc.) fields, or their values,
+            according to the other fields of values in the collection.
+            A specification of {field: function_to_process_this_value,...} wouldn't allow the full powers
+            we are allowing here.
+        process_info_dict: A sort of converse of format_dict.
+            This is a {field_name: field_conversion_func, ...} dict that is used to convert info_dict values
+            before returning them.
+        name_separator: Used
+
+    >>> ln = StrTupleDictWithPrefix('/home/{user}/fav/{num}.txt',
+    ...	                  format_dict={'user': '[^/]+', 'num': '\d+'},
+    ...	                  process_info_dict={'num': int},
+    ...                   sep='/'
+    ...	                 )
+    >>> ln.mk('USER', num=123)  # making a string (with args or kwargs)
+    '/home/USER/fav/123.txt'
+    >>> ####### prefix methods #######
+    >>> ln.is_valid_prefix('/home/USER/fav/')
+    True
+    >>> ln.is_valid_prefix('/home/USER/fav/12')  # False because too long
+    False
+    >>> ln.is_valid_prefix('/home/USER/fav')  # False because too short
+    False
+    >>> ln.is_valid_prefix('/home/')  # True because just right
+    True
+    >>> ln.is_valid_prefix('/home/USER/fav/123.txt')  # full path, so output same as is_valid() method
+    True
+    >>>
+    >>> ln.mk_prefix('ME')
+    '/home/ME/fav/'
+    >>> ln.mk_prefix(user='YOU', num=456)  # full specification, so output same as same as mk() method
+    '/home/YOU/fav/456.txt'
+    """
+
+    @wraps(StrTupleDict.__init__)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        set_signature_of_func(_mk_prefix, [(s, None) for s in self.fields])
+        self.mk_prefix = MethodType(_mk_prefix, self)
+
+    def is_valid_prefix(self, s):
+        """Check if name is a valid prefix.
+        :param s: a string (that might or might not be a valid prefix)
+        :return: True iff name is a valid prefix
+        """
+        return bool(self.prefix_pattern.match(s))
+
+
+LinearNaming = StrTupleDictWithPrefix
 
 from py2store.base import Store
 from collections import namedtuple
 from py2store.util import lazyprop
+
 
 class ParametricKeyStore(Store):
     def __init__(self, store, linear_naming=None):
@@ -454,7 +558,7 @@ class StoreWithDictKeys(ParametricKeyStore):
 class StoreWithNamedTupleKeys(ParametricKeyStore):
     @lazyprop
     def NamedTupleKey(self):
-        return namedtuple('NamedTupleKey', field_names=self._linear_naming.names)
+        return namedtuple('NamedTupleKey', field_names=self._linear_naming.fields)
 
     def _id_of_key(self, key):
         return self._linear_naming.mk(*key)
