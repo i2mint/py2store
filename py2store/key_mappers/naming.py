@@ -248,39 +248,6 @@ def _mk(self, *args, **kwargs):
     return self.template.format(**kwargs)
 
 
-def _mk_prefix(self, *args, **kwargs):
-    """
-    Make a prefix for an uploads name that has has the path up to the first None argument.
-    :return: A string that is the prefix of a valid name
-    """
-    assert len(args) + len(kwargs) <= self.n_fields, "You have too many arguments"
-    kwargs = dict({k: v for k, v in zip(self.fields, args)}, **kwargs)
-    if self.process_kwargs is not None:
-        kwargs = self.process_kwargs(**kwargs)
-
-    # ascertain that no fields were skipped (we can leave fields out at the end, but not in the middle)
-    a_name_was_skipped = False
-    for name in self.fields:
-        if name not in kwargs:
-            if a_name_was_skipped == True:
-                raise ValueError("You are making a PREFIX: This means you can't skip any fields. "
-                                 "Once a name is omitted, you need to omit all further fields. "
-                                 f"The name order is {self.fields}. You specified {tuple(kwargs.keys())}")
-            else:
-                a_name_was_skipped = True
-
-    keep_kwargs = {}
-    last_name = None
-    for name in self.fields:
-        if name in kwargs:
-            keep_kwargs[name] = kwargs[name]
-            last_name = name
-        else:
-            break
-
-    return self.prefix_template_including_name[last_name].format(**keep_kwargs)
-
-
 class StrTupleDict(object):
 
     def __init__(self, template: (str, tuple, list), format_dict=None,
@@ -373,15 +340,26 @@ class StrTupleDict(object):
         self.process_kwargs = process_kwargs
         self.process_info_dict = process_info_dict
 
-        self.prefix_template_including_name, self.prefix_template_excluding_name = \
-            mk_prefix_templates_dicts(self.template)
+        def _mk(self, *args, **kwargs):
+            """
+            Make a full name with given kwargs. All required name=val must be present (or infered by self.process_kwargs
+            function.
+            The required fields are in self.fields.
+            Does NOT check for validity of the vals.
+            :param kwargs: The name=val arguments needed to construct a valid name
+            :return: an name
+            """
+            n = len(args) + len(kwargs)
+            if n > self.n_fields:
+                raise ValueError(f"You have too many arguments: (args, kwargs) is ({args},{kwargs})")
+            elif n < self.n_fields:
+                raise ValueError(f"You have too few arguments: (args, kwargs) is ({args},{kwargs})")
+            kwargs = dict({k: v for k, v in zip(self.fields, args)}, **kwargs)
+            if self.process_kwargs is not None:
+                kwargs = self.process_kwargs(**kwargs)
+            return self.template.format(**kwargs)
 
-        _prefix_pattern = '$|'.join(
-            [x.format(**self.format_dict) for x in sorted(list(self.prefix_template_including_name.values()), key=len)])
-        _prefix_pattern += '$'
-        self.prefix_pattern = re.compile(_prefix_pattern)
-
-        set_signature_of_func(_mk, self.fields)
+        set_signature_of_func(_mk, ['self'] + self.fields)
         self.mk = MethodType(_mk, self)
 
     def is_valid(self, s: str):
@@ -515,6 +493,47 @@ class StrTupleDictWithPrefix(StrTupleDict):
     @wraps(StrTupleDict.__init__)
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        self.prefix_template_including_name, self.prefix_template_excluding_name = \
+            mk_prefix_templates_dicts(self.template)
+
+        _prefix_pattern = '$|'.join(
+            [x.format(**self.format_dict) for x in sorted(list(self.prefix_template_including_name.values()), key=len)])
+        _prefix_pattern += '$'
+        self.prefix_pattern = re.compile(_prefix_pattern)
+
+        def _mk_prefix(self, *args, **kwargs):
+            """
+            Make a prefix for an uploads name that has has the path up to the first None argument.
+            :return: A string that is the prefix of a valid name
+            """
+            assert len(args) + len(kwargs) <= self.n_fields, "You have too many arguments"
+            kwargs = dict({k: v for k, v in zip(self.fields, args)}, **kwargs)
+            if self.process_kwargs is not None:
+                kwargs = self.process_kwargs(**kwargs)
+
+            # ascertain that no fields were skipped (we can leave fields out at the end, but not in the middle)
+            a_name_was_skipped = False
+            for name in self.fields:
+                if name not in kwargs:
+                    if a_name_was_skipped == True:
+                        raise ValueError("You are making a PREFIX: This means you can't skip any fields. "
+                                         "Once a name is omitted, you need to omit all further fields. "
+                                         f"The name order is {self.fields}. You specified {tuple(kwargs.keys())}")
+                    else:
+                        a_name_was_skipped = True
+
+            keep_kwargs = {}
+            last_name = None
+            for name in self.fields:
+                if name in kwargs:
+                    keep_kwargs[name] = kwargs[name]
+                    last_name = name
+                else:
+                    break
+
+            return self.prefix_template_including_name[last_name].format(**keep_kwargs)
+
         set_signature_of_func(_mk_prefix, [(s, None) for s in self.fields])
         self.mk_prefix = MethodType(_mk_prefix, self)
 
