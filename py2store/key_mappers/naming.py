@@ -553,37 +553,42 @@ from py2store.util import lazyprop
 
 
 class ParametricKeyStore(Store):
-    def __init__(self, store, linear_naming=None):
+    def __init__(self, store, keymap=None):
         super().__init__(store)
-        self._linear_naming = linear_naming
+        self._keymap = keymap
+
+    @property
+    def _linear_naming(self):
+        print("_linear_naming Deprecated: Use _keymap instead")
+        return self._keymap
 
 
 class StoreWithTupleKeys(ParametricKeyStore):
     def _id_of_key(self, key):
-        return self._linear_naming.mk(*key)
+        return self._keymap.mk(*key)
 
     def _key_of_id(self, _id):
-        return self._linear_naming.info_tuple(_id)
+        return self._keymap.info_tuple(_id)
 
 
 class StoreWithDictKeys(ParametricKeyStore):
     def _id_of_key(self, key):
-        return self._linear_naming.mk(**key)
+        return self._keymap.mk(**key)
 
     def _key_of_id(self, _id):
-        return self._linear_naming.info_dict(_id)
+        return self._keymap.info_dict(_id)
 
 
 class StoreWithNamedTupleKeys(ParametricKeyStore):
     @lazyprop
     def NamedTupleKey(self):
-        return namedtuple('NamedTupleKey', field_names=self._linear_naming.fields)
+        return namedtuple('NamedTupleKey', field_names=self._keymap.fields)
 
     def _id_of_key(self, key):
-        return self._linear_naming.mk(*key)
+        return self._keymap.mk(*key)
 
     def _key_of_id(self, _id):
-        return self.NamedTupleKey(*self._linear_naming.info_tuple(_id))
+        return self.NamedTupleKey(*self._keymap.info_tuple(_id))
 
 
 # def mk_parametric_key_store_cls(store_cls, key_type=tuple):
