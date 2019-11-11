@@ -3,6 +3,52 @@ import types
 from py2store.base import has_kv_store_interface, Store
 
 
+def cache_iter(collection_cls, name=None):
+    """Make a class that wraps input class's __iter__ becomes cached.
+
+    Quite often we have a lot of keys, that we get from a remote data source, and don't want to have to ask for
+    them again and again, having them be fetched, sent over the network, etc.
+    So we need caching.
+
+    But this caching is not the typical read caching, since it's __iter__ we want to cache, and that's a generator.
+    So we'll implement a store class decorator specialized for this.
+
+    The following decorator, when applied to a class (that has an __iter__), will perform the __iter__ code, consuming
+    all items of the generator and storing them in _iter_cache, and then will yield from there every subsequent call.
+
+    If you need to refresh the cache, you'll need to delete _iter_cache (or set to None). Most of the time though,
+    you'll be applying this caching decorator to static data.
+
+    Args:
+        collection_cls: The class to wrap (must have an __iter__)
+        name: The name of the new class
+
+    The ex
+    >>> @cache_iter
+    ... class A:
+    ...     def __iter__(self):
+    ...         yield from [1, 2, 3]
+    >>> # Note, could have also used this form: AA = cache_iter(A)
+    >>> a = A()
+    >>> list(a)
+    [1, 2, 3]
+    >>> a._iter_cache = ['a', 'b', 'c']  # changing the cache, to prove that subsequent listing will read from there
+    >>> list(a)  # proof:
+    ['a', 'b', 'c']
+    """
+    name = name or 'IterCached' + collection_cls.__name__
+    cached_cls = type(name, (collection_cls,), {'_iter_cache': None})
+
+    def __iter__(self):
+        if getattr(self, '_iter_cache', None) is None:
+            self._iter_cache = list(super(cached_cls, self).__iter__())
+        yield from self._iter_cache
+
+    cached_cls.__iter__ = __iter__
+
+    return cached_cls
+
+
 def kv_wrap_persister_cls(persister_cls, name=None):
     """Make a class that wraps a persister into a py2store.base.Store,
 
