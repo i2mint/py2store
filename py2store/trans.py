@@ -37,6 +37,20 @@ def cache_iter(collection_cls, iter_to_container=list, name=None):
     >>> a._iter_cache = ['a', 'b', 'c']  # changing the cache, to prove that subsequent listing will read from there
     >>> list(a)  # proof:
     ['a', 'b', 'c']
+    >>>
+    >>> # Let's demo the iter_to_container argument. The default is "list", which will just consume the iter in order
+    >>> sorted_dict = cache_iter(dict, iter_to_container=list)
+    >>> s = sorted_dict({'b': 3, 'a': 2, 'c': 1})
+    >>> list(s)  # keys will be in the order they were defined
+    ['b', 'a', 'c']
+    >>> sorted_dict = cache_iter(dict, iter_to_container=sorted)
+    >>> s = sorted_dict({'b': 3, 'a': 2, 'c': 1})
+    >>> list(s)  # keys will be sorted
+    ['a', 'b', 'c']
+    >>> sorted_dict = cache_iter(dict, iter_to_container=lambda x: sorted(x, key=len))
+    >>> s = sorted_dict({'bbb': 3, 'aa': 2, 'c': 1})
+    >>> list(s)  # keys will be sorted according to their length
+    ['c', 'aa', 'bbb']
     """
     name = name or 'IterCached' + collection_cls.__name__
     cached_cls = type(name, (collection_cls,), {'_iter_cache': None})
