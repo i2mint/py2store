@@ -1,9 +1,10 @@
 from functools import wraps
 import types
+from typing import Type
 from py2store.base import has_kv_store_interface, Store, KvCollection
 
 
-def cache_iter(collection_cls: KvCollection, iter_to_container=list, name=None):
+def cache_iter(collection_cls: Type[KvCollection], iter_to_container=list, name=None):
     """Make a class that wraps input class's __iter__ becomes cached.
 
     Quite often we have a lot of keys, that we get from a remote data source, and don't want to have to ask for
