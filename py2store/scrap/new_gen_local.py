@@ -42,8 +42,8 @@ from py2store.persisters.local_files import (
 
 
 class Local(ParametrizedPath, LocalFileRWD, IterBasedSizedMixin, GetBasedContainerMixin):
-    def __init__(self, rootdir, subpath='{subpath}', open_kwargs=None, **linear_naming_kwargs):
-        ParametrizedPath.__init__(self, rootdir, subpath, **linear_naming_kwargs)
+    def __init__(self, rootdir, subpath='{subpath}', open_kwargs=None, **keymap_kws):
+        ParametrizedPath.__init__(self, rootdir, subpath, **keymap_kws)
         open_kwargs = open_kwargs or {}
         LocalFileRWD.__init__(self, **open_kwargs)
 

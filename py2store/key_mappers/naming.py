@@ -370,14 +370,6 @@ class StrTupleDict(object):
         """
         return bool(self.pattern.match(s))
 
-    def extract(self, field, s):
-        """Extract a single item from an name
-        :param field: field of the item to extract
-        :param s: the string from which to extract it
-        :return: the value for name
-        """
-        return self.extract_pattern[field].match(s).group(1)
-
     def str_to_dict(self, s: str):
         """
         Get a dict with the arguments of an name (for example group, user, subuser, etc.)
@@ -404,9 +396,6 @@ class StrTupleDict(object):
     def tuple_to_str(self, t):
         return self.mk(*t)
 
-    info_dict = str_to_dict  # alias
-    info_tuple = str_to_tuple  # alias
-
     def dict_to_tuple(self, d):
         assert_condition(len(self.fields) == len(d), f"len(d)={len(d)} but len(fields)={len(self.fields)}")
         return tuple(d[f] for f in self.fields)
@@ -414,6 +403,17 @@ class StrTupleDict(object):
     def tuple_to_dict(self, t):
         assert_condition(len(self.fields) == len(t), f"len(d)={len(t)} but len(fields)={len(self.fields)}")
         return {f: x for f, x in zip(self.fields, t)}
+
+    def extract(self, field, s):
+        """Extract a single item from an name
+        :param field: field of the item to extract
+        :param s: the string from which to extract it
+        :return: the value for name
+        """
+        return self.extract_pattern[field].match(s).group(1)
+
+    info_dict = str_to_dict  # alias
+    info_tuple = str_to_tuple  # alias
 
     def replace_name_elements(self, s: str, **elements_kwargs):
         """Replace specific name argument values with others

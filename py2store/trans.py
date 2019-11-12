@@ -3,7 +3,7 @@ import types
 from py2store.base import has_kv_store_interface, Store
 
 
-def cache_iter(collection_cls, name=None):
+def cache_iter(collection_cls, iter_to_container=list, name=None):
     """Make a class that wraps input class's __iter__ becomes cached.
 
     Quite often we have a lot of keys, that we get from a remote data source, and don't want to have to ask for
@@ -21,6 +21,8 @@ def cache_iter(collection_cls, name=None):
 
     Args:
         collection_cls: The class to wrap (must have an __iter__)
+        iter_to_container: The function that will be applied to existing __iter__() and assigned to cache.
+            The default is list. Another useful one is the sorted function.
         name: The name of the new class
 
     The ex
@@ -41,7 +43,7 @@ def cache_iter(collection_cls, name=None):
 
     def __iter__(self):
         if getattr(self, '_iter_cache', None) is None:
-            self._iter_cache = list(super(cached_cls, self).__iter__())
+            self._iter_cache = iter_to_container(super(cached_cls, self).__iter__())
         yield from self._iter_cache
 
     cached_cls.__iter__ = __iter__
