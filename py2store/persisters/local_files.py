@@ -69,6 +69,7 @@ def dirpaths_in_dir(rootdir):
 
 
 def iter_filepaths_in_folder_recursively(root_folder, max_levels=inf, _current_level=0):
+    max_levels = max_levels or inf
     for full_path in paths_in_dir(root_folder):
         if os.path.isdir(full_path):
             if _current_level < max_levels:
@@ -80,6 +81,7 @@ def iter_filepaths_in_folder_recursively(root_folder, max_levels=inf, _current_l
 
 
 def iter_dirpaths_in_folder_recursively(root_folder, max_levels=inf, _current_level=0):
+    max_levels = max_levels or inf
     for full_path in paths_in_dir(root_folder):
         if os.path.isdir(full_path):
             yield full_path
@@ -349,6 +351,7 @@ from py2store.key_mappers.naming import mk_pattern_from_template_and_format_dict
 
 class FileSysCollection(KvCollection):
     def __init__(self, rootdir, subpath='', pattern_for_field=None, max_levels=inf):
+        max_levels = max_levels or inf
         subpath_implied_min_levels = len(subpath.split(os.path.sep)) - 1
         assert max_levels >= subpath_implied_min_levels, \
             f"max_levels is {max_levels}, but subpath {subpath} would imply at least {subpath_implied_min_levels}"
