@@ -3,6 +3,7 @@ import types
 from typing import Type
 from py2store.base import has_kv_store_interface, Store, KvCollection
 
+from py2store.util import lazyprop
 
 def cache_iter(collection_cls: Type[KvCollection], iter_to_container=list, name=None):
     """Make a class that wraps input class's __iter__ becomes cached.
@@ -60,9 +61,13 @@ def cache_iter(collection_cls: Type[KvCollection], iter_to_container=list, name=
     name = name or 'IterCached' + collection_cls.__name__
     cached_cls = type(name, (collection_cls,), {'_iter_cache': None})
 
+    @lazyprop
+    def _iter_cache(self):
+        return iter_to_container(super(cached_cls, self).__iter__())
+
     def __iter__(self):
-        if getattr(self, '_iter_cache', None) is None:
-            self._iter_cache = iter_to_container(super(cached_cls, self).__iter__())
+        # if getattr(self, '_iter_cache', None) is None:
+        #     self._iter_cache = iter_to_container(super(cached_cls, self).__iter__())
         yield from self._iter_cache
 
     def __len__(self):
@@ -70,6 +75,7 @@ def cache_iter(collection_cls: Type[KvCollection], iter_to_container=list, name=
 
     cached_cls.__iter__ = __iter__
     cached_cls.__len__ = __len__
+    cached_cls._iter_cache = _iter_cache
 
     _define_keys_values_and_items_according_to_iter(cached_cls)
 
