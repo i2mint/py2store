@@ -5,6 +5,7 @@ from py2store.base import has_kv_store_interface, Store, KvCollection
 
 from py2store.util import lazyprop
 
+
 def cache_iter(collection_cls: Type[KvCollection], iter_to_container=list, name=None):
     """Make a class that wraps input class's __iter__ becomes cached.
 
@@ -298,18 +299,18 @@ def kv_wrap_persister_cls(persister_cls, name=None):
     return cls
 
 
-def wrap_kvs(store_cls, name=None, *,
+def wrap_kvs(store, name=None, *,
              key_of_id=None, id_of_key=None, obj_of_data=None, data_of_obj=None, postget=None
              ):
-    """Make a Store that is wrapped with the given key/val transformers
+    """Make a Store that is wrapped with the given key/val transformers.
 
     Args:
-        store_cls:
-        name:
-        key_of_id:
-        id_of_key:
-        obj_of_data:
-        data_of_obj:
+        store: Store class or instance
+        name: Name to give the wrapper class
+        key_of_id: To be the external _key_of_id
+        id_of_key: To be the external _id_of_key
+        obj_of_data: To be the external _obj_of_data
+        data_of_obj: To be the external _data_of_obj
         postget: postget(k, v) function that is called (and output returned) after retrieving the v for k
 
     Returns:
@@ -347,43 +348,52 @@ def wrap_kvs(store_cls, name=None, *,
     >>> list(b.items())
     [('BIG', 'upper letters'), ('small', 'lower text')]
     """
-    if not has_kv_store_interface(store_cls):
-        store_cls = kv_wrap_persister_cls(store_cls, name=name)
-    elif name is not None:
-        _store_cls = store_cls
-        store_cls = type(name, (_store_cls,), {})  # make a "copy"
+    if not isinstance(store, type):  # then consider it to be an instance
+        store_instance = store
+        WrapperStore = wrap_kvs(Store, name=name,
+                                key_of_id=key_of_id, id_of_key=id_of_key,
+                                obj_of_data=obj_of_data, data_of_obj=data_of_obj,
+                                postget=postget)
+        return WrapperStore(store_instance)
+    else:  # it's a class we're wrapping
+        store_cls = store
+        if not has_kv_store_interface(store_cls):
+            store_cls = kv_wrap_persister_cls(store_cls, name=name)
+        elif name is not None:
+            _store_cls = store_cls
+            store_cls = type(name, (_store_cls,), {})  # make a "copy"
 
-    if key_of_id is not None:
-        def _key_of_id(self, _id):
-            return key_of_id(super(store_cls, self)._key_of_id(_id))
+        if key_of_id is not None:
+            def _key_of_id(self, _id):
+                return key_of_id(super(store_cls, self)._key_of_id(_id))
 
-        store_cls._key_of_id = _key_of_id
+            store_cls._key_of_id = _key_of_id
 
-    if id_of_key is not None:
-        def _id_of_key(self, k):
-            return super(store_cls, self)._id_of_key(id_of_key(k))
+        if id_of_key is not None:
+            def _id_of_key(self, k):
+                return super(store_cls, self)._id_of_key(id_of_key(k))
 
-        store_cls._id_of_key = _id_of_key
+            store_cls._id_of_key = _id_of_key
 
-    if obj_of_data is not None:
-        def _obj_of_data(self, _id):
-            return obj_of_data(super(store_cls, self)._obj_of_data(_id))
+        if obj_of_data is not None:
+            def _obj_of_data(self, _id):
+                return obj_of_data(super(store_cls, self)._obj_of_data(_id))
 
-        store_cls._obj_of_data = _obj_of_data
+            store_cls._obj_of_data = _obj_of_data
 
-    if data_of_obj is not None:
-        def _data_of_obj(self, obj):
-            return super(store_cls, self)._data_of_obj(data_of_obj(obj))
+        if data_of_obj is not None:
+            def _data_of_obj(self, obj):
+                return super(store_cls, self)._data_of_obj(data_of_obj(obj))
 
-        store_cls._data_of_obj = _data_of_obj
+            store_cls._data_of_obj = _data_of_obj
 
-    if postget is not None:
-        def __getitem__(self, k):
-            return postget(k, super(store_cls, self).__getitem__(k))
+        if postget is not None:
+            def __getitem__(self, k):
+                return postget(k, super(store_cls, self).__getitem__(k))
 
-        store_cls.__getitem__ = __getitem__
+            store_cls.__getitem__ = __getitem__
 
-    return store_cls
+        return store_cls
 
     #
     # class MyStore(Store):

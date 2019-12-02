@@ -1,9 +1,14 @@
 import os
 import shutil
 import re
+from collections import namedtuple
 from warnings import warn
 
 var_str_p = re.compile('\W|^(?=\d)')
+
+
+def ntup(**kwargs):
+    return namedtuple('NamedTuple', list(kwargs))(**kwargs)
 
 
 def str_to_var_str(s: str) -> str:
