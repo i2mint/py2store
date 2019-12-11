@@ -171,8 +171,8 @@ def test_dropbox():
     import json
     import os
 
-    configs = json.load(open(os.path.expanduser('~/.py2store_configs.json')))
-    store = DropboxTextStore('/py2store_data/test/', **configs['dropbox']['__init__kwargs'])
+    configs = json.load(open(os.path.expanduser('~/.py2store_configs/dropbox.json')))
+    store = DropboxTextStore('/py2store_data/test/', **configs['_fak_']['k'])
     _multi_test(store)
 
     # from py2store.kv import LocalFileStore as cls

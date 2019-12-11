@@ -9,8 +9,8 @@ from py2store.base import KvCollection, KvReader, KvPersister, Reader, Persister
 from py2store.stores.local_store import LocalStore, LocalBinaryStore, LocalTextStore, LocalPickleStore, LocalJsonStore
 from py2store.stores.local_store import QuickStore, QuickBinaryStore, QuickTextStore, QuickJsonStore, QuickPickleStore
 from py2store.base import Store
-from py2store.trans import wrap_kvs
-from py2store.access import user_configs_dict, user_configs, user_defaults_dict, user_defaults
+from py2store.trans import wrap_kvs, disable_delitem, disable_setitem, mk_read_only
+from py2store.access import user_configs_dict, user_configs, user_defaults_dict, user_defaults, mystores
 
 from py2store.stores.local_store import PickleStore  # consider deprecating and use LocalPickleStore instead?
 from py2store.persisters.local_files import ZipReader

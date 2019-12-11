@@ -93,6 +93,13 @@ class WavLocalFileStore2(WavSerializationMixin, LocalBinaryStore):
                                        subtype=subtype, endian=endian)
 
 
+# class WfSrLocalFileStore(LocalBinaryStore):
+# """"""
+#     def _obj_of_data(self, data):
+#         return data
+#         return sf.read(BytesIO(data))
+
+
 from py2store.stores.local_store import MakeMissingDirsStoreMixin
 import os
 
