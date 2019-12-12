@@ -106,6 +106,7 @@ def validate_kwargs(kwargs_to_validate,
     return True
 
 
+empty_field_p = re.compile('{}')
 def get_fields_from_template(template):
     """
     Get list from {item} items of template string
@@ -115,6 +116,8 @@ def get_fields_from_template(template):
     >>> get_fields_from_template('this{is}an{example}of{a}template')
     ['is', 'example', 'a']
     """
+    # TODO: Need to use the string module, and need to auto-name the fields instead of refusing unnamed
+    assert not empty_field_p.search(template), "All fields must be named: That is, no empty {} allowed"
     return fields_re.findall(template)
 
 
@@ -147,8 +150,11 @@ def mk_named_capture_patterns(mapping_dict):
 
 
 def template_to_pattern(mapping_dict, template):
-    p = re.compile("{}".format("|".join(['{' + re.escape(x) + '}' for x in list(mapping_dict.keys())])))
-    return p.sub(lambda x: mapping_dict[x.string[(x.start() + 1):(x.end() - 1)]], template)
+    if mapping_dict:
+        p = re.compile("{}".format("|".join(['{' + re.escape(x) + '}' for x in list(mapping_dict.keys())])))
+        return p.sub(lambda x: mapping_dict[x.string[(x.start() + 1):(x.end() - 1)]], template)
+    else:
+        return template
 
 
 def mk_extract_pattern(template, format_dict=None, named_capture_patterns=None, name=None):

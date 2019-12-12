@@ -1,9 +1,30 @@
 from functools import wraps
 import types
 from typing import Type
-from py2store.base import has_kv_store_interface, Store, KvCollection
-
+from py2store.base import has_kv_store_interface, Store, KvCollection, KvReader
 from py2store.util import lazyprop
+
+
+def transparent_key_method(self, k):
+    return k
+
+
+def mk_kv_reader_from_kv_collection(kv_collection, name=None, getitem=transparent_key_method):
+    """Make a KvReader class from a KvCollection class.
+
+    Args:
+        kv_collection: The KvCollection class
+        name: The name to give the KvReader class (by default, it will be kv_collection.__name__ + 'Reader')
+        getitem: The method that will be assigned to __getitem__. Should have the (self, k) signature.
+            By default, getitem will be transparent_key_method, returning the key as is.
+            This default is useful when you want to delegate the actual getting to a _obj_of_data wrapper.
+
+    Returns: A KvReader class that subclasses the input kv_collection
+    """
+
+    name = name or kv_collection.__name__ + 'Reader'
+    reader_cls = type(name, (kv_collection, KvReader), {'__getitem__': getitem})
+    return reader_cls
 
 
 def raise_disabled_error(functionality):
@@ -432,7 +453,7 @@ def kv_wrap_persister_cls(persister_cls, name=None):
     return cls
 
 
-def wrap_kvs(store, name=None, *,
+def wrap_kvs(store, name, *,
              key_of_id=None, id_of_key=None, obj_of_data=None, data_of_obj=None, postget=None
              ):
     """Make a Store that is wrapped with the given key/val transformers.
@@ -457,7 +478,8 @@ def wrap_kvs(store, name=None, *,
     >>> def data_of_obj(obj):
     ...     return obj + 100
     >>>
-    >>> A = wrap_kvs(dict, key_of_id=key_of_id, id_of_key=id_of_key, obj_of_data=obj_of_data, data_of_obj=data_of_obj)
+    >>> A = wrap_kvs(dict, 'A',
+    ...             key_of_id=key_of_id, id_of_key=id_of_key, obj_of_data=obj_of_data, data_of_obj=data_of_obj)
     >>> a = A()
     >>> a['KEY'] = 1
     >>> a  # repr is just the base class (dict) repr, so shows "inside" the store (lower case keys and +100)
@@ -474,7 +496,7 @@ def wrap_kvs(store, name=None, *,
     [('KEY', 3)]
     >>>
     >>> # And now this: Showing how to condition the value transform (like obj_of_data), but conditioned on key.
-    >>> B = wrap_kvs(dict, postget=lambda k, v: f'upper {v}' if k[0].isupper() else f'lower {v}')
+    >>> B = wrap_kvs(dict, 'B', postget=lambda k, v: f'upper {v}' if k[0].isupper() else f'lower {v}')
     >>> b = B()
     >>> b['BIG'] = 'letters'
     >>> b['small'] = 'text'
@@ -492,7 +514,11 @@ def wrap_kvs(store, name=None, *,
         store_cls = store
         if not has_kv_store_interface(store_cls):
             store_cls = kv_wrap_persister_cls(store_cls, name=name)
-        elif name is not None:
+        else:
+            if name is None:
+                from warnings import warn
+                warn("The use of wraps_fv without an explicit name will be discontinued soon.")
+                name = 'Wrapped' + store_cls.__name__
             _store_cls = store_cls
             store_cls = type(name, (_store_cls,), {})  # make a "copy"
 
@@ -528,7 +554,6 @@ def wrap_kvs(store, name=None, *,
 
         return store_cls
 
-    #
     # class MyStore(Store):
     #     @wraps(persister_cls.__init__)
     #     def __init__(self, *args, **kwargs):

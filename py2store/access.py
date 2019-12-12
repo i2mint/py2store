@@ -28,6 +28,7 @@ from warnings import warn
 from functools import reduce
 from py2store.util import DictAttr, str_to_var_str
 
+FAK = '$fak'
 
 def getenv(name, default=None):
     """Like os.getenv, but removes a suffix \\r character if present (problem with some env var systems)"""
@@ -167,8 +168,8 @@ try:
             func_loader = staticmethod(dflt_func_loader)
 
             def _obj_of_data(self, data):
-                if '_fak_' in data:
-                    return fakit(data['_fak_'], self.func_loader)
+                if '$fak' in data:
+                    return fakit(data['$fak'], self.func_loader)
                 else:
                     msg = "Case not handled by MyStores"
                     if isinstance(data, dict):
@@ -190,7 +191,8 @@ try:
             return k + '.json'
 
 
-        ExtLessJsonStore = wrap_kvs(LocalJsonStore, key_of_id=without_json_ext, id_of_key=add_json_ext)
+        ExtLessJsonStore = wrap_kvs(LocalJsonStore, name='ExtLessJsonStore',
+                                    key_of_id=without_json_ext, id_of_key=add_json_ext)
 
         stores_json_path_format = os.path.join(user_configs_dirpath, 'stores', 'json', '{}.json')
         mystores = MyStores(ExtLessJsonStore(stores_json_path_format))

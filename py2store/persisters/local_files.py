@@ -69,7 +69,8 @@ def dirpaths_in_dir(rootdir):
 
 
 def iter_filepaths_in_folder_recursively(root_folder, max_levels=inf, _current_level=0):
-    max_levels = max_levels or inf
+    if max_levels is None:
+        max_levels = inf
     for full_path in paths_in_dir(root_folder):
         if os.path.isdir(full_path):
             if _current_level < max_levels:
@@ -81,7 +82,8 @@ def iter_filepaths_in_folder_recursively(root_folder, max_levels=inf, _current_l
 
 
 def iter_dirpaths_in_folder_recursively(root_folder, max_levels=inf, _current_level=0):
-    max_levels = max_levels or inf
+    if max_levels is None:
+        max_levels = inf
     for full_path in paths_in_dir(root_folder):
         if os.path.isdir(full_path):
             yield full_path
@@ -351,7 +353,8 @@ from py2store.key_mappers.naming import mk_pattern_from_template_and_format_dict
 
 class FileSysCollection(KvCollection):
     def __init__(self, rootdir, subpath='', pattern_for_field=None, max_levels=inf):
-        max_levels = max_levels or inf
+        if max_levels is None:
+            max_levels = inf
         subpath_implied_min_levels = len(subpath.split(os.path.sep)) - 1
         assert max_levels >= subpath_implied_min_levels, \
             f"max_levels is {max_levels}, but subpath {subpath} would imply at least {subpath_implied_min_levels}"
@@ -368,6 +371,7 @@ class FileSysCollection(KvCollection):
 class FileCollection(FileSysCollection):
 
     def __iter__(self):
+
         yield from filter(self.is_valid_key,
                           iter_filepaths_in_folder_recursively(self.rootdir, max_levels=self._max_levels))
 
@@ -506,6 +510,26 @@ class ZipReader(KvReader):
             f"{self.file_info_filt}"
         ))
         return f"{self.__class__.__name__}({args_str})"
+
+
+class ZipFileReader(FileCollection, KvReader):
+    """A local file reader whose keys are the zip filepaths of the rootdir and values are corresponding ZipReaders.
+    """
+
+    def __init__(self, rootdir, subpath='.+\.zip', pattern_for_field=None, max_levels=0,
+                 prefix='', open_kws=None, file_info_filt=take_everything):
+        super().__init__(rootdir, subpath, pattern_for_field, max_levels)
+        self.zip_reader_kwargs = dict(prefix=prefix, open_kws=open_kws, file_info_filt=file_info_filt)
+
+    def __getitem__(self, k):
+        return ZipReader(k, **self.zip_reader_kwargs)
+
+# trans alternative:
+# from py2store.trans import mk_kv_reader_from_kv_collection, wrap_kvs
+#
+# ZipFileReader = wrap_kvs(mk_kv_reader_from_kv_collection(FileCollection, name='_ZipFileReader'),
+#                          name='ZipFileReader',
+#                          obj_of_data=ZipReader)
 
 #
 # if __name__ == '__main__':
