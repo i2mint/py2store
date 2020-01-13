@@ -1,11 +1,124 @@
+from collections import Sized, Iterable
 from py2store.util import ModuleNotFoundErrorNiceMessage
 
 with ModuleNotFoundErrorNiceMessage():
     from sqlalchemy import create_engine, Column, String, Table
     from sqlalchemy.ext.declarative import declarative_base
     from sqlalchemy.orm import sessionmaker
+    import sqlalchemy as db
 
 from py2store.base import Persister
+
+from py2store.base import Collection, KvReader
+
+DFLT_SQL_PORT = 1433
+DFLT_SQL_HOST = 'localhost'
+
+
+class SqlTable(Sized, Iterable):
+    """Object wrapping a table. It is Iterable (yields rows (as tuples)) and Sized (i.e. you can call len on it)"""
+    _tmpl_count_rows_tmpl = 'SELECT COUNT(*) FROM {table_name}'
+    _tmpl_describe_tmpl = 'DESCRIBE {table_name}'
+    _tmpl_iter_tmpl = 'SELECT * FROM {table_name}'
+
+    def __init__(self, connection, table_name):
+        self.connection = connection
+        self.table_name = table_name
+
+    # Helpers ##########################################################################################################
+    # QUESTION: Should helpers (_describe, _columns, etc.) should be methods/properties/lazyprops, and hidden or not?
+
+    def _count_rows(self):
+        return self.connection.execute(self._tmpl_count_rows_tmpl.format(table_name=self.table_name))
+
+    def _describe(self):
+        return self.connection.execute(self._tmpl_describe_tmpl.format(table_name=self.table_name))
+
+    @property
+    def _columns(self):
+        return tuple(x[0] for x in self._describe())
+
+    ####################################################################################################################
+
+    def __iter__(self):
+        yield from self.connection.execute(self._tmpl_iter_tmpl.format(table_name=self.table_name))
+
+    def __len__(self):
+        return self._count_rows().first()[0]
+
+    def __repr__(self):
+        return f"SqlTable(..., table_name={self.table_name}"
+
+
+class SqlDatabaseCollection(Collection):
+    """A collection of sql tables names."""
+
+    def __init__(self, connection):
+        self.connection = connection
+
+    @classmethod
+    def from_connection(cls, connection):
+        pass  # TODO: Need to make object (with __new__) manually to do this?
+
+    @classmethod
+    def from_engine(cls, engine):
+        connection = engine.connect()
+        o = cls(connection)
+        o.engine = engine
+        return o
+
+    @classmethod
+    def from_uri(cls, uri):
+        engine = db.create_engine(uri)
+        o = cls.from_engine(engine)
+        o.uri = uri
+        return o
+
+    @classmethod
+    def from_config_dict(cls, config_dict):
+        # handle defaults
+        config_dict = dict(dict(host=DFLT_SQL_HOST, port=DFLT_SQL_PORT), **config_dict)
+
+        # validate input
+        expected_keys = {'user', 'pwd', 'host', 'port', 'database'}
+        assert {key for key in config_dict.keys() if key in expected_keys} == expected_keys, 'incomplete config'
+
+        # make the uri
+        uri = 'mysql+pymysql://{user}:{pwd}@{host}:{port}/{database}'.format(**config_dict)  # connect to database
+
+        print(uri)
+
+        # make an instance from uri
+        o = cls.from_uri(uri)
+        o.config_dict = config_dict
+        return o
+
+    @classmethod
+    def from_configs(cls, database, user='user', pwd='password', port=DFLT_SQL_PORT, host=DFLT_SQL_HOST):
+        return cls.from_config_dict(dict(database=database, user=user, pwd=pwd, port=port, host=host))
+
+    def __iter__(self):
+        yield from (x[0] for x in self.connection.execute('show tables'))
+
+
+class SqlReader(SqlDatabaseCollection, KvReader):
+    """A KvReader of sql tables. Keys are table names and values are SqlTable objects"""
+
+    def __getitem__(self, k):
+        return SqlTable(self.connection, k)
+
+
+# More explicit aliases
+SqlAlchemyReader = SqlReader
+SqlAlchemyDatabaseCollection = SqlDatabaseCollection
+
+
+class DfSqlReader(SqlReader):
+    def __getitem__(self, k):
+        with ModuleNotFoundErrorNiceMessage():
+            import pandas as pd
+        table = super().__getitem__(k)
+        return pd.DataFrame(data=list(table), columns=table._columns)
 
 
 class SQLAlchemyPersister(Persister):
