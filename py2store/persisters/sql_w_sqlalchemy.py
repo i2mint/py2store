@@ -86,8 +86,6 @@ class SqlDatabaseCollection(Collection):
         # make the uri
         uri = 'mysql+pymysql://{user}:{pwd}@{host}:{port}/{database}'.format(**config_dict)  # connect to database
 
-        print(uri)
-
         # make an instance from uri
         o = cls.from_uri(uri)
         o.config_dict = config_dict

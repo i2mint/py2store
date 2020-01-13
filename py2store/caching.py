@@ -22,7 +22,7 @@ def mk_memoizer(cache_store):
     return memoize
 
 
-def mk_cached_store(store_cls_you_want_to_cache, caching_store=None):
+def mk_cached_store(store_cls_you_want_to_cache, caching_store=None, new_store_name=None):
     """
 
     Args:
@@ -98,6 +98,9 @@ def mk_cached_store(store_cls_you_want_to_cache, caching_store=None):
         @mk_memoizer(caching_store)
         def __getitem__(self, k):
             return super().__getitem__(k)
+
+    if isinstance(new_store_name, str):
+        CachedStore.__name__ = new_store_name
 
     return CachedStore
 
