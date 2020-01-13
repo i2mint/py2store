@@ -24,7 +24,8 @@ This means that you don't have to implement these as all, and can choose to impl
 the storage methods themselves.
 """
 
-from collections.abc import Collection, Mapping, MutableMapping
+from collections.abc import Collection as CollectionABC
+from collections.abc import Mapping, MutableMapping
 from typing import Any, Iterable, Tuple
 
 Key = Any
@@ -37,20 +38,19 @@ ValIter = Iterable[Val]
 ItemIter = Iterable[Item]
 
 
-class KvCollection(Collection):
+class Collection(CollectionABC):
 
-    def __contains__(self, k: Key) -> bool:
+    def __contains__(self, x) -> bool:
         """
         Check if collection of keys contains k.
-        Note: This method actually fetches the contents for k, returning False if there's a key error trying to do so
+        Note: This method loops through all contents of collection to see if query element exists.
         Therefore it may not be efficient, and in most cases, a method specific to the case should be used.
         :return: True if k is in the collection, and False if not
         """
-        try:
-            self.__getitem__(k)
-            return True
-        except KeyError:
-            return False
+        for existing_x in self.__iter__():
+            if existing_x == x:
+                return True
+        return False
 
     def __len__(self) -> int:
         """
@@ -70,7 +70,25 @@ class KvCollection(Collection):
         return next(iter(self.items()))
 
 
-class KvReader(KvCollection, Mapping):
+KvCollection = Collection  # alias meant for back-compatibility. Would like to deprecated
+
+
+# def getitem_based_contains(self, x) -> bool:
+#     """
+#     Check if collection of keys contains k.
+#     Note: This method actually fetches the contents for k, returning False if there's a key error trying to do so
+#     Therefore it may not be efficient, and in most cases, a method specific to the case should be used.
+#     :return: True if k is in the collection, and False if not
+#     """
+#
+#     try:
+#         self.__getitem__(k)
+#         return True
+#     except KeyError:
+#         return False
+
+
+class KvReader(Collection, Mapping):
     """Acts as a Mapping abc, but with default __len__ (implemented by counting keys)
     and head method to get the first (k, v) item of the store"""
     pass
