@@ -1,7 +1,7 @@
 from functools import wraps
 
 from py2store.base import Store
-from py2store.persisters.sql_w_sqlalchemy import SQLAlchemyPersister, SqlReader
+from py2store.persisters.sql_w_sqlalchemy import SQLAlchemyPersister, SqlDbReader
 from py2store.util import lazyprop
 
 
@@ -43,7 +43,7 @@ with ModuleNotFoundErrorNiceMessage():
     import pandas as pd
 
 
-    class DfSqlReader(SqlReader):
+    class DfSqlDbReader(SqlDbReader):
         def __getitem__(self, k):
             table = super().__getitem__(k)
-            return pd.DataFrame(data=list(table), columns=table._columns)
+            return pd.DataFrame(data=list(table), columns=table.column_names)

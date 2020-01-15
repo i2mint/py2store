@@ -8,15 +8,27 @@ with ModuleNotFoundErrorNiceMessage():
     import sqlalchemy as db
 
 from py2store.base import Persister
-
 from py2store.base import Collection, KvReader
+from py2store.util import lazyprop, lazyprop_w_sentinel
 
 DFLT_SQL_PORT = 1433
 DFLT_SQL_HOST = 'localhost'
 
 
-class SqlTable(Sized, Iterable):
-    """Object wrapping a table. It is Iterable (yields rows (as tuples)) and Sized (i.e. you can call len on it)"""
+class SqlTableRowsCollection(Collection):
+    """Base class wrapping an sql table.
+    It is Iterable (yields rows (as tuples)) and Sized (i.e. you can call len on it).
+    It's also a container, but brute-forced: should probably subclass if you want to perform `row in table` efficiently.
+
+    Note: Be aware of how this object works if you're (1) talking to a table whose contents are changing dynamically.
+    * count_rows() will return the current count every time
+    * len returns the value of the _row_count lazyprop
+    * _row_count returns the length of the _rows cache if it exists, and if not, will return the live count_rows
+    * if len (therefore _row_count) is called before the object listed the rows (therefore filling it's cache),
+        it will return the current number of rows, but if at the time of listing rows, the number of different,
+        the number of rows will be updated to match number of rows cached.
+    * column_names is a cached property
+    """
     _tmpl_count_rows_tmpl = 'SELECT COUNT(*) FROM {table_name}'
     _tmpl_describe_tmpl = 'DESCRIBE {table_name}'
     _tmpl_iter_tmpl = 'SELECT * FROM {table_name}'
@@ -28,29 +40,48 @@ class SqlTable(Sized, Iterable):
     # Helpers ##########################################################################################################
     # QUESTION: Should helpers (_describe, _columns, etc.) should be methods/properties/lazyprops, and hidden or not?
 
-    def _count_rows(self):
-        return self.connection.execute(self._tmpl_count_rows_tmpl.format(table_name=self.table_name))
+    def count_rows(self):
+        return self.connection.execute(self._tmpl_count_rows_tmpl.format(table_name=self.table_name)).first()[0]
+
+    @lazyprop
+    def _row_count(self):
+        if lazyprop_w_sentinel.cache_is_active(self, '_rows'):
+            return len(self._rows)
+        else:
+            return self.count_rows()
+
+    def refresh_row_count(self):
+        del self._row_count  # delete current
+        return self._row_count  # return current row count (mainly to refresh the lazyprop
 
     def _describe(self):
         return self.connection.execute(self._tmpl_describe_tmpl.format(table_name=self.table_name))
 
-    @property
-    def _columns(self):
+    @lazyprop
+    def column_names(self):
         return tuple(x[0] for x in self._describe())
+
+    @lazyprop_w_sentinel
+    def _rows(self):
+        rows = list(self.connection.execute(self._tmpl_iter_tmpl.format(table_name=self.table_name)))
+        self._row_count = len(rows)
+        return rows
 
     ####################################################################################################################
 
     def __iter__(self):
-        yield from self.connection.execute(self._tmpl_iter_tmpl.format(table_name=self.table_name))
+        # Question: difference with `return iter(...)` for `for x in ...: yield x` options
+        # Question: Why is the construction of the connection.execute slow for big tables (not a real cursor it seems)
+        yield from self._rows
 
     def __len__(self):
-        return self._count_rows().first()[0]
+        return self._row_count
 
     def __repr__(self):
-        return f"SqlTable(..., table_name={self.table_name}"
+        return f"SqlTable(..., table_name={self.table_name})"
 
 
-class SqlDatabaseCollection(Collection):
+class SqlDbCollection(Collection):
     """A collection of sql tables names."""
 
     def __init__(self, connection):
@@ -99,24 +130,24 @@ class SqlDatabaseCollection(Collection):
         yield from (x[0] for x in self.connection.execute('show tables'))
 
 
-class SqlReader(SqlDatabaseCollection, KvReader):
+class SqlDbReader(SqlDbCollection, KvReader):
     """A KvReader of sql tables. Keys are table names and values are SqlTable objects"""
 
     def __getitem__(self, k):
-        return SqlTable(self.connection, k)
+        return SqlTableRowsCollection(self.connection, k)
 
 
 # More explicit aliases
-SqlAlchemyReader = SqlReader
-SqlAlchemyDatabaseCollection = SqlDatabaseCollection
+SqlAlchemyReader = SqlDbReader
+SqlAlchemyDatabaseCollection = SqlDbCollection
 
 
-class DfSqlReader(SqlReader):
-    def __getitem__(self, k):
-        with ModuleNotFoundErrorNiceMessage():
-            import pandas as pd
-        table = super().__getitem__(k)
-        return pd.DataFrame(data=list(table), columns=table._columns)
+# class DfSqlDbReader(SqlDbReader):
+#     def __getitem__(self, k):
+#         with ModuleNotFoundErrorNiceMessage():
+#             import pandas as pd
+#         table = super().__getitem__(k)
+#         return pd.DataFrame(data=list(table), columns=table.column_names)
 
 
 class SQLAlchemyPersister(Persister):
@@ -126,7 +157,7 @@ class SQLAlchemyPersister(Persister):
 
     def __init__(
             self,
-            db_uri='sqlite:///my_sqlite.db',
+            uri='sqlite:///my_sqlite.db',
             collection_name='py2store_default_table',
             key_fields=('id',),
             data_fields=('data',),
@@ -134,7 +165,7 @@ class SQLAlchemyPersister(Persister):
             **db_kwargs
     ):
         """
-        :param db_uri: Uniform Resource Identifier of a database you would like to use.
+        :param uri: Uniform Resource Identifier of a database you would like to use.
             Unix/Mac (note the four leading slashes)
                 sqlite:////absolute/path/to/foo.db
 
@@ -168,7 +199,7 @@ class SQLAlchemyPersister(Persister):
         self.table = None
         self.session = None
 
-        self.setup(db_uri, collection_name, **db_kwargs)
+        self.setup(uri, collection_name, **db_kwargs)
 
     def setup(self, db_uri, collection_name, **db_kwargs):
         # Setup connection to our DB:
@@ -247,5 +278,5 @@ class SQLAlchemyPersister(Persister):
     def __len__(self):
         return self.query.count()
 
-    def __del__(self):
-        self.teardown()
+    # def __del__(self):
+    #     self.teardown()

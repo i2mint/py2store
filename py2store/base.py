@@ -59,7 +59,6 @@ class Collection(CollectionABC):
         Therefore it is not efficient, and in most cases should be overridden with a more efficient version.
         :return: The number (int) of elements in the collection of keys.
         """
-        # TODO: some other means to more quickly count files?
         # Note: Found that sum(1 for _ in self.__iter__()) was slower for small, slightly faster for big inputs.
         count = 0
         for _ in self.__iter__():
