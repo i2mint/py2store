@@ -1,4 +1,4 @@
-from collections import Sized, Iterable
+from functools import partial
 from py2store.util import ModuleNotFoundErrorNiceMessage
 
 with ModuleNotFoundErrorNiceMessage():
@@ -7,6 +7,7 @@ with ModuleNotFoundErrorNiceMessage():
     from sqlalchemy.orm import sessionmaker
     import sqlalchemy as db
 
+from collections.abc import Sequence
 from py2store.base import Persister
 from py2store.base import Collection, KvReader
 from py2store.util import lazyprop, lazyprop_w_sentinel
@@ -14,6 +15,9 @@ from py2store.util import lazyprop, lazyprop_w_sentinel
 DFLT_SQL_PORT = 1433
 DFLT_SQL_HOST = 'localhost'
 
+
+# TODO: decorator to automatically retry (once) if the connection times out
+# --> from sqlalchemy.exc import OperationalError
 
 class SqlTableRowsCollection(Collection):
     """Base class wrapping an sql table.
@@ -33,9 +37,11 @@ class SqlTableRowsCollection(Collection):
     _tmpl_describe_tmpl = 'DESCRIBE {table_name}'
     _tmpl_iter_tmpl = 'SELECT * FROM {table_name}'
 
-    def __init__(self, connection, table_name):
+    def __init__(self, connection, table_name, batch_size=2000, limit=int(1e16)):
         self.connection = connection
         self.table_name = table_name
+        self.iter_rows = partial(iter_rows, connection=connection, table_name=table_name,
+                                 batch_size=batch_size, limit=limit)
 
     # Helpers ##########################################################################################################
     # QUESTION: Should helpers (_describe, _columns, etc.) should be methods/properties/lazyprops, and hidden or not?
@@ -72,13 +78,35 @@ class SqlTableRowsCollection(Collection):
     def __iter__(self):
         # Question: difference with `return iter(...)` for `for x in ...: yield x` options
         # Question: Why is the construction of the connection.execute slow for big tables (not a real cursor it seems)
-        yield from self._rows
+        yield from self.iter_rows()
 
     def __len__(self):
         return self._row_count
 
+    def __getitem__(self, idx):
+        if isinstance(idx, slice):
+            start, stop, step = idx.start, idx.stop, idx.step
+            start = start or 0
+            assert step is None, "__getitem__ doesn't handle stepped slices"
+            assert start >= 0, "slice start can't be negative"
+
+            if stop:
+                assert stop >= start, "slice stop must be at least the slice start"
+                return self.iter_rows(offset=start, limit=stop - start)
+            elif start:
+                return self.iter_rows(offset=start)
+            else:
+                return self.iter_rows()
+        elif isinstance(idx, int):
+            return self.iter_rows(offset=idx, limit=1)
+
     def __repr__(self):
         return f"SqlTable(..., table_name={self.table_name})"
+
+
+class SqlTableRowsSequence(SqlTableRowsCollection, Sequence):
+    def __getitem__(self, idx):
+        return list(super().__getitem__(idx))
 
 
 class SqlDbCollection(Collection):
@@ -280,3 +308,23 @@ class SQLAlchemyPersister(Persister):
 
     # def __del__(self):
     #     self.teardown()
+
+
+def iter_rows(connection, table_name, batch_size=1000, offset=0, limit=int(1e12)):
+    """Iterate the over the rows of a table.
+    The limit argument is mostly there to avoid an infinite loop, but can also be used to get ranges.
+    """
+    stop_offset = limit + offset  # to the range act like like sql limit
+    i = 0
+    for offset in range(offset, stop_offset, batch_size):
+        if i >= limit:
+            break
+        r = connection.execute(f'SELECT * FROM {table_name} LIMIT {batch_size} OFFSET {offset}')
+        if r.rowcount:
+            for i, x in enumerate(r.fetchall(), i):
+                if i < limit:
+                    yield x
+                else:
+                    break
+        else:
+            break
