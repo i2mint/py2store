@@ -203,11 +203,16 @@ class QuickLocalStoreMixin:
     at write time, as needed.
     """
 
+    _tmp_dirname = 'quick_store'
     _docsuffix = ' with default temp root and auto dir generation on write.'
+
+    @classmethod
+    def mk_tmp_quick_store_path_format(cls, subpath=''):
+        return mk_tmp_quick_store_dirpath(os.path.join(cls._tmp_dirname, subpath))
 
     def __init__(self, path_format=None):
         if path_format is None:
-            path_format = mk_tmp_quick_store_dirpath('quick_store')
+            path_format = self.mk_tmp_quick_store_path_format()
             print(f"No path_format was given, so taking one from a tmp dir. Namely:\n\t{path_format}")
         super().__init__(path_format)
 
