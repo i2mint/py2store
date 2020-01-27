@@ -83,7 +83,7 @@ class SqlTableRowsCollection(Collection):
     def __len__(self):
         return self._row_count
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx):  # TODO: Make the ss[:-4] case work too
         if isinstance(idx, slice):
             start, stop, step = idx.start, idx.stop, idx.step
             start = start or 0

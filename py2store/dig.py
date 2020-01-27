@@ -1,5 +1,19 @@
 from functools import partial
 
+not_found = type('NotFound', (), {})()
+no_default = type('NoDefault', (), {})()
+
+
+def get_first_attr_found(store, attrs, default=no_default):
+    for attr in attrs:
+        a = getattr(store, attr, not_found)
+        if a != not_found:
+            return a
+    if default == no_default:
+        raise AttributeError(f"None of the attributes were found: {attrs}")
+    else:
+        return default
+
 
 def recursive_get_attr(store, attr, default=None):
     a = getattr(store, attr, None)

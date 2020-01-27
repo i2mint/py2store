@@ -454,6 +454,7 @@ class StrTupleDict(object):
         print(self._info_str())
 
 
+# TODO: mk_prefix has wrong signature. Repair.
 class StrTupleDictWithPrefix(StrTupleDict):
     """Converting from and to strings, tuples, and dicts, but with partial "prefix" specs allowed.
 

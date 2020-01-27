@@ -347,11 +347,11 @@ class FileReader(KvReader):
         return f"{self._class_name}('{self._prefix}')"
 
 
-from py2store.base import KvCollection
+from py2store.base import Collection
 from py2store.key_mappers.naming import mk_pattern_from_template_and_format_dict
 
 
-class FileSysCollection(KvCollection):
+class FileSysCollection(Collection):
     def __init__(self, rootdir, subpath='', pattern_for_field=None, max_levels=inf):
         if max_levels is None:
             max_levels = inf

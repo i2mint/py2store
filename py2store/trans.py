@@ -1,7 +1,7 @@
 from functools import wraps
 import types
 from typing import Type
-from py2store.base import has_kv_store_interface, Store, KvCollection, KvReader
+from py2store.base import has_kv_store_interface, Store, Collection, KvReader
 from py2store.util import lazyprop
 
 
@@ -10,10 +10,10 @@ def transparent_key_method(self, k):
 
 
 def mk_kv_reader_from_kv_collection(kv_collection, name=None, getitem=transparent_key_method):
-    """Make a KvReader class from a KvCollection class.
+    """Make a KvReader class from a Collection class.
 
     Args:
-        kv_collection: The KvCollection class
+        kv_collection: The Collection class
         name: The name to give the KvReader class (by default, it will be kv_collection.__name__ + 'Reader')
         getitem: The method that will be assigned to __getitem__. Should have the (self, k) signature.
             By default, getitem will be transparent_key_method, returning the key as is.
@@ -50,7 +50,7 @@ def mk_read_only(o):
     return disable_delitem(disable_setitem(o))
 
 
-def cache_iter(collection_cls: Type[KvCollection], iter_to_container=list, name=None):
+def cache_iter(collection_cls: Type[Collection], iter_to_container=list, name=None):
     """Make a class that wraps input class's __iter__ becomes cached.
 
     Quite often we have a lot of keys, that we get from a remote data source, and don't want to have to ask for
@@ -125,116 +125,6 @@ def cache_iter(collection_cls: Type[KvCollection], iter_to_container=list, name=
     _define_keys_values_and_items_according_to_iter(cached_cls)
 
     return cached_cls
-
-
-#
-# # TODO: Factor out the method injection pattern (e.g. __getitem__, __setitem__ and __delitem__ are nearly identical)
-# def filtered_iter(filt: callable, name=None):
-#     """
-#
-#     Args:
-#         filt:
-#         name:
-#
-#     Returns:
-#
-#     >>> filtered_dict = filtered_iter(filt=lambda k: (len(k) % 2) == 1)(dict)  # keep only odd length keys
-#     >>>
-#     >>> s = filtered_dict({'a': 1, 'bb': object, 'ccc': 'a string', 'dddd': [1, 2]})
-#     >>>
-#     >>> list(s)
-#     ['a', 'ccc']
-#     >>> 'a' in s  # True because odd (length) key
-#     True
-#     >>> 'bb' in s  # False because odd (length) key
-#     False
-#     >>> len(s)
-#     2
-#     >>> list(s.keys())
-#     ['a', 'ccc']
-#     >>> list(s.values())
-#     [1, 'a string']
-#     >>> list(s.items())
-#     [('a', 1), ('ccc', 'a string')]
-#     >>> s.get('a')
-#     1
-#     >>> assert s.get('bb') is None
-#     >>> s['x'] = 10
-#     >>> list(s.items())
-#     [('a', 1), ('ccc', 'a string'), ('x', 10)]
-#     >>> try:
-#     ...     s['xx'] = 'not an odd key'
-#     ...     raise ValueError("This should have failed")
-#     ... except KeyError:
-#     ...     pass
-#     """
-#
-#     def wrap(collection_cls, name=name):
-#         name = name or 'Filtered' + collection_cls.__name__
-#         wrapped_cls = type(name, (collection_cls,), {})
-#
-#         def __iter__(self):
-#             yield from filter(filt, super(wrapped_cls, self).__iter__())
-#
-#         wrapped_cls.__iter__ = __iter__
-#
-#         _define_keys_values_and_items_according_to_iter(wrapped_cls)
-#
-#         def __len__(self):
-#             c = 0
-#             for _ in self:
-#                 c += 1
-#             return c
-#
-#         wrapped_cls.__len__ = __len__
-#
-#         def __contains__(self, k):
-#             if filt(k):
-#                 return k in super(wrapped_cls, self)
-#             else:
-#                 return False
-#
-#         wrapped_cls.__contains__ = __contains__
-#
-#         if hasattr(wrapped_cls, '__getitem__'):
-#             def __getitem__(self, k):
-#                 if filt(k):
-#                     return super(wrapped_cls, self)[k]
-#                 else:
-#                     raise KeyError(f"Key not in store: {k}")
-#
-#             wrapped_cls.__getitem__ = __getitem__
-#
-#         if hasattr(wrapped_cls, 'get'):
-#             def get(self, k, default=None):
-#                 if filt(k):
-#                     return super(wrapped_cls, self).get(k, default)
-#                 else:
-#                     return default
-#
-#             wrapped_cls.get = get
-#
-#         if hasattr(wrapped_cls, '__setitem__'):
-#             def __setitem__(self, k, v):
-#                 if filt(k):
-#                     super(wrapped_cls, self)[k] = v
-#                 else:
-#                     raise KeyError(f"Key not in store: {k}")
-#
-#             wrapped_cls.__setitem__ = __setitem__
-#
-#         if hasattr(wrapped_cls, '__delitem__'):
-#             def __delitem__(self, k):
-#                 if filt(k):
-#                     del super(wrapped_cls, self)[k]
-#                 else:
-#                     raise KeyError(f"Key not in store: {k}")
-#
-#             wrapped_cls.__delitem__ = __delitem__
-#
-#         return wrapped_cls
-#
-#     return wrap
 
 
 # TODO: Factor out the method injection pattern (e.g. __getitem__, __setitem__ and __delitem__ are nearly identical)
