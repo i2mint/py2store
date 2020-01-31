@@ -214,6 +214,11 @@ class QuickLocalStoreMixin:
         if path_format is None:
             path_format = self.mk_tmp_quick_store_path_format()
             print(f"No path_format was given, so taking one from a tmp dir. Namely:\n\t{path_format}")
+        else:
+            if path_format.startswith('~'):
+                path_format = os.path.expanduser(path_format)
+            elif path_format.startswith('.'):
+                path_format = os.path.abspath(path_format)
         super().__init__(path_format)
 
     def __setitem__(self, k, v):
