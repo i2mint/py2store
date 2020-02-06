@@ -68,7 +68,7 @@ def dirpaths_in_dir(rootdir):
     return filter(os.path.isdir, iglob(ensure_slash_suffix(rootdir) + '*'))
 
 
-def iter_filepaths_in_folder_recursively(root_folder, max_levels=inf, _current_level=0):
+def iter_filepaths_in_folder_recursively(root_folder, max_levels=None, _current_level=0):
     if max_levels is None:
         max_levels = inf
     for full_path in paths_in_dir(root_folder):
@@ -81,7 +81,7 @@ def iter_filepaths_in_folder_recursively(root_folder, max_levels=inf, _current_l
                 yield full_path
 
 
-def iter_dirpaths_in_folder_recursively(root_folder, max_levels=inf, _current_level=0):
+def iter_dirpaths_in_folder_recursively(root_folder, max_levels=None, _current_level=0):
     if max_levels is None:
         max_levels = inf
     for full_path in paths_in_dir(root_folder):
@@ -97,9 +97,10 @@ class PrefixedFilepaths:
     Keys collection for local files, where the keys are full filepaths DIRECTLY under a given root dir _prefix.
     This mixin adds iteration (__iter__), length (__len__), and containment (__contains__(k)).
     """
+    _max_levels = None
 
     def __iter__(self):
-        return iter_relative_files_and_folder(self._prefix)
+        return iter_relative_files_and_folder(self._prefix, max_levels=self._max_levels)
 
     def __contains__(self, k):
         """
@@ -115,9 +116,10 @@ class PrefixedFilepathsRecursive(PrefixedFilepaths):
     Keys collection for local files, where the keys are full filepaths RECURSIVELY under a given root dir _prefix.
     This mixin adds iteration (__iter__), length (__len__), and containment (__contains__(k)).
     """
+    _max_levels = None
 
     def __iter__(self):
-        return iter_filepaths_in_folder_recursively(self._prefix)
+        return iter_filepaths_in_folder_recursively(self._prefix, max_levels=self._max_levels)
 
 
 class PrefixedDirpathsRecursive(PrefixedFilepaths):
@@ -125,9 +127,10 @@ class PrefixedDirpathsRecursive(PrefixedFilepaths):
     Keys collection for local files, where the keys are full filepaths RECURSIVELY under a given root dir _prefix.
     This mixin adds iteration (__iter__), length (__len__), and containment (__contains__(k)).
     """
+    _max_levels = None
 
     def __iter__(self):
-        return iter_dirpaths_in_folder_recursively(self._prefix)
+        return iter_dirpaths_in_folder_recursively(self._prefix, max_levels=self._max_levels)
 
 
 def path_match_regex_from_path_format(path_format):
@@ -227,18 +230,23 @@ class LocalFileRWD:
 
 class FilepathFormatKeys(PathFormat, FilteredKeysMixin, KeyValidationABC,
                          PrefixedFilepathsRecursive, IterBasedSizedMixin):
-    pass
+    def __init__(self, path_format: str, max_levels: int = inf):
+        super().__init__(path_format)
+        self._max_levels = max_levels
 
 
 class DirpathFormatKeys(PathFormat, FilteredKeysMixin, KeyValidationABC,
                         PrefixedDirpathsRecursive, IterBasedSizedMixin):
-    pass
+    def __init__(self, path_format: str, max_levels: int = inf):
+        super().__init__(path_format)
+        self._max_levels = max_levels
 
 
 class PathFormatPersister(FilepathFormatKeys, LocalFileRWD):
-    def __init__(self, path_format, mode=DFLT_OPEN_MODE, **open_kwargs):
+    def __init__(self, path_format, max_levels: int = inf, mode=DFLT_OPEN_MODE, **open_kwargs):
         FilepathFormatKeys.__init__(self, path_format)
         LocalFileRWD.__init__(self, mode, **open_kwargs)
+        self._max_levels = max_levels
 
 
 class PrefixedFilepaths:
@@ -352,7 +360,7 @@ from py2store.key_mappers.naming import mk_pattern_from_template_and_format_dict
 
 
 class FileSysCollection(Collection):
-    def __init__(self, rootdir, subpath='', pattern_for_field=None, max_levels=inf):
+    def __init__(self, rootdir, subpath='', pattern_for_field=None, max_levels=None):
         if max_levels is None:
             max_levels = inf
         subpath_implied_min_levels = len(subpath.split(os.path.sep)) - 1
@@ -371,7 +379,6 @@ class FileSysCollection(Collection):
 class FileCollection(FileSysCollection):
 
     def __iter__(self):
-
         yield from filter(self.is_valid_key,
                           iter_filepaths_in_folder_recursively(self.rootdir, max_levels=self._max_levels))
 

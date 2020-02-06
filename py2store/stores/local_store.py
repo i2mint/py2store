@@ -158,24 +158,24 @@ class RelativePathFormatStore2(PrefixRelativizationMixin, PathFormatStoreWithPre
 class LocalTextStore(RelativePathFormatStore):
     """Local files store for text data"""
 
-    def __init__(self, path_format):
-        super().__init__(path_format, mode='t')
+    def __init__(self, path_format, max_levels=None):
+        super().__init__(path_format, max_levels=max_levels, mode='t')
 
 
 class LocalBinaryStore(RelativePathFormatStore):
     """Local files store for binary data"""
 
-    def __init__(self, path_format):
-        super().__init__(path_format, mode='b')
+    def __init__(self, path_format, max_levels=None):
+        super().__init__(path_format, max_levels=max_levels, mode='b')
 
 
 class LocalPickleStore(RelativePathFormatStore):
     """Local files store with pickle serialization"""
 
-    def __init__(self, path_format,
+    def __init__(self, path_format, max_levels=None,
                  fix_imports=True, protocol=None, pickle_encoding='ASCII', pickle_errors='strict',
                  **open_kwargs):
-        super().__init__(path_format, mode='b', **open_kwargs)
+        super().__init__(path_format, max_levels=max_levels, mode='b', **open_kwargs)
         self._loads, self._dumps = mk_pickle_rw_funcs(fix_imports, protocol, pickle_encoding, pickle_errors)
 
     def __getitem__(self, k):
@@ -210,7 +210,7 @@ class QuickLocalStoreMixin:
     def mk_tmp_quick_store_path_format(cls, subpath=''):
         return mk_tmp_quick_store_dirpath(os.path.join(cls._tmp_dirname, subpath))
 
-    def __init__(self, path_format=None):
+    def __init__(self, path_format=None, max_levels=None):
         if path_format is None:
             path_format = self.mk_tmp_quick_store_path_format()
             print(f"No path_format was given, so taking one from a tmp dir. Namely:\n\t{path_format}")
@@ -219,7 +219,7 @@ class QuickLocalStoreMixin:
                 path_format = os.path.expanduser(path_format)
             elif path_format.startswith('.'):
                 path_format = os.path.abspath(path_format)
-        super().__init__(path_format)
+        super().__init__(path_format, max_levels=max_levels)
 
     def __setitem__(self, k, v):
         dirname = os.path.dirname(os.path.join(self._prefix, k))
