@@ -107,6 +107,8 @@ def validate_kwargs(kwargs_to_validate,
 
 
 empty_field_p = re.compile('{}')
+
+
 def get_fields_from_template(template):
     """
     Get list from {item} items of template string
@@ -396,8 +398,12 @@ class StrTupleDict(object):
         info_dict = self.str_to_dict(s)
         return tuple(info_dict[x] for x in self.fields)
 
-    def dict_to_str(self, d):
+    def dict_to_str(self, d: dict):
         return self.mk(**d)
+
+    def super_dict_to_str(self, d: dict):
+        """Like dict_to_str, but the input dict can have extra keys that are not used by dict_to_str"""
+        return self.mk(**{k: v for k, v in d.items() if k in self.fields})
 
     def tuple_to_str(self, t):
         return self.mk(*t)
