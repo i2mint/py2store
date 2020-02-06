@@ -13,6 +13,24 @@ DFLT_DTYPE = 'int16'
 DFLT_FORMAT = 'WAV'
 DFLT_N_CHANNELS = 1
 
+# TODO: Do some validation and smart defaults with these
+dtype_from_sample_width = {
+    1: 'int16',
+    2: 'int16',
+    3: 'int32',
+    4: 'int32',
+    8: 'float64'
+}
+
+sample_width_for_soundfile_subtype = {
+    'DOUBLE': 8,
+    'FLOAT': 4,
+    'G721_32': 4,
+    'PCM_16': 2,
+    'PCM_24': 3,
+    'PCM_32': 4,
+    'PCM_U8': 1}
+
 # soundfile_signature not used yet, but intended for a future version of this module, that will use minting
 # and signature injection instead of long copy pastes of
 soundfile_signature = dict(dtype=DFLT_DTYPE, format=DFLT_FORMAT, subtype=None, endian=None)
@@ -51,15 +69,15 @@ class WfSrSerializationMixin:
         b = BytesIO()
         sf.write(b, wf, samplerate=sr, format='WAV')
         b.seek(0)
-        return b
+        return b.read()
 
 
 class WavSerializationMixin:
-    def __init__(self, assert_sr=None, dtype=DFLT_DTYPE, format=DFLT_FORMAT, subtype=None, endian=None):
+    def __init__(self, assert_sr=None, dtype=DFLT_DTYPE, format='WAV', subtype=None, endian=None):
         if assert_sr is not None:
             assert isinstance(assert_sr, int), "assert_sr must be an int"
         self.assert_sr = assert_sr
-        self._rw_kwargs = dict(dtype=dtype, format=format, subtype=subtype, endian=endian)
+        self._rw_kwargs = dict(format=format, subtype=subtype, endian=endian)
         self._read_kwargs = dict(dtype=dtype)
 
     def _obj_of_data(self, data):
@@ -68,6 +86,13 @@ class WavSerializationMixin:
             if self.assert_sr is not None:  # Putting None check here because less common, so more efficient on avg
                 raise SampleRateAssertionError(f"sr was {sr}, should be {self.assert_sr}")
         return wf
+
+    def _data_of_obj(self, obj):
+        wf = obj
+        b = BytesIO()
+        sf.write(b, wf, samplerate=self.assert_sr, **self._rw_kwargs)
+        b.seek(0)
+        return b.read()
 
 
 from py2store.base import Store
