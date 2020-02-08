@@ -468,9 +468,9 @@ class ZipReader(KvReader):
         #  'odir/app/data/audio/d/1574288084739961/m/Ctor.json']
     """
 
-    def __init__(self, zip_file, prefix='', open_kws=None, file_info_filt=take_everything):
+    def __init__(self, zip_file, prefix='', open_kws=None, file_info_filt=None):
         self.open_kws = open_kws or {}
-        self.file_info_filt = file_info_filt
+        self.file_info_filt = file_info_filt or ZipReader.EVERYTHING
         self.prefix = prefix
         if not isinstance(zip_file, ZipFile):
             if isinstance(zip_file, dict):
@@ -509,6 +509,10 @@ class ZipReader(KvReader):
     def DIRS_ONLY(fileinfo):
         return fileinfo.is_dir()
 
+    @staticmethod
+    def EVERYTHING(fileinfo):
+        return True
+
     def __repr__(self):
         args_str = ', '.join((
             f"'{self.zip_file.filename}'",
@@ -530,6 +534,14 @@ class ZipFileReader(FileCollection, KvReader):
 
     def __getitem__(self, k):
         return ZipReader(k, **self.zip_reader_kwargs)
+
+
+ZipFilesReader = ZipFileReader  # alias because singular ZipFileReader is misleading. Deprecate?
+
+
+class FilesOfZip(ZipReader):
+    def __init__(self, zip_file, prefix='', open_kws=None):
+        super().__init__(zip_file, prefix=prefix, open_kws=open_kws, file_info_filt=ZipReader.FILES_ONLY)
 
 # trans alternative:
 # from py2store.trans import mk_kv_reader_from_kv_collection, wrap_kvs
