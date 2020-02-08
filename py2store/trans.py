@@ -444,17 +444,156 @@ def wrap_kvs(store, name, *,
 
         return store_cls
 
-    # class MyStore(Store):
-    #     @wraps(persister_cls.__init__)
-    #     def __init__(self, *args, **kwargs):
-    #         persister = persister_cls(*args, **kwargs)
-    #         super().__init__(persister)
-    #
-    # name = name or ('Wrapped' + persister_cls.__name__)
-    # MyStore.__name__ = name
-    #
-    # return MyStore
 
+def _kv_wrap_outcoming_keys(trans_func):
+    """Transform 'out-coming' keys, that is, the keys you see when you ask for them,
+    say, through __iter__(), keys(), or first element of the items() pairs.
+
+    Use this when you wouldn't use the keys in their original format,
+    or when you want to extract information from it.
+
+    Warning: If you haven't also wrapped incoming keys with a corresponding inverse transformation,
+    you won't be able to use the outcoming keys to fetch data.
+
+    >>> from collections import UserDict
+    >>> S = kv_wrap.outcoming_keys(lambda x: x[5:])(UserDict)
+    >>> s = S({'root/foo': 10, 'root/bar': 'xo'})
+    >>> list(s)
+    ['foo', 'bar']
+    >>> list(s.keys())
+    ['foo', 'bar']
+    >>> list(s.items())
+    [('foo', 10), ('bar', 'xo')]
+    """
+
+    def wrapper(o, name=None):
+        name = name or getattr(o, '__name__', getattr(o.__class__, '__name__')) + '_kr'
+        return wrap_kvs(o, name, key_of_id=trans_func)
+
+    return wrapper
+
+
+def _kv_wrap_ingoing_keys(trans_func):
+    """Transform 'in-going' keys, that is, the keys you see when you ask for them,
+    say, through __iter__(), keys(), or first element of the items() pairs.
+
+    Use this when your context holds objects themselves holding key information, but you don't want to
+    (because you shouldn't) 'manually' extract that information and construct the key manually every time you need
+    to write something or fetch some existing data.
+
+    Warning: If you haven't also wrapped outcoming keys with a corresponding inverse transformation,
+    you won't be able to use the incoming keys to fetch data.
+
+    >>> from collections import UserDict
+    >>> S = kv_wrap.ingoing_keys(lambda x: 'root/' + x)(UserDict)
+    >>> s = S()
+    >>> s['foo'] = 10
+    >>> s['bar'] = 'xo'
+    >>> list(s)
+    ['root/foo', 'root/bar']
+    >>> list(s.keys())
+    ['root/foo', 'root/bar']
+    >>> list(s.items())
+    [('root/foo', 10), ('root/bar', 'xo')]
+    """
+
+    def wrapper(o, name=None):
+        name = name or getattr(o, '__name__', getattr(o.__class__, '__name__')) + '_kw'
+        return wrap_kvs(o, name, id_of_key=trans_func)
+
+    return wrapper
+
+
+def _kv_wrap_outcoming_vals(trans_func):
+    """Transform 'out-coming' values, that is, the values you see when you ask for them,
+    say, through the values() or the second element of items() pairs.
+    This can be seen as adding a de-serialization layer: trans_func being the de-serialization function.
+
+    For example, say your store gives you values of the bytes type, but you want to use text, or gives you text,
+    but you want it to be interpreted as a JSON formatted text and get a dict instead. Both of these are
+    de-serialization layers, or out-coming value transformations.
+
+    Warning: If it matters, make sure you also wrapped with a corresponding inverse serialization.
+
+    >>> from collections import UserDict
+    >>> S = kv_wrap.outcoming_vals(lambda x: x * 2)(UserDict)
+    >>> s = S(foo=10, bar='xo')
+    >>> list(s.values())
+    [20, 'xoxo']
+    >>> list(s.items())
+    [('foo', 20), ('bar', 'xoxo')]
+    """
+
+    def wrapper(o, name=None):
+        name = name or getattr(o, '__name__', getattr(o.__class__, '__name__')) + '_vr'
+        return wrap_kvs(o, name, obj_of_data=trans_func)
+
+    return wrapper
+
+
+def _kv_wrap_ingoing_vals(trans_func):
+    """Transform 'in-going' values, that is, the values at the level of the store's interface are transformed
+    to a different value before writing to the wrapped store.
+    This can be seen as adding a serialization layer: trans_func being the serialization function.
+
+    For example, say you have a list of audio samples, and you want to save these in a WAV format.
+
+    Warning: If it matters, make sure you also wrapped with a corresponding inverse de-serialization.
+
+    >>> from collections import UserDict
+    >>> S = kv_wrap.ingoing_vals(lambda x: x * 2)(UserDict)
+    >>> s = S()
+    >>> s['foo'] = 10
+    >>> s['bar'] = 'xo'
+    >>> list(s.values())
+    [20, 'xoxo']
+    >>> list(s.items())
+    [('foo', 20), ('bar', 'xoxo')]
+    """
+
+    def wrapper(o, name=None):
+        name = name or getattr(o, '__name__', getattr(o.__class__, '__name__')) + '_vw'
+        return wrap_kvs(o, name, data_of_obj=trans_func)
+
+    return wrapper
+
+
+def _kv_wrap_val_reads_wrt_to_keys(trans_func):
+    def wrapper(o, name=None):
+        name = name or getattr(o, '__name__', getattr(o.__class__, '__name__')) + '_vrk'
+        return wrap_kvs(o, name, postget=trans_func)
+
+    return wrapper
+
+
+def kv_wrap(trans_obj):
+    """
+    kv_wrap: A function that makes a wrapper (a decorator) that will get the wrappers from methods of the input object.
+
+    kv_wrap also has attributes:
+        outcoming_keys, ingoing_keys, outcoming_vals, ingoing_vals, and val_reads_wrt_to_keys
+    which will only add a single specific wrapper (specified as a function), when that's what you need.
+
+    """
+    key_of_id = getattr(trans_obj, '_key_of_id', None)
+    id_of_key = getattr(trans_obj, '_id_of_key', None)
+    obj_of_data = getattr(trans_obj, '_obj_of_data', None)
+    data_of_obj = getattr(trans_obj, '_data_of_obj', None)
+    postget = getattr(trans_obj, '_postget', None)
+
+    def wrapper(o, name=None):
+        name = name or getattr(o, '__name__', getattr(o.__class__, '__name__')) + '_kr'
+        return wrap_kvs(o, name, key_of_id=key_of_id, id_of_key=id_of_key, obj_of_data=obj_of_data,
+                        data_of_obj=data_of_obj, postget=postget)
+
+    return wrapper
+
+
+kv_wrap.outcoming_keys = _kv_wrap_outcoming_keys
+kv_wrap.ingoing_keys = _kv_wrap_ingoing_keys
+kv_wrap.outcoming_vals = _kv_wrap_outcoming_vals
+kv_wrap.ingoing_vals = _kv_wrap_ingoing_vals
+kv_wrap.val_reads_wrt_to_keys = _kv_wrap_val_reads_wrt_to_keys
 
 _method_name_for = {
     'write': '__setitem__',
