@@ -184,6 +184,11 @@ class LocalPickleStore(RelativePathFormatStore):
     def __setitem__(self, k, v):
         return super().__setitem__(k, self._dumps(v))
 
+    # TODO: hack to take care of problem with head not playing well with wrappers. Find better solution.
+    def head(self):
+        for k, v in self.items():
+            return k, v
+
 
 class LocalJsonStore(SimpleJsonMixin, LocalTextStore):
     __doc__ = str(LocalTextStore.__doc__) + SimpleJsonMixin._docsuffix
