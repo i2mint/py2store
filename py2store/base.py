@@ -253,11 +253,11 @@ class Store(Persister):
     def __iter__(self) -> KeyIter:
         return map(self._key_of_id, self.store.__iter__())
 
-    def items(self) -> ItemIter:
-        if hasattr(self.store, 'items'):
-            yield from ((self._key_of_id(k), self._obj_of_data(v)) for k, v in self.store.items())
-        else:
-            yield from ((self._key_of_id(k), self._obj_of_data(self.store[k])) for k in self.store.__iter__())
+    # def items(self) -> ItemIter:
+    #     if hasattr(self.store, 'items'):
+    #         yield from ((self._key_of_id(k), self._obj_of_data(v)) for k, v in self.store.items())
+    #     else:
+    #         yield from ((self._key_of_id(k), self._obj_of_data(self.store[k])) for k in self.store.__iter__())
 
     def __len__(self) -> int:
         return self.store.__len__()
@@ -266,6 +266,9 @@ class Store(Persister):
         return self.store.__contains__(self._id_of_key(k))
 
     def head(self) -> Item:
+        for _id in self.store:
+            return self._key_of_id(_id), self._obj_of_data(self.store[_id])
+        # NOTE: Old version didn't work when key mapping was asymmetrical
         for k, v in self.items():
             return k, v
 
