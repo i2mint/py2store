@@ -17,7 +17,7 @@
    * [A few persisters you can use](#a-few-persisters-you-can-use)
       * [Local Files](#local-files)
       * [MongoDB](#mongodb)
-      * [S3](#s3)
+      * [S3, SQL, Zips, Dropbox](#s3-sql-zips-dropbox)
    * [Philosophical FAQs](#philosophical-faqs)
       * [Is a store an ORM? A DAO?](#is-a-store-an-orm-a-dao)
       * [Should storage transform the data?](#should-storage-transform-the-data)
@@ -577,10 +577,16 @@ store = MongoTupleKeyStore(key_fields=('_id', 'name'))
 basic_test(store, k=(1234, 'bob'), v={'age': 42, 'gender': 'unspecified'})
 ```
 
-## S3
+## S3, SQL, Zips, Dropbox
 
-It works pretty much like LocalStores, but stores in S3. You'll need to have an account with 
+S3 persister/stores work pretty much like LocalStores, but stores in S3. You'll need to have an account with 
 AWS to use this. Find S3 stores in py2store.stores.s3_stores.
+
+SQL give you read and write access to SQL DBs and tables. 
+
+ZipReader (and other related stores) talks to one or several files, giving you the ability to operate as if the zips were uncompressed. 
+
+Dropbox will give you access to dropbox files through the same dict-like interface.
 
 
 # Philosophical FAQs

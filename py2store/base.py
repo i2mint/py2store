@@ -253,8 +253,11 @@ class Store(Persister):
     def __iter__(self) -> KeyIter:
         return map(self._key_of_id, self.store.__iter__())
 
-    def items(self):
-        yield from ((self._key_of_id(k), self._obj_of_data(v)) for k, v in self.store.items())
+    def items(self) -> ItemIter:
+        if hasattr(self.store, 'items'):
+            yield from ((self._key_of_id(k), self._obj_of_data(v)) for k, v in self.store.items())
+        else:
+            yield from ((self._key_of_id(k), self._obj_of_data(self.store[k])) for k in self.store.__iter__())
 
     def __len__(self) -> int:
         return self.store.__len__()
