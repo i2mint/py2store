@@ -6,6 +6,7 @@ from py2store.core import PrefixRelativizationMixin, PrefixRelativization
 from py2store.key_mappers.paths import mk_relative_path_store
 from py2store.serializers.pickled import mk_pickle_rw_funcs
 from py2store.persisters.local_files import PathFormatPersister, DirpathFormatKeys, DirReader, ensure_slash_suffix
+from py2store.persisters.local_files import DirCollection
 from py2store.mixins import SimpleJsonMixin
 
 

@@ -10,7 +10,7 @@ from py2store.stores.local_store import LocalStore, LocalBinaryStore, LocalTextS
 from py2store.stores.local_store import QuickStore, QuickBinaryStore, QuickTextStore, QuickJsonStore, QuickPickleStore
 
 from py2store.base import Store
-from py2store.trans import wrap_kvs, disable_delitem, disable_setitem, mk_read_only
+from py2store.trans import wrap_kvs, disable_delitem, disable_setitem, mk_read_only, kv_wrap
 from py2store.access import user_configs_dict, user_configs, user_defaults_dict, user_defaults, mystores
 
 from py2store.stores.local_store import PickleStore  # consider deprecating and use LocalPickleStore instead?
@@ -20,3 +20,9 @@ with ModuleNotFoundIgnore():
     from py2store.stores.s3_store import S3BinaryStore, S3TextStore, S3PickleStore
 with ModuleNotFoundIgnore():
     from py2store.stores.mongo_store import MongoStore, MongoTupleKeyStore, MongoAnyKeyStore
+
+
+def head(store):
+    """Get the first item of a kv store"""
+    for k in store:
+        return store[k]

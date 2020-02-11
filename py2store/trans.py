@@ -1,8 +1,13 @@
 from functools import wraps
 import types
+from inspect import signature
 from typing import Type
 from py2store.base import has_kv_store_interface, Store, Collection, KvReader
 from py2store.util import lazyprop
+
+
+def num_of_args(func):
+    return len(signature(func).parameters)
 
 
 def transparent_key_method(self, k):
@@ -129,13 +134,13 @@ def cache_iter(collection_cls: Type[Collection], iter_to_container=list, name=No
 
 # TODO: Factor out the method injection pattern (e.g. __getitem__, __setitem__ and __delitem__ are nearly identical)
 def filtered_iter(filt: callable, name=None):
-    """
+    """Make a wrapper that will transform a store (class or instance thereof) into a sub-store (i.e. subset of keys).
 
     Args:
-        filt:
-        name:
+        filt: Boolean filter function. A function that takes a key and and returns True iff the key should be included.
+        name: The name to give the wrapped class
 
-    Returns:
+    Returns: A wrapper (that then needs to be applied to a store instance or class.
 
     >>> filtered_dict = filtered_iter(filt=lambda k: (len(k) % 2) == 1)(dict)  # keep only odd length keys
     >>>
@@ -168,70 +173,76 @@ def filtered_iter(filt: callable, name=None):
     ...     pass
     """
 
-    def wrap(collection_cls, name=name):
-        name = name or 'Filtered' + collection_cls.__name__
-        wrapped_cls = type(name, (collection_cls,), {})
+    def wrap(store, name=name):
+        if not isinstance(store, type):  # then consider it to be an instance
+            store_instance = store
+            WrapperStore = filtered_iter(filt, name=name)(Store)
+            return WrapperStore(store_instance)
+        else:  # it's a class we're wrapping
+            collection_cls = store
+            name = name or 'Filtered' + collection_cls.__name__
+            wrapped_cls = type(name, (collection_cls,), {})
 
-        def __iter__(self):
-            yield from filter(filt, super(wrapped_cls, self).__iter__())
+            def __iter__(self):
+                yield from filter(filt, super(wrapped_cls, self).__iter__())
 
-        wrapped_cls.__iter__ = __iter__
+            wrapped_cls.__iter__ = __iter__
 
-        _define_keys_values_and_items_according_to_iter(wrapped_cls)
+            _define_keys_values_and_items_according_to_iter(wrapped_cls)
 
-        def __len__(self):
-            c = 0
-            for _ in self.__iter__():
-                c += 1
-            return c
+            def __len__(self):
+                c = 0
+                for _ in self.__iter__():
+                    c += 1
+                return c
 
-        wrapped_cls.__len__ = __len__
+            wrapped_cls.__len__ = __len__
 
-        def __contains__(self, k):
-            if filt(k):
-                return super(wrapped_cls, self).__contains__(k)
-            else:
-                return False
-
-        wrapped_cls.__contains__ = __contains__
-
-        if hasattr(wrapped_cls, '__getitem__'):
-            def __getitem__(self, k):
+            def __contains__(self, k):
                 if filt(k):
-                    return super(wrapped_cls, self).__getitem__(k)
+                    return super(wrapped_cls, self).__contains__(k)
                 else:
-                    raise KeyError(f"Key not in store: {k}")
+                    return False
 
-            wrapped_cls.__getitem__ = __getitem__
+            wrapped_cls.__contains__ = __contains__
 
-        if hasattr(wrapped_cls, 'get'):
-            def get(self, k, default=None):
-                if filt(k):
-                    return super(wrapped_cls, self).get(k, default)
-                else:
-                    return default
+            if hasattr(wrapped_cls, '__getitem__'):
+                def __getitem__(self, k):
+                    if filt(k):
+                        return super(wrapped_cls, self).__getitem__(k)
+                    else:
+                        raise KeyError(f"Key not in store: {k}")
 
-            wrapped_cls.get = get
+                wrapped_cls.__getitem__ = __getitem__
 
-        if hasattr(wrapped_cls, '__setitem__'):
-            def __setitem__(self, k, v):
-                if filt(k):
-                    return super(wrapped_cls, self).__setitem__(k, v)
-                else:
-                    raise KeyError(f"Key not in store: {k}")
+            if hasattr(wrapped_cls, 'get'):
+                def get(self, k, default=None):
+                    if filt(k):
+                        return super(wrapped_cls, self).get(k, default)
+                    else:
+                        return default
 
-            wrapped_cls.__setitem__ = __setitem__
+                wrapped_cls.get = get
 
-        if hasattr(wrapped_cls, '__delitem__'):
-            def __delitem__(self, k):
-                if filt(k):
-                    return super(wrapped_cls, self).__delitem__(k)
-                else:
-                    raise KeyError(f"Key not in store: {k}")
+            if hasattr(wrapped_cls, '__setitem__'):
+                def __setitem__(self, k, v):
+                    if filt(k):
+                        return super(wrapped_cls, self).__setitem__(k, v)
+                    else:
+                        raise KeyError(f"Key not in store: {k}")
 
-            wrapped_cls.__delitem__ = __delitem__
+                wrapped_cls.__setitem__ = __setitem__
 
-        return wrapped_cls
+            if hasattr(wrapped_cls, '__delitem__'):
+                def __delitem__(self, k):
+                    if filt(k):
+                        return super(wrapped_cls, self).__delitem__(k)
+                    else:
+                        raise KeyError(f"Key not in store: {k}")
+
+                wrapped_cls.__delitem__ = __delitem__
+
+            return wrapped_cls
 
     return wrap
 
@@ -413,32 +424,52 @@ def wrap_kvs(store, name, *,
             store_cls = type(name, (_store_cls,), {})  # make a "copy"
 
         if key_of_id is not None:
-            def _key_of_id(self, _id):
-                return key_of_id(super(store_cls, self)._key_of_id(_id))
+            if num_of_args(key_of_id) == 1:
+                def _key_of_id(self, _id):
+                    return key_of_id(super(store_cls, self)._key_of_id(_id))
+            else:
+                def _key_of_id(self, _id):
+                    return key_of_id(self, super(store_cls, self)._key_of_id(_id))
 
             store_cls._key_of_id = _key_of_id
 
         if id_of_key is not None:
-            def _id_of_key(self, k):
-                return super(store_cls, self)._id_of_key(id_of_key(k))
+            if num_of_args(id_of_key) == 1:
+                def _id_of_key(self, k):
+                    return super(store_cls, self)._id_of_key(id_of_key(k))
+            else:
+                def _id_of_key(self, k):
+                    return super(store_cls, self)._id_of_key(id_of_key(self, k))
 
             store_cls._id_of_key = _id_of_key
 
         if obj_of_data is not None:
-            def _obj_of_data(self, _id):
-                return obj_of_data(super(store_cls, self)._obj_of_data(_id))
+            if num_of_args(obj_of_data) == 1:
+                def _obj_of_data(self, _id):
+                    return obj_of_data(super(store_cls, self)._obj_of_data(_id))
+            else:
+                def _obj_of_data(self, _id):
+                    return obj_of_data(self, super(store_cls, self)._obj_of_data(_id))
 
             store_cls._obj_of_data = _obj_of_data
 
         if data_of_obj is not None:
-            def _data_of_obj(self, obj):
-                return super(store_cls, self)._data_of_obj(data_of_obj(obj))
+            if num_of_args(data_of_obj) == 1:
+                def _data_of_obj(self, obj):
+                    return super(store_cls, self)._data_of_obj(data_of_obj(obj))
+            else:
+                def _data_of_obj(self, obj):
+                    return super(store_cls, self)._data_of_obj(data_of_obj(self, obj))
 
             store_cls._data_of_obj = _data_of_obj
 
         if postget is not None:
-            def __getitem__(self, k):
-                return postget(k, super(store_cls, self).__getitem__(k))
+            if num_of_args(postget) == 2:
+                def __getitem__(self, k):
+                    return postget(k, super(store_cls, self).__getitem__(k))
+            else:
+                def __getitem__(self, k):
+                    return postget(self, k, super(store_cls, self).__getitem__(k))
 
             store_cls.__getitem__ = __getitem__
 

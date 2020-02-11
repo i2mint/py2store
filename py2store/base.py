@@ -266,8 +266,24 @@ class Store(Persister):
         return self.store.__contains__(self._id_of_key(k))
 
     def head(self) -> Item:
-        for _id in self.store:
-            return self._key_of_id(_id), self._obj_of_data(self.store[_id])
+        try:
+            for k in self:
+                return k, self[k]
+        except Exception as e:
+
+            from warnings import warn
+            msg = f"Couldn't get data for the key {k}. This could be be...\n"
+            msg += "... because it's not a store (just a collection, that doesn't have a __getitem__)\n"
+            msg += "... because there's a layer transforming outcoming keys that are not the ones the store actually " \
+                   "uses? If you didn't wrap the store with the inverse ingoing keys transformation, " \
+                   "that would happen.\n"
+            msg += "I'll ask the inner-layer what it's head is, but IT MAY NOT REFLECT the reality of your store" \
+                   "if you have some filtering, caching etc."
+            msg += f"The error messages was: \n{e}"
+            warn(msg)
+
+            for _id in self.store:
+                return self._key_of_id(_id), self._obj_of_data(self.store[_id])
         # NOTE: Old version didn't work when key mapping was asymmetrical
         # for k, v in self.items():
         #     return k, v
