@@ -2,7 +2,7 @@ from collections.abc import Collection
 import os
 import re
 
-from py2store.base import Store
+from py2store.base import Store, KvCollection
 from py2store.util import max_common_prefix
 from py2store.key_mappers.paths import PrefixRelativizationMixin
 from py2store.parse_format import match_re_for_fstring
@@ -64,7 +64,7 @@ class PathFormat:
 
 
 # TODO: Revisit ExplicitKeys and ExplicitKeysWithPrefixRelativization. Not extendible to full store!
-class ExplicitKeys:
+class ExplicitKeys(KvCollection):
     """
     py2store.base.Keys implementation that gets it's keys explicitly from a collection given at initialization time.
     The key_collection must be a collections.abc.Collection (such as list, tuple, set, etc.)
@@ -93,6 +93,28 @@ class ExplicitKeys:
 
     def __contains__(self, k):
         return k in self._key_collection
+
+
+class ExplicitKeysStore(ExplicitKeys, Store):
+    """Wrap a store (instance) so that it gets it's keys from an explicit iterable of keys.
+
+    >>> s = {'a': 1, 'b': 2, 'c': 3, 'd': 4}
+    >>> list(s)
+    ['a', 'b', 'c', 'd']
+    >>> ss = ExplicitKeysStore(s, ['d', 'a'])
+    >>> len(ss)
+    2
+    >>> list(ss)
+    ['d', 'a']
+    >>> list(ss.values())
+    [4, 1]
+    >>> ss.head()
+    ('d', 4)
+    """
+
+    def __init__(self, store, key_collection):
+        Store.__init__(self, store)
+        ExplicitKeys.__init__(self, key_collection)
 
 
 class ExplicitKeysWithPrefixRelativization(PrefixRelativizationMixin, Store):
