@@ -259,7 +259,9 @@ def _mk(self, *args, **kwargs):
 class StrTupleDict(object):
 
     def __init__(self, template: (str, tuple, list), format_dict=None,
-                 process_kwargs=None, process_info_dict=None, sep: str = path_sep):
+                 process_kwargs=None, process_info_dict=None,
+                 named_tuple_type_name='NamedTuple',
+                 sep: str = path_sep):
         """Converting from and to strings, tuples, and dicts.
 
         Args:
@@ -369,6 +371,7 @@ class StrTupleDict(object):
 
         set_signature_of_func(_mk, ['self'] + self.fields)
         self.mk = MethodType(_mk, self)
+        self.NamedTuple = namedtuple(named_tuple_type_name, self.fields)
 
     def is_valid(self, s: str):
         """Check if the name has the "upload format" (i.e. the kind of fields that are _ids of fv_mgc, and what
@@ -398,23 +401,38 @@ class StrTupleDict(object):
         info_dict = self.str_to_dict(s)
         return tuple(info_dict[x] for x in self.fields)
 
-    def dict_to_str(self, d: dict):
-        return self.mk(**d)
+    def str_to_namedtuple(self, s: str):
+        return self.dict_to_namedtuple(self.str_to_dict(s))
 
     def super_dict_to_str(self, d: dict):
         """Like dict_to_str, but the input dict can have extra keys that are not used by dict_to_str"""
         return self.mk(**{k: v for k, v in d.items() if k in self.fields})
 
-    def tuple_to_str(self, t):
-        return self.mk(*t)
+    def dict_to_str(self, d: dict):
+        return self.mk(**d)
 
     def dict_to_tuple(self, d):
         assert_condition(len(self.fields) == len(d), f"len(d)={len(d)} but len(fields)={len(self.fields)}")
         return tuple(d[f] for f in self.fields)
 
+    def dict_to_namedtuple(self, d):
+        return self.NamedTuple(**d)
+
     def tuple_to_dict(self, t):
         assert_condition(len(self.fields) == len(t), f"len(d)={len(t)} but len(fields)={len(self.fields)}")
         return {f: x for f, x in zip(self.fields, t)}
+
+    def tuple_to_str(self, t):
+        return self.mk(*t)
+
+    def namedtuple_to_tuple(self, nt):
+        return tuple(nt)
+
+    def namedtuple_to_dict(self, nt):
+        return {k: getattr(nt, k) for k in self.fields}
+
+    def namedtuple_to_str(self, nt):
+        return self.dict_to_str(self.namedtuple_to_dict(nt))
 
     def extract(self, field, s):
         """Extract a single item from an name
@@ -846,16 +864,38 @@ from py2store.trans import wrap_kvs
 
 pjoin = os.path.join
 
+KeyMapNames = namedtuple('KeyMaps', ['key_of_id', 'id_of_key'])
+KeyMaps = namedtuple('KeyMaps', ['key_of_id', 'id_of_key'])
 
-def mk_tupled_store_from_path_format_store_cls(store, subpath='', store_cls_kwargs=None,
-                                               keymap=StrTupleDict, keymap_kwargs=None,
-                                               name=None):
-    """Wrap a store (instance or class) that uses string keys to make it into a store that uses tuple keys.
+
+def _get_keymap_names_for_str_to_key_type(key_type):
+    if not isinstance(key_type, str):
+        key_type = {tuple: 'tuple', namedtuple: 'namedtuple', dict: 'dict', str: 'str'}.get(key_type, None)
+
+    if key_type not in {'tuple', 'namedtuple', 'dict', 'str'}:
+        raise ValueError(f"Not a recognized key_type: {key_type}")
+
+    return KeyMapNames(key_of_id=f"str_to_{key_type}", id_of_key=f"{key_type}_to_str")
+
+
+def _get_method_for_str_to_key_type(keymap, key_type):
+    kmn = _get_keymap_names_for_str_to_key_type(key_type)
+    return KeyMaps(key_of_id=getattr(keymap, kmn.key_of_id),
+                   id_of_key=getattr(keymap, kmn.id_of_key))
+
+
+def mk_store_from_path_format_store_cls(store, subpath='', store_cls_kwargs=None,
+                                        key_type=namedtuple,
+                                        keymap=StrTupleDict, keymap_kwargs=None,
+                                        name=None):
+    """Wrap a store (instance or class) that uses string keys to make it into a store that uses a specific key format.
 
     Args:
         store: The instance or class to wrap
         subpath: The subpath (defining the subset of the data pointed at by the URI
         store_cls_kwargs:  # if store is a class, the kwargs that you would have given the store_cls to make itself
+        key_type: The key type you want to interface with:
+            dict, tuple, namedtuple, str or 'dict', 'tuple', 'namedtuple', 'str'
         keymap:  # the keymap instance or class you want to use to map keys
         keymap_kwargs:  # if keymap is a cls, the kwargs to give it (besides the subpath)
         name: The name to give the class the function will make here
@@ -866,20 +906,21 @@ def mk_tupled_store_from_path_format_store_cls(store, subpath='', store_cls_kwar
     Example:
     ```
     # Get a (sessiono,bt) indexed LocalJsonStore
-    s = mk_tupled_store_from_path_format_store_cls(LocalJsonStore,
+    s = mk_store_from_path_format_store_cls(LocalJsonStore,
                                                    os.path.join(root_dir, 'd'),
                                                    subpath='{session}/d/{bt}',
                                                    keymap_kwargs=dict(process_info_dict={'session': int, 'bt': int}))
     ```
-
     """
     if isinstance(keymap, type):
         keymap = keymap(subpath, **(keymap_kwargs or {}))  # make the keymap instance
 
+    km = _get_method_for_str_to_key_type(keymap, key_type)
+
     if isinstance(store, type):
-        name = name or 'Str2TupleWrapped' + store.__name__
+        name = name or 'KeyWrapped' + store.__name__
         _WrappedStoreCls = wrap_kvs(store, name=name,
-                                    key_of_id=keymap.str_to_tuple, id_of_key=keymap.tuple_to_str)
+                                    key_of_id=km.key_of_id, id_of_key=km.id_of_key)
 
         class WrappedStoreCls(_WrappedStoreCls):
             def __init__(self, root_uri):
@@ -888,5 +929,8 @@ def mk_tupled_store_from_path_format_store_cls(store, subpath='', store_cls_kwar
 
         return WrappedStoreCls
     else:
-        name = name or 'Str2TupleWrapped' + store.__class__.__name__
-        return wrap_kvs(store, name=name, key_of_id=keymap.str_to_tuple, id_of_key=keymap.tuple_to_str)
+        name = name or 'KeyWrapped' + store.__class__.__name__
+        return wrap_kvs(store, name=name, key_of_id=km.key_of_id, id_of_key=km.id_of_key)
+
+
+mk_tupled_store_from_path_format_store_cls = mk_store_from_path_format_store_cls
