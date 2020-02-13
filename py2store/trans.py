@@ -369,7 +369,7 @@ def kv_wrap_persister_cls(persister_cls, name=None):
     >>> # before the key/val transformers are in place to do their jobs.
     """
 
-    name = name or ('Wrapped' + persister_cls.__name__)
+    name = name or ('PWrapped' + persister_cls.__name__)
 
     cls = type(name, (Store,), {})
 
@@ -382,7 +382,7 @@ def kv_wrap_persister_cls(persister_cls, name=None):
     return cls
 
 
-def wrap_kvs(store, name, *,
+def wrap_kvs(store, name=None, *,
              key_of_id=None, id_of_key=None, obj_of_data=None, data_of_obj=None, postget=None
              ):
     """Make a Store that is wrapped with the given key/val transformers.
@@ -445,9 +445,14 @@ def wrap_kvs(store, name, *,
             store_cls = kv_wrap_persister_cls(store_cls, name=name)
         else:
             if name is None:
-                from warnings import warn
-                warn("The use of wraps_fv without an explicit name will be discontinued soon.")
+                # from warnings import warn
+                # warn("The use of wraps_fv without an explicit name will be discontinued soon.")
                 name = 'Wrapped' + store_cls.__name__
+                # TODO: This is not the best way to handle this. Investigate another way. ######################
+                global_names = set(globals()).union(locals())
+                if name in global_names:
+                    raise NameError("That name is already in use")
+                # TODO: ########################################################################################
             _store_cls = store_cls
             store_cls = type(name, (_store_cls,), {})  # make a "copy"
 
