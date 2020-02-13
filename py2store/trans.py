@@ -1,10 +1,21 @@
 from functools import wraps
 import types
 from inspect import signature
-from typing import Type
+from typing import Type, Union, Iterable
 from py2store.base import has_kv_store_interface, Store, Collection, KvReader
 from py2store.util import lazyprop
 
+
+def get_class_name(cls, dflt_name=None):
+    name = getattr(cls, '__name__', None)
+    if name is None:
+        name = getattr(getattr(cls, '__class__', object), '__name__', None)
+        if name is None:
+            if dflt_name is not None:
+                return dflt_name
+            else:
+                raise ValueError(f"{cls} has no name I could extract")
+    return name
 
 def num_of_args(func):
     return len(signature(func).parameters)
@@ -55,7 +66,7 @@ def mk_read_only(o):
     return disable_delitem(disable_setitem(o))
 
 
-def cache_iter(collection_cls: Type[Collection], iter_to_container=list, name=None):
+def cache_iter(store, iter_to_container=list, name=None):
     """Make a class that wraps input class's __iter__ becomes cached.
 
     Quite often we have a lot of keys, that we get from a remote data source, and don't want to have to ask for
@@ -108,36 +119,45 @@ def cache_iter(collection_cls: Type[Collection], iter_to_container=list, name=No
     >>> list(s)  # keys will be sorted according to their length
     ['c', 'aa', 'bbb']
     """
-    name = name or 'IterCached' + collection_cls.__name__
-    cached_cls = type(name, (collection_cls,), {'_iter_cache': None})
 
-    @lazyprop
-    def _iter_cache(self):
-        return iter_to_container(super(cached_cls, self).__iter__())
+    if not isinstance(store, type):  # then consider it to be an instance
+        store_instance = store
+        WrapperStore = cache_iter(Store, iter_to_container=iter_to_container, name=name)
+        return WrapperStore(store_instance)
+    else:
+        store_cls = store
+        name = name or 'IterCached' + get_class_name(store_cls)
+        cached_cls = type(name, (store_cls,), {'_iter_cache': None})
 
-    def __iter__(self):
-        # if getattr(self, '_iter_cache', None) is None:
-        #     self._iter_cache = iter_to_container(super(cached_cls, self).__iter__())
-        yield from self._iter_cache
+        @lazyprop
+        def _iter_cache(self):
+            return iter_to_container(super(cached_cls, self).__iter__())
 
-    def __len__(self):
-        return len(self._iter_cache)
+        def __iter__(self):
+            # if getattr(self, '_iter_cache', None) is None:
+            #     self._iter_cache = iter_to_container(super(cached_cls, self).__iter__())
+            yield from self._iter_cache
 
-    cached_cls.__iter__ = __iter__
-    cached_cls.__len__ = __len__
-    cached_cls._iter_cache = _iter_cache
+        def __len__(self):
+            return len(self._iter_cache)
 
-    _define_keys_values_and_items_according_to_iter(cached_cls)
+        cached_cls.__iter__ = __iter__
+        cached_cls.__len__ = __len__
+        cached_cls._iter_cache = _iter_cache
 
-    return cached_cls
+        _define_keys_values_and_items_according_to_iter(cached_cls)
+
+        return cached_cls
 
 
 # TODO: Factor out the method injection pattern (e.g. __getitem__, __setitem__ and __delitem__ are nearly identical)
-def filtered_iter(filt: callable, name=None):
+def filtered_iter(filt: Union[callable, Iterable], name=None):
     """Make a wrapper that will transform a store (class or instance thereof) into a sub-store (i.e. subset of keys).
 
     Args:
-        filt: Boolean filter function. A function that takes a key and and returns True iff the key should be included.
+        filt: A callable or iterable:
+            callable: Boolean filter function. A func taking a key and and returns True iff the key should be included.
+            iterable: The collection of keys you want to filter "in"
         name: The name to give the wrapped class
 
     Returns: A wrapper (that then needs to be applied to a store instance or class.
@@ -173,6 +193,14 @@ def filtered_iter(filt: callable, name=None):
     ...     pass
     """
 
+    if not callable(filt):  # if filt is not a callable...
+        # ... assume it's the collection of keys you want and make a filter function to filter those "in".
+        assert next(iter(filt)), "filt should be a callable, or an iterable"
+        keys_that_should_be_filtered_in = filt
+
+        def filt(k):
+            return k in keys_that_should_be_filtered_in
+
     def wrap(store, name=name):
         if not isinstance(store, type):  # then consider it to be an instance
             store_instance = store
@@ -180,7 +208,7 @@ def filtered_iter(filt: callable, name=None):
             return WrapperStore(store_instance)
         else:  # it's a class we're wrapping
             collection_cls = store
-            name = name or 'Filtered' + collection_cls.__name__
+            name = name or 'Filtered' + get_class_name(collection_cls)
             wrapped_cls = type(name, (collection_cls,), {})
 
             def __iter__(self):

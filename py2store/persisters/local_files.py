@@ -292,26 +292,26 @@ def extend_prefix(prefix, new_prefix):
 
 
 class DirReader(KvReader):
-    """ KV Reader whose keys (AND VALUES) are directory full paths of the subdirectories of _prefix rootdir.
+    """ KV Reader whose keys (AND VALUES) are directory full paths of the subdirectories of rootdir.
     """
 
-    def __init__(self, _prefix):
-        self._prefix = ensure_slash_suffix(_prefix)
+    def __init__(self, rootdir):
+        self.rootdir = ensure_slash_suffix(rootdir)
         # TODO: Look into alternatives for the raison d'etre of _new_node and _class_name
         # (They are there, because using self.__class__ directly goes to super)
         self._new_node = self.__class__
         self._class_name = self.__class__.__name__
 
     def _extended_prefix(self, new_prefix):
-        return extend_prefix(self._prefix, new_prefix)
+        return extend_prefix(self.rootdir, new_prefix)
 
     def __contains__(self, k):
-        return k.startswith(self._prefix) and os.path.isdir(k)
+        return k.startswith(self.rootdir) and os.path.isdir(k)
 
     def __iter__(self):
         return filter(os.path.isdir,  # (3) filter out any non-directories
                       map(self._extended_prefix,  # (2) extend prefix with sub-path name
-                          os.listdir(self._prefix)))  # (1) list file names under _prefix
+                          os.listdir(self.rootdir)))  # (1) list file names under _prefix
 
     def __getitem__(self, k):
         if os.path.isdir(k):
@@ -320,30 +320,30 @@ class DirReader(KvReader):
             raise NoSuchKeyError(f"No such key (perhaps it's not a directory, or was deleted?): {k}")
 
     def __repr__(self):
-        return f"{self._class_name}('{self._prefix}')"
+        return f"{self._class_name}('{self.rootdir}')"
 
 
 class FileReader(KvReader):
-    """ KV Reader whose keys (AND VALUES) are file full paths of _prefix (rootdir).
+    """ KV Reader whose keys (AND VALUES) are file full paths of rootdir.
     """
 
-    def __init__(self, _prefix):
-        self._prefix = ensure_slash_suffix(_prefix)
+    def __init__(self, rootdir):
+        self.rootdir = ensure_slash_suffix(rootdir)
         # TODO: Look into alternatives for the raison d'etre of _new_node and _class_name
         # (They are there, because using self.__class__ directly goes to super)
         self._new_node = self.__class__
         self._class_name = self.__class__.__name__
 
     def _extended_prefix(self, new_prefix):
-        return extend_prefix(self._prefix, new_prefix)
+        return extend_prefix(self.rootdir, new_prefix)
 
     def __contains__(self, k):
-        return k.startswith(self._prefix) and os.path.isdir(k)
+        return k.startswith(self.rootdir) and os.path.isdir(k)
 
     def __iter__(self):
         return filter(os.path.isdir,  # (3) filter out any non-directories
                       map(self._extended_prefix,  # (2) extend prefix with sub-path name
-                          os.listdir(self._prefix)))  # (1) list file names under _prefix
+                          os.listdir(self.rootdir)))  # (1) list file names under _prefix
 
     def __getitem__(self, k):
         if os.path.isdir(k):
@@ -352,7 +352,7 @@ class FileReader(KvReader):
             raise NoSuchKeyError(f"No such key (perhaps it's not a directory, or was deleted?): {k}")
 
     def __repr__(self):
-        return f"{self._class_name}('{self._prefix}')"
+        return f"{self._class_name}('{self.rootdir}')"
 
 
 from py2store.base import Collection

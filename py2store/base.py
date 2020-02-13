@@ -66,7 +66,10 @@ class Collection(CollectionABC):
         return count
 
     def head(self):
-        return next(iter(self.items()))
+        if hasattr(self, 'items'):
+            return next(iter(self.items()))
+        else:
+            return next(iter(self))
 
 
 KvCollection = Collection  # alias meant for back-compatibility. Would like to deprecated
@@ -90,7 +93,10 @@ KvCollection = Collection  # alias meant for back-compatibility. Would like to d
 class KvReader(Collection, Mapping):
     """Acts as a Mapping abc, but with default __len__ (implemented by counting keys)
     and head method to get the first (k, v) item of the store"""
-    pass
+
+    def head(self):
+        for k, v in self.items():
+            yield k, v
 
 
 Reader = KvReader  # alias
