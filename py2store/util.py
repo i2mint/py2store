@@ -1,10 +1,29 @@
 import os
 import shutil
 import re
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 from warnings import warn
+from typing import Any, Hashable, Callable, Iterable
 
 var_str_p = re.compile('\W|^(?=\d)')
+
+Item = Any
+
+
+def groupby(items: Iterable[Item], key: Callable[[Item], Hashable]):
+    """Groups items according to group keys updated from those items through the given (item_to_)key function.
+
+    Args:
+        items: iterable of items
+        key: The function that computes a key from an item. Needs to return
+
+    Returns: A dict of {group_key: items_in_that_group, ...}
+
+    """
+    groups = defaultdict(list)
+    for k in items:
+        groups[key(k)].append(k)
+    return dict(groups)
 
 
 def ntup(**kwargs):
@@ -174,6 +193,31 @@ class lazyprop:
     def __repr__(self):
         cn = self.__class__.__name__
         return '<%s func=%s>' % (cn, self.func)
+
+
+from functools import lru_cache, wraps
+import weakref
+
+
+@wraps(lru_cache)
+def memoized_method(*lru_args, **lru_kwargs):
+    def decorator(func):
+        @wraps(func)
+        def wrapped_func(self, *args, **kwargs):
+            # Storing the wrapped method inside the instance since a strong reference to self would not allow it to die.
+            self_weak = weakref.ref(self)
+
+            @wraps(func)
+            @lru_cache(*lru_args, **lru_kwargs)
+            def cached_method(*args, **kwargs):
+                return func(self_weak(), *args, **kwargs)
+
+            setattr(self, func.__name__, cached_method)
+            return cached_method(*args, **kwargs)
+
+        return wrapped_func
+
+    return decorator
 
 
 class lazyprop_w_sentinel(lazyprop):
