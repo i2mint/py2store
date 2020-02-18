@@ -249,11 +249,17 @@ class Store(Persister):
         return self._obj_of_data(self.store.__getitem__(self._id_of_key(k)))
 
     def get(self, k: Key, default=None) -> Val:
-        data = self.store.get(self._id_of_key(k), no_such_item)
-        if data is not no_such_item:
-            return self._obj_of_data(data)
-        else:
-            return default
+        if hasattr(self.store, 'get'):  # if store has a get method, use it
+            data = self.store.get(self._id_of_key(k), no_such_item)
+            if data is not no_such_item:
+                return self._obj_of_data(data)
+            else:
+                return default
+        else:  # if not, do the get function otherwise
+            if k in self:
+                return self._obj_of_data(self[k])
+            else:
+                return default
 
     # Explore ####################################################################
     def __iter__(self) -> KeyIter:

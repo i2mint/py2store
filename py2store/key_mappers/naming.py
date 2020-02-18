@@ -106,6 +106,50 @@ def validate_kwargs(kwargs_to_validate,
     return True
 
 
+def namedtuple_to_dict(nt):
+    """
+    >>> from collections import namedtuple
+    >>> NT = namedtuple('MyTuple', ('foo', 'hello'))
+    >>> nt = NT(1, 42)
+    >>> nt
+    MyTuple(foo=1, hello=42)
+    >>> d = namedtuple_to_dict(nt)
+    >>> d
+    {'foo': 1, 'hello': 42}
+    """
+    return {field: getattr(nt, field) for field in nt._fields}
+
+
+def dict_to_namedtuple(d, namedtuple_obj=None):
+    """
+    >>> from collections import namedtuple
+    >>> NT = namedtuple('MyTuple', ('foo', 'hello'))
+    >>> nt = NT(1, 42)
+    >>> nt
+    MyTuple(foo=1, hello=42)
+    >>> d = namedtuple_to_dict(nt)
+    >>> d
+    {'foo': 1, 'hello': 42}
+    >>> dict_to_namedtuple(d)
+    NamedTupleFromDict(foo=1, hello=42)
+    >>> dict_to_namedtuple(d, nt)
+    MyTuple(foo=1, hello=42)
+    """
+    if namedtuple_obj is None:
+        namedtuple_obj = 'NamedTupleFromDict'
+    if isinstance(namedtuple_obj, str):
+        namedtuple_name = namedtuple_obj
+        namedtuple_cls = namedtuple(namedtuple_name, tuple(d.keys()))
+    elif isinstance(namedtuple_obj, tuple) and hasattr(namedtuple_obj, '_fields'):
+        namedtuple_cls = namedtuple_obj.__class__
+    elif isinstance(namedtuple_obj, type):
+        namedtuple_cls = namedtuple_obj
+    else:
+        raise TypeError(f"Can't resolve the nametuple class specification: {namedtuple_obj}")
+
+    return namedtuple_cls(**d)
+
+
 empty_field_p = re.compile('{}')
 
 
