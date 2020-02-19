@@ -26,6 +26,19 @@ def groupby(items: Iterable[Item], key: Callable[[Item], Hashable]):
     return dict(groups)
 
 
+def regroupby(items, *key_funcs, **named_key_funcs):
+    """REcursive groupby. Applies the groupby function recursively, using a sequence of key functions.
+    """
+    key_funcs = list(key_funcs) + list(named_key_funcs.values())
+    assert len(key_funcs) > 0, "You need to have at least one key_func"
+    if len(key_funcs) == 1:
+        return groupby(items, key=key_funcs[0])
+    else:
+        key_func, *key_funcs = key_funcs
+        groups = groupby(items, key=key_func)
+        return {group_key: regroupby(group_items, *key_funcs) for group_key, group_items in groups.items()}
+
+
 def ntup(**kwargs):
     return namedtuple('NamedTuple', list(kwargs))(**kwargs)
 

@@ -22,7 +22,13 @@ with ModuleNotFoundIgnore():
     from py2store.stores.mongo_store import MongoStore, MongoTupleKeyStore, MongoAnyKeyStore
 
 
-def head(store):
+def kvhead(store):
     """Get the first item of a kv store"""
     for k in store:
-        return store[k]
+        return k, store[k]
+
+
+def ihead(store):
+    """Get the first item of an iterable"""
+    for item in store:
+        return item
