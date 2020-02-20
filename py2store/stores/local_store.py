@@ -179,6 +179,14 @@ class LocalPickleStore(RelativePathFormatStore):
         super().__init__(path_format, max_levels=max_levels, mode='b', **open_kwargs)
         self._loads, self._dumps = mk_pickle_rw_funcs(fix_imports, protocol, pickle_encoding, pickle_errors)
 
+    @classmethod
+    def for_dill(cls, path_format, max_levels=None, open_kwargs=None, *args, **kwargs):
+        from py2store.serializers.pickled import mk_dill_rw_funcs
+        open_kwargs = open_kwargs or {}
+        self = cls(path_format, max_levels=max_levels, **open_kwargs)
+        self._loads, self._dumps = mk_dill_rw_funcs(*args, **kwargs)
+        return self
+
     def __getitem__(self, k):
         return self._loads(super().__getitem__(k))
 

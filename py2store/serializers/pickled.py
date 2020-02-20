@@ -2,6 +2,8 @@ import pickle
 import marshal
 from functools import partial
 
+rw_funcs_maker_for = dict()
+
 
 # TODO: Make (in a different module) a factory to encapsulate the common pattern of the next three functions, and others
 
@@ -20,6 +22,9 @@ def mk_pickle_rw_funcs(fix_imports=True, protocol=None, pickle_encoding='ASCII',
     )
 
 
+rw_funcs_maker_for['pickle'] = mk_pickle_rw_funcs
+
+
 def mk_marshal_rw_funcs(**kwargs):  # TODO: Check actual arguments for marshal load and dump
     """Generates a reader and writer using marshal. That is, a pair of parametrized loads and dumps
 
@@ -34,6 +39,8 @@ def mk_marshal_rw_funcs(**kwargs):  # TODO: Check actual arguments for marshal l
         partial(marshal.dumps, **kwargs)
     )
 
+
+rw_funcs_maker_for['marshal'] = mk_marshal_rw_funcs
 
 ##### Extras (requiring some third-party packages ######################################################################
 
@@ -57,6 +64,9 @@ with ModuleNotFoundIgnore():
             partial(dill.loads, ignore=ignore),
             partial(dill.dumps, protocol=protocol, byref=byref, fmode=fmode, recurse=recurse)
         )
+
+
+    rw_funcs_maker_for['dill'] = mk_dill_rw_funcs
 
 # class PickleMixin:
 #     """Local files store with pickle serialization"""
