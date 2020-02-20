@@ -150,6 +150,38 @@ def dict_to_namedtuple(d, namedtuple_obj=None):
     return namedtuple_cls(**d)
 
 
+def update_fields_of_namedtuple(nt: tuple, *, name_of_output_type=None, remove_fields=(), **kwargs):
+    """Replace fields of namedtuple
+    >>> from collections import namedtuple
+    >>> NT = namedtuple('NT', ('a', 'b', 'c'))
+    >>> nt = NT(1,2,3)
+    >>> nt
+    NT(a=1, b=2, c=3)
+    >>> update_fields_of_namedtuple(nt, c=3000)  # replacing a single field
+    NT(a=1, b=2, c=3000)
+    >>> update_fields_of_namedtuple(nt, c=3000, a=1000)  # replacing two fields
+    NT(a=1000, b=2, c=3000)
+    >>> update_fields_of_namedtuple(nt, a=1000, c=3000)  # see that the original order doesn't change
+    NT(a=1000, b=2, c=3000)
+    >>> update_fields_of_namedtuple(nt, b=2000, d='hello')  # replacing one field and adding a new one
+    UpdatedNT(a=1, b=2000, c=3, d='hello')
+    >>> # Now let's try controlling the name of the output type, remove fields, and add new ones
+    >>> update_fields_of_namedtuple(nt, name_of_output_type='NewGuy', remove_fields=('a', 'c'), hello='world')
+    NewGuy(b=2, hello='world')
+    """
+
+    output_type_can_be_the_same_as_input_type = (not remove_fields) and set(kwargs.keys()).issubset(nt._fields)
+    d = dict(namedtuple_to_dict(nt), **kwargs)
+    for f in remove_fields:
+        d.pop(f)
+
+    if output_type_can_be_the_same_as_input_type and name_of_output_type is None:
+        return dict_to_namedtuple(d, nt.__class__)
+    else:
+        name_of_output_type = name_of_output_type or f'Updated{nt.__class__.__name__}'
+        return dict_to_namedtuple(d, name_of_output_type)
+
+
 empty_field_p = re.compile('{}')
 
 
