@@ -1,15 +1,15 @@
 from functools import wraps
 
-from py2store.persisters.mongo_w_pymongo import MongoPersister
+from py2store.persisters.mongo_w_pymongo import OldMongoPersister
 
 from py2store.base import Store
 from py2store.util import lazyprop
 
 
 class MongoStore(Store):
-    @wraps(MongoPersister.__init__)
+    @wraps(OldMongoPersister.__init__)
     def __init__(self, *args, **kwargs):
-        persister = MongoPersister(*args, **kwargs)
+        persister = OldMongoPersister(*args, **kwargs)
         super().__init__(persister)
 
 

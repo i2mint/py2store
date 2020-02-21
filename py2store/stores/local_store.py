@@ -152,6 +152,11 @@ class PathFormatStoreWithPrefix(Store):
         self._prefix = self.store._prefix
 
 
+# Would like to replace the above pattern with what's below, but
+# from py2store.trans import store_wrap
+# PathFormatStoreWithPrefix = store_wrap(PathFormatStore, 'PathFormatStoreWithPrefix')
+
+
 class RelativePathFormatStore2(PrefixRelativizationMixin, PathFormatStoreWithPrefix):
     pass
 

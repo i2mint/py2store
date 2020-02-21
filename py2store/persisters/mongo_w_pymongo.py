@@ -161,7 +161,7 @@ class OldMongoPersister(Persister):
     Note that the mongo persister is designed not to overwrite the value of a key if the key already exists.
     You can subclass it and use update_one instead of insert_one if you want to be able to overwrite data.
 
-    >>> s = MongoPersister()  # just use defaults
+    >>> s = OldMongoPersister()  # just use defaults
     >>> for _id in s:  # deleting all docs in tmp
     ...     del s[_id]
     >>> k = {'_id': 'foo'}
@@ -190,7 +190,7 @@ class OldMongoPersister(Persister):
     0
     >>>
     >>> # Making a persister whose keys are 2-dimensional and values are 3-dimensional
-    >>> s = MongoPersister(db_name='py2store', collection_name='tmp',
+    >>> s = OldMongoPersister(db_name='py2store', collection_name='tmp',
     ...                     key_fields=('first', 'last'), data_fields=('yob', 'proj', 'bdfl'))
     >>> for _id in s:  # deleting all docs in tmp
     ...     del s[_id]
