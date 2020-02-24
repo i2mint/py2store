@@ -58,8 +58,12 @@ class PcmSerializationMixin:
 
 
 class WfSrSerializationMixin:
+    _read_format = DFLT_FORMAT
+    _rw_kwargs = dict(dtype=DFLT_DTYPE, subtype=None, endian=None)
+
     def __init__(self, dtype=DFLT_DTYPE, format=DFLT_FORMAT, subtype=None, endian=None):
-        self._rw_kwargs = dict(dtype=dtype, format=format, subtype=subtype, endian=endian)
+        self._read_format = format
+        self._rw_kwargs = dict(dtype=dtype, subtype=subtype, endian=endian)
 
     def _obj_of_data(self, data):
         return sf.read(BytesIO(data), **self._rw_kwargs)
@@ -67,12 +71,15 @@ class WfSrSerializationMixin:
     def _data_of_obj(self, obj):
         wf, sr = obj
         b = BytesIO()
-        sf.write(b, wf, samplerate=sr, format='WAV')
+        sf.write(b, wf, samplerate=sr, format=self._rw_kwargs)
         b.seek(0)
         return b.read()
 
 
 class WavSerializationMixin:
+    _rw_kwargs = dict(format='WAV', subtype=None, endian=None)
+    _read_kwargs = dict(dtype=DFLT_DTYPE)
+
     def __init__(self, assert_sr=None, dtype=DFLT_DTYPE, format='WAV', subtype=None, endian=None):
         if assert_sr is not None:
             assert isinstance(assert_sr, int), "assert_sr must be an int"
