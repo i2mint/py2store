@@ -1,8 +1,16 @@
 import os
 import json
 import pickle
+import csv
+from io import StringIO, BytesIO
 
-from py2store import LocalBinaryStore
+
+def csv_fileobj(csv_data, *args, **kwargs):  # TODO: Use extended wraps func to inject
+    fp = StringIO('')
+    writer = csv.writer(fp)
+    writer.writerows(csv_data, *args, **kwargs)
+    fp.seek(0)
+    return fp.read().encode()
 
 
 def identity_method(x):
@@ -14,6 +22,7 @@ dflt_dflt_incoming_val_trans = staticmethod(identity_method)
 
 dflt_incoming_val_trans_for_key = {
     '.bin': identity_method,
+    '.csv': lambda v: list(csv.reader(StringIO(v.decode()))),
     '.txt': lambda v: v.decode(),
     '.pkl': lambda v: pickle.loads(v),
     '.pickle': lambda v: pickle.loads(v),
@@ -22,6 +31,7 @@ dflt_incoming_val_trans_for_key = {
 
 dflt_outgoing_val_trans_for_key = {
     '.bin': identity_method,
+    '.csv': csv_fileobj,
     '.txt': lambda v: v.encode(),
     '.pkl': lambda v: pickle.dumps(v),
     '.pickle': lambda v: pickle.dumps(v),
