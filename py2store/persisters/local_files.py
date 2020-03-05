@@ -420,9 +420,11 @@ def take_everything(fileinfo):
 
 
 # TODO: The way prefix and file_info_filt is handled is not efficient
+# TODO: prefix is silly: less general than filename_filt would be, and not even producing relative paths
 # (especially when getitem returns subdirs)
 class ZipReader(KvReader):
-    """A KvReader to read the contents of a zip file
+    """A KvReader to read the contents of a zip file.
+    Provides a KV perspective of https://docs.python.org/3/library/zipfile.html
 
     Examples:
         # >>> s = ZipReader('/path/to/some_zip_file.zip')
@@ -469,6 +471,15 @@ class ZipReader(KvReader):
     """
 
     def __init__(self, zip_file, prefix='', open_kws=None, file_info_filt=None):
+        """
+
+        Args:
+            zip_file: A path to make ZipFile(zip_file)
+            prefix: A prefix to filter by.
+            open_kws:  To be used when doing a ZipFile(...).open
+            file_info_filt: Filter for the FileInfo objects (see https://docs.python.org/3/library/zipfile.html)
+                of the paths listed in the zip file
+        """
         self.open_kws = open_kws or {}
         self.file_info_filt = file_info_filt or ZipReader.EVERYTHING
         self.prefix = prefix
@@ -480,6 +491,18 @@ class ZipReader(KvReader):
             else:
                 zip_file = ZipFile(zip_file)
         self.zip_file = zip_file
+
+    @classmethod
+    def for_files_only(cls, zip_file, prefix='', open_kws=None, file_info_filt=None):
+        if file_info_filt is None:
+            file_info_filt = ZipReader.FILES_ONLY
+        else:
+            _file_info_filt = file_info_filt
+
+            def file_info_filt(x):
+                return ZipReader.FILES_ONLY(x) and _file_info_filt(x)
+
+        return cls(zip_file, prefix, open_kws, file_info_filt)
 
     @lazyprop
     def info_for_key(self):
