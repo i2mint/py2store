@@ -1,8 +1,8 @@
 from functools import wraps
 import types
 from inspect import signature
-from typing import Type, Union, Iterable
-from py2store.base import has_kv_store_interface, Store, Collection, KvReader
+from typing import Union, Iterable, Optional
+from py2store.base import Store, KvReader
 from py2store.util import lazyprop
 
 
@@ -399,19 +399,94 @@ def kv_wrap_persister_cls(persister_cls, name=None):
     return cls
 
 
+def _wrap_outcoming(store_cls: type, wrapped_method: str, trans_func: Optional[callable] = None):
+    """Output-transforming wrapping of the wrapped_method of store_cls.
+    The transformation is given by trans_func, which could be a one (trans_func(x)
+    or two (trans_func(self, x)) argument function.
+
+    Args:
+        store_cls: The class that will be transformed
+        wrapped_method: The method (name) that will be transformed.
+        trans_func: The transformation function.
+
+    Returns: Nothing. It transforms the class in-place
+
+    """
+    if trans_func is not None:
+        if num_of_args(trans_func) == 1:
+            @wraps(getattr(store_cls, wrapped_method))
+            def new_method(self, x):
+                # # Long form (for explanation)
+                # super_method = getattr(super(store_cls, self), wrapped_method)
+                # output_of_super_method = super_method(x)
+                # transformed_output_of_super_method = trans_func(output_of_super_method)
+                # return transformed_output_of_super_method
+                return trans_func(getattr(super(store_cls, self), wrapped_method)(x))
+        else:
+            @wraps(getattr(store_cls, wrapped_method))
+            def new_method(self, x):
+                # # Long form (for explanation)
+                # super_method = getattr(super(store_cls, self), wrapped_method)
+                # output_of_super_method = super_method(x)
+                # transformed_output_of_super_method = trans_func(self, output_of_super_method)
+                # return transformed_output_of_super_method
+                return trans_func(self, getattr(super(store_cls, self), wrapped_method)(x))
+
+        setattr(store_cls, wrapped_method, new_method)
+
+
+def _wrap_ingoing(store_cls, wrapped_method: str, trans_func=None):
+    if trans_func is not None:
+        if num_of_args(trans_func) == 1:
+            @wraps(getattr(store_cls, wrapped_method))
+            def new_method(self, x):
+                return getattr(super(store_cls, self), wrapped_method)(trans_func(x))
+        else:
+            @wraps(getattr(store_cls, wrapped_method))
+            def new_method(self, x):
+                return getattr(super(store_cls, self), wrapped_method)(trans_func(self, x))
+
+        setattr(store_cls, wrapped_method, new_method)
+
+
 def wrap_kvs(store, name=None, *,
-             key_of_id=None, id_of_key=None, obj_of_data=None, data_of_obj=None, postget=None
+             key_of_id=None, id_of_key=None, obj_of_data=None, data_of_obj=None, preset=None, postget=None
              ):
     """Make a Store that is wrapped with the given key/val transformers.
+
+    Naming convention:
+        Morphemes:
+            key: outer key
+            _id: inner key
+            obj: outer value
+            data: inner value
+        Grammar:
+            Y_of_X: means that you get a Y output when giving an X input. Also known as X_to_Y.
+
 
     Args:
         store: Store class or instance
         name: Name to give the wrapper class
-        key_of_id: To be the external _key_of_id
-        id_of_key: To be the external _id_of_key
-        obj_of_data: To be the external _obj_of_data
-        data_of_obj: To be the external _data_of_obj
-        postget: postget(k, v) function that is called (and output returned) after retrieving the v for k
+        key_of_id: The outcoming key transformation function.
+            Forms are `k = key_of_id(_id)` or `k = key_of_id(self, _id)`
+        id_of_key: The ingoing key transformation function.
+            Forms are `_id = id_of_key(k)` or `_id = id_of_key(self, k)`
+        obj_of_data: The outcoming val transformation function.
+            Forms are `obj = obj_of_data(data)` or `obj = obj_of_data(self, data)`
+        data_of_obj: The ingoing val transformation function.
+            Forms are `data = data_of_obj(obj)` or `data = data_of_obj(self, obj)`
+        preset: A function that is called before doing a `__setitem__`.
+            The function is called with both `k` and `v` as inputs, and should output a transformed value.
+            The intent use is to do ingoing value transformations conditioned on the key.
+            For example, you may want to serialize an object depending on if you're writing to a
+             '.csv', or '.json', or '.pickle' file.
+            Forms are `preset(k, obj)` or `preset(self, k, obj)`
+        postget: A function that is called after the value `v` for a key `k` is be `__getitem__`.
+            The function is called with both `k` and `v` as inputs, and should output a transformed value.
+            The intent use is to do outcoming value transformations conditioned on the key.
+            We already have `obj_of_data` for outcoming value trans, but cannot condition it's behavior on k.
+            For example, you may want to deserialize the bytes of a '.csv', or '.json', or '.pickle' in different ways.
+            Forms are `obj = postget(k, data)` or `obj = postget(self, k, data)`
 
     Returns:
 
@@ -448,6 +523,65 @@ def wrap_kvs(store, name=None, *,
     >>> b['small'] = 'text'
     >>> list(b.items())
     [('BIG', 'upper letters'), ('small', 'lower text')]
+    >>>
+    >>>
+    >>> # Let's try preset and postget. We'll wrap a dict and write the same list of lists object to
+    >>> # keys ending with .csv, .json, and .pkl, specifying the obvious extension-dependent
+    >>> # serialization/deserialization we want to associate with it.
+    >>>
+    >>> # First, some very simple csv transformation functions
+    >>> to_csv = lambda LoL: '\\n'.join(map(','.join, map(lambda L: (x for x in L), LoL)))
+    >>> from_csv = lambda csv: list(map(lambda x: x.split(','), csv.split('\\n')))
+    >>> LoL = [['a','b','c'],['d','e','f']]
+    >>> assert from_csv(to_csv(LoL)) == LoL
+    >>>
+    >>> import json, pickle
+    >>>
+    >>> def preset(k, v):
+    ...     if k.endswith('.csv'):
+    ...         return to_csv(v)
+    ...     elif k.endswith('.json'):
+    ...         return json.dumps(v)
+    ...     elif k.endswith('.pkl'):
+    ...         return pickle.dumps(v)
+    ...     else:
+    ...         return v  # as is
+    ...
+    ...
+    >>> def postget(k, v):
+    ...     if k.endswith('.csv'):
+    ...         return from_csv(v)
+    ...     elif k.endswith('.json'):
+    ...         return json.loads(v)
+    ...     elif k.endswith('.pkl'):
+    ...         return pickle.loads(v)
+    ...     else:
+    ...         return v  # as is
+    ...
+    >>> mydict = wrap_kvs(dict, preset=preset, postget=postget)
+    >>>
+    >>> obj = [['a','b','c'],['d','e','f']]
+    >>> d = mydict()
+    >>> d['foo.csv'] = obj  # store the object as csv
+    >>> d  # "printing" a dict by-passes the transformations, so we see the data in the "raw" format it is stored in.
+    {'foo.csv': 'a,b,c\\nd,e,f'}
+    >>> d['foo.csv']  # but if we actually ask for the data, it deserializes to our original object
+    [['a', 'b', 'c'], ['d', 'e', 'f']]
+    >>> d['bar.json'] = obj  # store the object as json
+    >>> d
+    {'foo.csv': 'a,b,c\\nd,e,f', 'bar.json': '[["a", "b", "c"], ["d", "e", "f"]]'}
+    >>> d['bar.json']
+    [['a', 'b', 'c'], ['d', 'e', 'f']]
+    >>> d['bar.json'] = {'a': 1, 'b': [1, 2], 'c': 'normal json'}  # let's write a normal json instead.
+    >>> d
+    {'foo.csv': 'a,b,c\\nd,e,f', 'bar.json': '{"a": 1, "b": [1, 2], "c": "normal json"}'}
+    >>> del d['foo.csv']
+    >>> del d['bar.json']
+    >>> d['foo.pkl'] = obj
+    >>> print(str(d)[:49])  # see that it looks like bytes of a pickle, indeed!
+    {'foo.pkl': b'\\x80\\x03]q\\x00(]q\\x01(X\\x01\\x00\\x00
+    >>> d['foo.pkl']
+    [['a', 'b', 'c'], ['d', 'e', 'f']]
     """
     if not isinstance(store, type):  # then consider it to be an instance
         store_instance = store
@@ -469,25 +603,11 @@ def wrap_kvs(store, name=None, *,
 
         # outcoming ####################################################################################################
 
-        if key_of_id is not None:
-            if num_of_args(key_of_id) == 1:
-                def _key_of_id(self, _id):
-                    return key_of_id(super(store_cls, self)._key_of_id(_id))
-            else:
-                def _key_of_id(self, _id):
-                    return key_of_id(self, super(store_cls, self)._key_of_id(_id))
+        _wrap_outcoming(store_cls, '_key_of_id', key_of_id)
+        _wrap_outcoming(store_cls, '_obj_of_data', obj_of_data)
 
-            store_cls._key_of_id = _key_of_id
-
-        if obj_of_data is not None:
-            if num_of_args(obj_of_data) == 1:
-                def _obj_of_data(self, data):
-                    return obj_of_data(super(store_cls, self)._obj_of_data(data))
-            else:
-                def _obj_of_data(self, data):
-                    return obj_of_data(self, super(store_cls, self)._obj_of_data(data))
-
-            store_cls._obj_of_data = _obj_of_data
+        _wrap_ingoing(store_cls, '_id_of_key', id_of_key)
+        _wrap_ingoing(store_cls, '_data_of_obj', data_of_obj)
 
         if postget is not None:
             if num_of_args(postget) == 2:
@@ -499,27 +619,15 @@ def wrap_kvs(store, name=None, *,
 
             store_cls.__getitem__ = __getitem__
 
-        # ingoing ######################################################################################################
-
-        if id_of_key is not None:
-            if num_of_args(id_of_key) == 1:
-                def _id_of_key(self, k):
-                    return super(store_cls, self)._id_of_key(id_of_key(k))
+        if preset is not None:
+            if num_of_args(postget) == 2:
+                def __setitem__(self, k, v):
+                    return super(store_cls, self).__setitem__(k, preset(k, v))
             else:
-                def _id_of_key(self, k):
-                    return super(store_cls, self)._id_of_key(id_of_key(self, k))
+                def __setitem__(self, k, v):
+                    return super(store_cls, self).__setitem__(k, preset(self, k, v))
 
-            store_cls._id_of_key = _id_of_key
-
-        if data_of_obj is not None:
-            if num_of_args(data_of_obj) == 1:
-                def _data_of_obj(self, obj):
-                    return super(store_cls, self)._data_of_obj(data_of_obj(obj))
-            else:
-                def _data_of_obj(self, obj):
-                    return super(store_cls, self)._data_of_obj(data_of_obj(self, obj))
-
-            store_cls._data_of_obj = _data_of_obj
+            store_cls.__setitem__ = __setitem__
 
         return store_cls
 
