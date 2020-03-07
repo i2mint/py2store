@@ -457,21 +457,17 @@ def wrap_kvs(store, name=None, *,
                                 postget=postget)
         return WrapperStore(store_instance)
     else:  # it's a class we're wrapping
-        store_cls = store
-        if not has_kv_store_interface(store_cls):
-            store_cls = kv_wrap_persister_cls(store_cls, name=name)
-        else:
-            if name is None:
-                # from warnings import warn
-                # warn("The use of wraps_fv without an explicit name will be discontinued soon.")
-                name = store_cls.__qualname__ + 'Wrapped'
-                # TODO: This is not the best way to handle this. Investigate another way. ######################
-                global_names = set(globals()).union(locals())
-                if name in global_names:
-                    raise NameError("That name is already in use")
-                # TODO: ########################################################################################
-            _store_cls = store_cls
-            store_cls = type(name, (_store_cls,), {})  # make a "copy"
+        name = name or store.__qualname__ + 'Wrapped'
+
+        # TODO: This is not the best way to handle this. Investigate another way. ######################
+        global_names = set(globals()).union(locals())
+        if name in global_names:
+            raise NameError("That name is already in use")
+        # TODO: ########################################################################################
+
+        store_cls = kv_wrap_persister_cls(store, name=name)  # experiment
+
+        # outcoming ####################################################################################################
 
         if key_of_id is not None:
             if num_of_args(key_of_id) == 1:
@@ -483,35 +479,15 @@ def wrap_kvs(store, name=None, *,
 
             store_cls._key_of_id = _key_of_id
 
-        if id_of_key is not None:
-            if num_of_args(id_of_key) == 1:
-                def _id_of_key(self, k):
-                    return super(store_cls, self)._id_of_key(id_of_key(k))
-            else:
-                def _id_of_key(self, k):
-                    return super(store_cls, self)._id_of_key(id_of_key(self, k))
-
-            store_cls._id_of_key = _id_of_key
-
         if obj_of_data is not None:
             if num_of_args(obj_of_data) == 1:
-                def _obj_of_data(self, _id):
-                    return obj_of_data(super(store_cls, self)._obj_of_data(_id))
+                def _obj_of_data(self, data):
+                    return obj_of_data(super(store_cls, self)._obj_of_data(data))
             else:
-                def _obj_of_data(self, _id):
-                    return obj_of_data(self, super(store_cls, self)._obj_of_data(_id))
+                def _obj_of_data(self, data):
+                    return obj_of_data(self, super(store_cls, self)._obj_of_data(data))
 
             store_cls._obj_of_data = _obj_of_data
-
-        if data_of_obj is not None:
-            if num_of_args(data_of_obj) == 1:
-                def _data_of_obj(self, obj):
-                    return super(store_cls, self)._data_of_obj(data_of_obj(obj))
-            else:
-                def _data_of_obj(self, obj):
-                    return super(store_cls, self)._data_of_obj(data_of_obj(self, obj))
-
-            store_cls._data_of_obj = _data_of_obj
 
         if postget is not None:
             if num_of_args(postget) == 2:
@@ -522,6 +498,28 @@ def wrap_kvs(store, name=None, *,
                     return postget(self, k, super(store_cls, self).__getitem__(k))
 
             store_cls.__getitem__ = __getitem__
+
+        # ingoing ######################################################################################################
+
+        if id_of_key is not None:
+            if num_of_args(id_of_key) == 1:
+                def _id_of_key(self, k):
+                    return super(store_cls, self)._id_of_key(id_of_key(k))
+            else:
+                def _id_of_key(self, k):
+                    return super(store_cls, self)._id_of_key(id_of_key(self, k))
+
+            store_cls._id_of_key = _id_of_key
+
+        if data_of_obj is not None:
+            if num_of_args(data_of_obj) == 1:
+                def _data_of_obj(self, obj):
+                    return super(store_cls, self)._data_of_obj(data_of_obj(obj))
+            else:
+                def _data_of_obj(self, obj):
+                    return super(store_cls, self)._data_of_obj(data_of_obj(self, obj))
+
+            store_cls._data_of_obj = _data_of_obj
 
         return store_cls
 
