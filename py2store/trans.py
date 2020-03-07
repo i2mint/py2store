@@ -749,12 +749,26 @@ def _kv_wrap_ingoing_vals(trans_func):
     return wrapper
 
 
-def _kv_wrap_val_reads_wrt_to_keys(trans_func):
+def _ingoing_vals_wrt_to_keys(trans_func):
+    def wrapper(o, name=None):
+        name = name or getattr(o, '__qualname__', getattr(o.__class__, '__qualname__')) + '_vwk'
+        return wrap_kvs(o, name, preset=trans_func)
+
+    return wrapper
+
+
+def _outcoming_vals_wrt_to_keys(trans_func):
     def wrapper(o, name=None):
         name = name or getattr(o, '__qualname__', getattr(o.__class__, '__qualname__')) + '_vrk'
         return wrap_kvs(o, name, postget=trans_func)
 
     return wrapper
+
+
+def mk_trans_obj(**kwargs):
+    """Convenience method to quickly make a trans_obj (just an object holding some trans functions"""
+    # TODO: Could make this more flexible (assuming here only staticmethods) and validate inputs...
+    return type('TransObj', (), {k: staticmethod(v) for k, v in kwargs.items()})()
 
 
 def kv_wrap(trans_obj):
@@ -766,25 +780,29 @@ def kv_wrap(trans_obj):
     which will only add a single specific wrapper (specified as a function), when that's what you need.
 
     """
+
     key_of_id = getattr(trans_obj, '_key_of_id', None)
     id_of_key = getattr(trans_obj, '_id_of_key', None)
     obj_of_data = getattr(trans_obj, '_obj_of_data', None)
     data_of_obj = getattr(trans_obj, '_data_of_obj', None)
+    preset = getattr(trans_obj, '_preset', None)
     postget = getattr(trans_obj, '_postget', None)
 
     def wrapper(o, name=None):
         name = name or getattr(o, '__qualname__', getattr(o.__class__, '__qualname__')) + '_kr'
         return wrap_kvs(o, name, key_of_id=key_of_id, id_of_key=id_of_key, obj_of_data=obj_of_data,
-                        data_of_obj=data_of_obj, postget=postget)
+                        data_of_obj=data_of_obj, preset=preset, postget=postget)
 
     return wrapper
 
 
+kv_wrap.mk_trans_obj = mk_trans_obj  # to have a trans_obj maker handy
 kv_wrap.outcoming_keys = _kv_wrap_outcoming_keys
 kv_wrap.ingoing_keys = _kv_wrap_ingoing_keys
 kv_wrap.outcoming_vals = _kv_wrap_outcoming_vals
 kv_wrap.ingoing_vals = _kv_wrap_ingoing_vals
-kv_wrap.val_reads_wrt_to_keys = _kv_wrap_val_reads_wrt_to_keys
+kv_wrap.ingoing_vals_wrt_to_keys = _ingoing_vals_wrt_to_keys
+kv_wrap.outcoming_vals_wrt_to_keys = _outcoming_vals_wrt_to_keys
 
 _method_name_for = {
     'write': '__setitem__',
