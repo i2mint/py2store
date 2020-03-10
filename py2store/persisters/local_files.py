@@ -426,6 +426,21 @@ class ZipReader(KvReader):
     """A KvReader to read the contents of a zip file.
     Provides a KV perspective of https://docs.python.org/3/library/zipfile.html
 
+    Note: If you get data zipped by a mac, you might get some junk along with it.
+    Namely `__MACOSX` folders `.DS_Store` files. I won't rant about it, since others have.
+    But you might find it useful to remove them from view. One choice is to use `py2store.trans.filtered_iter`
+    to get a filtered view of the zips contents. In most cases, this should do the job:
+    ```
+    # applied to store instance or class:
+    store = filtered_iter(lambda x: not x.startswith('__MACOSX') and '.DS_Store' not in x)(store)
+    ```
+
+    Another option is just to remove these from the zip file once and for all. In unix-like systems:
+    ```
+    zip -d filename.zip __MACOSX/\*
+    zip -d filename.zip \*/.DS_Store
+    ```
+
     Examples:
         # >>> s = ZipReader('/path/to/some_zip_file.zip')
         # >>> len(s)
