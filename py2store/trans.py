@@ -1,4 +1,4 @@
-from functools import wraps
+from functools import wraps, partial
 import types
 from inspect import signature
 from typing import Union, Iterable, Optional
@@ -83,7 +83,7 @@ def mk_read_only(o):
     return disable_delitem(disable_setitem(o))
 
 
-def cache_iter(store, iter_to_container=list, name=None):
+def cache_iter(store=None, iter_to_container=list, name=None):
     """Make a class that wraps input class's __iter__ becomes cached.
 
     Quite often we have a lot of keys, that we get from a remote data source, and don't want to have to ask for
@@ -96,12 +96,15 @@ def cache_iter(store, iter_to_container=list, name=None):
     The following decorator, when applied to a class (that has an __iter__), will perform the __iter__ code, consuming
     all items of the generator and storing them in _iter_cache, and then will yield from there every subsequent call.
 
-    If you need to refresh the cache, you'll need to delete _iter_cache (or set to None). Most of the time though,
-    you'll be applying this caching decorator to static data.
+    It is assumed, if you're using the cache_iter transformation, that you're dealing with static data
+    (or data that can be considered static for the life of the store -- for example, when conducting analytics).
+    If you ever need to refresh the cache during the life of the store, you can to delete _iter_cache like this:
+    ```
+    del your_store._iter_cache
+    ```
+    Once you do that, the next time you try to ask something about the contents of the store, it will actually do
+    a live query again, as for the first time.
 
-    IMPORTANT Warning: This decorator wraps __iter__ only. This will affect consequential methods (such as
-    keys, items, values, etc.) only if they use __iter__ to carry out their work. For example, items() won't have
-    the desired effect if you wrap dict, but will have the desired effect if you wrap KvStore.
 
     Args:
         collection_cls: The class to wrap (must have an __iter__)
@@ -109,7 +112,7 @@ def cache_iter(store, iter_to_container=list, name=None):
             The default is list. Another useful one is the sorted function.
         name: The name of the new class
 
-    The ex
+
     >>> @cache_iter
     ... class A:
     ...     def __iter__(self):
@@ -137,7 +140,9 @@ def cache_iter(store, iter_to_container=list, name=None):
     ['c', 'aa', 'bbb']
     """
 
-    if not isinstance(store, type):  # then consider it to be an instance
+    if store is None:
+        return partial(cache_iter, iter_to_container=iter_to_container, name=name)
+    elif not isinstance(store, type):  # then consider it to be an instance
         store_instance = store
         WrapperStore = cache_iter(Store, iter_to_container=iter_to_container, name=name)
         return WrapperStore(store_instance)
@@ -148,7 +153,7 @@ def cache_iter(store, iter_to_container=list, name=None):
 
         @lazyprop
         def _iter_cache(self):
-            return iter_to_container(super(cached_cls, self).__iter__())
+            return iter_to_container(super(cached_cls, self).__iter__())  # TODO: Should it be iter(super(...)?
 
         def __iter__(self):
             # if getattr(self, '_iter_cache', None) is None:
@@ -189,6 +194,8 @@ def filtered_iter(filt: Union[callable, Iterable], name=None):
     True
     >>> 'bb' in s  # False because odd (length) key
     False
+    >>> s.get('bb', None)
+    None
     >>> len(s)
     2
     >>> list(s.keys())
@@ -213,7 +220,7 @@ def filtered_iter(filt: Union[callable, Iterable], name=None):
     if not callable(filt):  # if filt is not a callable...
         # ... assume it's the collection of keys you want and make a filter function to filter those "in".
         assert next(iter(filt)), "filt should be a callable, or an iterable"
-        keys_that_should_be_filtered_in = filt
+        keys_that_should_be_filtered_in = set(filt)
 
         def filt(k):
             return k in keys_that_should_be_filtered_in
@@ -295,7 +302,7 @@ def filtered_iter(filt: Union[callable, Iterable], name=None):
 def _define_keys_values_and_items_according_to_iter(cls):
     if hasattr(cls, 'keys'):
         def keys(self):
-            return self.__iter__()
+            yield from self.__iter__()  # TODO: Should it be iter(self)?
 
         cls.keys = keys
 
@@ -310,6 +317,17 @@ def _define_keys_values_and_items_according_to_iter(cls):
             yield from ((k, self[k]) for k in self)
 
         cls.items = items
+
+
+class _DefineKeysValuesAndItemsAccordingToIter:
+    def keys(self):
+        yield from self.__iter__()  # TODO: Should it be iter(self)?
+
+    def values(self):
+        yield from (self[k] for k in self)
+
+    def items(self):
+        yield from ((k, self[k]) for k in self)
 
 
 def kv_wrap_persister_cls(persister_cls, name=None):
@@ -449,7 +467,7 @@ def _wrap_ingoing(store_cls, wrapped_method: str, trans_func=None):
         setattr(store_cls, wrapped_method, new_method)
 
 
-def wrap_kvs(store, name=None, *,
+def wrap_kvs(store=None, name=None, *,
              key_of_id=None, id_of_key=None, obj_of_data=None, data_of_obj=None, preset=None, postget=None
              ):
     """Make a Store that is wrapped with the given key/val transformers.
@@ -583,7 +601,10 @@ def wrap_kvs(store, name=None, *,
     >>> d['foo.pkl']
     [['a', 'b', 'c'], ['d', 'e', 'f']]
     """
-    if not isinstance(store, type):  # then consider it to be an instance
+    if store is None:
+        return partial(wrap_kvs, name=name, key_of_id=key_of_id, id_of_key=id_of_key, obj_of_data=obj_of_data,
+                       data_of_obj=data_of_obj, preset=preset, postget=postget)
+    elif not isinstance(store, type):  # then consider it to be an instance
         store_instance = store
         WrapperStore = wrap_kvs(Store, name=name,
                                 key_of_id=key_of_id, id_of_key=id_of_key,
