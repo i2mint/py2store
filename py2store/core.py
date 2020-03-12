@@ -63,6 +63,18 @@ class PathFormat:
         return self._key_filt(k)
 
 
+class KeyStore:
+    def __init__(self, id_of_key, key_of_id=None):
+        self.id_of_key = id_of_key
+        self.key_of_id = key_of_id or {_id: k for k, _id in id_of_key.items()}
+
+    def _key_of_id(self, _id):
+        return self.key_of_id[_id]
+
+    def _id_of_key(self, k):
+        return self.id_of_key[k]
+
+
 # TODO: Revisit ExplicitKeys and ExplicitKeysWithPrefixRelativization. Not extendible to full store!
 class ExplicitKeys(KvCollection):
     """

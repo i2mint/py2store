@@ -376,6 +376,24 @@ def delegate_as(delegate_cls, to='delegate', include=frozenset(), exclude=frozen
     return inner
 
 
+class imdict(dict):
+    """ A frozen hashable dict """
+
+    def __hash__(self):
+        return id(self)
+
+    def _immutable(self, *args, **kws):
+        raise TypeError('object is immutable')
+
+    __setitem__ = _immutable
+    __delitem__ = _immutable
+    clear = _immutable
+    update = _immutable
+    setdefault = _immutable
+    pop = _immutable
+    popitem = _immutable
+
+
 def move_files_of_folder_to_trash(folder):
     trash_dir = os.path.join(os.getenv("HOME"), '.Trash')  # works with mac (perhaps linux too?)
     assert os.path.isdir(trash_dir), f"{trash_dir} directory not found"

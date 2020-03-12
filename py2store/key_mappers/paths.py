@@ -1,7 +1,97 @@
-from functools import wraps
+from functools import wraps, reduce
+from dataclasses import dataclass
+from typing import Union
+import os
+
 from py2store.base import Store
 from py2store.util import lazyprop
 from py2store.dig import recursive_get_attr
+
+path_sep = os.path.sep
+
+
+class PathGetMixin:
+    """
+    Mixin allows you to access nested stores through a path of keys.
+    That is, give you a path_store from a store, such that:
+    ```
+        path_store['a','b','c'] == store['a']['b']['c']
+    ```
+    The mixin will check if the key is of the path type (by default `tuple`), and if it is, it will iterate through
+    the path, recursively getting the elements.
+
+    Plays well with:
+        KeyPath
+
+    >>> class P(PathGetMixin, dict):
+    ...     pass
+    >>> s = P({'a': {'b': {'c': 42}}})
+    >>> s['a']
+    {'b': {'c': 42}}
+    >>> s['a', 'b']
+    {'c': 42}
+    >>> s['a', 'b', 'c']
+    42
+    >>>
+    >>> from py2store import kv_wrap
+    >>> class P(PathGetMixin, dict): ...
+    >>> PP = kv_wrap(KeyPath(path_sep='.'))(P)
+    >>>
+    >>> s = PP({'a': {'b': {'c': 42}}})
+    >>> assert s['a'] == {'b': {'c': 42}}
+    >>> assert s['a.b'] == {'c': 42}
+    >>> assert s['a.b.c'] == 42
+    """
+    _path_type: type = tuple
+
+    def __getitem__(self, k):
+        if isinstance(k, self._path_type):
+            return reduce(lambda store, key: store[key], k, self)
+        else:
+            return super().__getitem__(k)
+
+
+@dataclass
+class KeyPath:
+    """
+    A key mapper that converts from an iterable key (default tuple) to a string (given a path-separator str)
+
+    Args:
+        path_sep: The path separator (used to make string paths from iterable paths and visa versa
+        _path_type: The type of the outcoming (inner) path. But really, any function to convert from a list to
+            the outer path type we want.
+
+    Plays well with:
+        KeyPath
+
+    >>> kp = KeyPath(path_sep='/')
+    >>> kp._key_of_id(('a', 'b', 'c'))
+    'a/b/c'
+    >>> kp._id_of_key('a/b/c')
+    ('a', 'b', 'c')
+    >>> kp = KeyPath(path_sep='.')
+    >>> kp._key_of_id(('a', 'b', 'c'))
+    'a.b.c'
+    >>> kp._id_of_key('a.b.c')
+    ('a', 'b', 'c')
+    >>> kp = KeyPath(path_sep=':::', _path_type=dict.fromkeys)
+    >>> _id = dict.fromkeys('abc')
+    >>> _id
+    {'a': None, 'b': None, 'c': None}
+    >>> kp._key_of_id(_id)
+    'a:::b:::c'
+    >>> kp._id_of_key('a:::b:::c')
+    {'a': None, 'b': None, 'c': None}
+    """
+
+    path_sep: str = path_sep
+    _path_type: Union[type, callable] = tuple
+
+    def _key_of_id(self, _id):
+        return self.path_sep.join(_id)
+
+    def _id_of_key(self, k):
+        return self._path_type(k.split(self.path_sep))
 
 
 class PrefixRelativizationMixin:
@@ -76,7 +166,7 @@ def mk_relative_path_store(store_cls, name=None, with_key_validation=False):
     >>> s['foo'] = 'bar'
     >>> dict(s.items())  # gives us what you would expect
     {'foo': 'bar'}
-    >>>  # but underthe hood, the dict we wrapped actually contains the '/ROOT/' prefix
+    >>>  # but under the hood, the dict we wrapped actually contains the '/ROOT/' prefix
     >>> dict(s.store)
     {'/ROOT/foo': 'bar'}
     >>>
@@ -108,6 +198,40 @@ def mk_relative_path_store(store_cls, name=None, with_key_validation=False):
         cls._id_of_key = _id_of_key
 
     return cls
+
+
+# TODO: Merge with mk_relative_path_store
+def rel_path_wrap(o, _prefix):
+    """
+
+    Args:
+        o: An object to be wrapped
+        _prefix: The _prefix to use for key wrapping (will remove it from outcoming keys and add to ingoing keys.
+
+    >>> # The dynamic way (if you try this at home, be aware of the pitfalls of the dynamic way
+    >>> # -- but don't just believe the static dogmas).
+    >>> d = {'/ROOT/of/every/thing': 42, '/ROOT/of/this/too': 0}
+    >>> dd = rel_path_wrap(d, '/ROOT/')
+    >>> s._prefix = '/ROOT/'
+    >>> s['foo'] = 'bar'
+    >>> dict(s.items())  # gives us what you would expect
+    {'foo': 'bar'}
+    >>>  # but under the hood, the dict we wrapped actually contains the '/ROOT/' prefix
+    >>> dict(s.store)
+    {'/ROOT/foo': 'bar'}
+    >>>
+    >>> # The static way: Make a class that will integrate the _prefix at construction time.
+    >>> class MyStore(mk_relative_path_store(dict)):  # Indeed, mk_relative_path_store(dict) is a class you can subclass
+    ...     def __init__(self, _prefix, *args, **kwargs):
+    ...         self._prefix = _prefix
+
+    """
+
+    from py2store import kv_wrap
+
+    trans_obj = PrefixRelativizationMixin()
+    trans_obj._prefix = _prefix
+    return kv_wrap(trans_obj)(o)
 
 # mk_relative_path_store_cls = mk_relative_path_store  # alias
 
