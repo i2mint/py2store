@@ -217,6 +217,14 @@ def mk_tmp_quick_store_dirpath(dirname=''):
     return os.path.join(temp_root, dirname)
 
 
+def mk_absolute_path(path_format):
+    if path_format.startswith('~'):
+        path_format = os.path.expanduser(path_format)
+    elif path_format.startswith('.'):
+        path_format = os.path.abspath(path_format)
+    return path_format
+
+
 class QuickLocalStoreMixin:
     """A mixin that will choose a path_format if none given, and will create directories under the (temp) root,
     at write time, as needed.
@@ -234,10 +242,7 @@ class QuickLocalStoreMixin:
             path_format = self.mk_tmp_quick_store_path_format()
             print(f"No path_format was given, so taking one from a tmp dir. Namely:\n\t{path_format}")
         else:
-            if path_format.startswith('~'):
-                path_format = os.path.expanduser(path_format)
-            elif path_format.startswith('.'):
-                path_format = os.path.abspath(path_format)
+            path_format = mk_absolute_path(path_format)
         super().__init__(path_format, max_levels=max_levels)
 
     def __setitem__(self, k, v):
