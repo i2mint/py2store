@@ -30,6 +30,12 @@ from py2store.util import DictAttr, str_to_var_str
 
 FAK = '$fak'
 
+
+# TODO: Make a config_utils.py module to centralize config tools (configs for access is just one -- serializers another)
+# TODO: Integrate (external because not standard lib) other safer tools for secrets, such as:
+#  https://github.com/SimpleLegal/pocket_protector
+
+
 def getenv(name, default=None):
     """Like os.getenv, but removes a suffix \\r character if present (problem with some env var systems)"""
     v = os.getenv(name, default)
