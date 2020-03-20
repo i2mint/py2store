@@ -290,7 +290,7 @@ class Store(Persister):
             msg += "... because there's a layer transforming outcoming keys that are not the ones the store actually " \
                    "uses? If you didn't wrap the store with the inverse ingoing keys transformation, " \
                    "that would happen.\n"
-            msg += "I'll ask the inner-layer what it's head is, but IT MAY NOT REFLECT the reality of your store" \
+            msg += "I'll ask the inner-layer what it's head is, but IT MAY NOT REFLECT the reality of your store " \
                    "if you have some filtering, caching etc."
             msg += f"The error messages was: \n{e}"
             warn(msg)

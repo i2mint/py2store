@@ -1,4 +1,4 @@
-from functools import wraps, partial
+from functools import wraps, partial, reduce
 import types
 from inspect import signature
 from typing import Union, Iterable, Optional
@@ -36,6 +36,63 @@ def store_wrap(obj, name=None):
 
 def num_of_args(func):
     return len(signature(func).parameters)
+
+
+def _is_bound(method):
+    return hasattr(method, '__self__')
+
+
+def _first_param_is_an_instance_param(params, first_arg_names_used_for_instances=frozenset(['self'])):
+    return len(params) > 0 and list(params)[0] in first_arg_names_used_for_instances
+
+
+# TODO: Add validation of func: That all but perhaps 1 argument (not counting self) has a default
+def _guess_wrap_arg_idx(func, first_arg_names_used_for_instances=frozenset(['self'])):
+    """
+
+    Args:
+        func:
+        first_arg_names_used_for_instances:
+
+    Returns:
+
+    >>> def f1(x): ...
+    >>> assert _guess_wrap_arg_idx(f1) == 0
+    >>>
+    >>> def f2(self, x): ...
+    >>> assert _guess_wrap_arg_idx(f2) == 1
+    >>>
+    >>> f3 = lambda self, x: True
+    >>> assert _guess_wrap_arg_idx(f3) == 1
+    >>>
+    >>> class A:
+    ...     def bar(self, x): ...
+    ...     def foo(dacc, x): ...
+    >>> a = A()
+    >>>
+    >>> _guess_wrap_arg_idx(a.bar)
+    0
+    >>> _guess_wrap_arg_idx(a.foo)
+    0
+    >>> _guess_wrap_arg_idx(A.bar)
+    1
+    >>> _guess_wrap_arg_idx(A.foo)
+    0
+    >>>
+    """
+    params = signature(func).parameters
+    if len(params) == 0:
+        # no argument, so we can't be wrapping anything!!!
+        raise ValueError("The function has no parameters, so I can't guess which one you want to wrap")
+    elif not _is_bound(func) and _first_param_is_an_instance_param(params, first_arg_names_used_for_instances):
+        return 1
+    else:
+        return 0  # only one argument, it must be the one the user wants to wrap
+    # else:  # ... well now it get's a bit muddled...
+    #     if _first_param_is_an_instance_param(params, first_arg_names_used_for_instances):
+    #         return 1
+    #     else:
+    #         return None  # couldn't guess what argument you're trying to wrap
 
 
 def transparent_key_method(self, k):
@@ -194,8 +251,7 @@ def filtered_iter(filt: Union[callable, Iterable], name=None):
     True
     >>> 'bb' in s  # False because odd (length) key
     False
-    >>> s.get('bb', None)
-    None
+    >>> assert s.get('bb', None) == None
     >>> len(s)
     2
     >>> list(s.keys())
@@ -417,7 +473,8 @@ def kv_wrap_persister_cls(persister_cls, name=None):
     return cls
 
 
-def _wrap_outcoming(store_cls: type, wrapped_method: str, trans_func: Optional[callable] = None):
+def _wrap_outcoming(store_cls: type, wrapped_method: str, trans_func: Optional[callable] = None,
+                    wrap_arg_idx: Optional[int] = None):
     """Output-transforming wrapping of the wrapped_method of store_cls.
     The transformation is given by trans_func, which could be a one (trans_func(x)
     or two (trans_func(self, x)) argument function.
@@ -426,13 +483,17 @@ def _wrap_outcoming(store_cls: type, wrapped_method: str, trans_func: Optional[c
         store_cls: The class that will be transformed
         wrapped_method: The method (name) that will be transformed.
         trans_func: The transformation function.
+        wrap_arg_idx: The index of the
 
     Returns: Nothing. It transforms the class in-place
 
     """
     if trans_func is not None:
-        if num_of_args(trans_func) == 1:
-            @wraps(getattr(store_cls, wrapped_method))
+        wrapped_func = getattr(store_cls, wrapped_method)
+        wrap_arg_idx = wrap_arg_idx or _guess_wrap_arg_idx(wrapped_func)
+        if wrap_arg_idx == 0:
+            # print(f"00000: {store_cls}: {wrapped_method}, {trans_func}")
+            @wraps(wrapped_func)
             def new_method(self, x):
                 # # Long form (for explanation)
                 # super_method = getattr(super(store_cls, self), wrapped_method)
@@ -440,8 +501,9 @@ def _wrap_outcoming(store_cls: type, wrapped_method: str, trans_func: Optional[c
                 # transformed_output_of_super_method = trans_func(output_of_super_method)
                 # return transformed_output_of_super_method
                 return trans_func(getattr(super(store_cls, self), wrapped_method)(x))
-        else:
-            @wraps(getattr(store_cls, wrapped_method))
+        elif wrap_arg_idx == 1:
+            # print("11111")
+            @wraps(wrapped_func)
             def new_method(self, x):
                 # # Long form (for explanation)
                 # super_method = getattr(super(store_cls, self), wrapped_method)
@@ -449,20 +511,29 @@ def _wrap_outcoming(store_cls: type, wrapped_method: str, trans_func: Optional[c
                 # transformed_output_of_super_method = trans_func(self, output_of_super_method)
                 # return transformed_output_of_super_method
                 return trans_func(self, getattr(super(store_cls, self), wrapped_method)(x))
+        else:
+            raise ValueError(f"I don't know how to handle wrap_arg_idx={wrap_arg_idx}")
 
         setattr(store_cls, wrapped_method, new_method)
 
 
-def _wrap_ingoing(store_cls, wrapped_method: str, trans_func=None):
+def _wrap_ingoing(store_cls, wrapped_method: str, trans_func: Optional[callable] = None,
+                  wrap_arg_idx: Optional[int] = None):
     if trans_func is not None:
-        if num_of_args(trans_func) == 1:
+        wrapped_func = getattr(store_cls, wrapped_method)
+        wrap_arg_idx = wrap_arg_idx or _guess_wrap_arg_idx(wrapped_func)
+
+        if wrap_arg_idx == 0:
             @wraps(getattr(store_cls, wrapped_method))
             def new_method(self, x):
                 return getattr(super(store_cls, self), wrapped_method)(trans_func(x))
-        else:
+        elif wrap_arg_idx == 1:
+            # print(f"00000: {store_cls}: {wrapped_method}, {trans_func}")
             @wraps(getattr(store_cls, wrapped_method))
             def new_method(self, x):
                 return getattr(super(store_cls, self), wrapped_method)(trans_func(self, x))
+        else:
+            raise ValueError(f"I don't know how to handle wrap_arg_idx={wrap_arg_idx}")
 
         setattr(store_cls, wrapped_method, new_method)
 
@@ -631,7 +702,10 @@ def wrap_kvs(store=None, name=None, *,
         _wrap_ingoing(store_cls, '_data_of_obj', data_of_obj)
 
         if postget is not None:
-            if num_of_args(postget) == 2:
+            nargs = num_of_args(postget)
+            if nargs < 2:
+                raise ValueError("A postget function needs to have (key, value) or (self, key, value) arguments")
+            elif nargs == 2:
                 def __getitem__(self, k):
                     return postget(k, super(store_cls, self).__getitem__(k))
             else:
@@ -641,7 +715,10 @@ def wrap_kvs(store=None, name=None, *,
             store_cls.__getitem__ = __getitem__
 
         if preset is not None:
-            if num_of_args(postget) == 2:
+            nargs = num_of_args(preset)
+            if nargs < 2:
+                raise ValueError("A preset function needs to have (key, value) or (self, key, value) arguments")
+            elif nargs == 2:
                 def __setitem__(self, k, v):
                     return super(store_cls, self).__setitem__(k, preset(k, v))
             else:
@@ -832,6 +909,103 @@ _method_name_for = {
     'list': '__iter__',
     'count': '__len__'
 }
+
+
+def add_path_get(store=None, name=None, path_type: type = tuple):
+    """
+    Make nested stores accessible through key paths.
+
+    Say you have some nested stores.
+    You know... like a `ZipFileReader` store whose values are `ZipReader`s,
+    whose values are bytes of the zipped files (and you can go on... whose (json) values are...).
+
+    Well, you can access any node of this nested tree of stores like this:
+    ```
+        MyStore[key_1][key_2][key_3]
+    ```
+    And that's fine. But maybe you'd like to do it this way instead:
+    ```
+        MyStore[key_1, key_2, key_3]
+    ```
+    Or like this:
+
+        MyStore['key_1/key_2/key_3']
+    Or this:
+
+        MyStore['key_1.key_2.key_3']
+    You get the point. This is what `add_path_get` is meant for.
+
+    Args:
+        store: The store (class or instance) you're wrapping.
+            If not specified, the function will return a decorator.
+        name: The name to give the class (not applicable to instance wrapping)
+        path_type: The type that paths are expressed as. Needs to be an Iterable type. By default, a tuple.
+            This is used to decide whether the key should be taken as a "normal" key of the store,
+            or should be used to iterate through, recursively getting values.
+
+    Returns: A wrapped store (class or instance), or a store wrapping decorator (if store is not specified)
+
+    See Also: `py2store.key_mappers.paths.PathGetMixin`, `py2store.key_mappers.paths.KeyPath`
+
+    >>> # wrapping an instance
+    >>> s = add_path_get({'a': {'b': {'c': 42}}})
+    >>> s['a']
+    {'b': {'c': 42}}
+    >>> s['a', 'b']
+    {'c': 42}
+    >>> s['a', 'b', 'c']
+    42
+    >>> # wrapping a class
+    >>> S = add_path_get(dict)
+    >>> s = S(a={'b': {'c': 42}})
+    >>> assert s['a'] == {'b': {'c': 42}}; assert s['a', 'b'] == {'c': 42}; assert s['a', 'b', 'c'] == 42
+    >>>
+    >>> # using add_path_get as a decorator
+    >>> @add_path_get
+    ... class S(dict):
+    ...    pass
+    >>> s = S(a={'b': {'c': 42}})
+    >>> assert s['a'] == {'b': {'c': 42}};
+    >>> assert s['a', 'b'] == s['a']['b'];
+    >>> assert s['a', 'b', 'c'] == s['a']['b']['c']
+    >>>
+    >>> # a different kind of path?
+    >>> # You can choose a different path_type, but sometimes (say both keys and key paths are strings)
+    >>> # you need to involve more tools. Like py2store.key_mappers.paths.KeyPath...
+    >>> from py2store.key_mappers.paths import KeyPath
+    >>> from py2store import kv_wrap
+    >>> SS = kv_wrap(KeyPath(path_sep='.'))(S)
+    >>> s = SS({'a': {'b': {'c': 42}}})
+    >>> assert s['a'] == {'b': {'c': 42}}; assert s['a.b'] == s['a']['b']; assert s['a.b.c'] == s['a']['b']['c']
+    """
+    if store is None:
+        return partial(add_path_get, name=name, path_type=path_type)
+    elif not isinstance(store, type):  # then consider it to be an instance
+        store_instance = store
+        WrapperStore = add_path_get(Store, name=name, path_type=path_type)
+
+        return WrapperStore(store_instance)
+    else:  # it's a class we're wrapping
+        name = name or store.__qualname__ + 'WithPathGet'
+
+        # TODO: This is not the best way to handle this. Investigate another way. ######################
+        global_names = set(globals()).union(locals())
+        if name in global_names:
+            raise NameError("That name is already in use")
+        # TODO: ########################################################################################
+
+        store_cls = kv_wrap_persister_cls(store, name=name)
+        store_cls._path_type = path_type
+
+        def __getitem__(self, k):
+            if isinstance(k, self._path_type):
+                return reduce(lambda store, key: store[key], k, self)
+            else:
+                return super(store_cls, self).__getitem__(k)
+
+        store_cls.__getitem__ = __getitem__
+
+        return store_cls
 
 
 def _insert_alias(store, method_name, alias=None):
