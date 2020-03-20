@@ -19,6 +19,20 @@ def groupby(items: Iterable[Item], key: Callable[[Item], Hashable]):
 
     Returns: A dict of {group_key: items_in_that_group, ...}
 
+    >>> groupby(range(11), key=lambda x: x % 3)
+    {0: [0, 3, 6, 9], 1: [1, 4, 7, 10], 2: [2, 5, 8]}
+    >>>
+    >>> tokens = ['the', 'fox', 'is', 'in', 'a', 'box']
+    >>> groupby(tokens, len)
+    {3: ['the', 'fox', 'box'], 2: ['is', 'in'], 1: ['a']}
+    >>> key_map = {1: 'one', 2: 'two'}
+    >>> groupby(tokens, lambda x: key_map.get(len(x), 'more'))
+    {'more': ['the', 'fox', 'box'], 'two': ['is', 'in'], 'one': ['a']}
+    >>> stopwords = {'the', 'in', 'a', 'on'}
+    >>> groupby(tokens, lambda w: w in stopwords)
+    {True: ['the', 'in', 'a'], False: ['fox', 'is', 'box']}
+    >>> groupby(tokens, lambda w: ['words', 'stopwords'][int(w in stopwords)])
+    {'stopwords': ['the', 'in', 'a'], 'words': ['fox', 'is', 'box']}
     """
     groups = defaultdict(list)
     for k in items:
@@ -28,6 +42,22 @@ def groupby(items: Iterable[Item], key: Callable[[Item], Hashable]):
 
 def regroupby(items, *key_funcs, **named_key_funcs):
     """REcursive groupby. Applies the groupby function recursively, using a sequence of key functions.
+
+    Note: The named_key_funcs argument names don't have any external effect.
+        They just give a name to the key function, for code reading clarity purposes.
+
+    >>> # group by how big the number is, then by it's mod 3 value
+    >>> # note that named_key_funcs argument names doesn't have any external effect (but give a name to the function)
+    >>> regroupby([1, 2, 3, 4, 5, 6, 7], lambda x: 'big' if x > 5 else 'small', mod3=lambda x: x % 3)
+    {'small': {1: [1, 4], 2: [2, 5], 0: [3]}, 'big': {0: [6], 1: [7]}}
+    >>>
+    >>> tokens = ['the', 'fox', 'is', 'in', 'a', 'box']
+    >>> stopwords = {'the', 'in', 'a', 'on'}
+    >>> word_category = lambda x: 'stopwords' if x in stopwords else 'words'
+    >>> regroupby(tokens, word_category, len)
+    {'stopwords': {3: ['the'], 2: ['in'], 1: ['a']}, 'words': {3: ['fox', 'box'], 2: ['is']}}
+    >>> regroupby(tokens, len, word_category)
+    {3: {'stopwords': ['the'], 'words': ['fox', 'box']}, 2: {'words': ['is'], 'stopwords': ['in']}, 1: {'stopwords': ['a']}}
     """
     key_funcs = list(key_funcs) + list(named_key_funcs.values())
     assert len(key_funcs) > 0, "You need to have at least one key_func"
