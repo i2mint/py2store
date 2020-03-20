@@ -20,6 +20,7 @@ def identity_method(x):
     return x
 
 
+# TODO: Enhance default handling so users can have their own defaults (checking for local config file etc.)
 dflt_func_key = lambda self, k: os.path.splitext(k)[1]
 dflt_dflt_incoming_val_trans = staticmethod(identity_method)
 
@@ -41,6 +42,8 @@ dflt_outgoing_val_trans_for_key = {
     '.json': lambda v: json.dumps(v).encode(),
 }
 
+
+# TODO: Different misc objects (function, class, default instance) should be a aligned more
 
 class MiscReaderMixin:
     """Mixin to transform incoming vals according to the key their under.
@@ -162,6 +165,9 @@ class MiscGetter:
 
 
 misc_objs_get = MiscGetter()
+
+# TODO: Make this be more tightly couples with the actual default used in get_obj and MiscGetter (avoid misalignments)
+misc_objs_get.dflt_incoming_val_trans_for_key = dflt_incoming_val_trans_for_key
 
 
 class MiscStoreMixin(MiscReaderMixin):
