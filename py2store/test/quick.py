@@ -1,3 +1,4 @@
+import pytest
 from py2store import QuickStore
 
 store = QuickStore()  # will print what (tmp) rootdir it is choosing
@@ -20,3 +21,6 @@ assert len(store) >= 2  # can't be sure there were no elements before, so can't 
 # delete the stuff you've written
 del store['foo']
 del store['hello/world']
+
+if __name__ == '__main__':
+    pytest.main()

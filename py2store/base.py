@@ -24,7 +24,8 @@ This means that you don't have to implement these as all, and can choose to impl
 the storage methods themselves.
 """
 
-from collections.abc import Collection, Mapping, MutableMapping
+from collections.abc import Collection as CollectionABC
+from collections.abc import Mapping, MutableMapping
 from typing import Any, Iterable, Tuple
 
 Key = Any
@@ -37,20 +38,19 @@ ValIter = Iterable[Val]
 ItemIter = Iterable[Item]
 
 
-class KvCollection(Collection):
+class Collection(CollectionABC):
 
-    def __contains__(self, k: Key) -> bool:
+    def __contains__(self, x) -> bool:
         """
         Check if collection of keys contains k.
-        Note: This method actually fetches the contents for k, returning False if there's a key error trying to do so
+        Note: This method loops through all contents of collection to see if query element exists.
         Therefore it may not be efficient, and in most cases, a method specific to the case should be used.
         :return: True if k is in the collection, and False if not
         """
-        try:
-            self.__getitem__(k)
-            return True
-        except KeyError:
-            return False
+        for existing_x in self.__iter__():
+            if existing_x == x:
+                return True
+        return False
 
     def __len__(self) -> int:
         """
@@ -59,7 +59,6 @@ class KvCollection(Collection):
         Therefore it is not efficient, and in most cases should be overridden with a more efficient version.
         :return: The number (int) of elements in the collection of keys.
         """
-        # TODO: some other means to more quickly count files?
         # Note: Found that sum(1 for _ in self.__iter__()) was slower for small, slightly faster for big inputs.
         count = 0
         for _ in self.__iter__():
@@ -67,13 +66,37 @@ class KvCollection(Collection):
         return count
 
     def head(self):
-        return next(iter(self.items()))
+        if hasattr(self, 'items'):
+            return next(iter(self.items()))
+        else:
+            return next(iter(self))
 
 
-class KvReader(KvCollection, Mapping):
+KvCollection = Collection  # alias meant for back-compatibility. Would like to deprecated
+
+
+# def getitem_based_contains(self, x) -> bool:
+#     """
+#     Check if collection of keys contains k.
+#     Note: This method actually fetches the contents for k, returning False if there's a key error trying to do so
+#     Therefore it may not be efficient, and in most cases, a method specific to the case should be used.
+#     :return: True if k is in the collection, and False if not
+#     """
+#
+#     try:
+#         self.__getitem__(k)
+#         return True
+#     except KeyError:
+#         return False
+
+
+class KvReader(Collection, Mapping):
     """Acts as a Mapping abc, but with default __len__ (implemented by counting keys)
     and head method to get the first (k, v) item of the store"""
-    pass
+
+    def head(self):
+        for k, v in self.items():
+            yield k, v
 
 
 Reader = KvReader  # alias
@@ -117,11 +140,12 @@ class Store(Persister):
     """
     By store we mean key-value store. This could be files in a filesystem, objects in s3, or a database. Where and
     how the content is stored should be specified, but StoreInterface offers a dict-like interface to this.
+    ::
+        __getitem__ calls: _id_of_key			                    _obj_of_data
+        __setitem__ calls: _id_of_key		        _data_of_obj
+        __delitem__ calls: _id_of_key
+        __iter__    calls:	            _key_of_id
 
-    __getitem__ calls: _id_of_key			                    _obj_of_data
-    __setitem__ calls: _id_of_key		        _data_of_obj
-    __delitem__ calls: _id_of_key
-    __iter__    calls:	            _key_of_id
 
     >>> # Default store: no key or value conversion ################################################
     >>> s = Store()
@@ -226,15 +250,27 @@ class Store(Persister):
         return self._obj_of_data(self.store.__getitem__(self._id_of_key(k)))
 
     def get(self, k: Key, default=None) -> Val:
-        data = self.store.get(self._id_of_key(k), no_such_item)
-        if data is not no_such_item:
-            return self._obj_of_data(data)
-        else:
-            return default
+        if hasattr(self.store, 'get'):  # if store has a get method, use it
+            data = self.store.get(self._id_of_key(k), no_such_item)
+            if data is not no_such_item:
+                return self._obj_of_data(data)
+            else:
+                return default
+        else:  # if not, do the get function otherwise
+            if k in self:
+                return self._obj_of_data(self[k])
+            else:
+                return default
 
     # Explore ####################################################################
     def __iter__(self) -> KeyIter:
         return map(self._key_of_id, self.store.__iter__())
+
+    # def items(self) -> ItemIter:
+    #     if hasattr(self.store, 'items'):
+    #         yield from ((self._key_of_id(k), self._obj_of_data(v)) for k, v in self.store.items())
+    #     else:
+    #         yield from ((self._key_of_id(k), self._obj_of_data(self.store[k])) for k in self.store.__iter__())
 
     def __len__(self) -> int:
         return self.store.__len__()
@@ -243,8 +279,27 @@ class Store(Persister):
         return self.store.__contains__(self._id_of_key(k))
 
     def head(self) -> Item:
-        for k, v in self.items():
-            return k, v
+        try:
+            for k in self:
+                return k, self[k]
+        except Exception as e:
+
+            from warnings import warn
+            msg = f"Couldn't get data for the key {k}. This could be be...\n"
+            msg += "... because it's not a store (just a collection, that doesn't have a __getitem__)\n"
+            msg += "... because there's a layer transforming outcoming keys that are not the ones the store actually " \
+                   "uses? If you didn't wrap the store with the inverse ingoing keys transformation, " \
+                   "that would happen.\n"
+            msg += "I'll ask the inner-layer what it's head is, but IT MAY NOT REFLECT the reality of your store " \
+                   "if you have some filtering, caching etc."
+            msg += f"The error messages was: \n{e}"
+            warn(msg)
+
+            for _id in self.store:
+                return self._key_of_id(_id), self._obj_of_data(self.store[_id])
+        # NOTE: Old version didn't work when key mapping was asymmetrical
+        # for k, v in self.items():
+        #     return k, v
 
     # Write ####################################################################
     def __setitem__(self, k: Key, v: Val):
@@ -277,6 +332,7 @@ KvStore = Store  # alias with explict name
 
 def has_kv_store_interface(o):
     """Check if object has the KvStore interface (that is, has the kv wrapper methods
+
     Args:
         o: object (class or instance)
 

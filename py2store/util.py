@@ -1,9 +1,76 @@
 import os
 import shutil
 import re
+from collections import namedtuple, defaultdict
 from warnings import warn
+from typing import Any, Hashable, Callable, Iterable
 
 var_str_p = re.compile('\W|^(?=\d)')
+
+Item = Any
+
+
+def groupby(items: Iterable[Item], key: Callable[[Item], Hashable]):
+    """Groups items according to group keys updated from those items through the given (item_to_)key function.
+
+    Args:
+        items: iterable of items
+        key: The function that computes a key from an item. Needs to return
+
+    Returns: A dict of {group_key: items_in_that_group, ...}
+
+    >>> groupby(range(11), key=lambda x: x % 3)
+    {0: [0, 3, 6, 9], 1: [1, 4, 7, 10], 2: [2, 5, 8]}
+    >>>
+    >>> tokens = ['the', 'fox', 'is', 'in', 'a', 'box']
+    >>> groupby(tokens, len)
+    {3: ['the', 'fox', 'box'], 2: ['is', 'in'], 1: ['a']}
+    >>> key_map = {1: 'one', 2: 'two'}
+    >>> groupby(tokens, lambda x: key_map.get(len(x), 'more'))
+    {'more': ['the', 'fox', 'box'], 'two': ['is', 'in'], 'one': ['a']}
+    >>> stopwords = {'the', 'in', 'a', 'on'}
+    >>> groupby(tokens, lambda w: w in stopwords)
+    {True: ['the', 'in', 'a'], False: ['fox', 'is', 'box']}
+    >>> groupby(tokens, lambda w: ['words', 'stopwords'][int(w in stopwords)])
+    {'stopwords': ['the', 'in', 'a'], 'words': ['fox', 'is', 'box']}
+    """
+    groups = defaultdict(list)
+    for k in items:
+        groups[key(k)].append(k)
+    return dict(groups)
+
+
+def regroupby(items, *key_funcs, **named_key_funcs):
+    """REcursive groupby. Applies the groupby function recursively, using a sequence of key functions.
+
+    Note: The named_key_funcs argument names don't have any external effect.
+        They just give a name to the key function, for code reading clarity purposes.
+
+    >>> # group by how big the number is, then by it's mod 3 value
+    >>> # note that named_key_funcs argument names doesn't have any external effect (but give a name to the function)
+    >>> regroupby([1, 2, 3, 4, 5, 6, 7], lambda x: 'big' if x > 5 else 'small', mod3=lambda x: x % 3)
+    {'small': {1: [1, 4], 2: [2, 5], 0: [3]}, 'big': {0: [6], 1: [7]}}
+    >>>
+    >>> tokens = ['the', 'fox', 'is', 'in', 'a', 'box']
+    >>> stopwords = {'the', 'in', 'a', 'on'}
+    >>> word_category = lambda x: 'stopwords' if x in stopwords else 'words'
+    >>> regroupby(tokens, word_category, len)
+    {'stopwords': {3: ['the'], 2: ['in'], 1: ['a']}, 'words': {3: ['fox', 'box'], 2: ['is']}}
+    >>> regroupby(tokens, len, word_category)
+    {3: {'stopwords': ['the'], 'words': ['fox', 'box']}, 2: {'words': ['is'], 'stopwords': ['in']}, 1: {'stopwords': ['a']}}
+    """
+    key_funcs = list(key_funcs) + list(named_key_funcs.values())
+    assert len(key_funcs) > 0, "You need to have at least one key_func"
+    if len(key_funcs) == 1:
+        return groupby(items, key=key_funcs[0])
+    else:
+        key_func, *key_funcs = key_funcs
+        groups = groupby(items, key=key_func)
+        return {group_key: regroupby(group_items, *key_funcs) for group_key, group_items in groups.items()}
+
+
+def ntup(**kwargs):
+    return namedtuple('NamedTuple', list(kwargs))(**kwargs)
 
 
 def str_to_var_str(s: str) -> str:
@@ -20,6 +87,7 @@ def str_to_var_str(s: str) -> str:
     return var_str_p.sub('_', s)
 
 
+# TODO: Make it work with a store, without having to load and store the values explicitly.
 class DictAttr:
     """Convenience class to hold Key-Val pairs with both a dict-like and struct-like interface.
     The dict-like interface has just the basic get/set/del/iter/len
@@ -123,7 +191,8 @@ def fill_with_dflts(d, dflt_dict=None):
 
 class lazyprop:
     """
-    A descriptor implementation of lazyprop (cached property) from David Beazley's "Python Cookbook" book.
+    A descriptor implementation of lazyprop (cached property).
+    Made based on David Beazley's "Python Cookbook" book and enhanced with boltons.cacheutils ideas.
     It's
     >>> class Test:
     ...     def __init__(self, a):
@@ -153,15 +222,95 @@ class lazyprop:
     """
 
     def __init__(self, func):
+        self.__doc__ = getattr(func, '__doc__')
+        self.__isabstractmethod__ = getattr(func, '__isabstractmethod__', False)
         self.func = func
 
     def __get__(self, instance, cls):
         if instance is None:
             return self
         else:
-            value = self.func(instance)
-            setattr(instance, self.func.__name__, value)
+            value = instance.__dict__[self.func.__name__] = self.func(instance)
             return value
+
+    def __repr__(self):
+        cn = self.__class__.__name__
+        return '<%s func=%s>' % (cn, self.func)
+
+
+from functools import lru_cache, wraps
+import weakref
+
+
+@wraps(lru_cache)
+def memoized_method(*lru_args, **lru_kwargs):
+    def decorator(func):
+        @wraps(func)
+        def wrapped_func(self, *args, **kwargs):
+            # Storing the wrapped method inside the instance since a strong reference to self would not allow it to die.
+            self_weak = weakref.ref(self)
+
+            @wraps(func)
+            @lru_cache(*lru_args, **lru_kwargs)
+            def cached_method(*args, **kwargs):
+                return func(self_weak(), *args, **kwargs)
+
+            setattr(self, func.__name__, cached_method)
+            return cached_method(*args, **kwargs)
+
+        return wrapped_func
+
+    return decorator
+
+
+class lazyprop_w_sentinel(lazyprop):
+    """
+    A descriptor implementation of lazyprop (cached property).
+    Inserts a `self.func.__name__ + '__cache_active'` attribute
+
+    >>> class Test:
+    ...     def __init__(self, a):
+    ...         self.a = a
+    ...     @lazyprop_w_sentinel
+    ...     def len(self):
+    ...         print('generating "len"')
+    ...         return len(self.a)
+    >>> t = Test([0, 1, 2, 3, 4])
+    >>> lazyprop_w_sentinel.cache_is_active(t, 'len')
+    False
+    >>> t.__dict__  # let's look under the hood
+    {'a': [0, 1, 2, 3, 4]}
+    >>> t.len
+    generating "len"
+    5
+    >>> lazyprop_w_sentinel.cache_is_active(t, 'len')
+    True
+    >>> t.len  # notice there's no 'generating "len"' print this time!
+    5
+    >>> t.__dict__  # let's look under the hood
+    {'a': [0, 1, 2, 3, 4], 'len': 5, 'sentinel_of__len': True}
+    >>> # But careful when using lazyprop that no one will change the value of a without deleting the property first
+    >>> t.a = [0, 1, 2]  # if we change a...
+    >>> t.len  # ... we still get the old cached value of len
+    5
+    >>> del t.len  # if we delete the len prop
+    >>> t.len  # ... then len being recomputed again
+    generating "len"
+    3
+    """
+    sentinel_prefix = 'sentinel_of__'
+
+    def __get__(self, instance, cls):
+        if instance is None:
+            return self
+        else:
+            value = instance.__dict__[self.func.__name__] = self.func(instance)
+            setattr(instance, self.sentinel_prefix + self.func.__name__, True)  # my hack
+            return value
+
+    @classmethod
+    def cache_is_active(cls, instance, attr):
+        return getattr(instance, cls.sentinel_prefix + attr, False)
 
 
 class Struct:
@@ -257,6 +406,24 @@ def delegate_as(delegate_cls, to='delegate', include=frozenset(), exclude=frozen
     return inner
 
 
+class imdict(dict):
+    """ A frozen hashable dict """
+
+    def __hash__(self):
+        return id(self)
+
+    def _immutable(self, *args, **kws):
+        raise TypeError('object is immutable')
+
+    __setitem__ = _immutable
+    __delitem__ = _immutable
+    clear = _immutable
+    update = _immutable
+    setdefault = _immutable
+    pop = _immutable
+    popitem = _immutable
+
+
 def move_files_of_folder_to_trash(folder):
     trash_dir = os.path.join(os.getenv("HOME"), '.Trash')  # works with mac (perhaps linux too?)
     assert os.path.isdir(trash_dir), f"{trash_dir} directory not found"
@@ -270,12 +437,18 @@ def move_files_of_folder_to_trash(folder):
 
 
 class ModuleNotFoundErrorNiceMessage:
+    def __init__(self, msg=None):
+        self.msg = msg
+
     def __enter__(self):
         pass
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if exc_type is ModuleNotFoundError:
-            raise ModuleNotFoundError(f"""
+            if self.msg is not None:
+                warn(self.msg)
+            else:
+                raise ModuleNotFoundError(f"""
 It seems you don't have required `{exc_val.name}` package for this Store.
 Try installing it by running:
 

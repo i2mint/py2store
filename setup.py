@@ -8,7 +8,7 @@ def readme():
 
 setup(
     name='py2store',
-    version='0.0.5',
+    version='0.0.6',
     description='DAO for Python: Tools to create simple and consistent interfaces to complicated and varied data sources.',
     long_description=readme(),
     long_description_content_type="text/markdown",
@@ -19,7 +19,7 @@ setup(
     install_requires=[],
     include_package_data=True,
     zip_safe=False,
-    download_url='https://github.com/i2mint/py2store/archive/v0.0.5.zip',
+    download_url='https://github.com/i2mint/py2store/archive/v0.0.6.zip',
     keywords=['storage', 'interface'],
     classifiers=[
         'Development Status :: 3 - Alpha',
@@ -31,7 +31,6 @@ setup(
         'Intended Audience :: Developers',
         'Topic :: Software Development',
         'License :: OSI Approved :: Apache Software License',
-        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
     ],
 )

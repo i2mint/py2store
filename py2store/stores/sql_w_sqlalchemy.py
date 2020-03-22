@@ -1,7 +1,7 @@
 from functools import wraps
 
 from py2store.base import Store
-from py2store.persisters.sql_w_sqlalchemy import SQLAlchemyPersister
+from py2store.persisters.sql_w_sqlalchemy import SQLAlchemyPersister, SqlDbReader
 from py2store.util import lazyprop
 
 
@@ -32,3 +32,18 @@ class SQLAlchemyTupleStore(SQLAlchemyStore):
 
     def _obj_of_data(self, obj):
         return tuple(getattr(obj, x) for x in self._data_fields)
+
+
+# Extras ###############################################################################################################
+# Note: The stuff below may require extra dependencies
+
+from py2store.util import ModuleNotFoundErrorNiceMessage
+
+with ModuleNotFoundErrorNiceMessage():
+    import pandas as pd
+
+
+    class DfSqlDbReader(SqlDbReader):
+        def __getitem__(self, k):
+            table = super().__getitem__(k)
+            return pd.DataFrame(data=list(table), columns=table.column_names)

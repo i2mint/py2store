@@ -13,7 +13,7 @@ with ModuleNotFoundWarning(f"{__file__}: One of the needed modules can't be foun
 
     class TestSQLAlchemyPersister(BasePersisterTest):
         db = SQLAlchemyPersister(
-            db_uri=SQLITE_DB_URI,
+            uri=SQLITE_DB_URI,
             collection_name=SQLITE_TABLE_NAME,
             key_fields=list(BasePersisterTest.key.keys()),
             data_fields=list(BasePersisterTest.data.keys()),
@@ -28,7 +28,7 @@ with ModuleNotFoundWarning(f"{__file__}: One of the needed modules can't be foun
 
     class TestSQLAlchemyTupleStore(BaseTupleStoreTest):
         db = SQLAlchemyTupleStore(
-            db_uri=SQLITE_DB_URI,
+            uri=SQLITE_DB_URI,
             collection_name=SQLITE_TABLE_NAME,
             key_fields=BaseTupleStoreTest.key_fields,
             data_fields=BaseTupleStoreTest.data_fields,

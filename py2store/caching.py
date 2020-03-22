@@ -1,5 +1,5 @@
 from functools import wraps
-from typing import Iterable
+from typing import Iterable, Union, Callable, Hashable, Any
 
 
 ########################################################################################################################
@@ -22,7 +22,7 @@ def mk_memoizer(cache_store):
     return memoize
 
 
-def mk_cached_store(store_cls_you_want_to_cache, caching_store=None):
+def mk_cached_store(store_cls_you_want_to_cache, caching_store=None, new_store_name=None):
     """
 
     Args:
@@ -99,7 +99,162 @@ def mk_cached_store(store_cls_you_want_to_cache, caching_store=None):
         def __getitem__(self, k):
             return super().__getitem__(k)
 
+    if isinstance(new_store_name, str):
+        CachedStore.__name__ = new_store_name
+
     return CachedStore
+
+
+def _slow_but_somewhat_general_hash(*args, **kwargs):
+    """
+    Attempts to create a hash of the inputs, recursively resolving the most common hurdles (dicts, sets, lists)
+
+    Returns: A hash value for the input
+
+    >>> _slow_but_somewhat_general_hash(1, [1, 2], a_set={1,2}, a_dict={'a': 1, 'b': [1,2]})
+    ((1, (1, 2)), (('a_set', (1, 2)), ('a_dict', (('a', 1), ('b', (1, 2))))))
+    """
+    if len(kwargs) == 0 and len(args) == 1:
+        single_val = args[0]
+        if hasattr(single_val, 'items'):
+            return tuple((k, _slow_but_somewhat_general_hash(v)) for k, v in single_val.items())
+        elif isinstance(single_val, (set, list)):
+            return tuple(single_val)
+        else:
+            return single_val
+    else:
+        return (tuple(_slow_but_somewhat_general_hash(x) for x in args),
+                tuple((k, _slow_but_somewhat_general_hash(v)) for k, v in kwargs.items()))
+
+
+# TODO: Could add an empty_cache function attribute.
+#  Wrap the store cache to track new keys, and delete those (and only those!!) when emptying the store.
+def store_cached(store, key_func: Callable):
+    """
+    Function output memorizer but using a specific (usually persisting) store as it's memory and a key_func to
+    compute the key under which to store the output.
+
+    The key can be
+    - a single value under which the output should be stored, regardless of the input.
+    - a key function that is called on the inputs to create a hash under which the function's output should be stored.
+
+    Args:
+        store: The key-value store to use for caching. Must support __getitem__ and __setitem__.
+        key_func: The key function that is called on the input of the function to create the key value.
+
+    Note: Union[Callable, Any] is equivalent to just Any, but reveals the two cases of a key more clearly.
+    Note: No, Union[Callable, Hashable] is not better. For one, general store keys are not restricted to hashable keys.
+    Note: No, they shouldn't.
+
+    See Also: store_cached_with_single_key (for a version where the cache store key doesn't depend on function's args)
+
+    >>> # Note: Our doc test will use dict as the store, but to make the functionality useful beyond existing
+    >>> # RAM-memorizer, you should use actual "persisting" stores that store in local files, or DBs, etc.
+    >>> store = dict()
+    >>> @store_cached(store, lambda *args: args)
+    ... def my_data(x, y):
+    ...     print("Pretend this is a long computation")
+    ...     return x + y
+    >>> t = my_data(1, 2)  # note the print below (because the function is called
+    Pretend this is a long computation
+    >>> tt = my_data(1, 2)  # note there's no print (because the function is NOT called)
+    >>> assert t == tt
+    >>> tt
+    3
+    >>> my_data(3, 4)  # but different inputs will trigger the actual function again
+    Pretend this is a long computation
+    7
+    >>> my_data._cache
+    {(1, 2): 3, (3, 4): 7}
+    """
+    assert callable(key_func), "key_func should be a callable: " \
+                               "It's called on the wrapped function's input to make a key for the caching store."
+
+    def func_wrapper(func):
+        @wraps(func)
+        def wrapped_func(*args, **kwargs):
+            key = key_func(*args, **kwargs)
+            if key in store:  # if the store has that key...
+                return store[key]  # ... just return the data cached under this key
+            else:  # if the store doesn't have it...
+                output = func(*args, **kwargs)  # ... call the function and get the output
+                store[key] = output  # store the output under the key
+                return output
+
+        wrapped_func._cache = store
+        return wrapped_func
+
+    return func_wrapper
+
+
+def store_cached_with_single_key(store, key):
+    """
+    Function output memorizer but using a specific store and key as it's memory.
+
+    Use in situations where you have a argument-less function or bound method that computes some data whose dependencies
+    are static enough that there's enough advantage to make the data refresh explicit (by deleting the cache entry)
+    instead of making it implicit (recomputing/refetching the data every time).
+
+    The key should be a single value under which the output should be stored, regardless of the input.
+
+    Note: The wrapped function comes with a empty_cache attribute, which when called, empties the cache (i.e. removes
+    the key from the store)
+
+    Note: The wrapped function has a hidden `_cache` attribute pointing to the store in case you need to peep into it.
+
+    Args:
+        store: The cache. The key-value store to use for caching. Must support __getitem__ and __setitem__.
+        key: The store key under which to store the output of the function.
+
+    Note: Union[Callable, Any] is equivalent to just Any, but reveals the two cases of a key more clearly.
+    Note: No, Union[Callable, Hashable] is not better. For one, general store keys are not restricted to hashable keys.
+    Note: No, they shouldn't.
+
+    See Also: store_cached (for a version whose keys are computed from the wrapped function's input.
+
+    >>> # Note: Our doc test will use dict as the store, but to make the functionality useful beyond existing
+    >>> # RAM-memorizer, you should use actual "persisting" stores that store in local files, or DBs, etc.
+    >>> store = dict()
+    >>> @store_cached_with_single_key(store, 'whatevs')
+    ... def my_data():
+    ...     print("Pretend this is a long computation")
+    ...     return [1, 2, 3]
+    >>> t = my_data()  # note the print below (because the function is called
+    Pretend this is a long computation
+    >>> tt = my_data()  # note there's no print (because the function is NOT called)
+    >>> assert t == tt
+    >>> tt
+    [1, 2, 3]
+    >>> my_data._cache  # peep in the cache
+    {'whatevs': [1, 2, 3]}
+    >>> # let's empty the cache
+    >>> my_data.empty_cache_entry()
+    >>> assert 'whatevs' not in my_data._cache  # see that the cache entry is gone.
+    >>> t = my_data()  # so when you call the function again, it prints again!d
+    Pretend this is a long computation
+    """
+
+    def func_wrapper(func):
+        # TODO: Enforce that the func is argument-less or a bound method here?
+
+        # TODO: WhyTF doesn't this work: (unresolved reference)
+        # if key is None:
+        #     key = '.'.join([func.__module__, func.__qualname___])
+
+        @wraps(func)
+        def wrapped_func(*args, **kwargs):
+            if key in store:  # if the store has that key...
+                return store[key]  # ... just return the data cached under this key
+            else:
+                output = func(*args, **kwargs)
+                store[key] = output
+                return output
+
+        wrapped_func._cache = store
+        wrapped_func.empty_cache_entry = lambda: wrapped_func._cache.__delitem__(key)
+        return wrapped_func
+
+    return func_wrapper
 
 
 def ensure_clear_to_kv_store(store):
@@ -134,12 +289,6 @@ def flush_on_exit(cls):
     return new_cls
 
 
-# t = self.flush_cache()
-# if hasattr(store_cls_you_want_to_cache, '__exit__'):
-#     t = super().__exit__(*args, **kwargs)
-# return t
-
-@flush_on_exit
 def mk_write_cached_store(store_cls_you_want_to_cache,
                           w_cache=None,
                           flush_cache_condition=None):
@@ -236,6 +385,7 @@ def mk_write_cached_store(store_cls_you_want_to_cache,
 
     w_cache.clear()
 
+    @flush_on_exit
     class WriteCachedStore(store_cls_you_want_to_cache):
         _w_cache = w_cache
         _flush_cache_condition = staticmethod(flush_cache_condition)
