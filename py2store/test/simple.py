@@ -172,9 +172,14 @@ def test_dropbox():
     import json
     import os
 
-    configs = json.load(open(os.path.expanduser('~/.py2store_configs/stores/json/dropbox.json')))
-    store = DropboxTextStore('/py2store_data/test/', **configs[FAK]['k'])
-    _multi_test(store)
+    try:
+        filepath = os.path.expanduser('~/.py2store_configs/stores/json/dropbox.json')
+        configs = json.load(open(filepath))
+        store = DropboxTextStore('/py2store_data/test/', **configs[FAK]['k'])
+        _multi_test(store)
+    except FileNotFoundError:
+        from warnings import warn
+        warn(f"FileNotFoundError: {filepath}")
 
     # from py2store.kv import LocalFileStore as cls
     # _test_path_format_local_file_ops(cls)
