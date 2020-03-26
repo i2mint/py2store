@@ -575,7 +575,9 @@ class ZipFilesReader(FileCollection, KvReader):
 
 
 class FlatZipFilesReader(ZipFilesReader):
-    """A local file reader whose keys are the zip filepaths of the rootdir and values are corresponding ZipReaders.
+    """Read the union of the contents of multiple zip files.
+    A local file reader whose keys are the zip filepaths of the rootdir and values are corresponding ZipReaders.
+
     """
 
     @lazyprop
