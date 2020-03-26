@@ -96,7 +96,7 @@ class KvReader(Collection, Mapping):
 
     def head(self):
         for k, v in self.items():
-            yield k, v
+            return k, v
 
 
 Reader = KvReader  # alias

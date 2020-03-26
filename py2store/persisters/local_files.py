@@ -561,12 +561,12 @@ class ZipReader(KvReader):
         return f"{self.__class__.__name__}({args_str})"
 
 
-class ZipFileReader(FileCollection, KvReader):
+class ZipFilesReader(FileCollection, KvReader):
     """A local file reader whose keys are the zip filepaths of the rootdir and values are corresponding ZipReaders.
     """
 
     def __init__(self, rootdir, subpath='.+\.zip', pattern_for_field=None, max_levels=0,
-                 prefix='', open_kws=None, file_info_filt=take_everything):
+                 prefix='', open_kws=None, file_info_filt=ZipReader.FILES_ONLY):
         super().__init__(rootdir, subpath, pattern_for_field, max_levels)
         self.zip_reader_kwargs = dict(prefix=prefix, open_kws=open_kws, file_info_filt=file_info_filt)
 
@@ -574,7 +574,27 @@ class ZipFileReader(FileCollection, KvReader):
         return ZipReader(k, **self.zip_reader_kwargs)
 
 
-ZipFilesReader = ZipFileReader  # alias because singular ZipFileReader is misleading. Deprecate?
+class FlatZipFilesReader(ZipFilesReader):
+    """A local file reader whose keys are the zip filepaths of the rootdir and values are corresponding ZipReaders.
+    """
+
+    @lazyprop
+    def _zip_readers(self):
+        rootdir_len = len(self.rootdir)
+        return {fullpath[rootdir_len:]: super(FlatZipFilesReader, self).__getitem__(fullpath)
+                for fullpath in super().__iter__()}
+
+    def __iter__(self):
+        for zip_relpath, zip_reader in self._zip_readers.items():  # go through the zip paths
+            for path_in_zip in zip_reader:  # go through the keys of the ZipReader (the zipped filepaths)
+                yield (zip_relpath, path_in_zip)
+
+    def __getitem__(self, k):
+        zip_relpath, path_in_zip = k  # k is a pair of the path to the zip file and the path of a file within it
+        return self._zip_readers[zip_relpath][path_in_zip]
+
+
+ZipFileReader = ZipFilesReader  # back-compatibility alias
 
 
 class FilesOfZip(ZipReader):

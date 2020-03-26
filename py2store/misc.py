@@ -163,6 +163,16 @@ class MiscGetter:
     def __getitem__(self, k):
         return get_obj(k, self.store, self.incoming_val_trans_for_key, self.dflt_incoming_val_trans, self.func_key)
 
+    def __iter__(self):
+        # Disabling "manually" to avoid iteration falling back on __getitem__ with integers
+        # To know more, see:
+        #   https://stackoverflow.com/questions/37941523/pip-uninstall-no-files-were-found-to-uninstall
+        #   https://www.python.org/dev/peps/pep-0234/
+
+        raise NotImplementedError("By default, there's no iteration in MiscGetter. "
+                                  "But feel free to subclass if you "
+                                  "have a particular sense of what the iteration should yield!")
+
 
 misc_objs_get = MiscGetter()
 
