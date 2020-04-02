@@ -703,6 +703,7 @@ def wrap_kvs(store=None, name=None, *,
 
         if postget is not None:
             nargs = num_of_args(postget)
+
             if nargs < 2:
                 raise ValueError("A postget function needs to have (key, value) or (self, key, value) arguments")
             elif nargs == 2:

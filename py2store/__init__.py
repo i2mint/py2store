@@ -15,7 +15,7 @@ from py2store.trans import wrap_kvs, disable_delitem, disable_setitem, mk_read_o
 from py2store.access import user_configs_dict, user_configs, user_defaults_dict, user_defaults, mystores
 
 from py2store.stores.local_store import PickleStore  # consider deprecating and use LocalPickleStore instead?
-from py2store.persisters.local_files import ZipReader, FilesOfZip, ZipFilesReader
+from py2store.slib.zipfile import ZipReader, ZipFilesReader, FilesOfZip
 
 with ModuleNotFoundIgnore():
     from py2store.stores.s3_store import S3BinaryStore, S3TextStore, S3PickleStore
