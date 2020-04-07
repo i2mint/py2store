@@ -2,6 +2,7 @@ import os
 import shutil
 import re
 from collections import namedtuple, defaultdict
+from inspect import signature
 from warnings import warn
 from typing import Any, Hashable, Callable, Iterable
 
@@ -493,3 +494,7 @@ class ModuleNotFoundIgnore:
         if exc_type is ModuleNotFoundError:
             pass
         return True
+
+
+def num_of_args(func):
+    return len(signature(func).parameters)

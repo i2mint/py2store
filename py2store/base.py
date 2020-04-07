@@ -327,6 +327,7 @@ class Store(Persister):
         return self.store.__repr__()
 
 
+# Store.register(dict)  # TODO: Would this be a good idea? To make isinstance({}, Store) be True (though missing head())
 KvStore = Store  # alias with explict name
 
 

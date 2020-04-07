@@ -3,7 +3,7 @@ import types
 from inspect import signature
 from typing import Union, Iterable, Optional
 from py2store.base import Store, KvReader
-from py2store.util import lazyprop
+from py2store.util import lazyprop, num_of_args
 
 
 def get_class_name(cls, dflt_name=None):
@@ -32,10 +32,6 @@ def store_wrap(obj, name=None):
         return StoreWrap
     else:
         return Store(obj)
-
-
-def num_of_args(func):
-    return len(signature(func).parameters)
 
 
 def _is_bound(method):
