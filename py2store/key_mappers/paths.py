@@ -88,7 +88,10 @@ class KeyPath:
     _path_type: Union[type, callable] = tuple
 
     def _key_of_id(self, _id):
-        return self.path_sep.join(_id)
+        if not isinstance(_id, str):
+            return self.path_sep.join(_id)
+        else:
+            return _id
 
     def _id_of_key(self, k):
         return self._path_type(k.split(self.path_sep))
