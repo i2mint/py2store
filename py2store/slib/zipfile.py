@@ -1,5 +1,6 @@
 import inspect
 from functools import wraps
+from io import BytesIO
 from zipfile import ZipFile
 
 from py2store import KvReader
@@ -104,6 +105,8 @@ class ZipReader(KvReader):
                 zip_file = ZipFile(**zip_file)
             elif isinstance(zip_file, (tuple, list)):
                 zip_file = ZipFile(*zip_file)
+            elif isinstance(zip_file, bytes):
+                zip_file = ZipFile(BytesIO(zip_file))
             else:
                 zip_file = ZipFile(zip_file)
         self.zip_file = zip_file
