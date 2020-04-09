@@ -113,6 +113,7 @@ class MiscReaderMixin:
 
 
 # TODO: I'd really like to reuse MiscReaderMixin here! There's a lot of potential.
+# TODO: For more flexibility, the default store should probably be a UriReader (that doesn't exist yet)
 #  If store argument of get_obj was a type instead of an instance, or if MiscReaderMixin was a transformer, if would
 #  be easier -- but would it make their individual concerns mixed?
 def get_obj(k, store=LocalBinaryStore(path_format=''),
@@ -120,9 +121,14 @@ def get_obj(k, store=LocalBinaryStore(path_format=''),
             dflt_incoming_val_trans=identity_method,
             func_key=lambda k: os.path.splitext(k)[1]):
     """A quick way to get an object, with default... everything (but the key, you know, a clue of what you want)"""
-
+    if k.startswith('http://') or k.startswith('https://'):
+        import urllib.request
+        with urllib.request.urlopen(k) as response:
+            v = response.read()
+    else:
+        v = store[k]
     trans_func = (incoming_val_trans_for_key or {}).get(func_key(k), dflt_incoming_val_trans)
-    return trans_func(store[k])
+    return trans_func(v)
 
 
 # TODO: I'd really like to reuse MiscReaderMixin here! There's a lot of potential.
