@@ -26,7 +26,7 @@ def decoded_contents(content_file):
 
 # TODO: use signature arithmetic
 # @kv_decorator
-class GitHubStore(KvReader):
+class GitHubReader(KvReader):
     """
     a Store that can access a GitHub account
     """
@@ -102,7 +102,8 @@ class BranchDir(KvReader):
 
     def __getitem__(self, k):
         t = self._source_obj.get_contents(k)
-        if isinstance(t, list):
+        # TODO: There is an inefficiency here in the isinstance(t, list) case
+        if isinstance(t, list):  # TODO: ... you already have the content_files in t, so don't need to call API again.
             return self.__class__(self._source_obj, self.branch_name, k, self.content_file_extractor)
         else:
             return self.content_file_extractor(t)
@@ -161,7 +162,7 @@ def _content_file_isdir(content_file):
 #
 #
 # # @kv_decorator
-# class GitHubStore(KvReader):
+# class GitHubReader(KvReader):
 #     """
 #     a Store that can access a GitHub account
 #     """
@@ -226,7 +227,7 @@ def _content_file_isdir(content_file):
 #
 # # @cache_iter(iter_to_container=sorted)
 # # @cache_iter
-# class GitHubStore(KvReader):
+# class GitHubReader(KvReader):
 #     """
 #     a Store that can access a GitHub account
 #     """
