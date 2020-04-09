@@ -39,6 +39,8 @@ from abc import ABCMeta
 from pprint import pprint
 from collections import OrderedDict, ChainMap
 
+from py2store.util import format_invocation
+
 _AbstractIterableBase = ABCMeta('_AbstractIterableBase', (object,), {})
 
 _type_type = type
@@ -115,32 +117,7 @@ def is_iterable(obj):
     return True
 
 
-def format_invocation(name='', args=(), kwargs=None):
-    """Given a name, positional arguments, and keyword arguments, format
-    a basic Python-style function call.
 
-    >>> print(format_invocation('func', args=(1, 2), kwargs={'c': 3}))
-    func(1, 2, c=3)
-    >>> print(format_invocation('a_func', args=(1,)))
-    a_func(1)
-    >>> print(format_invocation('kw_func', kwargs=[('a', 1), ('b', 2)]))
-    kw_func(a=1, b=2)
-
-    """
-    kwargs = kwargs or {}
-    a_text = ', '.join([repr(a) for a in args])
-    if isinstance(kwargs, dict):
-        kwarg_items = [(k, kwargs[k]) for k in sorted(kwargs)]
-    else:
-        kwarg_items = kwargs
-    kw_text = ', '.join(['%s=%r' % (k, v) for k, v in kwarg_items])
-
-    all_args_text = a_text
-    if all_args_text and kw_text:
-        all_args_text += ', '
-    all_args_text += kw_text
-
-    return '%s(%s)' % (name, all_args_text)
 
 
 _MISSING = make_sentinel('_MISSING')
