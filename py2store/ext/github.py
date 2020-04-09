@@ -103,7 +103,7 @@ class BranchDir(KvReader):
     def __getitem__(self, k):
         t = self._source_obj.get_contents(k)
         if isinstance(t, list):
-            return self.__class__(self._source_obj, self.branch_name, k)
+            return self.__class__(self._source_obj, self.branch_name, k, self.content_file_extractor)
         else:
             return self.content_file_extractor(t)
 
