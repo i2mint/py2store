@@ -40,7 +40,8 @@ class KaggleDatasetInfoReader(KvReader):
 
     Prerequisites:
         pip install kaggle
-        Having a kaggle api token where the kaggle library will be looking for it (google will tell you)
+        Having a kaggle api token where the kaggle library will be looking for it
+            (see https://github.com/Kaggle/kaggle-api#api-credentials)
 
     You seed a Reader by specifying any combination of things like search terms, groups, filetypes etc.
     See `kaggle.api` for more information.
