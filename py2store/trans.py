@@ -67,9 +67,9 @@ def _guess_wrap_arg_idx(func, first_arg_names_used_for_instances=frozenset(['sel
     >>> a = A()
     >>>
     >>> _guess_wrap_arg_idx(a.bar)
-    0
+    1
     >>> _guess_wrap_arg_idx(a.foo)
-    0
+    1
     >>> _guess_wrap_arg_idx(A.bar)
     1
     >>> _guess_wrap_arg_idx(A.foo)
@@ -81,6 +81,8 @@ def _guess_wrap_arg_idx(func, first_arg_names_used_for_instances=frozenset(['sel
         # no argument, so we can't be wrapping anything!!!
         raise ValueError("The function has no parameters, so I can't guess which one you want to wrap")
     elif not _is_bound(func) and _first_param_is_an_instance_param(params, first_arg_names_used_for_instances):
+        return 1
+    elif _is_bound(func):
         return 1
     else:
         return 0  # only one argument, it must be the one the user wants to wrap
@@ -486,9 +488,9 @@ def _wrap_outcoming(store_cls: type, wrapped_method: str, trans_func: Optional[c
     """
     if trans_func is not None:
         wrapped_func = getattr(store_cls, wrapped_method)
-        wrap_arg_idx = wrap_arg_idx or _guess_wrap_arg_idx(wrapped_func)
+        wrap_arg_idx = wrap_arg_idx or _guess_wrap_arg_idx(trans_func)
         if wrap_arg_idx == 0:
-            # print(f"00000: {store_cls}: {wrapped_method}, {trans_func}")
+            # print(f"00000: {store_cls}: {wrapped_method}, {trans_func}, {wrapped_func}, {wrap_arg_idx}")
             @wraps(wrapped_func)
             def new_method(self, x):
                 # # Long form (for explanation)
@@ -517,15 +519,14 @@ def _wrap_ingoing(store_cls, wrapped_method: str, trans_func: Optional[callable]
                   wrap_arg_idx: Optional[int] = None):
     if trans_func is not None:
         wrapped_func = getattr(store_cls, wrapped_method)
-        wrap_arg_idx = wrap_arg_idx or _guess_wrap_arg_idx(wrapped_func)
+        wrap_arg_idx = wrap_arg_idx or _guess_wrap_arg_idx(trans_func)
 
         if wrap_arg_idx == 0:
-            @wraps(getattr(store_cls, wrapped_method))
+            @wraps(wrapped_func)
             def new_method(self, x):
                 return getattr(super(store_cls, self), wrapped_method)(trans_func(x))
         elif wrap_arg_idx == 1:
-            # print(f"00000: {store_cls}: {wrapped_method}, {trans_func}")
-            @wraps(getattr(store_cls, wrapped_method))
+            @wraps(wrapped_func)
             def new_method(self, x):
                 return getattr(super(store_cls, self), wrapped_method)(trans_func(self, x))
         else:
