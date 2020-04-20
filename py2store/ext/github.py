@@ -4,9 +4,10 @@ from github import GithubException
 # from py2store.trans import cache_iter
 # from py2store.key_mappers.paths import PathGetMixin
 from github import Github, ContentFile
-from base64 import b64decode
 
 from py2store.util import format_invocation
+
+
 #
 # from py2store.utils.signatures import update_signature_with_signatures_from_funcs
 #
@@ -17,11 +18,10 @@ from py2store.util import format_invocation
 # @cache_iter
 
 
-from base64 import b64decode
-
-
 def decoded_contents(content_file):
-    return b64decode(content_file.content).decode()
+    return content_file.decoded_content
+    # from base64 import b64decode
+    # return b64decode(content_file.content).decode()
 
 
 # TODO: use signature arithmetic
