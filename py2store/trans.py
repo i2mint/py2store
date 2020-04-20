@@ -67,9 +67,9 @@ def _guess_wrap_arg_idx(func, first_arg_names_used_for_instances=frozenset(['sel
     >>> a = A()
     >>>
     >>> _guess_wrap_arg_idx(a.bar)
-    1
+    0
     >>> _guess_wrap_arg_idx(a.foo)
-    1
+    0
     >>> _guess_wrap_arg_idx(A.bar)
     1
     >>> _guess_wrap_arg_idx(A.foo)
@@ -569,7 +569,7 @@ def _wrap_ingoing(store_cls,
 def wrap_kvs(store=None, name=None, *,
              key_of_id=None, id_of_key=None, obj_of_data=None, data_of_obj=None, preset=None, postget=None
              ):
-    """Make a Store that is wrapped with the given key/val transformers.
+    r"""Make a Store that is wrapped with the given key/val transformers.
 
     Naming convention:
         Morphemes:
@@ -694,9 +694,7 @@ def wrap_kvs(store=None, name=None, *,
     {'foo.csv': 'a,b,c\\nd,e,f', 'bar.json': '{"a": 1, "b": [1, 2], "c": "normal json"}'}
     >>> del d['foo.csv']
     >>> del d['bar.json']
-    >>> d['foo.pkl'] = obj
-    >>> print(str(d)[:49])  # see that it looks like bytes of a pickle, indeed!
-    {'foo.pkl': b'\\x80\\x03]q\\x00(]q\\x01(X\\x01\\x00\\x00
+    >>> d['foo.pkl'] = obj  # 'save' obj as pickle
     >>> d['foo.pkl']
     [['a', 'b', 'c'], ['d', 'e', 'f']]
     """

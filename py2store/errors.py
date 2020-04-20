@@ -6,7 +6,7 @@ from inspect import signature
 # TODO: What about traceback?
 # TODO: Make it a more general and useful store decorator. Trans store into an getitem exception catching store.
 def items_with_caught_exceptions(d: Mapping, callback=None,
-                                 catch_exceptions=(KeyError,), yield_callback_output=False):
+                                 catch_exceptions=(Exception,), yield_callback_output=False):
     """
     Do what Mapping.items() does, but catching exceptions when getting the values for a key.
 
@@ -72,17 +72,18 @@ def items_with_caught_exceptions(d: Mapping, callback=None,
     [(2, 2), (4, 4), (6, 6), (8, 8)]
     """
 
-    # wrap the input callback so that
+    # wrap the input callback to make the callback definition less constrained for the user.
     if callback is not None:
         try:
             params = signature(callback).parameters
-        except ValueError:
-            def wrapped_callback(k, e, d, i):
-                return callback(k, e, d, i)
-        finally:
+
             def wrapped_callback(**kwargs):
                 kwargs = {k: v for k, v in kwargs.items() if k in params}
                 return callback(**kwargs)
+        except ValueError:
+            def wrapped_callback(k, e, d, i):
+                return callback(k, e, d, i)
+
     else:
         def wrapped_callback(k, e, d, i):
             pass  # do nothing
