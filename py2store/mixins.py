@@ -15,7 +15,6 @@ class SimpleJsonMixin:
         return json.dumps(obj)
 
 
-
 class IdentityKeysWrapMixin:
     """Transparent KeysWrapABC. Often placed in the mro to satisfy the KeysWrapABC need in a neutral way.
     This is useful in cases where the keys the persistence functions work with are the same as those you want to work
