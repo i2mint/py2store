@@ -82,8 +82,8 @@ def _guess_wrap_arg_idx(func, first_arg_names_used_for_instances=frozenset(['sel
         raise ValueError("The function has no parameters, so I can't guess which one you want to wrap")
     elif not _is_bound(func) and _first_param_is_an_instance_param(params, first_arg_names_used_for_instances):
         return 1
-    elif _is_bound(func):
-        return 1
+    # elif _is_bound(func):
+    #     return 0
     else:
         return 0  # only one argument, it must be the one the user wants to wrap
     # else:  # ... well now it get's a bit muddled...
@@ -471,7 +471,9 @@ def kv_wrap_persister_cls(persister_cls, name=None):
     return cls
 
 
-def _wrap_outcoming(store_cls: type, wrapped_method: str, trans_func: Optional[callable] = None,
+def _wrap_outcoming(store_cls: type,
+                    wrapped_method: str,
+                    trans_func: Optional[callable] = None,
                     wrap_arg_idx: Optional[int] = None):
     """Output-transforming wrapping of the wrapped_method of store_cls.
     The transformation is given by trans_func, which could be a one (trans_func(x)
@@ -485,10 +487,34 @@ def _wrap_outcoming(store_cls: type, wrapped_method: str, trans_func: Optional[c
 
     Returns: Nothing. It transforms the class in-place
 
+    >>> from py2store.trans import store_wrap
+    >>> S = store_wrap(dict)
+    >>> _wrap_outcoming(S, '_key_of_id', lambda x: f'wrapped_{x}')
+    >>> s = S({'a': 1, 'b': 2})
+    >>> list(s)
+    ['wrapped_a', 'wrapped_b']
+    >>> _wrap_outcoming(S, '_key_of_id', lambda self, x: f'wrapped_{x}')
+    >>> s = S({'a': 1, 'b': 2}); assert list(s) == ['wrapped_a', 'wrapped_b']
+    >>> class A:
+    ...     def __init__(self, prefix='wrapped_'):
+    ...         self.prefix = prefix
+    ...     def _key_of_id(self, x):
+    ...         return self.prefix + x
+    >>> _wrap_outcoming(S, '_key_of_id', A(prefix='wrapped_')._key_of_id)
+    >>> s = S({'a': 1, 'b': 2}); assert list(s) == ['wrapped_a', 'wrapped_b']
+    >>>
+    >>> S = store_wrap(dict)
+    >>> _wrap_outcoming(S, '_obj_of_data', lambda x: x * 7)
+    >>> s = S({'a': 1, 'b': 2})
+    >>> list(s.values())
+    [7, 14]
     """
     if trans_func is not None:
         wrapped_func = getattr(store_cls, wrapped_method)
-        wrap_arg_idx = wrap_arg_idx or _guess_wrap_arg_idx(trans_func)
+        if isinstance(trans_func, tuple) and len(trans_func) == 2:
+            trans_func, wrap_arg_idx = trans_func  # the idx is given by the trans_func input
+        else:
+            wrap_arg_idx = wrap_arg_idx or _guess_wrap_arg_idx(trans_func)
         if wrap_arg_idx == 0:
             # print(f"00000: {store_cls}: {wrapped_method}, {trans_func}, {wrapped_func}, {wrap_arg_idx}")
             @wraps(wrapped_func)
@@ -515,11 +541,16 @@ def _wrap_outcoming(store_cls: type, wrapped_method: str, trans_func: Optional[c
         setattr(store_cls, wrapped_method, new_method)
 
 
-def _wrap_ingoing(store_cls, wrapped_method: str, trans_func: Optional[callable] = None,
+def _wrap_ingoing(store_cls,
+                  wrapped_method: str,
+                  trans_func: Optional[callable] = None,
                   wrap_arg_idx: Optional[int] = None):
     if trans_func is not None:
         wrapped_func = getattr(store_cls, wrapped_method)
-        wrap_arg_idx = wrap_arg_idx or _guess_wrap_arg_idx(trans_func)
+        if isinstance(trans_func, tuple) and len(trans_func) == 2:
+            trans_func, wrap_arg_idx = trans_func  # the idx is given by the trans_func input
+        else:
+            wrap_arg_idx = wrap_arg_idx or _guess_wrap_arg_idx(trans_func)
 
         if wrap_arg_idx == 0:
             @wraps(wrapped_func)
