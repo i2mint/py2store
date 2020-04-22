@@ -8,6 +8,8 @@ from py2store.key_mappers.paths import mk_relative_path_store
 from py2store.persisters.local_files import inf, ensure_slash_suffix, iter_filepaths_in_folder_recursively, \
     iter_dirpaths_in_folder_recursively
 
+# TODO: subpath: Need to be able to allow named and unnamed file format markers (i.e {} and {named})
+
 _dflt_not_valid_error_msg = "Key not valid (usually because does not exist or access not permitted): {}"
 _dflt_not_found_error_msg = "Key not found: {}"
 

@@ -4,11 +4,15 @@ import re
 from collections import namedtuple, defaultdict
 from inspect import signature
 from warnings import warn
-from typing import Any, Hashable, Callable, Iterable
+from typing import Any, Hashable, Callable, Iterable, Optional
 
 var_str_p = re.compile('\W|^(?=\d)')
 
 Item = Any
+
+
+def fullpath(path):
+    return os.path.abspath(os.path.expanduser(path))
 
 
 def format_invocation(name='', args=(), kwargs=None):
@@ -39,12 +43,16 @@ def format_invocation(name='', args=(), kwargs=None):
     return '%s(%s)' % (name, all_args_text)
 
 
-def groupby(items: Iterable[Item], key: Callable[[Item], Hashable]):
+def groupby(items: Iterable[Item],
+            key: Callable[[Item], Hashable],
+            val: Optional[Callable[[Item], Any]] = None
+            ) -> dict:
     """Groups items according to group keys updated from those items through the given (item_to_)key function.
 
     Args:
         items: iterable of items
-        key: The function that computes a key from an item. Needs to return
+        key: The function that computes a key from an item. Needs to return a hashable.
+        val: An optional function that computes a val from an item. If not given, the item itself will be taken.
 
     Returns: A dict of {group_key: items_in_that_group, ...}
 
@@ -64,8 +72,12 @@ def groupby(items: Iterable[Item], key: Callable[[Item], Hashable]):
     {'stopwords': ['the', 'in', 'a'], 'words': ['fox', 'is', 'box']}
     """
     groups = defaultdict(list)
-    for k in items:
-        groups[key(k)].append(k)
+    if val is None:
+        for item in items:
+            groups[key(item)].append(item)
+    else:
+        for item in items:
+            groups[key(item)].append(val(item))
     return dict(groups)
 
 
@@ -435,12 +447,12 @@ def delegate_as(delegate_cls, to='delegate', include=frozenset(), exclude=frozen
     return inner
 
 
-class imdict(dict):
-    """ A frozen hashable dict """
-
+class HashableMixin:
     def __hash__(self):
         return id(self)
 
+
+class ImmutableMixin:
     def _immutable(self, *args, **kws):
         raise TypeError('object is immutable')
 
@@ -451,6 +463,11 @@ class imdict(dict):
     setdefault = _immutable
     pop = _immutable
     popitem = _immutable
+
+
+class imdict(dict, HashableMixin, ImmutableMixin):
+    """ A frozen hashable dict """
+    pass
 
 
 def move_files_of_folder_to_trash(folder):

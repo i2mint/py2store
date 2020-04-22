@@ -11,6 +11,10 @@ from py2store.mixins import FilteredKeysMixin, IterBasedSizedMixin
 from py2store.parse_format import match_re_for_fstring
 from py2store.base import KvReader
 
+# # TODO: These imports are for back compatibility and should be removed at some point
+# from py2store.slib.zipfile import ZipReader, ZipFileReader, ZipFilesReader, FilesOfZip
+# from py2store.filesys import FileCollection, DirCollection
+
 DFLT_OPEN_MODE = ''
 
 file_sep = os.path.sep
@@ -354,5 +358,3 @@ class FileReader(KvReader):
 
     def __repr__(self):
         return f"{self._class_name}('{self.rootdir}')"
-
-
