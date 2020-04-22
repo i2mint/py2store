@@ -2,6 +2,126 @@ from functools import reduce
 from inspect import Signature, Parameter, _empty, _ParameterKind, signature
 from typing import Any
 
+from inspect import Signature, Parameter, signature
+from collections import UserDict
+
+from inspect import Signature, Parameter, _empty
+from collections.abc import Mapping
+from typing import Union, Callable
+
+
+def mk_sig(obj: Union[Signature, Callable, Mapping, None] = None, return_annotations=_empty, **annotations):
+    """Convenience function to make a signature or inject annotations to an existing one.
+
+    Note: If you don't need
+    >>> s = mk_sig(lambda a, b, c=1, d='bar': ..., b=int, d=str)
+    >>> s
+    <Signature (a, b: int, c=1, d: str = 'bar')>
+    >>> # showing that sig can take a signature input, and overwrite an existing annotation:
+    >>> mk_sig(s, a=list, b=float)  # note the b=float
+    <Signature (a: list, b: float, c=1, d: str = 'bar')>
+    >>> mk_sig()
+    <Signature ()>
+    >>> mk_sig(lambda a, b=2, c=3: ..., d=int)  # trying to annotate an argument that doesn't exist
+    Traceback (most recent call last):
+    ...
+    AssertionError: These argument names weren't found in the signature: {'d'}
+    """
+    if obj is None:
+        return Signature()
+    if callable(obj):
+        obj = Signature.from_callable(obj)  # get a signature object from a callable
+    if isinstance(obj, Signature):
+        obj = obj.parameters  # get the parameters attribute from a signature
+    params = dict(obj)  # get a writable copy of parameters
+    if not annotations:
+        return Signature(params.values(), return_annotation=return_annotations)
+    else:
+        assert set(annotations) <= set(params), \
+            f"These argument names weren't found in the signature: {set(annotations) - set(params)}"
+        for name, annotation in annotations.items():
+            p = params[name]
+            params[name] = Parameter(name=name, kind=p.kind, default=p.default, annotation=annotation)
+        return Signature(params.values(), return_annotation=return_annotations)
+
+
+def mk_sig_from_args(*args_without_default, **args_with_defaults):
+    """Make a Signature instance by specifying args_without_default and args_with_defaults.
+    >>> mk_sig_from_args('a', 'b', c=1, d='bar')
+    <Signature (a, b, c=1, d='bar')>
+    """
+    assert all(isinstance(x, str) for x in args_without_default), "all default-less arguments must be strings"
+    kind = Parameter.POSITIONAL_OR_KEYWORD
+    params = [Parameter(name, kind=kind) for name in args_without_default]
+    params += [Parameter(name, kind=kind, default=default) for name, default in args_with_defaults.items()]
+    return Signature(params)
+
+
+def insert_annotations(s: Signature, *, return_annotation=_empty, **annotations):
+    """Insert annotations in a signature.
+    (Note: not really insert but returns a copy of input signature)
+    >>> from inspect import signature
+    >>> s = signature(lambda a, b, c=1, d='bar': 0)
+    >>> s
+    <Signature (a, b, c=1, d='bar')>
+    >>> ss = insert_annotations(s, b=int, d=str)
+    >>> ss
+    <Signature (a, b: int, c=1, d: str = 'bar')>
+    >>> insert_annotations(s, b=int, d=str, e=list)
+    Traceback (most recent call last):
+    ...
+    AssertionError: These argument names weren't found in the signature: {'e'}
+    """
+    assert set(annotations) <= set(s.parameters), \
+        f"These argument names weren't found in the signature: {set(annotations) - set(s.parameters)}"
+    params = dict(s.parameters)
+    for name, annotation in annotations.items():
+        p = params[name]
+        params[name] = Parameter(name=name, kind=p.kind, default=p.default, annotation=annotation)
+    return Signature(params.values(), return_annotation=return_annotation)
+
+
+class Params(UserDict):
+    """
+
+    >>> def foo(a, b: int, c=None, d: str='hi') -> int: ...
+    >>> def bar(b: float, d='hi'): ...
+    >>> Params(foo)
+    {'a': <Parameter "a">, 'b': <Parameter "b: int">, 'c': <Parameter "c=None">, 'd': <Parameter "d: str = 'hi'">}
+    >>> p = Params(bar)
+    >>> Params(p['b'])
+    {'b': <Parameter "b: float">}
+    >>> Params()
+    {}
+    >>> Params([p['d'], p['b']])
+    {'d': <Parameter "d='hi'">, 'b': <Parameter "b: float">}
+    """
+
+    def __init__(self, obj=None, validate=True):
+        if obj is None:
+            params_dict = dict()
+        elif callable(obj):
+            params_dict = dict(signature(obj).parameters)
+        elif isinstance(obj, Parameter):
+            params_dict = {obj.name: obj}
+        else:
+            try:
+                params_dict = dict(obj)
+            except TypeError:
+                params_dict = {x.name: x for x in obj}
+
+        super().__init__(params_dict)
+
+        if validate:
+            self.validate()
+
+    def validate(self):
+        for k, v in self.items():
+            assert isinstance(k, str), f"isinstance({k}, str)"
+            assert isinstance(v, Parameter), f"isinstance({v}, Parameter)"
+        return True
+
+
 mappingproxy = type(Signature().parameters)
 
 
@@ -217,6 +337,9 @@ def _merge_sig_dicts(sig1_dict, sig2_dict):
     }
 
 
+var_kinds = {Parameter.VAR_POSITIONAL, Parameter.VAR_KEYWORD}
+
+
 def _merge_signatures(sig1, sig2):
     """Get the merged signatures of two signatures (sig2 is the final decider of conflics)
     >>> def foo(a='a', b: int=0, c=None) -> int: ...
@@ -232,7 +355,10 @@ def _merge_signatures(sig1, sig2):
     >>> _merge_signatures(bar_sig, foo_sig)
     <Signature (b: int = 0, d: str = 'hi', a='a', c=None) -> int>
     """
-    return mk_signature(**_merge_sig_dicts(signature_to_dict(sig1), signature_to_dict(sig2)))
+    sig1_dict = signature_to_dict(sig1)
+    # remove variadic kinds from sig1
+    sig1_dict['parameters'] = {k: v for k, v in sig1_dict['parameters'].items() if v.kind not in var_kinds}
+    return mk_signature(**_merge_sig_dicts(sig1_dict, signature_to_dict(sig2)))
 
 
 def _merge_signatures_of_funcs(func1, func2):
@@ -276,3 +402,49 @@ def _merged_signatures_of_func_list(funcs, return_annotation: Any = _empty):
         return_annotation = signature(return_annotation).return_annotation
 
     return s.replace(return_annotation=return_annotation)
+
+
+############# Tools for testing ########################################################################################
+from functools import partial
+
+
+def param_for_kind(name=None, kind='positional_or_keyword', with_default=False, annotation=Parameter.empty):
+    """Function to easily and flexibly make inspect.Parameter objects for testing.
+
+    It's annoying to have to compose parameters from scratch to testing things.
+    This tool should help making it less annoying.
+
+    >>> from py2mint.signatures import param_kinds
+    >>> list(map(param_for_kind, param_kinds))
+    [<Parameter "POSITIONAL_ONLY">, <Parameter "POSITIONAL_OR_KEYWORD">, <Parameter "VAR_POSITIONAL">, <Parameter "KEYWORD_ONLY">, <Parameter "VAR_KEYWORD">]
+    >>> param_for_kind.positional_or_keyword()
+    <Parameter "POSITIONAL_OR_KEYWORD">
+    >>> param_for_kind.positional_or_keyword('foo')
+    <Parameter "foo">
+    >>> param_for_kind.keyword_only()
+    <Parameter "KEYWORD_ONLY">
+    >>> param_for_kind.keyword_only('baz', with_default=True)
+    <Parameter "baz='dflt_keyword_only'">
+    """
+    name = name or f"{kind}"
+    kind_obj = getattr(Parameter, str(kind).upper())
+    kind = str(kind_obj).lower()
+    default = f"dflt_{kind}" if with_default and kind not in {'var_positional', 'var_keyword'} else Parameter.empty
+    return Parameter(name=name,
+                     kind=kind_obj,
+                     default=default,
+                     annotation=annotation)
+
+
+param_kinds = list(filter(lambda x: x.upper() == x, Parameter.__dict__))
+
+for kind in param_kinds:
+    lower_kind = kind.lower()
+    setattr(param_for_kind, lower_kind,
+            partial(param_for_kind, kind=kind))
+    setattr(param_for_kind, 'with_default',
+            partial(param_for_kind, with_default=True))
+    setattr(getattr(param_for_kind, lower_kind), 'with_default',
+            partial(param_for_kind, kind=kind, with_default=True))
+    setattr(getattr(param_for_kind, 'with_default'), lower_kind,
+            partial(param_for_kind, kind=kind, with_default=True))
