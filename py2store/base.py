@@ -38,7 +38,20 @@ ValIter = Iterable[Val]
 ItemIter = Iterable[Item]
 
 
+class AttrNames:
+    CollectionABC = {'__len__', '__iter__', '__contains__'}
+    Mapping = CollectionABC | {'keys', 'get', 'items', '__reversed__', 'values', '__getitem__'}
+    MutableMapping = Mapping | {'setdefault', 'pop', 'popitem', 'clear', 'update', '__delitem__', '__setitem__'}
+
+    Collection = CollectionABC | {'head'}
+    KvReader = (Mapping | {'head'}) - {'__reversed__'}
+    KvPersister = (MutableMapping | {'head'}) - {'__reversed__'} - {'clear'}
+
+
 class Collection(CollectionABC):
+    """The same as collections.abc.Collection, with some modifications:
+    - Addition of a ``head``
+    """
 
     def __contains__(self, x) -> bool:
         """
@@ -98,26 +111,84 @@ class KvReader(Collection, Mapping):
         for k, v in self.items():
             return k, v
 
+    def __reversed__(self):
+        """The __reversed__ is disabled at the base, but can be re-defined in subclasses.
+        Rationale: KvReader is meant to wrap a variety of storage backends or key-value perspectives thereof.
+        Not all of these would have a natural or intuitive order nor do we want to maintain one systematically.
+
+        If you need a reversed list, here's one way to do it, but note that it
+        depends on how self iterates, which is not even assured to be consistent at every call:
+        ```
+        reversed = list(self)[::-1]
+        ```
+
+        If the keys are comparable, therefore sortable, another natural option would be:
+        ```
+        reversed = sorted(self)[::-1]
+        ```
+        """
+        raise NotImplementedError(__doc__)
+
 
 Reader = KvReader  # alias
 
 
+# TODO: Should we really be using MutableMapping if we're disabling so many of it's methods?
 # TODO: Wishful thinking: Define store type so the type is defined by it's methods, not by subclassing.
-class Persister(Reader, MutableMapping):
-    """ Acts as a MutableMapping abc, but disabling the clear method, and computing __len__ by counting keys"""
+class KvPersister(KvReader, MutableMapping):
+    """ Acts as a MutableMapping abc, but disabling the clear and __reversed__ method,
+    and computing __len__ by iterating over all keys, and counting them.
+
+    Note that KvPersister is a MutableMapping, and as such, is dict-like.
+    But that doesn't mean it's a dict.
+
+    For instance, consider the following code:
+    ```
+        s = SomeKvPersister()
+        s['a']['b'] = 3
+    ```
+    If `s` is a dict, this would have the effect of adding a ('b', 3) item under 'a'.
+    But in the general case, this might
+    - fail, because the `s['a']` doesn't support sub-scripting (doesn't have a `__getitem__`)
+    - or, worse, will pass silently but not actually persist the write as expected (e.g. LocalFileStore)
+
+    Another example: `s.popitem()` will pop a `(k, v)` pair off of the `s` store.
+    That is, retrieve the `v` for `k`, delete the entry for `k`, and return a `(k, v)`.
+    Note that unlike modern dicts which will return the last item that was stored
+     -- that is, LIFO (last-in, first-out) order -- for KvPersisters,
+     there's no assurance as to what item will be, since it will depend on the backend storage system
+     and/or how the persister was implemented.
+
+    """
 
     def clear(self):
-        raise NotImplementedError('''
-        The clear method was overridden to make dangerous difficult.
-        If you really want to delete all your data, you can do so by doing:
-            try:
-                while True:
-                    self.popitem()
-            except KeyError:
-                pass''')
+        """The clear method is disabled to make dangerous difficult.
+        You don't want to delete your whole DB
+        If you really want to delete all your data, you can do so by doing something like this:
+            ```
+            for k in self:
+                try:
+                    del self[k]
+                except KeyError:
+                    pass
+            ```
+        """
+        raise NotImplementedError(__doc__)
+
+    # # TODO: Tests and documentation demos needed.
+    # def popitem(self):
+    #     """pop a (k, v) pair off of the store.
+    #     That is, retrieve the v for k, delete the entry for k, and return a (k, v)
+    #     Note that unlike modern dicts which will return the last item that was stored
+    #      -- that is, LIFO (last-in, first-out) order -- for KvPersisters,
+    #      there's no assurance as to what item will be, since it will depend on the backend storage system
+    #      and/or how the persister was implemented.
+    #     :return:
+    #     """
+    #     return super(KvPersister, self).popitem()
 
 
-KvPersister = Persister  # alias with explict name
+Persister = KvPersister  # alias for back-compatibility
 
 
 # TODO: Make identity_func "identifiable". If we use the following one, we can use == to detect it's use,
@@ -136,7 +207,7 @@ class NoSuchItem():
 no_such_item = NoSuchItem()
 
 
-class Store(Persister):
+class Store(KvPersister):
     """
     By store we mean key-value store. This could be files in a filesystem, objects in s3, or a database. Where and
     how the content is stored should be specified, but StoreInterface offers a dict-like interface to this.
@@ -247,7 +318,8 @@ class Store(Persister):
 
     # Read ####################################################################
     def __getitem__(self, k: Key) -> Val:
-        return self._obj_of_data(self.store.__getitem__(self._id_of_key(k)))
+        return self._obj_of_data(self.store[self._id_of_key(k)])
+        # return self._obj_of_data(self.store.__getitem__(self._id_of_key(k)))
 
     def get(self, k: Key, default=None) -> Val:
         if hasattr(self.store, 'get'):  # if store has a get method, use it
@@ -262,9 +334,20 @@ class Store(Persister):
             else:
                 return default
 
+    # def update(self, other=(), /, **kwds):
+    #     """
+    #     update(self, other=(), /, **kwds)
+    # D.update([E, ]**F) -> None.  Update D from mapping/iterable E and F.
+    # If E present and has a .keys() method, does:     for k in E: D[k] = E[k]
+    # If E present and lacks .keys() method, does:     for (k, v) in E: D[k] = v
+    # In either case, this is followed by: for k, v in F.items(): D[k] = v
+    #     :return:
+    #     """
+
     # Explore ####################################################################
     def __iter__(self) -> KeyIter:
-        return map(self._key_of_id, self.store.__iter__())
+        yield from (self._key_of_id(k) for k in self.store)
+        # return map(self._key_of_id, self.store.__iter__())
 
     # def items(self) -> ItemIter:
     #     if hasattr(self.store, 'items'):
@@ -273,10 +356,12 @@ class Store(Persister):
     #         yield from ((self._key_of_id(k), self._obj_of_data(self.store[k])) for k in self.store.__iter__())
 
     def __len__(self) -> int:
-        return self.store.__len__()
+        return len(self.store)
+        # return self.store.__len__()
 
     def __contains__(self, k) -> bool:
-        return self.store.__contains__(self._id_of_key(k))
+        return self._id_of_key(k) in self.store
+        # return self.store.__contains__(self._id_of_key(k))
 
     def head(self) -> Item:
         try:
@@ -312,19 +397,20 @@ class Store(Persister):
     def __delitem__(self, k: Key):
         return self.store.__delitem__(self._id_of_key(k))
 
-    def clear(self):
-        raise NotImplementedError('''
-        The clear method was overridden to make dangerous difficult.
-        If you really want to delete all your data, you can do so by doing:
-            try:
-                while True:
-                    self.popitem()
-            except KeyError:
-                pass''')
+    # def clear(self):
+    #     raise NotImplementedError('''
+    #     The clear method was overridden to make dangerous difficult.
+    #     If you really want to delete all your data, you can do so by doing:
+    #         try:
+    #             while True:
+    #                 self.popitem()
+    #         except KeyError:
+    #             pass''')
 
     # Misc ####################################################################
     def __repr__(self):
-        return self.store.__repr__()
+        return repr(self.store)
+        # return self.store.__repr__()
 
 
 # Store.register(dict)  # TODO: Would this be a good idea? To make isinstance({}, Store) be True (though missing head())
