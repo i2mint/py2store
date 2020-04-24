@@ -1,6 +1,7 @@
 import os
 import shutil
 import re
+import sys
 from collections import namedtuple, defaultdict
 from inspect import signature
 from warnings import warn
@@ -13,6 +14,10 @@ Item = Any
 
 def fullpath(path):
     return os.path.abspath(os.path.expanduser(path))
+
+
+def attrs_of(obj):
+    return set(dir(obj))
 
 
 def format_invocation(name='', args=(), kwargs=None):
@@ -230,6 +235,13 @@ def fill_with_dflts(d, dflt_dict=None):
     return dict(dflt_dict, **d)
 
 
+# Note: Had replaced with cached_property (new in 3.8)
+# if not sys.version_info >= (3, 8):
+#     from functools import cached_property
+# # etc...
+# But then I realized that the way cached_property is implemented, pycharm does not see the properties (lint)
+# So I'm reverting to lazyprop
+# TODO: Keep track of the evolution of functools.cached_property and compare performance.
 class lazyprop:
     """
     A descriptor implementation of lazyprop (cached property).

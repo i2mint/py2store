@@ -149,7 +149,11 @@ try:
     import json
 
     user_configs_dirpath = os.path.expanduser(getenv('PY2STORE_CONFIGS_DIR', '~/.py2store_configs'))
+    my_configs_dirname = os.path.expanduser(getenv('MY_PY2STORE_DIR_NAME', 'my'))
+    myconfigs_dirpath = os.path.join(user_configs_dirpath, my_configs_dirname)
+
     if os.path.isdir(user_configs_dirpath):
+
         def directory_json_items():
             for f in filter(lambda x: x.endswith('.json'), os.listdir(user_configs_dirpath)):
                 filepath = os.path.join(user_configs_dirpath, f)
@@ -166,8 +170,56 @@ try:
         user_configs = DictAttr(**{k: v for k, v in directory_json_items()})
 
         from py2store.base import KvStore
-        from py2store.stores.local_store import LocalJsonStore
+        from py2store.stores.local_store import LocalJsonStore, LocalBinaryStore
         from py2store.trans import wrap_kvs
+        from py2store.misc import MiscStoreMixin
+        from functools import wraps
+
+        if os.path.isdir(myconfigs_dirpath):
+            class MyConfigs(MiscStoreMixin, LocalBinaryStore):
+                @wraps(LocalBinaryStore)
+                def __init__(self, *args, **kwargs):
+                    LocalBinaryStore.__init__(self, *args, **kwargs)
+                    self._init_args_kwargs = (args, kwargs)
+                    if len(args) > 0:
+                        self.dirpath = args[0]
+                    elif len(kwargs) > 0:
+                        self.dirpath = kwargs[next(iter(kwargs))]
+
+                def refresh(self):
+                    """Sometimes you add a file, and you want to make sure your myconfigs sees it.
+                    refresh() does that for you. It reinitializes the reader."""
+                    args, kwargs = self._init_args_kwargs
+                    self.__init__(*args, **kwargs)
+
+                def get(self, k):
+                    v = super().get(k, None)
+                    if v is None:
+                        from warnings import warn
+                        warn(f"""You don't have the config file I'm expecting, so you'll have to enter it manually.
+                        I'm expecting this filepath:\n\t {os.path.join(self.dirpath, k)}
+                        """)
+                    return v
+
+                def get_config_value(self, k, path=None):
+                    v = self.get(k)
+                    if path is None:
+                        return v
+                    else:
+                        if path in v:
+                            return v[path]
+                        else:
+                            raise KeyError(f"I don't see any {path} in {k}")
+
+
+            myconfigs = MyConfigs(myconfigs_dirpath)
+            myconfigs.dirpath = myconfigs_dirpath
+        else:
+            warn(f"""The py2store-myconfigs directory wasn't found: {myconfigs_dirpath}
+            If you want to have all the cool functionality of `myconfigs`, you should make this directory, 
+            and put stuff in it. Here's to make it easy for you to do it. Go to a terminal and run this:
+                mkdir {myconfigs_dirpath}
+            """)
 
 
         class MyStores(KvStore):
@@ -202,10 +254,10 @@ try:
 
         stores_json_path_format = os.path.join(user_configs_dirpath, 'stores', 'json', '{}.json')
         mystores = MyStores(ExtLessJsonStore(stores_json_path_format))
+        mystores.dirpath = user_configs_dirpath
 
     else:
         warn(f"The configs directory wasn't found (please make it): {user_configs_dirpath}")
-        warn("Configs in a single json is being deprecated")
         user_configs_filepath = os.path.expanduser(getenv('PY2STORE_CONFIGS_JSON_FILEPATH', '~/.py2store_configs.json'))
         if os.path.isfile(user_configs_filepath):
             user_configs_dict = json.load(open(user_configs_filepath))
