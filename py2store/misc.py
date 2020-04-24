@@ -5,6 +5,8 @@ import csv
 from io import StringIO, BytesIO
 
 from py2store import LocalBinaryStore
+from py2store.slib.s_zipfile import FilesOfZip
+from py2store.slib.s_configparser import ConfigReader
 from py2store.util import imdict
 
 
@@ -31,6 +33,8 @@ dflt_incoming_val_trans_for_key = {
     '.pkl': lambda v: pickle.loads(v),
     '.pickle': lambda v: pickle.loads(v),
     '.json': lambda v: json.loads(v),
+    '.zip': FilesOfZip,
+    '.ini': lambda v: ConfigReader(v, interpolation=ConfigReader.ExtendedInterpolation())
 }
 
 dflt_outgoing_val_trans_for_key = {
