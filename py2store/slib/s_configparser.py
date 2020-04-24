@@ -49,6 +49,8 @@ empty string value here =
 """
 
 
+# TODO: ConfigParser is already a mapping, but pros/cons of subclassing?
+#   For instance, it has it's get method already, but it is not consistent with the get of collections.abc.Mapping
 # TODO: Extend to a KvPersister (include __setitem__ and __delitem__)
 #   Relevant methods: add_section, write, remove_section. Need to decide on auto-persistence.
 #   In fact, the reader is already a writer (from ConfigParser), but need to manage persistence.
