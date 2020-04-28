@@ -104,7 +104,7 @@ class ZipReader(KvReader):
         if not isinstance(zip_file, ZipFile):
             if isinstance(zip_file, str):
                 zip_file = fullpath(zip_file)
-            elif isinstance(zip_file, dict):
+            if isinstance(zip_file, dict):
                 zip_file = ZipFile(**zip_file)
             elif isinstance(zip_file, (tuple, list)):
                 zip_file = ZipFile(*zip_file)
