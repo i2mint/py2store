@@ -139,6 +139,8 @@ def mk_read_only(o):
     return disable_delitem(disable_setitem(o))
 
 
+# TODO: Merge this with explicit keys functionality. iter_to_container should become a cache_store
+#   that holds the hash_keys and update_keys_cache functionalities.
 def cached_keys(store=None, *,
                 iter_to_container: callable = list,
                 hash_keys: bool = False,
@@ -294,7 +296,7 @@ def cached_keys(store=None, *,
                 super(cached_cls, self).__setitem__(k, v)
                 # self.store[k] = v
                 if k not in self:  # just to avoid deleting the cache if we already had the key
-                    self.update_keys_cache([v])
+                    self.update_keys_cache([k])
 
             def update(self, other=(), **kwds):
                 # super(cached_cls, self).update(other, **kwds)
@@ -306,6 +308,10 @@ def cached_keys(store=None, *,
                     super_setitem(k, v)
                     # self.store[k] = v
                 self.update_keys_cache(new_keys=list(other) + list(kwds))
+
+            # def __delitem__(self, k):
+            #     super(cached_cls, self).__delitem__(k)
+            #     self.update_keys_cache([k])
 
             if not hash_keys:
                 def update_keys_cache(self, new_keys=None):
@@ -854,7 +860,7 @@ def wrap_kvs(store=None, name=None, *,
             elif nargs == 2:
                 def __getitem__(self, k):
                     return postget(k, super(store_cls, self).__getitem__(k))
-            else:
+            else:  # TODO: Fragile. Need to check for bound or self instead.
                 def __getitem__(self, k):
                     return postget(self, k, super(store_cls, self).__getitem__(k))
 
@@ -867,7 +873,7 @@ def wrap_kvs(store=None, name=None, *,
             elif nargs == 2:
                 def __setitem__(self, k, v):
                     return super(store_cls, self).__setitem__(k, preset(k, v))
-            else:
+            else:  # TODO: Fragile. Need to check for bound or self instead.
                 def __setitem__(self, k, v):
                     return super(store_cls, self).__setitem__(k, preset(self, k, v))
 
