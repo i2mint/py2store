@@ -12,6 +12,46 @@ var_str_p = re.compile('\W|^(?=\d)')
 Item = Any
 
 
+def add_attrs(remember_added_attrs=True, if_attr_exists='raise', **attrs):
+    """Make a function that will add attributes to an obj.
+    Originally meant to be used as a decorator of a function, to inject
+    >>> from py2store.util import add_attrs
+    >>> @add_attrs(bar='bituate', hello='world')
+    ... def foo():
+    ...     pass
+    >>> [x for x in dir(foo) if not x.startswith('_')]
+    ['bar', 'hello']
+    >>> foo.bar
+    'bituate'
+    >>> foo.hello
+    'world'
+    >>> foo._added_attrs  # Another attr was added to hold the list of attributes added (in case we need to remove them
+    ['bar', 'hello']
+    """
+
+    def add_attrs_to_func(obj):
+        attrs_added = []
+        for attr_name, attr_val in attrs.items():
+            if hasattr(obj, attr_name):
+                if if_attr_exists == 'raise':
+                    raise AttributeError(f"Attribute {attr_name} already exists in {obj}")
+                elif if_attr_exists == 'warn':
+                    warn(f"Attribute {attr_name} already exists in {obj}")
+                elif if_attr_exists == 'skip':
+                    continue
+                else:
+                    raise ValueError(f"Unknown value for if_attr_exists: {if_attr_exists}")
+            setattr(obj, attr_name, attr_val)
+            attrs_added.append(attr_name)
+
+        if remember_added_attrs:
+            obj._added_attrs = attrs_added
+
+        return obj
+
+    return add_attrs_to_func
+
+
 def fullpath(path):
     return os.path.abspath(os.path.expanduser(path))
 
