@@ -1,7 +1,9 @@
+from collections.abc import Mapping
 from typing import Callable, Collection
 
 from py2store import Store
 from py2store.base import KvCollection, KvReader
+from py2store.trans import kv_wrap
 from py2store.key_mappers.paths import PrefixRelativizationMixin
 from py2store.util import max_common_prefix
 
@@ -76,7 +78,7 @@ class ExplicitKeys(KvCollection):
     ['foo', 'bar', 'alice']
     """
 
-    # __slots__ = ('_key_collection',)
+    __slots__ = ('_key_collection',)
 
     def __init__(self, key_collection: Collection):
         assert isinstance(key_collection, Collection), \
@@ -129,6 +131,80 @@ class ExplicitKeysStore(ExplicitKeys, Store):
     def __init__(self, store, key_collection):
         Store.__init__(self, store)
         ExplicitKeys.__init__(self, key_collection)
+
+
+class ExplicitKeyMap:
+    def __init__(self, *, key_of_id: Mapping = None, id_of_key: Mapping = None):
+        """
+
+        :param key_of_id:
+        :param id_of_key:
+
+        >>> km = ExplicitKeyMap(key_of_id={'a': 1, 'b': 2})
+        >>> km.id_of_key = {1: 'a', 2: 'b'}
+        >>> km._key_of_id('b')
+        2
+        >>> km._id_of_key(1)
+        'a'
+        >>> # You can specify id_of_key instead
+        >>> km = ExplicitKeyMap(id_of_key={1: 'a', 2: 'b'})
+        >>> assert km.key_of_id_map == {'a': 1, 'b': 2}
+        >>> # You can specify both key_of_id and id_of_key
+        >>> km = ExplicitKeyMap(key_of_id={'a': 1, 'b': 2}, id_of_key={1: 'a', 2: 'b'})
+        >>> assert km._key_of_id(km._id_of_key(2)) == 2
+        >>> assert km._id_of_key(km._key_of_id('b')) == 'b'
+        >>> # But they better be inverse of each other!
+        >>> km = ExplicitKeyMap(key_of_id={'a': 1, 'b': 2, 'c': 2})
+        Traceback (most recent call last):
+          ...
+        AssertionError: The values of key_of_id are not unique, so the mapping is not invertible
+        >>> km = ExplicitKeyMap(key_of_id={'a': 1, 'b': 2}, id_of_key={1: 'a', 2: 'oh no!!!!'})
+        Traceback (most recent call last):
+          ...
+        AssertionError: id_of_key and key_of_id_map are not inverse of each other!
+        """
+        if key_of_id is None and id_of_key is None:
+            raise ValueError("You need to specify key_of_id_map, or id_of_key_map, or both")
+        if key_of_id is None:
+            assert hasattr(id_of_key, 'items')
+            key_of_id = {v: k for k, v in id_of_key.items()}
+            assert len(key_of_id) == len(id_of_key), \
+                "The values of id_of_key are not unique, so the mapping is not invertible"
+        elif id_of_key is None:
+            assert hasattr(key_of_id, 'items')
+            id_of_key = {v: k for k, v in key_of_id.items()}
+            assert len(id_of_key) == len(key_of_id), \
+                "The values of key_of_id are not unique, so the mapping is not invertible"
+        else:
+            assert (len(id_of_key) == len(key_of_id)) and (id_of_key == {v: k for k, v in key_of_id.items()}), \
+                "id_of_key and key_of_id_map are not inverse of each other!"
+
+        self.key_of_id_map = key_of_id
+        self.id_of_key_map = id_of_key
+
+    def _key_of_id(self, _id):
+        return self.key_of_id_map[_id]
+
+    def _id_of_key(self, k):
+        return self.id_of_key_map[k]
+
+
+class ExplicitKeymapReader(ExplicitKeys, Store):
+    """Wrap a store (instance) so that it gets it's keys from an explicit iterable of keys.
+
+    >>> s = {'a': 1, 'b': 2, 'c': 3, 'd': 4}
+    >>> id_of_key = {'A': 'a', 'C': 'c'}
+    >>> ss = ExplicitKeymapReader(s, id_of_key=id_of_key)
+    >>> list(ss)
+    ['A', 'C']
+    >>> ss['C']  # will look up 'C', find 'c', and call the store on that.
+    3
+    """
+
+    def __init__(self, store, key_of_id=None, id_of_key=None):
+        key_trans = ExplicitKeyMap(key_of_id=key_of_id, id_of_key=id_of_key)
+        Store.__init__(self, kv_wrap(key_trans)(store))
+        ExplicitKeys.__init__(self, id_of_key.keys())
 
 
 class ExplicitKeysWithPrefixRelativization(PrefixRelativizationMixin, Store):
