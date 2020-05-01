@@ -2,8 +2,9 @@ from functools import wraps, partial, reduce
 import types
 from inspect import signature
 from typing import Union, Iterable, Optional
-from py2store.base import Store, KvReader
-from py2store.util import lazyprop
+from py2store.base import Store, KvReader, AttrNames
+from py2store.util import lazyprop, num_of_args, attrs_of
+from warnings import warn
 
 
 def get_class_name(cls, dflt_name=None):
@@ -32,10 +33,6 @@ def store_wrap(obj, name=None):
         return StoreWrap
     else:
         return Store(obj)
-
-
-def num_of_args(func):
-    return len(signature(func).parameters)
 
 
 def _is_bound(method):
@@ -86,6 +83,8 @@ def _guess_wrap_arg_idx(func, first_arg_names_used_for_instances=frozenset(['sel
         raise ValueError("The function has no parameters, so I can't guess which one you want to wrap")
     elif not _is_bound(func) and _first_param_is_an_instance_param(params, first_arg_names_used_for_instances):
         return 1
+    # elif _is_bound(func):
+    #     return 0
     else:
         return 0  # only one argument, it must be the one the user wants to wrap
     # else:  # ... well now it get's a bit muddled...
@@ -140,7 +139,13 @@ def mk_read_only(o):
     return disable_delitem(disable_setitem(o))
 
 
-def cache_iter(store=None, iter_to_container=list, name=None):
+# TODO: Merge this with explicit keys functionality. iter_to_container should become a cache_store
+#   that holds the hash_keys and update_keys_cache functionalities.
+def cached_keys(store=None, *,
+                iter_to_container: callable = list,
+                hash_keys: bool = False,
+                update_cache_on_write=True,
+                name: str = None):
     """Make a class that wraps input class's __iter__ becomes cached.
 
     Quite often we have a lot of keys, that we get from a remote data source, and don't want to have to ask for
@@ -151,82 +156,198 @@ def cache_iter(store=None, iter_to_container=list, name=None):
     So we'll implement a store class decorator specialized for this.
 
     The following decorator, when applied to a class (that has an __iter__), will perform the __iter__ code, consuming
-    all items of the generator and storing them in _iter_cache, and then will yield from there every subsequent call.
+    all items of the generator and storing them in _keys_cache, and then will yield from there every subsequent call.
 
-    It is assumed, if you're using the cache_iter transformation, that you're dealing with static data
+    It is assumed, if you're using the cached_keys transformation, that you're dealing with static data
     (or data that can be considered static for the life of the store -- for example, when conducting analytics).
-    If you ever need to refresh the cache during the life of the store, you can to delete _iter_cache like this:
+    If you ever need to refresh the cache during the life of the store, you can to delete _keys_cache like this:
     ```
-    del your_store._iter_cache
+    del your_store._keys_cache
     ```
     Once you do that, the next time you try to ask something about the contents of the store, it will actually do
     a live query again, as for the first time.
 
 
     Args:
-        collection_cls: The class to wrap (must have an __iter__)
+        store: The store instance or class to wrap (must have an __iter__)
         iter_to_container: The function that will be applied to existing __iter__() and assigned to cache.
             The default is list. Another useful one is the sorted function.
+        hash_keys: If True, will compute a set of keys to be able to check for containment faster
+            Note that the keys have to be hashable.
+            Note that the speed-up is to the expense of RAM for the extra set of non ordered keys.
+            If order doesn't matter to you, you can get fast containment checks without the memory overhead,
+            by specifying `iter_to_container=set`.
+        update_cache_on_write: If True, will call the `update_cached_keys` method on writes.
+            By default, the method deletes the cached keys so that they're regenerated the next time the
+            store is iterated on.
         name: The name of the new class
 
-
-    >>> @cache_iter
-    ... class A:
-    ...     def __iter__(self):
-    ...         yield from [1, 2, 3]
-    >>> # Note, could have also used this form: AA = cache_iter(A)
-    >>> a = A()
-    >>> list(a)
-    [1, 2, 3]
-    >>> a._iter_cache = ['a', 'b', 'c']  # changing the cache, to prove that subsequent listing will read from there
-    >>> list(a)  # proof:
+    Lets cache the keys of a dict.
+    >>> cached_dict = cached_keys(dict)
+    >>> d = cached_dict(a=1, b=2, c=3)
+    >>> # And you get a store that behaves as expected (but more speed and RAM)
+    >>> list(d)
     ['a', 'b', 'c']
-    >>>
+    >>> list(d.items())  # whether you iterate with .keys(), .values(), or .items()
+    [('a', 1), ('b', 2), ('c', 3)]
+
+    This is where the keys are stored:
+    >>> d._keys_cache
+    ['a', 'b', 'c']
+
     >>> # Let's demo the iter_to_container argument. The default is "list", which will just consume the iter in order
-    >>> sorted_dict = cache_iter(dict, iter_to_container=list)
+    >>> sorted_dict = cached_keys(dict, iter_to_container=list)
     >>> s = sorted_dict({'b': 3, 'a': 2, 'c': 1})
     >>> list(s)  # keys will be in the order they were defined
     ['b', 'a', 'c']
-    >>> sorted_dict = cache_iter(dict, iter_to_container=sorted)
+    >>> sorted_dict = cached_keys(dict, iter_to_container=sorted)
     >>> s = sorted_dict({'b': 3, 'a': 2, 'c': 1})
     >>> list(s)  # keys will be sorted
     ['a', 'b', 'c']
-    >>> sorted_dict = cache_iter(dict, iter_to_container=lambda x: sorted(x, key=len))
+    >>> sorted_dict = cached_keys(dict, iter_to_container=lambda x: sorted(x, key=len))
+    >>> s = sorted_dict({'bbb': 3, 'aa': 2, 'c': 1})
+    >>> list(s)  # keys will be sorted according to their length
+    ['c', 'aa', 'bbb']
+
+    >>> # But if you change the keys (adding new ones with __setitem__ or update, or removing with pop or popitem)
+    >>> # then the cache is recomputed (the first time you use an operation that iterates over keys
+    >>> d.update(d=4)  # let's add an element (try d['d'] = 4 as well)
+    >>> list(d)
+    ['a', 'b', 'c', 'd']
+    >>> d['e'] = 5
+    >>> list(d.items())  # whether you iterate with .keys(), .values(), or .items()
+    [('a', 1), ('b', 2), ('c', 3), ('d', 4), ('e', 5)]
+
+    >>> @cached_keys
+    ... class A:
+    ...     def __iter__(self):
+    ...         yield from [1, 2, 3]
+    >>> # Note, could have also used this form: AA = cached_keys(A)
+    >>> a = A()
+    >>> list(a)
+    [1, 2, 3]
+    >>> a._keys_cache = ['a', 'b', 'c']  # changing the cache, to prove that subsequent listing will read from there
+    >>> list(a)  # proof:
+    ['a', 'b', 'c']
+    >>>
+
+    >>> # Let's demo the iter_to_container argument. The default is "list", which will just consume the iter in order
+    >>> sorted_dict = cached_keys(dict, iter_to_container=list)
+    >>> s = sorted_dict({'b': 3, 'a': 2, 'c': 1})
+    >>> list(s)  # keys will be in the order they were defined
+    ['b', 'a', 'c']
+    >>> sorted_dict = cached_keys(dict, iter_to_container=sorted)
+    >>> s = sorted_dict({'b': 3, 'a': 2, 'c': 1})
+    >>> list(s)  # keys will be sorted
+    ['a', 'b', 'c']
+    >>> sorted_dict = cached_keys(dict, iter_to_container=lambda x: sorted(x, key=len))
     >>> s = sorted_dict({'bbb': 3, 'aa': 2, 'c': 1})
     >>> list(s)  # keys will be sorted according to their length
     ['c', 'aa', 'bbb']
     """
 
+    assert isinstance(hash_keys, bool)
     if store is None:
-        return partial(cache_iter, iter_to_container=iter_to_container, name=name)
+        return partial(cached_keys, iter_to_container=iter_to_container, hash_keys=hash_keys,
+                       update_cache_on_write=update_cache_on_write, name=name)
     elif not isinstance(store, type):  # then consider it to be an instance
         store_instance = store
-        WrapperStore = cache_iter(Store, iter_to_container=iter_to_container, name=name)
+        WrapperStore = cached_keys(Store, iter_to_container=iter_to_container, hash_keys=hash_keys,
+                                   update_cache_on_write=update_cache_on_write, name=name)
         return WrapperStore(store_instance)
     else:
         store_cls = store
         name = name or 'IterCached' + get_class_name(store_cls)
-        cached_cls = type(name, (store_cls,), {'_iter_cache': None})
+        cached_cls = type(name, (store_cls,), {'_keys_cache': None, '_set_of_keys': None})
 
-        @lazyprop
-        def _iter_cache(self):
-            return iter_to_container(super(cached_cls, self).__iter__())  # TODO: Should it be iter(super(...)?
+        @_define_keys_values_and_items_according_to_iter
+        class CachedIterMethods:
+            _set_of_keys = None
+            _keys_cache = None
 
-        def __iter__(self):
-            # if getattr(self, '_iter_cache', None) is None:
-            #     self._iter_cache = iter_to_container(super(cached_cls, self).__iter__())
-            yield from self._iter_cache
+            # To have them around for explanability
+            _hash_keys = hash_keys
+            _iter_to_container = iter_to_container
+            _update_cache_on_write = update_cache_on_write
 
-        def __len__(self):
-            return len(self._iter_cache)
+            @lazyprop
+            def _keys_cache(self):
+                # print(iter_to_container)
+                return iter_to_container(super(cached_cls, self).__iter__())  # TODO: Should it be iter(super(...)?
 
-        cached_cls.__iter__ = __iter__
-        cached_cls.__len__ = __len__
-        cached_cls._iter_cache = _iter_cache
+            @property
+            def _iter_cache(self):  # for back-compatibility
+                warn("The new name for `_iter_cache` is `_keys_cache`. Start using that!", DeprecationWarning)
+                return self._keys_cache
 
-        _define_keys_values_and_items_according_to_iter(cached_cls)
+            def __iter__(self):
+                # if getattr(self, '_keys_cache', None) is None:
+                #     self._keys_cache = iter_to_container(super(cached_cls, self).__iter__())
+                yield from self._keys_cache
+
+            def __len__(self):
+                return len(self._keys_cache)
+
+            def items(self):
+                for k in self._keys_cache:
+                    yield k, self[k]
+
+            def __setitem__(self, k, v):
+                super(cached_cls, self).__setitem__(k, v)
+                # self.store[k] = v
+                if k not in self:  # just to avoid deleting the cache if we already had the key
+                    self.update_keys_cache([k])
+
+            def update(self, other=(), **kwds):
+                # super(cached_cls, self).update(other, **kwds)
+                super_setitem = super(cached_cls, self).__setitem__
+                for k in other:
+                    super_setitem(k, other[k])
+                    # self.store[k] = other[k]
+                for k, v in kwds.items():
+                    super_setitem(k, v)
+                    # self.store[k] = v
+                self.update_keys_cache(new_keys=list(other) + list(kwds))
+
+            # def __delitem__(self, k):
+            #     super(cached_cls, self).__delitem__(k)
+            #     self.update_keys_cache([k])
+
+            if not hash_keys:
+                def update_keys_cache(self, new_keys=None):
+                    """The method that is called after writes (`s[k]=v` or `s.update(other, **kwargs))
+                    if `_update_cache_on_write == True`.
+                    The default beha vior ignores the input new_keys, and just deletes the cache.
+                    """
+                    if hasattr(self, '_keys_cache'):
+                        del self._keys_cache
+
+                def __contains__(self, k):
+                    return k in self._keys_cache
+            else:  # TODO: Need to test this case
+                @lazyprop
+                def _set_of_keys(self):
+                    return set(self)
+
+                cached_cls._set_of_keys = _set_of_keys
+
+                def update_keys_cache(self, new_keys=None):
+                    if hasattr(self, '_keys_cache'):
+                        del self._keys_cache
+                    if hasattr(self, '_set_of_keys'):
+                        del self._set_of_keys
+
+                def __contains__(self, k):
+                    return k in self._set_of_keys
+
+        special_attrs = {'update_keys_cache', '_keys_cache', '_set_of_keys'}
+        for attr in special_attrs | (AttrNames.KvPersister & attrs_of(cached_cls) & attrs_of(CachedIterMethods)):
+            setattr(cached_cls, attr, getattr(CachedIterMethods, attr))
 
         return cached_cls
+
+
+cache_iter = cached_keys  # TODO: Alias, partial it and make it more like the original, for back compatibility.
 
 
 # TODO: Factor out the method injection pattern (e.g. __getitem__, __setitem__ and __delitem__ are nearly identical)
@@ -374,6 +495,8 @@ def _define_keys_values_and_items_according_to_iter(cls):
 
         cls.items = items
 
+    return cls
+
 
 class _DefineKeysValuesAndItemsAccordingToIter:
     def keys(self):
@@ -473,7 +596,9 @@ def kv_wrap_persister_cls(persister_cls, name=None):
     return cls
 
 
-def _wrap_outcoming(store_cls: type, wrapped_method: str, trans_func: Optional[callable] = None,
+def _wrap_outcoming(store_cls: type,
+                    wrapped_method: str,
+                    trans_func: Optional[callable] = None,
                     wrap_arg_idx: Optional[int] = None):
     """Output-transforming wrapping of the wrapped_method of store_cls.
     The transformation is given by trans_func, which could be a one (trans_func(x)
@@ -487,12 +612,36 @@ def _wrap_outcoming(store_cls: type, wrapped_method: str, trans_func: Optional[c
 
     Returns: Nothing. It transforms the class in-place
 
+    >>> from py2store.trans import store_wrap
+    >>> S = store_wrap(dict)
+    >>> _wrap_outcoming(S, '_key_of_id', lambda x: f'wrapped_{x}')
+    >>> s = S({'a': 1, 'b': 2})
+    >>> list(s)
+    ['wrapped_a', 'wrapped_b']
+    >>> _wrap_outcoming(S, '_key_of_id', lambda self, x: f'wrapped_{x}')
+    >>> s = S({'a': 1, 'b': 2}); assert list(s) == ['wrapped_a', 'wrapped_b']
+    >>> class A:
+    ...     def __init__(self, prefix='wrapped_'):
+    ...         self.prefix = prefix
+    ...     def _key_of_id(self, x):
+    ...         return self.prefix + x
+    >>> _wrap_outcoming(S, '_key_of_id', A(prefix='wrapped_')._key_of_id)
+    >>> s = S({'a': 1, 'b': 2}); assert list(s) == ['wrapped_a', 'wrapped_b']
+    >>>
+    >>> S = store_wrap(dict)
+    >>> _wrap_outcoming(S, '_obj_of_data', lambda x: x * 7)
+    >>> s = S({'a': 1, 'b': 2})
+    >>> list(s.values())
+    [7, 14]
     """
     if trans_func is not None:
         wrapped_func = getattr(store_cls, wrapped_method)
-        wrap_arg_idx = wrap_arg_idx or _guess_wrap_arg_idx(wrapped_func)
+        if isinstance(trans_func, tuple) and len(trans_func) == 2:
+            trans_func, wrap_arg_idx = trans_func  # the idx is given by the trans_func input
+        else:
+            wrap_arg_idx = wrap_arg_idx or _guess_wrap_arg_idx(trans_func)
         if wrap_arg_idx == 0:
-            # print(f"00000: {store_cls}: {wrapped_method}, {trans_func}")
+            # print(f"00000: {store_cls}: {wrapped_method}, {trans_func}, {wrapped_func}, {wrap_arg_idx}")
             @wraps(wrapped_func)
             def new_method(self, x):
                 # # Long form (for explanation)
@@ -517,19 +666,23 @@ def _wrap_outcoming(store_cls: type, wrapped_method: str, trans_func: Optional[c
         setattr(store_cls, wrapped_method, new_method)
 
 
-def _wrap_ingoing(store_cls, wrapped_method: str, trans_func: Optional[callable] = None,
+def _wrap_ingoing(store_cls,
+                  wrapped_method: str,
+                  trans_func: Optional[callable] = None,
                   wrap_arg_idx: Optional[int] = None):
     if trans_func is not None:
         wrapped_func = getattr(store_cls, wrapped_method)
-        wrap_arg_idx = wrap_arg_idx or _guess_wrap_arg_idx(wrapped_func)
+        if isinstance(trans_func, tuple) and len(trans_func) == 2:
+            trans_func, wrap_arg_idx = trans_func  # the idx is given by the trans_func input
+        else:
+            wrap_arg_idx = wrap_arg_idx or _guess_wrap_arg_idx(trans_func)
 
         if wrap_arg_idx == 0:
-            @wraps(getattr(store_cls, wrapped_method))
+            @wraps(wrapped_func)
             def new_method(self, x):
                 return getattr(super(store_cls, self), wrapped_method)(trans_func(x))
         elif wrap_arg_idx == 1:
-            # print(f"00000: {store_cls}: {wrapped_method}, {trans_func}")
-            @wraps(getattr(store_cls, wrapped_method))
+            @wraps(wrapped_func)
             def new_method(self, x):
                 return getattr(super(store_cls, self), wrapped_method)(trans_func(self, x))
         else:
@@ -541,7 +694,7 @@ def _wrap_ingoing(store_cls, wrapped_method: str, trans_func: Optional[callable]
 def wrap_kvs(store=None, name=None, *,
              key_of_id=None, id_of_key=None, obj_of_data=None, data_of_obj=None, preset=None, postget=None
              ):
-    """Make a Store that is wrapped with the given key/val transformers.
+    r"""Make a Store that is wrapped with the given key/val transformers.
 
     Naming convention:
         Morphemes:
@@ -666,9 +819,7 @@ def wrap_kvs(store=None, name=None, *,
     {'foo.csv': 'a,b,c\\nd,e,f', 'bar.json': '{"a": 1, "b": [1, 2], "c": "normal json"}'}
     >>> del d['foo.csv']
     >>> del d['bar.json']
-    >>> d['foo.pkl'] = obj
-    >>> print(str(d)[:49])  # see that it looks like bytes of a pickle, indeed!
-    {'foo.pkl': b'\\x80\\x03]q\\x00(]q\\x01(X\\x01\\x00\\x00
+    >>> d['foo.pkl'] = obj  # 'save' obj as pickle
     >>> d['foo.pkl']
     [['a', 'b', 'c'], ['d', 'e', 'f']]
     """
@@ -703,12 +854,13 @@ def wrap_kvs(store=None, name=None, *,
 
         if postget is not None:
             nargs = num_of_args(postget)
+
             if nargs < 2:
                 raise ValueError("A postget function needs to have (key, value) or (self, key, value) arguments")
             elif nargs == 2:
                 def __getitem__(self, k):
                     return postget(k, super(store_cls, self).__getitem__(k))
-            else:
+            else:  # TODO: Fragile. Need to check for bound or self instead.
                 def __getitem__(self, k):
                     return postget(self, k, super(store_cls, self).__getitem__(k))
 
@@ -721,7 +873,7 @@ def wrap_kvs(store=None, name=None, *,
             elif nargs == 2:
                 def __setitem__(self, k, v):
                     return super(store_cls, self).__setitem__(k, preset(k, v))
-            else:
+            else:  # TODO: Fragile. Need to check for bound or self instead.
                 def __setitem__(self, k, v):
                     return super(store_cls, self).__setitem__(k, preset(self, k, v))
 

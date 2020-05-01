@@ -1,21 +1,103 @@
 import os
 import shutil
 import re
+import sys
 from collections import namedtuple, defaultdict
+from inspect import signature
 from warnings import warn
-from typing import Any, Hashable, Callable, Iterable
+from typing import Any, Hashable, Callable, Iterable, Optional
 
 var_str_p = re.compile('\W|^(?=\d)')
 
 Item = Any
 
 
-def groupby(items: Iterable[Item], key: Callable[[Item], Hashable]):
+def add_attrs(remember_added_attrs=True, if_attr_exists='raise', **attrs):
+    """Make a function that will add attributes to an obj.
+    Originally meant to be used as a decorator of a function, to inject
+    >>> from py2store.util import add_attrs
+    >>> @add_attrs(bar='bituate', hello='world')
+    ... def foo():
+    ...     pass
+    >>> [x for x in dir(foo) if not x.startswith('_')]
+    ['bar', 'hello']
+    >>> foo.bar
+    'bituate'
+    >>> foo.hello
+    'world'
+    >>> foo._added_attrs  # Another attr was added to hold the list of attributes added (in case we need to remove them
+    ['bar', 'hello']
+    """
+
+    def add_attrs_to_func(obj):
+        attrs_added = []
+        for attr_name, attr_val in attrs.items():
+            if hasattr(obj, attr_name):
+                if if_attr_exists == 'raise':
+                    raise AttributeError(f"Attribute {attr_name} already exists in {obj}")
+                elif if_attr_exists == 'warn':
+                    warn(f"Attribute {attr_name} already exists in {obj}")
+                elif if_attr_exists == 'skip':
+                    continue
+                else:
+                    raise ValueError(f"Unknown value for if_attr_exists: {if_attr_exists}")
+            setattr(obj, attr_name, attr_val)
+            attrs_added.append(attr_name)
+
+        if remember_added_attrs:
+            obj._added_attrs = attrs_added
+
+        return obj
+
+    return add_attrs_to_func
+
+
+def fullpath(path):
+    return os.path.abspath(os.path.expanduser(path))
+
+
+def attrs_of(obj):
+    return set(dir(obj))
+
+
+def format_invocation(name='', args=(), kwargs=None):
+    """Given a name, positional arguments, and keyword arguments, format
+    a basic Python-style function call.
+
+    >>> print(format_invocation('func', args=(1, 2), kwargs={'c': 3}))
+    func(1, 2, c=3)
+    >>> print(format_invocation('a_func', args=(1,)))
+    a_func(1)
+    >>> print(format_invocation('kw_func', kwargs=[('a', 1), ('b', 2)]))
+    kw_func(a=1, b=2)
+
+    """
+    kwargs = kwargs or {}
+    a_text = ', '.join([repr(a) for a in args])
+    if isinstance(kwargs, dict):
+        kwarg_items = [(k, kwargs[k]) for k in sorted(kwargs)]
+    else:
+        kwarg_items = kwargs
+    kw_text = ', '.join(['%s=%r' % (k, v) for k, v in kwarg_items])
+
+    all_args_text = a_text
+    if all_args_text and kw_text:
+        all_args_text += ', '
+    all_args_text += kw_text
+
+    return '%s(%s)' % (name, all_args_text)
+
+
+def groupby(items: Iterable[Item],
+            key: Callable[[Item], Hashable],
+            val: Optional[Callable[[Item], Any]] = None
+            ) -> dict:
     """Groups items according to group keys updated from those items through the given (item_to_)key function.
 
     Args:
         items: iterable of items
-        key: The function that computes a key from an item. Needs to return
+        key: The function that computes a key from an item. Needs to return a hashable.
+        val: An optional function that computes a val from an item. If not given, the item itself will be taken.
 
     Returns: A dict of {group_key: items_in_that_group, ...}
 
@@ -35,8 +117,12 @@ def groupby(items: Iterable[Item], key: Callable[[Item], Hashable]):
     {'stopwords': ['the', 'in', 'a'], 'words': ['fox', 'is', 'box']}
     """
     groups = defaultdict(list)
-    for k in items:
-        groups[key(k)].append(k)
+    if val is None:
+        for item in items:
+            groups[key(item)].append(item)
+    else:
+        for item in items:
+            groups[key(item)].append(val(item))
     return dict(groups)
 
 
@@ -189,11 +275,18 @@ def fill_with_dflts(d, dflt_dict=None):
     return dict(dflt_dict, **d)
 
 
+# Note: Had replaced with cached_property (new in 3.8)
+# if not sys.version_info >= (3, 8):
+#     from functools import cached_property
+# # etc...
+# But then I realized that the way cached_property is implemented, pycharm does not see the properties (lint)
+# So I'm reverting to lazyprop
+# TODO: Keep track of the evolution of functools.cached_property and compare performance.
 class lazyprop:
     """
     A descriptor implementation of lazyprop (cached property).
     Made based on David Beazley's "Python Cookbook" book and enhanced with boltons.cacheutils ideas.
-    It's
+
     >>> class Test:
     ...     def __init__(self, a):
     ...         self.a = a
@@ -406,12 +499,12 @@ def delegate_as(delegate_cls, to='delegate', include=frozenset(), exclude=frozen
     return inner
 
 
-class imdict(dict):
-    """ A frozen hashable dict """
-
+class HashableMixin:
     def __hash__(self):
         return id(self)
 
+
+class ImmutableMixin:
     def _immutable(self, *args, **kws):
         raise TypeError('object is immutable')
 
@@ -422,6 +515,11 @@ class imdict(dict):
     setdefault = _immutable
     pop = _immutable
     popitem = _immutable
+
+
+class imdict(dict, HashableMixin, ImmutableMixin):
+    """ A frozen hashable dict """
+    pass
 
 
 def move_files_of_folder_to_trash(folder):
@@ -493,3 +591,7 @@ class ModuleNotFoundIgnore:
         if exc_type is ModuleNotFoundError:
             pass
         return True
+
+
+def num_of_args(func):
+    return len(signature(func).parameters)

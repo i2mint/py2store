@@ -55,6 +55,9 @@ class MongoCollectionReader(KvReader):
     def __len__(self):
         return self._mgc.count_documents({})
 
+    def __length_hint__(self):
+        return self._mgc.estimated_document_count()
+
 
 class MongoCollectionPersister(MongoCollectionReader):
     """

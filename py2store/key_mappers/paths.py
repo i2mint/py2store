@@ -88,7 +88,10 @@ class KeyPath:
     _path_type: Union[type, callable] = tuple
 
     def _key_of_id(self, _id):
-        return self.path_sep.join(_id)
+        if not isinstance(_id, str):
+            return self.path_sep.join(_id)
+        else:
+            return _id
 
     def _id_of_key(self, k):
         return self._path_type(k.split(self.path_sep))
@@ -147,7 +150,7 @@ class PrefixRelativizationMixin:
         return _id[self._prefix_length:]
 
 
-def mk_relative_path_store(store_cls, name=None, with_key_validation=False):
+def mk_relative_path_store(store_cls, name=None, with_key_validation=False, prefix_attr='_prefix'):
     """
 
     Args:
@@ -182,8 +185,9 @@ def mk_relative_path_store(store_cls, name=None, with_key_validation=False):
 
     @wraps(store_cls.__init__)
     def __init__(self, *args, **kwargs):
-        super(cls, self).__init__(store=store_cls(*args, **kwargs))
-        self._prefix = recursive_get_attr(self.store, '_prefix', '')  # TODO: Might need descriptor to enable assignment
+        Store.__init__(self, store=store_cls(*args, **kwargs))
+        prefix = recursive_get_attr(self.store, '_prefix', '')
+        setattr(self, prefix_attr, prefix)  # TODO: Might need descriptor to enable assignment
 
     cls.__init__ = __init__
 
@@ -193,17 +197,29 @@ def mk_relative_path_store(store_cls, name=None, with_key_validation=False):
             if self.store.is_valid_key(_id):
                 return _id
             else:
-                raise KeyError(f"Key not valid: {k}")
+                raise KeyError(f"Key not valid (usually because does not exist or access not permitted): {k}")
 
         cls._id_of_key = _id_of_key
 
     return cls
 
 
+# TODO: Intended to replace the init-less PrefixRelativizationMixin
+class RelativePathMixin:
+    def __init__(self, prefix):
+        self._prefix = prefix
+        self._prefix_length = len(self._prefix)
+
+    def _id_of_key(self, k):
+        return self._prefix + k
+
+    def _key_of_id(self, _id):
+        return _id[self._prefix_length:]
+
+
 # TODO: Merge with mk_relative_path_store
 def rel_path_wrap(o, _prefix):
     """
-
     Args:
         o: An object to be wrapped
         _prefix: The _prefix to use for key wrapping (will remove it from outcoming keys and add to ingoing keys.
@@ -211,14 +227,13 @@ def rel_path_wrap(o, _prefix):
     >>> # The dynamic way (if you try this at home, be aware of the pitfalls of the dynamic way
     >>> # -- but don't just believe the static dogmas).
     >>> d = {'/ROOT/of/every/thing': 42, '/ROOT/of/this/too': 0}
-    >>> dd = rel_path_wrap(d, '/ROOT/')
-    >>> s._prefix = '/ROOT/'
-    >>> s['foo'] = 'bar'
-    >>> dict(s.items())  # gives us what you would expect
-    {'foo': 'bar'}
+    >>> dd = rel_path_wrap(d, '/ROOT/of/')
+    >>> dd['foo'] = 'bar'
+    >>> dict(dd.items())  # gives us what you would expect
+    {'every/thing': 42, 'this/too': 0, 'foo': 'bar'}
     >>>  # but under the hood, the dict we wrapped actually contains the '/ROOT/' prefix
-    >>> dict(s.store)
-    {'/ROOT/foo': 'bar'}
+    >>> dict(dd.store)
+    {'/ROOT/of/every/thing': 42, '/ROOT/of/this/too': 0, '/ROOT/of/foo': 'bar'}
     >>>
     >>> # The static way: Make a class that will integrate the _prefix at construction time.
     >>> class MyStore(mk_relative_path_store(dict)):  # Indeed, mk_relative_path_store(dict) is a class you can subclass
@@ -229,8 +244,7 @@ def rel_path_wrap(o, _prefix):
 
     from py2store import kv_wrap
 
-    trans_obj = PrefixRelativizationMixin()
-    trans_obj._prefix = _prefix
+    trans_obj = RelativePathMixin(_prefix)
     return kv_wrap(trans_obj)(o)
 
 # mk_relative_path_store_cls = mk_relative_path_store  # alias

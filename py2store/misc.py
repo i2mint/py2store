@@ -5,6 +5,8 @@ import csv
 from io import StringIO, BytesIO
 
 from py2store import LocalBinaryStore
+from py2store.slib.s_zipfile import FilesOfZip
+from py2store.slib.s_configparser import ConfigReader
 from py2store.util import imdict
 
 
@@ -31,7 +33,15 @@ dflt_incoming_val_trans_for_key = {
     '.pkl': lambda v: pickle.loads(v),
     '.pickle': lambda v: pickle.loads(v),
     '.json': lambda v: json.loads(v),
+    '.zip': FilesOfZip,
+    '.ini': lambda v: ConfigReader(v, interpolation=ConfigReader.ExtendedInterpolation()),
 }
+
+synset_of_ext = {'.ini': {'.cnf', '.conf', '.config'}}
+for user_this, for_these_extensions in synset_of_ext.items():
+    if user_this in dflt_incoming_val_trans_for_key:
+        for ext in for_these_extensions:
+            dflt_incoming_val_trans_for_key[ext] = dflt_incoming_val_trans_for_key[user_this]
 
 dflt_outgoing_val_trans_for_key = {
     '.bin': identity_method,
@@ -113,6 +123,7 @@ class MiscReaderMixin:
 
 
 # TODO: I'd really like to reuse MiscReaderMixin here! There's a lot of potential.
+# TODO: For more flexibility, the default store should probably be a UriReader (that doesn't exist yet)
 #  If store argument of get_obj was a type instead of an instance, or if MiscReaderMixin was a transformer, if would
 #  be easier -- but would it make their individual concerns mixed?
 def get_obj(k, store=LocalBinaryStore(path_format=''),
@@ -120,9 +131,14 @@ def get_obj(k, store=LocalBinaryStore(path_format=''),
             dflt_incoming_val_trans=identity_method,
             func_key=lambda k: os.path.splitext(k)[1]):
     """A quick way to get an object, with default... everything (but the key, you know, a clue of what you want)"""
-
+    if k.startswith('http://') or k.startswith('https://'):
+        import urllib.request
+        with urllib.request.urlopen(k) as response:
+            v = response.read()
+    else:
+        v = store[k]
     trans_func = (incoming_val_trans_for_key or {}).get(func_key(k), dflt_incoming_val_trans)
-    return trans_func(store[k])
+    return trans_func(v)
 
 
 # TODO: I'd really like to reuse MiscReaderMixin here! There's a lot of potential.
@@ -162,6 +178,16 @@ class MiscGetter:
 
     def __getitem__(self, k):
         return get_obj(k, self.store, self.incoming_val_trans_for_key, self.dflt_incoming_val_trans, self.func_key)
+
+    def __iter__(self):
+        # Disabling "manually" to avoid iteration falling back on __getitem__ with integers
+        # To know more, see:
+        #   https://stackoverflow.com/questions/37941523/pip-uninstall-no-files-were-found-to-uninstall
+        #   https://www.python.org/dev/peps/pep-0234/
+
+        raise NotImplementedError("By default, there's no iteration in MiscGetter. "
+                                  "But feel free to subclass if you "
+                                  "have a particular sense of what the iteration should yield!")
 
 
 misc_objs_get = MiscGetter()
