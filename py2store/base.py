@@ -316,6 +316,8 @@ class Store(KvPersister):
     _data_of_obj = static_identity_method
     _obj_of_data = static_identity_method
 
+    _max_repr_size = None
+
     # Read ####################################################################
     def __getitem__(self, k: Key) -> Val:
         return self._obj_of_data(self.store[self._id_of_key(k)])
@@ -364,21 +366,25 @@ class Store(KvPersister):
         # return self.store.__contains__(self._id_of_key(k))
 
     def head(self) -> Item:
+        k = None
         try:
             for k in self:
                 return k, self[k]
         except Exception as e:
 
             from warnings import warn
-            msg = f"Couldn't get data for the key {k}. This could be be...\n"
-            msg += "... because it's not a store (just a collection, that doesn't have a __getitem__)\n"
-            msg += "... because there's a layer transforming outcoming keys that are not the ones the store actually " \
-                   "uses? If you didn't wrap the store with the inverse ingoing keys transformation, " \
-                   "that would happen.\n"
-            msg += "I'll ask the inner-layer what it's head is, but IT MAY NOT REFLECT the reality of your store " \
-                   "if you have some filtering, caching etc."
-            msg += f"The error messages was: \n{e}"
-            warn(msg)
+            if k is None:
+                raise
+            else:
+                msg = f"Couldn't get data for the key {k}. This could be be...\n"
+                msg += "... because it's not a store (just a collection, that doesn't have a __getitem__)\n"
+                msg += "... because there's a layer transforming outcoming keys that are not the ones the store actually " \
+                       "uses? If you didn't wrap the store with the inverse ingoing keys transformation, " \
+                       "that would happen.\n"
+                msg += "I'll ask the inner-layer what it's head is, but IT MAY NOT REFLECT the reality of your store " \
+                       "if you have some filtering, caching etc."
+                msg += f"The error messages was: \n{e}"
+                warn(msg)
 
             for _id in self.store:
                 return self._key_of_id(_id), self._obj_of_data(self.store[_id])
@@ -409,7 +415,12 @@ class Store(KvPersister):
 
     # Misc ####################################################################
     def __repr__(self):
-        return repr(self.store)
+        x = repr(self.store)
+        if isinstance(self._max_repr_size, int):
+            half = int(self._max_repr_size)
+            if len(x) > self._max_repr_size:
+                x = x[:half] + '  ...  ' + x[-half:]
+        return x
         # return self.store.__repr__()
 
 

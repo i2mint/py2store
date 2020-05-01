@@ -21,7 +21,7 @@ from py2store.caching import mk_cached_store, store_cached, store_cached_with_si
     ensure_clear_to_kv_store, flush_on_exit, mk_write_cached_store
 
 from py2store.stores.local_store import PickleStore  # consider deprecating and use LocalPickleStore instead?
-from py2store.slib.s_zipfile import ZipReader, ZipFilesReader, FilesOfZip
+from py2store.slib.s_zipfile import ZipReader, ZipFilesReader, FilesOfZip, FlatZipFilesReader
 
 with ModuleNotFoundIgnore():
     from py2store.access import myconfigs

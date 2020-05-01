@@ -1,7 +1,7 @@
-from typing import Callable, Mapping, Collection
+from typing import Callable, Collection
 
 from py2store import Store
-from py2store.base import KvCollection
+from py2store.base import KvCollection, KvReader
 from py2store.key_mappers.paths import PrefixRelativizationMixin
 from py2store.util import max_common_prefix
 
@@ -75,7 +75,8 @@ class ExplicitKeys(KvCollection):
     >>> list(keys)
     ['foo', 'bar', 'alice']
     """
-    __slots__ = ('_key_collection',)
+
+    # __slots__ = ('_key_collection',)
 
     def __init__(self, key_collection: Collection):
         assert isinstance(key_collection, Collection), \
@@ -93,7 +94,7 @@ class ExplicitKeys(KvCollection):
         return k in self._key_collection
 
 
-class ExplicitKeysSource(ExplicitKeys, ObjReader, Mapping):
+class ExplicitKeysSource(ExplicitKeys, ObjReader, KvReader):
     """
     An object source that uses an explicit keys collection and a specified function to read contents for a key.
     """
