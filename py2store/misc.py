@@ -34,8 +34,14 @@ dflt_incoming_val_trans_for_key = {
     '.pickle': lambda v: pickle.loads(v),
     '.json': lambda v: json.loads(v),
     '.zip': FilesOfZip,
-    '.ini': lambda v: ConfigReader(v, interpolation=ConfigReader.ExtendedInterpolation())
+    '.ini': lambda v: ConfigReader(v, interpolation=ConfigReader.ExtendedInterpolation()),
 }
+
+synset_of_ext = {'.ini': {'.cnf', '.conf', '.config'}}
+for user_this, for_these_extensions in synset_of_ext.items():
+    if user_this in dflt_incoming_val_trans_for_key:
+        for ext in for_these_extensions:
+            dflt_incoming_val_trans_for_key[ext] = dflt_incoming_val_trans_for_key[user_this]
 
 dflt_outgoing_val_trans_for_key = {
     '.bin': identity_method,
