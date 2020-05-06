@@ -8,7 +8,7 @@ def readme():
 
 setup(
     name='py2store',
-    version='0.0.6',
+    version='0.0.7',
     description='DAO for Python: Tools to create simple and consistent interfaces to complicated and varied data sources.',
     long_description=readme(),
     long_description_content_type="text/markdown",
