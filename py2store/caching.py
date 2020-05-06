@@ -105,10 +105,27 @@ def mk_cached_store(store_cls_you_want_to_cache, caching_store=None, new_store_n
     return CachedStore
 
 
+# TODO: Didn't finish this. Finish, doctest, and remove underscore
+def _pre_condition_containment(store_cls, bool_key_func, new_store_name=None):
+    """Adds a custom boolean key function `bool_key_func` before the store_cls.__contains__ check is performed.
+
+    It is meant to be used to create smart read caches.
+
+    This can be used, for example, to perform TTL caching by having `bool_key_func` check on how long
+    ago a cache item has been created, and returning False if the item is past it's expiry time.
+    """
+
+    class PreContaimentStore(store_cls):
+        def __contains__(self, k):
+            return bool_key_func(k) and super().__contains__(k)
+
+    if isinstance(new_store_name, str):
+        PreContaimentStore.__name__ = new_store_name
+
+
 def _slow_but_somewhat_general_hash(*args, **kwargs):
     """
     Attempts to create a hash of the inputs, recursively resolving the most common hurdles (dicts, sets, lists)
-
     Returns: A hash value for the input
 
     >>> _slow_but_somewhat_general_hash(1, [1, 2], a_set={1,2}, a_dict={'a': 1, 'b': [1,2]})

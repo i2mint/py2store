@@ -181,6 +181,7 @@ class ZipFilesReader(FileCollection, KvReader):
         return ZipReader(k, **self.zip_reader_kwargs)
 
 
+# TODO: Add easy connection to ExplicitKeymapReader and other path trans and cache useful for the folder of zips context
 class FlatZipFilesReader(ZipFilesReader):
     """Read the union of the contents of multiple zip files.
     A local file reader whose keys are the zip filepaths of the rootdir and values are corresponding ZipReaders.
