@@ -174,6 +174,15 @@ def cached_keys(store=None,
     Once you do that, the next time you try to ask something about the contents of the store, it will actually do
     a live query again, as for the first time.
 
+    Note: The default keys_cache is list though in many cases, you'd probably should use set, or an explicitly
+    computer set instead. The reason list is used as the default is because (1) we didn't want to assume that
+    order did not matter (maybe it does to you) and (2) we didn't want to assume that your keys were hashable.
+    That said, if you're keys are hashable, and order does not matter, use set. That'll give you two things:
+    (a) your `key in store` checks will be faster (O(1) instead of O(n)) and (b) you'll enforce unicity of keys.
+
+    Know also that if you precompute the keys you want to cache with a container that has an update
+    method (by default `update`) your cache updates will be faster and if the container you use has
+    a `remove` method, you'll be able to delete as well.
 
     Args:
         store: The store instance or class to wrap (must have an __iter__), or None if you want a decorator.
@@ -465,8 +474,8 @@ def cached_keys(store=None,
                 self.update_keys_cache(kwds)
 
             def __delitem__(self, k):
-                super(cached_cls, self).__delitem__(k)
                 self._keys_cache.remove(k)
+                super(cached_cls, self).__delitem__(k)
 
         # And this is where we add all the needed methods (for example, no __setitem__ won't be added if the original
         #   class didn't have one in the first place.
