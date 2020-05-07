@@ -112,7 +112,7 @@ def _extend_path(path, extension):
     return extend_path
 
 
-class DropboxLinkPersister(ReadOnlyMixin, DropboxPersister):
+class DropboxLinkReaderWithToken(ReadOnlyMixin, DropboxPersister):
     def __init__(self, url, oauth2_access_token):
         self._con = Dropbox(oauth2_access_token)
         self.url = url

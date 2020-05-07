@@ -4,7 +4,7 @@ from tests.base_test import BasePersisterTest
 from py2store.util import ModuleNotFoundWarning
 
 with ModuleNotFoundWarning(f"{__file__}: One of the needed modules can't be found. Will skip this test."):
-    from py2store.persisters.dropbox_w_dropbox import DropboxPersister, DropboxLinkPersister
+    from py2store.persisters.dropbox_w_dropbox import DropboxPersister, DropboxLinkReaderWithToken
 
     ROOT_DIR = environ.get('DROPBOX_ROOT_DIR', '/test_data')
     TOKEN = environ.get('DROPBOX_TOKEN')
@@ -23,7 +23,7 @@ with ModuleNotFoundWarning(f"{__file__}: One of the needed modules can't be foun
 
 
     class TestDropboxLinkPersister(TestDropboxPersister):
-        db = DropboxLinkPersister(
+        db = DropboxLinkReaderWithToken(
             url='https://www.dropbox.com/sh/0ru09jmk0w9tdnr/AAA-PPON2sYmwUUoGQpBQh1Ia?dl=0',
             oauth2_access_token=TOKEN,
         )
