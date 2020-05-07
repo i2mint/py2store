@@ -24,7 +24,7 @@ class ObjLoader(object):
 
 class ObjReader:
     """
-    py2store.base.AbstractObjReader implementation that uses a specified function to get the contents for a given key.
+    A reader that uses a specified function to get the contents for a given key.
 
     >>> # define a contents_of_key that reads stuff from a dict
     >>> data = {'foo': 'bar', 42: "everything"}

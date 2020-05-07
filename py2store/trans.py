@@ -1,10 +1,12 @@
 from functools import wraps, partial, reduce
 import types
 from inspect import signature
-from typing import Union, Iterable, Optional
+from typing import Union, Iterable, Optional, Collection
 from py2store.base import Store, KvReader, AttrNames
 from py2store.util import lazyprop, num_of_args, attrs_of
 from warnings import warn
+from collections.abc import Iterable
+from itertools import chain
 
 
 def get_class_name(cls, dflt_name=None):
@@ -139,12 +141,17 @@ def mk_read_only(o):
     return disable_delitem(disable_setitem(o))
 
 
+def is_iterable(x):
+    return isinstance(x, Iterable)
+
+
 # TODO: Merge this with explicit keys functionality. iter_to_container should become a cache_store
 #   that holds the hash_keys and update_keys_cache functionalities.
-def cached_keys(store=None, *,
-                iter_to_container: callable = list,
-                hash_keys: bool = False,
-                update_cache_on_write=True,
+def cached_keys(store=None,
+                *,
+                keys_cache: Union[callable, Collection] = list,
+                iter_to_container=None,  # deprecated: use keys_cache instead
+                cache_update_method='update',
                 name: str = None):
     """Make a class that wraps input class's __iter__ becomes cached.
 
@@ -169,20 +176,118 @@ def cached_keys(store=None, *,
 
 
     Args:
-        store: The store instance or class to wrap (must have an __iter__)
+        store: The store instance or class to wrap (must have an __iter__), or None if you want a decorator.
+        keys_cache: An explicit collection of keys
         iter_to_container: The function that will be applied to existing __iter__() and assigned to cache.
             The default is list. Another useful one is the sorted function.
-        hash_keys: If True, will compute a set of keys to be able to check for containment faster
-            Note that the keys have to be hashable.
-            Note that the speed-up is to the expense of RAM for the extra set of non ordered keys.
-            If order doesn't matter to you, you can get fast containment checks without the memory overhead,
-            by specifying `iter_to_container=set`.
-        update_cache_on_write: If True, will call the `update_cached_keys` method on writes.
-            By default, the method deletes the cached keys so that they're regenerated the next time the
-            store is iterated on.
+        cache_update_method: Name of the keys_cache update method to use, if it is an attribute of keys_cache.
+            Note that this cache_update_method will be used only
+                if keys_cache is an explicit iterable and has that attribute
+                if keys_cache is a callable and has that attribute.
+            The default None
         name: The name of the new class
 
-    Lets cache the keys of a dict.
+    Returns:
+        If store is:
+            None: Will return a decorator that can be applied to a store
+            a store class: Will return a wrapped class that caches it's keys
+            a store instance: Will return a wrapped instance that caches it's keys
+
+        The instances of such key-cached classes have some extra attributes:
+            _explicit_keys: The actual cache. An iterable container
+            update_keys_cache: Is called if a user uses the instance to mutate the store (i.e. write or delete).
+
+    You have two ways of caching keys:
+    - By providing the explicit list of keys you want cache (and use)
+    - By providing a callable that will iterate through your store and collect an explicit list of keys
+
+    Let's take a simple dict as our original store.
+    >>> source = dict(c=3, b=2, a=1)
+
+    Specify an iterable, and it will be used as the cached keys
+    >>> cached = cached_keys(source, keys_cache='bc')
+    >>> list(cached.items())  # notice that the order you get things is also ruled by the cache
+    [('b', 2), ('c', 3)]
+
+    Specify a callable, and it will apply it to the existing keys to make your cache
+    >>> list(cached_keys(source, keys_cache=sorted))
+    ['a', 'b', 'c']
+
+    You can use the callable keys_cache specification to filter as well!
+    Oh, and let's demo the fact that if you don't specify the store, it will make a store decorator for you:
+    >>> cache_my_keys = cached_keys(keys_cache=lambda keys: list(filter(lambda k: k >= 'b', keys)))
+    >>> d = cache_my_keys(source)  # used as to transform an instance
+    >>> list(d)
+    ['c', 'b']
+
+    Let's use that same `cache_my_keys` to decorate a class instead:
+    >>> cached_dict = cache_my_keys(dict)
+    >>> d = cached_dict(c=3, b=2, a=1)
+    >>> list(d)
+    ['c', 'b']
+
+    Note that there's still an underlying store (dict) that has the data:
+    >>> repr(d)  # repr isn't wrapped, so you can still see your underlying dict
+    "{'c': 3, 'b': 2, 'a': 1}"
+
+    And yes, you can still add elements,
+    >>> d['z'] = 26
+    >>> list(d.items())
+    [('c', 3), ('b', 2), ('z', 26)]
+
+    do bulk updates,
+    >>> d.update({'more': 'of this'}, more_of='that')
+    >>> list(d.items())
+    [('c', 3), ('b', 2), ('z', 26), ('more', 'of this'), ('more_of', 'that')]
+
+    and delete...
+    >>> del d['more']
+    >>> list(d.items())
+    [('c', 3), ('b', 2), ('z', 26), ('more_of', 'that')]
+
+    But careful! Know what you're doing if you try to get creative. Have a look at this:
+    >>> d['a'] = 100  # add an 'a' item
+    >>> d.update(and_more='of that')  # update to add yet another item
+    >>> list(d.items())
+    [('c', 3), ('b', 2), ('z', 26), ('more_of', 'that')]
+
+    Indeed: No 'a' or 'and_more'.
+
+    Now... they were indeed added. Or to be more precise, the value of the already existing a was changed,
+    and a new ('and_more', 'of that') item was indeed added in the underlying store:
+    >>> repr(d)
+    "{'c': 3, 'b': 2, 'a': 100, 'z': 26, 'more_of': 'that', 'and_more': 'of that'}"
+
+    But you're not seeing it.
+
+    Why?
+
+    Because you chose to use a callable keys_cache that doesn't have an 'update' method.
+    When your _keys_cache attribute (the iterable cache) is not updatable itself, the
+    way updates work is that we iterate through the underlying store (where the updates actually took place),
+    and apply the keys_cache (callable) to that iterable.
+
+    So what happened here was that you have your new 'a' and 'and_more' items, but your cached version of the
+    store doesn't see it because it's filtered out. On the other hand, check out what happens if you have
+    an updateable cache.
+
+    Using `set` instead of `list`, after the `filter`.
+    >>> cache_my_keys = cached_keys(keys_cache=set)
+    >>> d = cache_my_keys(source)  # used as to transform an instance
+    >>> sorted(d)  # using sorted because a set's order is not always the same
+    ['a', 'b', 'c']
+    >>> d['a'] = 100
+    >>> d.update(and_more='of that')  # update to add yet another item
+    >>> sorted(d.items())
+    [('a', 100), ('and_more', 'of that'), ('b', 2), ('c', 3)]
+
+    This example was to illustrate a more subtle aspect of cached_keys. You would probably deal with
+    the filter concern in a different way in this case. But the rope is there -- it's your choice on how
+    to use it.
+
+    And here's some more examples if that wasn't enough!
+
+    >>> # Lets cache the keys of a dict.
     >>> cached_dict = cached_keys(dict)
     >>> d = cached_dict(a=1, b=2, c=3)
     >>> # And you get a store that behaves as expected (but more speed and RAM)
@@ -196,21 +301,21 @@ def cached_keys(store=None, *,
     ['a', 'b', 'c']
 
     >>> # Let's demo the iter_to_container argument. The default is "list", which will just consume the iter in order
-    >>> sorted_dict = cached_keys(dict, iter_to_container=list)
+    >>> sorted_dict = cached_keys(dict, keys_cache=list)
     >>> s = sorted_dict({'b': 3, 'a': 2, 'c': 1})
     >>> list(s)  # keys will be in the order they were defined
     ['b', 'a', 'c']
-    >>> sorted_dict = cached_keys(dict, iter_to_container=sorted)
+    >>> sorted_dict = cached_keys(dict, keys_cache=sorted)
     >>> s = sorted_dict({'b': 3, 'a': 2, 'c': 1})
     >>> list(s)  # keys will be sorted
     ['a', 'b', 'c']
-    >>> sorted_dict = cached_keys(dict, iter_to_container=lambda x: sorted(x, key=len))
+    >>> sorted_dict = cached_keys(dict, keys_cache=lambda x: sorted(x, key=len))
     >>> s = sorted_dict({'bbb': 3, 'aa': 2, 'c': 1})
     >>> list(s)  # keys will be sorted according to their length
     ['c', 'aa', 'bbb']
 
-    >>> # But if you change the keys (adding new ones with __setitem__ or update, or removing with pop or popitem)
-    >>> # then the cache is recomputed (the first time you use an operation that iterates over keys
+    If you change the keys (adding new ones with __setitem__ or update, or removing with pop or popitem)
+    then the cache is recomputed (the first time you use an operation that iterates over keys)
     >>> d.update(d=4)  # let's add an element (try d['d'] = 4 as well)
     >>> list(d)
     ['a', 'b', 'c', 'd']
@@ -232,48 +337,69 @@ def cached_keys(store=None, *,
     >>>
 
     >>> # Let's demo the iter_to_container argument. The default is "list", which will just consume the iter in order
-    >>> sorted_dict = cached_keys(dict, iter_to_container=list)
+    >>> sorted_dict = cached_keys(dict, keys_cache=list)
     >>> s = sorted_dict({'b': 3, 'a': 2, 'c': 1})
     >>> list(s)  # keys will be in the order they were defined
     ['b', 'a', 'c']
-    >>> sorted_dict = cached_keys(dict, iter_to_container=sorted)
+    >>> sorted_dict = cached_keys(dict, keys_cache=sorted)
     >>> s = sorted_dict({'b': 3, 'a': 2, 'c': 1})
     >>> list(s)  # keys will be sorted
     ['a', 'b', 'c']
-    >>> sorted_dict = cached_keys(dict, iter_to_container=lambda x: sorted(x, key=len))
+    >>> sorted_dict = cached_keys(dict, keys_cache=lambda x: sorted(x, key=len))
     >>> s = sorted_dict({'bbb': 3, 'aa': 2, 'c': 1})
     >>> list(s)  # keys will be sorted according to their length
     ['c', 'aa', 'bbb']
     """
+    if iter_to_container is not None:
+        assert callable(iter_to_container)
+        warn("The argument name 'iter_to_container' is being deprecated in favor of the more general 'keys_cache'")
+        assert keys_cache == iter_to_container
 
-    assert isinstance(hash_keys, bool)
     if store is None:
-        return partial(cached_keys, iter_to_container=iter_to_container, hash_keys=hash_keys,
-                       update_cache_on_write=update_cache_on_write, name=name)
+        return partial(cached_keys, keys_cache=keys_cache, cache_update_method=cache_update_method, name=name)
     elif not isinstance(store, type):  # then consider it to be an instance
         store_instance = store
-        WrapperStore = cached_keys(Store, iter_to_container=iter_to_container, hash_keys=hash_keys,
-                                   update_cache_on_write=update_cache_on_write, name=name)
+        WrapperStore = cached_keys(Store, keys_cache=keys_cache, cache_update_method=cache_update_method, name=name)
         return WrapperStore(store_instance)
     else:
         store_cls = store
         name = name or 'IterCached' + get_class_name(store_cls)
-        cached_cls = type(name, (store_cls,), {'_keys_cache': None, '_set_of_keys': None})
+        cached_cls = type(name, (store_cls,), {'_keys_cache': None})
 
+        # The following class is not the class that will be returned, but the class from which we'll take the methods
+        #   that will be copied in the class that will be returned.
         @_define_keys_values_and_items_according_to_iter
         class CachedIterMethods:
-            _set_of_keys = None
-            _keys_cache = None
+            _explicit_keys = False
+            _updatable_cache = False
+            _iter_to_container = None
+            if hasattr(keys_cache, cache_update_method):
+                _updatable_cache = True
+            if is_iterable(keys_cache):  # if keys_cache is iterable, it is the cache instance itself.
+                _keys_cache = keys_cache
+                _explicit_keys = True
+            elif callable(keys_cache):
+                # if keys_cache is not iterable, but callable, we'll use it to make the keys_cache from __iter__
+                _iter_to_container = keys_cache
 
-            # To have them around for explanability
-            _hash_keys = hash_keys
-            _iter_to_container = iter_to_container
-            _update_cache_on_write = update_cache_on_write
+                @lazyprop
+                def _keys_cache(self):
+                    # print(iter_to_container)
+                    return keys_cache(super(cached_cls, self).__iter__())  # TODO: Should it be iter(super(...)?
 
-            @lazyprop
-            def _keys_cache(self):
-                # print(iter_to_container)
-                return iter_to_container(super(cached_cls, self).__iter__())  # TODO: Should it be iter(super(...)?
+            # if not callable(_explicit_keys):
+
+            # If keys_cache_update is None (the default), the method 'update' will be searched for as above,
+            #   and if not found, will fall back to None.
+            # if isinstance(keys_cache_update, str):
+            #     if (_explicit_keys and hasattr(_explicit_keys, '__class__')
+            #             and hasattr(_explicit_keys.__class__, keys_cache_update)):
+            #         keys_cache_update = getattr(_explicit_keys.__class__, keys_cache_update)
+
+            # if (_explicit_keys and hasattr(_explicit_keys, '__class__')
+            #         and hasattr(_explicit_keys.__class__, 'update')):
+            #     keys_cache_update = _explicit_keys.__class__.update
+            #
 
             @property
             def _iter_cache(self):  # for back-compatibility
@@ -292,55 +418,59 @@ def cached_keys(store=None, *,
                 for k in self._keys_cache:
                     yield k, self[k]
 
+            def __contains__(self, k):
+                return k in self._keys_cache
+
+            # The write and update stuff ###################################################################
+
+            if _updatable_cache:
+                def update_keys_cache(self, keys):
+                    """updates the keys by calling the
+                    """
+                    update_func = getattr(self._keys_cache, cache_update_method)
+                    update_func(self._keys_cache, keys)
+
+                update_keys_cache.__doc__ = "Updates the _keys_cache by calling its {} method"
+            else:
+                def update_keys_cache(self, keys):
+                    """Updates the _keys_cache by deleting the attribute
+                    """
+                    try:
+                        del self._keys_cache
+                        # print('deleted _keys_cache')
+                    except AttributeError:
+                        pass
+
             def __setitem__(self, k, v):
                 super(cached_cls, self).__setitem__(k, v)
                 # self.store[k] = v
                 if k not in self:  # just to avoid deleting the cache if we already had the key
-                    self.update_keys_cache([k])
+                    self.update_keys_cache((k,))
+                    # Note: different construction performances: (k,)->10ns, [k]->38ns, {k}->50ns
 
             def update(self, other=(), **kwds):
+                # print(other, kwds)
                 # super(cached_cls, self).update(other, **kwds)
                 super_setitem = super(cached_cls, self).__setitem__
                 for k in other:
+                    # print(k, other[k])
                     super_setitem(k, other[k])
                     # self.store[k] = other[k]
+                self.update_keys_cache(other)
+
                 for k, v in kwds.items():
+                    # print(k, v)
                     super_setitem(k, v)
                     # self.store[k] = v
-                self.update_keys_cache(new_keys=list(other) + list(kwds))
+                self.update_keys_cache(kwds)
 
-            # def __delitem__(self, k):
-            #     super(cached_cls, self).__delitem__(k)
-            #     self.update_keys_cache([k])
+            def __delitem__(self, k):
+                super(cached_cls, self).__delitem__(k)
+                self._keys_cache.remove(k)
 
-            if not hash_keys:
-                def update_keys_cache(self, new_keys=None):
-                    """The method that is called after writes (`s[k]=v` or `s.update(other, **kwargs))
-                    if `_update_cache_on_write == True`.
-                    The default beha vior ignores the input new_keys, and just deletes the cache.
-                    """
-                    if hasattr(self, '_keys_cache'):
-                        del self._keys_cache
-
-                def __contains__(self, k):
-                    return k in self._keys_cache
-            else:  # TODO: Need to test this case
-                @lazyprop
-                def _set_of_keys(self):
-                    return set(self)
-
-                cached_cls._set_of_keys = _set_of_keys
-
-                def update_keys_cache(self, new_keys=None):
-                    if hasattr(self, '_keys_cache'):
-                        del self._keys_cache
-                    if hasattr(self, '_set_of_keys'):
-                        del self._set_of_keys
-
-                def __contains__(self, k):
-                    return k in self._set_of_keys
-
-        special_attrs = {'update_keys_cache', '_keys_cache', '_set_of_keys'}
+        # And this is where we add all the needed methods (for example, no __setitem__ won't be added if the original
+        #   class didn't have one in the first place.
+        special_attrs = {'update_keys_cache', '_keys_cache', '_explicit_keys', '_updatable_cache'}
         for attr in special_attrs | (AttrNames.KvPersister & attrs_of(cached_cls) & attrs_of(CachedIterMethods)):
             setattr(cached_cls, attr, getattr(CachedIterMethods, attr))
 
