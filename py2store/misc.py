@@ -122,6 +122,14 @@ class MiscReaderMixin:
         return trans_func(super().__getitem__(k))
 
 
+try:
+    from py2store.persisters.dropbox_w_requests import bytes_from_dropbox
+except Exception:
+    _dropbox_as_special_case = False
+else:
+    _dropbox_as_special_case = True
+
+
 # TODO: I'd really like to reuse MiscReaderMixin here! There's a lot of potential.
 # TODO: For more flexibility, the default store should probably be a UriReader (that doesn't exist yet)
 #  If store argument of get_obj was a type instead of an instance, or if MiscReaderMixin was a transformer, if would
@@ -132,9 +140,14 @@ def get_obj(k, store=LocalBinaryStore(path_format=''),
             func_key=lambda k: os.path.splitext(k)[1]):
     """A quick way to get an object, with default... everything (but the key, you know, a clue of what you want)"""
     if k.startswith('http://') or k.startswith('https://'):
-        import urllib.request
-        with urllib.request.urlopen(k) as response:
-            v = response.read()
+        if (_dropbox_as_special_case and
+                (k.startswith('http://www.dropbox.com') or k.startswith('https://www.dropbox.com'))):
+            v = bytes_from_dropbox(k)
+        else:
+            import urllib.request
+            with urllib.request.urlopen(k) as response:
+                v = response.read()
+
     else:
         v = store[k]
     trans_func = (incoming_val_trans_for_key or {}).get(func_key(k), dflt_incoming_val_trans)

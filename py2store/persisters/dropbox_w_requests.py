@@ -12,6 +12,7 @@ with ModuleNotFoundErrorNiceMessage():
 class DropboxFolderCopyReader(Reader):
     """Makes a full local copy of the folder (by default, to a local temp folder) and gives access to it.
     """
+
     def __init__(self, url, path=tempfile.gettempdir()):
         self.url = url
         self.path = path
@@ -94,14 +95,29 @@ class DropboxFileCopyReader(Reader):
         return last_part_of_urls_path
 
 
-def download_from_dropbox(url, path, as_zip=False):
+def download_from_dropbox(url, file, as_zip=False, chunk_size=1024):
     response = requests.get(
         url,
         params={'dl': int(as_zip)},
         headers={'user-agent': 'Wget/1.16 (linux-gnu)'},
         stream=True,
     )
-    with open(path, 'wb') as f:
-        for chunk in response.iter_content(chunk_size=1024):
+
+    def iter_content_and_copy_to(file):
+        for chunk in response.iter_content(chunk_size=chunk_size):
             if chunk:
-                f.write(chunk)
+                file.write(chunk)
+
+    if not isinstance(file, str):
+        iter_content_and_copy_to(file)
+    else:
+        with open(file, 'wb') as _target_file:
+            iter_content_and_copy_to(_target_file)
+
+
+def bytes_from_dropbox(url, as_zip=False, chunk_size=1024):
+    from io import BytesIO
+    with BytesIO() as file:
+        download_from_dropbox(url, file, as_zip=as_zip, chunk_size=chunk_size)
+        file.seek(0)
+        return file.read()
