@@ -145,7 +145,7 @@ def is_iterable(x):
     return isinstance(x, Iterable)
 
 
-# TODO: Merge this with explicit keys functionality. iter_to_container should become a cache_store
+# TODO: Merge this with explicit keys functionality. keys_cache should become a cache_store
 #   that holds the hash_keys and update_keys_cache functionalities.
 def cached_keys(store=None,
                 *,
@@ -362,7 +362,7 @@ def cached_keys(store=None,
     if iter_to_container is not None:
         assert callable(iter_to_container)
         warn("The argument name 'iter_to_container' is being deprecated in favor of the more general 'keys_cache'")
-        assert keys_cache == iter_to_container
+        # assert keys_cache == iter_to_container
 
     if store is None:
         return partial(cached_keys, keys_cache=keys_cache, cache_update_method=cache_update_method, name=name)
