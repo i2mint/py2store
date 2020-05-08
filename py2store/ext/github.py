@@ -14,7 +14,7 @@ from py2store.util import format_invocation
 # # Just meant to be used for it's signature:
 # def _account_name(account_name): ...
 
-# @cache_iter(iter_to_container=sorted)
+# @cache_iter(keys_cache=sorted)
 # @cache_iter
 
 
@@ -152,7 +152,7 @@ def _content_file_isdir(content_file):
 # from py2store.key_mappers.paths import PathGetMixin
 #
 #
-# # @cache_iter(iter_to_container=sorted)
+# # @cache_iter(keys_cache=sorted)
 # # @cache_iter
 #
 # def check_credentials(account_name, access_token):
@@ -225,7 +225,7 @@ def _content_file_isdir(content_file):
 # from github import Github
 #
 #
-# # @cache_iter(iter_to_container=sorted)
+# # @cache_iter(keys_cache=sorted)
 # # @cache_iter
 # class GitHubReader(KvReader):
 #     """
