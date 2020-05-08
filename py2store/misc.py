@@ -123,7 +123,7 @@ class MiscReaderMixin:
 
 
 try:
-    from py2store.persisters.dropbox_w_requests import bytes_from_dropbox
+    from py2store.persisters.dropbox_w_urllib import bytes_from_dropbox
 except Exception:
     _dropbox_as_special_case = False
 else:

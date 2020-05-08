@@ -37,7 +37,7 @@ class DropboxFolderCopyReader(KvReader):
         return rel_path in self._files
 
     def _get_folder(self):
-        download_from_dropbox(self.url, self._zip_filepath, as_zip=True)
+        download_from_dropbox(self.url, self._zip_filepath)
         self._unzip()
         os.remove(self._zip_filepath)
 
@@ -52,7 +52,7 @@ class DropboxFileCopyReader(KvReader):
         self.url = url
         self.path = path or self._get_filename_from_url()
 
-        download_from_dropbox(self.url, self.path, as_zip=False)
+        download_from_dropbox(self.url, self.path)
         self.file = open(self.path, 'r')
 
     def __getitem__(self, index):

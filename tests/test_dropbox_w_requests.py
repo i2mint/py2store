@@ -3,7 +3,7 @@ import shutil
 
 import pytest
 
-from py2store.persisters.dropbox_w_requests import DropboxFolderCopyReader, DropboxFileCopyReader
+from py2store.persisters.dropbox_w_urllib import DropboxFolderCopyReader, DropboxFileCopyReader
 
 SHARED_FOLDER_URL = 'https://www.dropbox.com/sh/0ru09jmk0w9tdnr/AAA-PPON2sYmwUUoGQpBQh1Ia?dl=1'
 SHARED_FILE_URL = 'https://www.dropbox.com/s/wx9j4zm7zv9zffd/0b98e2af76c94a0a9cc2808866dd62de?dl=0'
