@@ -279,7 +279,7 @@ class LocalFileStore(Store):
 # S3
 
 from botocore.exceptions import ClientError
-from py2store.stores.s3_store import get_s3_resource
+from py2store.persisters.s3_w_boto3 import get_s3_resource
 from py2store.stores.s3_store import DFLT_AWS_S3_ENDPOINT, DFLT_BOTO_CLIENT_VERIFY, DFLT_CONFIG
 from functools import partial
 

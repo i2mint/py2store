@@ -152,7 +152,7 @@ def cached_keys(store=None,
                 keys_cache: Union[callable, Collection] = list,
                 iter_to_container=None,  # deprecated: use keys_cache instead
                 cache_update_method='update',
-                name: str = None):
+                name: str = None) -> Union[callable, KvReader]:
     """Make a class that wraps input class's __iter__ becomes cached.
 
     Quite often we have a lot of keys, that we get from a remote data source, and don't want to have to ask for

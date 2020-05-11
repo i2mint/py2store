@@ -155,3 +155,16 @@ class FileBytesPersister(FileBytesReader, KvPersister):
 RelPathFileBytesReader = mk_relative_path_store(FileBytesReader,
                                                 name='RelPathFileBytesReader',
                                                 prefix_attr='rootdir')
+
+
+class FileStringReader(FileBytesReader):
+    _read_open_kwargs = dict(FileBytesReader._read_open_kwargs, mode='rt')
+
+
+class FileStringPersister(FileBytesPersister):
+    _write_open_kwargs = dict(FileBytesPersister._write_open_kwargs, mode='wt')
+
+
+RelPathFileStringReader = mk_relative_path_store(FileStringReader,
+                                                 name='RelPathFileStringReader',
+                                                 prefix_attr='rootdir')

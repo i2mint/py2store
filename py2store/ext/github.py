@@ -31,18 +31,20 @@ class GitHubReader(KvReader):
     a Store that can access a GitHub account
     """
 
-    def __init__(self, account_name: str, content_file_extractor=decoded_contents,
+    def __init__(self, account_name: str = None,
+                 content_file_extractor=decoded_contents,
                  login_or_token=None, password=None, jwt=None,
                  base_url='https://api.github.com', timeout=15, client_id=None, client_secret=None,
                  user_agent='PyGithub/Python', per_page=30, verify=True, retry=None):
 
         assert isinstance(account_name, str), "account_name must be given (and a str)"
 
-        _source_obj = Github(login_or_token=login_or_token, password=password, jwt=jwt,
-                             base_url=base_url, timeout=timeout, client_id=client_id,
-                             client_secret=client_secret,
-                             user_agent=user_agent, per_page=per_page, verify=verify, retry=retry)
-        self._source_obj = _source_obj.get_user(account_name) if account_name else _source_obj.get_user()
+        _github = Github(login_or_token=login_or_token, password=password, jwt=jwt,
+                         base_url=base_url, timeout=timeout, client_id=client_id,
+                         client_secret=client_secret,
+                         user_agent=user_agent, per_page=per_page, verify=verify, retry=retry)
+        self._github = _github
+        self._source_obj = _github.get_user(account_name) if account_name else _github.get_user()
         self.content_file_extractor = content_file_extractor
 
     def __iter__(self):

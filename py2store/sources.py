@@ -1,5 +1,5 @@
 # from py2store.util import lazyprop, num_of_args
-from py2store import KvReader, cache_iter
+from py2store import KvReader, cached_keys
 
 
 class FuncReader(KvReader):
@@ -42,6 +42,10 @@ class FuncReader(KvReader):
         return self._func_of_name[k]()  # call the func
 
 
+import os
+
+psep = os.path.sep
+
 ddir = lambda o: [x for x in dir(o) if not x.startswith('_')]
 
 
@@ -49,11 +53,38 @@ def not_underscore_prefixed(x):
     return not x.startswith('_')
 
 
-@cache_iter(name='Ddir')
+def _path_to_module_str(path, root_path):
+    assert path.endswith('.py')
+    path = path[:-3]
+    if root_path.endswith(psep):
+        root_path = root_path[:-1]
+    root_path = os.path.dirname(root_path)
+    len_root = len(root_path) + 1
+    path_parts = path[len_root:].split(psep)
+    if path_parts[-1] == '__init__.py':
+        path_parts = path_parts[:-1]
+    return '.'.join(path_parts)
+
+
+@cached_keys(keys_cache=set, name='Ddir')
 class Ddir(KvReader):
     def __init__(self, obj, key_filt=not_underscore_prefixed):
         self._source = obj
         self._key_filt = key_filt
+
+    @classmethod
+    def module_from_path(cls, path, key_filt=not_underscore_prefixed, name=None, root_path=None):
+        import importlib.util
+        if name is None:
+            if root_path is not None:
+                try:
+                    name = _path_to_module_str(path, root_path)
+                except Exception:
+                    name = 'fake.module.name'
+        spec = importlib.util.spec_from_file_location(name, path)
+        foo = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(foo)
+        return cls(foo, key_filt)
 
     def __iter__(self):
         yield from filter(self._key_filt, dir(self._source))
