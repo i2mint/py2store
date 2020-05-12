@@ -193,7 +193,13 @@ class LocalPickleStore(RelativePathFormatStore):
         return self
 
     def __getitem__(self, k):
-        return self._loads(super().__getitem__(k))
+        try:
+            return self._loads(super().__getitem__(k))
+        except (ModuleNotFoundError, AttributeError) as e:
+            if isinstance(e, AttributeError) and 'module' not in str(e):
+                raise
+            else:
+                raise type(e)(f"Some modules are missing to unpickle {k}: {e}")
 
     def __setitem__(self, k, v):
         return super().__setitem__(k, self._dumps(v))
