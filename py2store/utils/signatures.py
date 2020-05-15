@@ -414,7 +414,7 @@ def param_for_kind(name=None, kind='positional_or_keyword', with_default=False, 
     It's annoying to have to compose parameters from scratch to testing things.
     This tool should help making it less annoying.
 
-    >>> from py2mint.signatures import param_kinds
+    >>> param_kinds = list(filter(lambda x: x.upper() == x, Parameter.__dict__))
     >>> list(map(param_for_kind, param_kinds))
     [<Parameter "POSITIONAL_ONLY">, <Parameter "POSITIONAL_OR_KEYWORD">, <Parameter "VAR_POSITIONAL">, <Parameter "KEYWORD_ONLY">, <Parameter "VAR_KEYWORD">]
     >>> param_for_kind.positional_or_keyword()

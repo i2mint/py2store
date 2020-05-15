@@ -53,7 +53,10 @@ def assert_callable(f: callable) -> callable:
 def dotpath_to_obj(dotpath):
     """Loads and returns the object referenced by the string DOTPATH_TO_MODULE.OBJ_NAME"""
     *module_path, obj_name = dotpath.split('.')
-    return getattr(importlib.import_module('.'.join(module_path)), obj_name)
+    if len(module_path) > 0:
+        return getattr(importlib.import_module('.'.join(module_path)), obj_name)
+    else:
+        return importlib.import_module(obj_name)
 
 
 def dotpath_to_func(f: (str, callable)) -> callable:
@@ -226,8 +229,8 @@ try:
             func_loader = staticmethod(dflt_func_loader)
 
             def _obj_of_data(self, data):
-                if '$fak' in data:
-                    return fakit(data['$fak'], self.func_loader)
+                if FAK in data:
+                    return fakit(data[FAK], self.func_loader)
                 else:
                     msg = "Case not handled by MyStores"
                     if isinstance(data, dict):

@@ -34,13 +34,19 @@ with ModuleNotFoundIgnore():
     from py2store.stores.mongo_store import MongoStore, MongoTupleKeyStore, MongoAnyKeyStore
 
 
-def kvhead(store):
-    """Get the first item of a kv store"""
-    for k in store:
-        return k, store[k]
+def kvhead(store, n=1):
+    """Get the first item of a kv store, or a list of the first n items"""
+    if n == 1:
+        for k in store:
+            return k, store[k]
+    else:
+        return [(k, store[k]) for i, k in enumerate(store) if i < n]
 
 
-def ihead(store):
-    """Get the first item of an iterable"""
-    for item in iter(store):
-        return item
+def ihead(store, n=1):
+    """Get the first item of an iterable, or a list of the first n items"""
+    if n == 1:
+        for item in iter(store):
+            return item
+    else:
+        return [item for i, item in enumerate(store) if i < n]

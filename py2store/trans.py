@@ -790,7 +790,7 @@ def _wrap_outcoming(store_cls: type,
                 # return transformed_output_of_super_method
                 return trans_func(getattr(super(store_cls, self), wrapped_method)(x))
         elif wrap_arg_idx == 1:
-            # print("11111")
+            # print(f"11111: {store_cls}: {wrapped_method}, {trans_func}, {wrapped_func}, {wrap_arg_idx}")
             @wraps(wrapped_func)
             def new_method(self, x):
                 # # Long form (for explanation)
@@ -831,7 +831,8 @@ def _wrap_ingoing(store_cls,
 
 
 def wrap_kvs(store=None, name=None, *,
-             key_of_id=None, id_of_key=None, obj_of_data=None, data_of_obj=None, preset=None, postget=None
+             key_of_id=None, id_of_key=None, obj_of_data=None, data_of_obj=None, preset=None, postget=None,
+             __module__=None
              ):
     r"""Make a Store that is wrapped with the given key/val transformers.
 
@@ -1017,6 +1018,9 @@ def wrap_kvs(store=None, name=None, *,
                     return super(store_cls, self).__setitem__(k, preset(self, k, v))
 
             store_cls.__setitem__ = __setitem__
+
+        if __module__ is not None:
+            store_cls.__module__ = __module__
 
         return store_cls
 
