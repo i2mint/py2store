@@ -8,8 +8,9 @@ from warnings import warn
 from collections.abc import Iterable
 from itertools import chain
 
-self_names = frozenset(['self'])
 
+########################################################################################################################
+# Utils
 
 def get_class_name(cls, dflt_name=None):
     name = getattr(cls, '__qualname__', None)
@@ -138,6 +139,9 @@ def mk_read_only(o):
 def is_iterable(x):
     return isinstance(x, Iterable)
 
+
+########################################################################################################################
+# Caching keys
 
 # TODO: Merge this with explicit keys functionality. keys_cache should become a cache_store
 #   that holds the hash_keys and update_keys_cache functionalities.
@@ -489,6 +493,9 @@ def cached_keys(store=None,
 cache_iter = cached_keys  # TODO: Alias, partial it and make it more like the original, for back compatibility.
 
 
+########################################################################################################################
+# Filtering iteration
+
 # TODO: Factor out the method injection pattern (e.g. __getitem__, __setitem__ and __delitem__ are nearly identical)
 def filtered_iter(filt: Union[callable, Iterable], name=None, __module__=None):
     """Make a wrapper that will transform a store (class or instance thereof) into a sub-store (i.e. subset of keys).
@@ -616,6 +623,12 @@ def filtered_iter(filt: Union[callable, Iterable], name=None, __module__=None):
             return wrapped_cls
 
     return wrap
+
+
+########################################################################################################################
+# Wrapping keys and values
+
+self_names = frozenset(['self'])
 
 
 def _define_keys_values_and_items_according_to_iter(cls):
@@ -1185,6 +1198,9 @@ kv_wrap.outcoming_vals = _kv_wrap_outcoming_vals
 kv_wrap.ingoing_vals = _kv_wrap_ingoing_vals
 kv_wrap.ingoing_vals_wrt_to_keys = _ingoing_vals_wrt_to_keys
 kv_wrap.outcoming_vals_wrt_to_keys = _outcoming_vals_wrt_to_keys
+
+########################################################################################################################
+# Aliasing
 
 _method_name_for = {
     'write': '__setitem__',
