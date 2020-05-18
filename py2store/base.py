@@ -307,6 +307,8 @@ class Store(KvPersister):
     # __slots__ = ('_id_of_key', '_key_of_id', '_data_of_obj', '_obj_of_data')
 
     def __init__(self, store=dict):
+        self._wrapped_methods = set(dir(Store))
+
         if isinstance(store, type):
             store = store()
         self.store = store
@@ -317,6 +319,16 @@ class Store(KvPersister):
     _obj_of_data = static_identity_method
 
     _max_repr_size = None
+
+    # TODO: Test performance of alternative delegation methods (or no delegation at all).
+    #   A (very) quick test over a few methods shows that the addition of this "delegate the rest"
+    #   slows things down by 10% to 20%.
+    def __getattr__(self, attr):
+        """Delegate method to wrapped store if not part of wrapper store methods"""
+        if attr in self._wrapped_methods:
+            return getattr(self, attr)
+        else:
+            return getattr(self.store, attr)
 
     # Read ####################################################################
     def __getitem__(self, k: Key) -> Val:

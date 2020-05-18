@@ -8,6 +8,8 @@ from warnings import warn
 from collections.abc import Iterable
 from itertools import chain
 
+self_names = frozenset(['self'])
+
 
 def get_class_name(cls, dflt_name=None):
     name = getattr(cls, '__qualname__', None)
@@ -41,41 +43,40 @@ def _is_bound(method):
     return hasattr(method, '__self__')
 
 
-def _first_param_is_an_instance_param(params, first_arg_names_used_for_instances=frozenset(['self'])):
-    return len(params) > 0 and list(params)[0] in first_arg_names_used_for_instances
+def _first_param_is_an_instance_param(params):
+    return len(params) > 0 and list(params)[0] in self_names
 
 
 # TODO: Add validation of func: That all but perhaps 1 argument (not counting self) has a default
-def _guess_wrap_arg_idx(func, first_arg_names_used_for_instances=frozenset(['self'])):
+def _has_unbound_self(func):
     """
 
     Args:
         func:
-        first_arg_names_used_for_instances:
 
     Returns:
 
     >>> def f1(x): ...
-    >>> assert _guess_wrap_arg_idx(f1) == 0
+    >>> assert _has_unbound_self(f1) == 0
     >>>
     >>> def f2(self, x): ...
-    >>> assert _guess_wrap_arg_idx(f2) == 1
+    >>> assert _has_unbound_self(f2) == 1
     >>>
     >>> f3 = lambda self, x: True
-    >>> assert _guess_wrap_arg_idx(f3) == 1
+    >>> assert _has_unbound_self(f3) == 1
     >>>
     >>> class A:
     ...     def bar(self, x): ...
     ...     def foo(dacc, x): ...
     >>> a = A()
     >>>
-    >>> _guess_wrap_arg_idx(a.bar)
+    >>> _has_unbound_self(a.bar)
     0
-    >>> _guess_wrap_arg_idx(a.foo)
+    >>> _has_unbound_self(a.foo)
     0
-    >>> _guess_wrap_arg_idx(A.bar)
+    >>> _has_unbound_self(A.bar)
     1
-    >>> _guess_wrap_arg_idx(A.foo)
+    >>> _has_unbound_self(A.foo)
     0
     >>>
     """
@@ -83,17 +84,10 @@ def _guess_wrap_arg_idx(func, first_arg_names_used_for_instances=frozenset(['sel
     if len(params) == 0:
         # no argument, so we can't be wrapping anything!!!
         raise ValueError("The function has no parameters, so I can't guess which one you want to wrap")
-    elif not _is_bound(func) and _first_param_is_an_instance_param(params, first_arg_names_used_for_instances):
-        return 1
-    # elif _is_bound(func):
-    #     return 0
+    elif not _is_bound(func) and _first_param_is_an_instance_param(params):
+        return True
     else:
-        return 0  # only one argument, it must be the one the user wants to wrap
-    # else:  # ... well now it get's a bit muddled...
-    #     if _first_param_is_an_instance_param(params, first_arg_names_used_for_instances):
-    #         return 1
-    #     else:
-    #         return None  # couldn't guess what argument you're trying to wrap
+        return False
 
 
 def transparent_key_method(self, k):
@@ -152,7 +146,8 @@ def cached_keys(store=None,
                 keys_cache: Union[callable, Collection] = list,
                 iter_to_container=None,  # deprecated: use keys_cache instead
                 cache_update_method='update',
-                name: str = None) -> Union[callable, KvReader]:
+                name: str = None,
+                __module__=None) -> Union[callable, KvReader]:
     """Make a class that wraps input class's __iter__ becomes cached.
 
     Quite often we have a lot of keys, that we get from a remote data source, and don't want to have to ask for
@@ -365,10 +360,12 @@ def cached_keys(store=None,
         # assert keys_cache == iter_to_container
 
     if store is None:
-        return partial(cached_keys, keys_cache=keys_cache, cache_update_method=cache_update_method, name=name)
+        return partial(cached_keys, keys_cache=keys_cache, cache_update_method=cache_update_method,
+                       name=name, __module__=__module__)
     elif not isinstance(store, type):  # then consider it to be an instance
         store_instance = store
-        WrapperStore = cached_keys(Store, keys_cache=keys_cache, cache_update_method=cache_update_method, name=name)
+        WrapperStore = cached_keys(Store, keys_cache=keys_cache, cache_update_method=cache_update_method,
+                                   name=name, __module__=__module__)
         return WrapperStore(store_instance)
     else:
         store_cls = store
@@ -483,6 +480,9 @@ def cached_keys(store=None,
         for attr in special_attrs | (AttrNames.KvPersister & attrs_of(cached_cls) & attrs_of(CachedIterMethods)):
             setattr(cached_cls, attr, getattr(CachedIterMethods, attr))
 
+        if __module__ is not None:
+            cached_cls.__module__ = __module__
+
         return cached_cls
 
 
@@ -490,7 +490,7 @@ cache_iter = cached_keys  # TODO: Alias, partial it and make it more like the or
 
 
 # TODO: Factor out the method injection pattern (e.g. __getitem__, __setitem__ and __delitem__ are nearly identical)
-def filtered_iter(filt: Union[callable, Iterable], name=None):
+def filtered_iter(filt: Union[callable, Iterable], name=None, __module__=None):
     """Make a wrapper that will transform a store (class or instance thereof) into a sub-store (i.e. subset of keys).
 
     Args:
@@ -541,7 +541,7 @@ def filtered_iter(filt: Union[callable, Iterable], name=None):
         def filt(k):
             return k in keys_that_should_be_filtered_in
 
-    def wrap(store, name=name):
+    def wrap(store, name=name, __module__=__module__):
         if not isinstance(store, type):  # then consider it to be an instance
             store_instance = store
             WrapperStore = filtered_iter(filt, name=name)(Store)
@@ -609,6 +609,9 @@ def filtered_iter(filt: Union[callable, Iterable], name=None):
                         raise KeyError(f"Key not in store: {k}")
 
                 wrapped_cls.__delitem__ = __delitem__
+
+            if __module__ is not None:
+                wrapped_cls.__module__ = __module__
 
             return wrapped_cls
 
@@ -737,8 +740,7 @@ def kv_wrap_persister_cls(persister_cls, name=None):
 
 def _wrap_outcoming(store_cls: type,
                     wrapped_method: str,
-                    trans_func: Optional[callable] = None,
-                    wrap_arg_idx: Optional[int] = None):
+                    trans_func: Optional[callable] = None):
     """Output-transforming wrapping of the wrapped_method of store_cls.
     The transformation is given by trans_func, which could be a one (trans_func(x)
     or two (trans_func(self, x)) argument function.
@@ -775,11 +777,8 @@ def _wrap_outcoming(store_cls: type,
     """
     if trans_func is not None:
         wrapped_func = getattr(store_cls, wrapped_method)
-        if isinstance(trans_func, tuple) and len(trans_func) == 2:
-            trans_func, wrap_arg_idx = trans_func  # the idx is given by the trans_func input
-        else:
-            wrap_arg_idx = wrap_arg_idx or _guess_wrap_arg_idx(trans_func)
-        if wrap_arg_idx == 0:
+
+        if not _has_unbound_self(trans_func):
             # print(f"00000: {store_cls}: {wrapped_method}, {trans_func}, {wrapped_func}, {wrap_arg_idx}")
             @wraps(wrapped_func)
             def new_method(self, x):
@@ -789,7 +788,7 @@ def _wrap_outcoming(store_cls: type,
                 # transformed_output_of_super_method = trans_func(output_of_super_method)
                 # return transformed_output_of_super_method
                 return trans_func(getattr(super(store_cls, self), wrapped_method)(x))
-        elif wrap_arg_idx == 1:
+        else:
             # print(f"11111: {store_cls}: {wrapped_method}, {trans_func}, {wrapped_func}, {wrap_arg_idx}")
             @wraps(wrapped_func)
             def new_method(self, x):
@@ -799,33 +798,24 @@ def _wrap_outcoming(store_cls: type,
                 # transformed_output_of_super_method = trans_func(self, output_of_super_method)
                 # return transformed_output_of_super_method
                 return trans_func(self, getattr(super(store_cls, self), wrapped_method)(x))
-        else:
-            raise ValueError(f"I don't know how to handle wrap_arg_idx={wrap_arg_idx}")
 
         setattr(store_cls, wrapped_method, new_method)
 
 
 def _wrap_ingoing(store_cls,
                   wrapped_method: str,
-                  trans_func: Optional[callable] = None,
-                  wrap_arg_idx: Optional[int] = None):
+                  trans_func: Optional[callable] = None):
     if trans_func is not None:
         wrapped_func = getattr(store_cls, wrapped_method)
-        if isinstance(trans_func, tuple) and len(trans_func) == 2:
-            trans_func, wrap_arg_idx = trans_func  # the idx is given by the trans_func input
-        else:
-            wrap_arg_idx = wrap_arg_idx or _guess_wrap_arg_idx(trans_func)
 
-        if wrap_arg_idx == 0:
+        if not _has_unbound_self(trans_func):
             @wraps(wrapped_func)
             def new_method(self, x):
                 return getattr(super(store_cls, self), wrapped_method)(trans_func(x))
-        elif wrap_arg_idx == 1:
+        else:
             @wraps(wrapped_func)
             def new_method(self, x):
                 return getattr(super(store_cls, self), wrapped_method)(trans_func(self, x))
-        else:
-            raise ValueError(f"I don't know how to handle wrap_arg_idx={wrap_arg_idx}")
 
         setattr(store_cls, wrapped_method, new_method)
 
@@ -965,13 +955,13 @@ def wrap_kvs(store=None, name=None, *,
     """
     if store is None:
         return partial(wrap_kvs, name=name, key_of_id=key_of_id, id_of_key=id_of_key, obj_of_data=obj_of_data,
-                       data_of_obj=data_of_obj, preset=preset, postget=postget)
+                       data_of_obj=data_of_obj, preset=preset, postget=postget, __module__=__module__)
     elif not isinstance(store, type):  # then consider it to be an instance
         store_instance = store
         WrapperStore = wrap_kvs(Store, name=name,
                                 key_of_id=key_of_id, id_of_key=id_of_key,
                                 obj_of_data=obj_of_data, data_of_obj=data_of_obj,
-                                postget=postget)
+                                postget=postget, __module__=__module__)
         return WrapperStore(store_instance)
     else:  # it's a class we're wrapping
         name = name or store.__qualname__ + 'Wrapped'
@@ -993,27 +983,26 @@ def wrap_kvs(store=None, name=None, *,
         _wrap_ingoing(store_cls, '_data_of_obj', data_of_obj)
 
         if postget is not None:
-            nargs = num_of_args(postget)
-
-            if nargs < 2:
+            if num_of_args(postget) < 2:
                 raise ValueError("A postget function needs to have (key, value) or (self, key, value) arguments")
-            elif nargs == 2:
+
+            if not _has_unbound_self(postget):
                 def __getitem__(self, k):
                     return postget(k, super(store_cls, self).__getitem__(k))
-            else:  # TODO: Fragile. Need to check for bound or self instead.
+            else:
                 def __getitem__(self, k):
                     return postget(self, k, super(store_cls, self).__getitem__(k))
 
             store_cls.__getitem__ = __getitem__
 
         if preset is not None:
-            nargs = num_of_args(preset)
-            if nargs < 2:
+            if num_of_args(preset) < 2:
                 raise ValueError("A preset function needs to have (key, value) or (self, key, value) arguments")
-            elif nargs == 2:
+
+            if not _has_unbound_self(preset):
                 def __setitem__(self, k, v):
                     return super(store_cls, self).__setitem__(k, preset(k, v))
-            else:  # TODO: Fragile. Need to check for bound or self instead.
+            else:
                 def __setitem__(self, k, v):
                     return super(store_cls, self).__setitem__(k, preset(self, k, v))
 

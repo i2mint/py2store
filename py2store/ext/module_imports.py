@@ -95,6 +95,10 @@ class ModuleImports(ModuleImportsBase):
     def _key_to_val(k):
         return k.imports
 
+    def print_kvs(self):
+        for k, v in self.items():
+            print(f"{k}" + '\n' + '\n'.join('    ' + x for x in v))
+
 
 # A few useful applications #####################################################################################
 
