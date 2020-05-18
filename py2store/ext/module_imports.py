@@ -2,6 +2,7 @@ import os
 from types import ModuleType
 from functools import wraps
 from importlib import import_module
+import warnings
 
 try:
     from findimports import ModuleGraph
@@ -19,7 +20,8 @@ class MyModuleGraph(ModuleGraph):
                  all_unused=False,
                  external_dependencies=True,
                  warn_about_duplicates=False,
-                 verbose=False):
+                 verbose=False,
+                 ignore_parse_path_warnings=False):
         super().__init__()
         self._root = root
         if isinstance(root, str) and not os.path.exists(root):
@@ -37,7 +39,13 @@ class MyModuleGraph(ModuleGraph):
         self.warn_about_duplicates = warn_about_duplicates
         self.verbose = verbose
 
-        self.parsePathname(self._rootpath)
+        # TODO: This doesn't work. Warnings still showing. Repair!
+        if ignore_parse_path_warnings:
+            with warnings.catch_warnings():
+                warnings.filterwarnings('ignore')
+                self.parsePathname(self._rootpath)
+        else:
+            self.parsePathname(self._rootpath)
 
 
 class ModulesColl(Collection):
