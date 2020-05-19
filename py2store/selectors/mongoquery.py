@@ -8,7 +8,7 @@ MongoDB Query Language queries.
 """
 
 import re
-from collections import Sequence, Mapping
+from collections.abc import Sequence, Mapping
 from six import string_types
 
 
