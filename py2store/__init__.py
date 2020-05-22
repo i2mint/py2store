@@ -6,7 +6,7 @@ file_sep = os.path.sep
 from py2store.util import lazyprop, groupby, regroupby
 
 # Imports to be able to easily get started...
-from py2store.base import Collection, KvReader, KvPersister, Reader, Persister
+from py2store.base import Collection, KvReader, KvPersister, Reader, Persister, kv_walk
 
 from py2store.stores.local_store import LocalStore, LocalBinaryStore, LocalTextStore, LocalPickleStore, LocalJsonStore
 from py2store.stores.local_store import QuickStore, QuickBinaryStore, QuickTextStore, QuickJsonStore, QuickPickleStore

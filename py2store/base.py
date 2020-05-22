@@ -439,6 +439,61 @@ class Store(KvPersister):
 # Store.register(dict)  # TODO: Would this be a good idea? To make isinstance({}, Store) be True (though missing head())
 KvStore = Store  # alias with explict name
 
+########################################################################################################################
+# walking in trees
+
+
+inf = float('infinity')
+
+
+def val_is_mapping(p, k, v):
+    return isinstance(v, Mapping)
+
+
+def asis(p, k, v):
+    return p, k, v
+
+
+def tuple_keypath_and_val(p, k, v):
+    if p == ():  # we're just begining (the root),
+        p = (k,)  # so begin the path with the first key.
+    else:
+        p = (*p, k)  # extend the path (append the new key)
+    return p, v
+
+
+def kv_walk(v: Mapping,
+            yield_func=asis,  # (p, k, v) -> what you want the gen to yield
+            walk_filt=val_is_mapping,  # (p, k, v) -> whether explore the nested structure v further
+            pkv_to_pv=tuple_keypath_and_val,
+            p=()
+            ):
+    """
+
+    :param v:
+    :param yield_func:
+    :param walk_filt:
+    :param pkv_to_pv:
+    :param p:
+    :return:
+
+    >>> d = {'a': 1, 'b': {'c': 2, 'd': 3}}
+    >>> list(kv_walk(d))
+    [(('a',), 'a', 1), (('b', 'c'), 'c', 2), (('b', 'd'), 'd', 3)]
+    >>> list(kv_walk(d, lambda p, k, v: '.'.join(p)))
+    ['a', 'b.c', 'b.d']
+    """
+    # print(f"1: entered with: v={v}, p={p}")
+    for k, vv in v.items():
+        # print(f"2: item: k={k}, vv={vv}")
+        pp, vv = pkv_to_pv(p, k, vv)  # update the path with k (and preprocess v if necessary)
+        if walk_filt(p, k, vv):  # should we recurse? (based on some function of p, k, v)
+            # print(f"3: recurse with: pp={pp}, vv={vv}\n")
+            yield from kv_walk(vv, yield_func, walk_filt, pkv_to_pv, pp)  # recurse
+        else:
+            # print(f"4: yield_func(pp={pp}, k={k}, vv={vv})\n --> {yield_func(pp, k, vv)}")
+            yield yield_func(pp, k, vv)  # yield something computed from p, k, vv
+
 
 def has_kv_store_interface(o):
     """Check if object has the KvStore interface (that is, has the kv wrapper methods
@@ -503,12 +558,3 @@ class KeyValidationABC(metaclass=ABCMeta):
 
 ########################################################################################################################
 # TODO: Delete when over with refactor
-
-#
-# class StoreMapping(Mapping):
-#     pass
-#
-#
-# class StoreMutableMapping(MutableMapping):
-#     def clear(self):
-#         raise DeletionsNotAllowed("Bulk deletes not allowed.")
