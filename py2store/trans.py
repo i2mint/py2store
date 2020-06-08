@@ -143,8 +143,9 @@ def is_iterable(x):
 ########################################################################################################################
 # Caching keys
 
-# TODO: Merge this with explicit keys functionality. keys_cache should become a cache_store
-#   that holds the hash_keys and update_keys_cache functionalities.
+# TODO: If a read-one-by-one (vs the current read all implementation) is necessary one day,
+#   see https://github.com/zahlman/indexify/blob/master/src/indexify.py for ideas
+#   but probably buffered (read by chunks) version of the later is better.
 def cached_keys(store=None,
                 *,
                 keys_cache: Union[callable, Collection] = list,
