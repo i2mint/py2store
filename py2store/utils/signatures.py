@@ -1,13 +1,12 @@
 from functools import reduce
-from inspect import Signature, Parameter, _empty, _ParameterKind, signature
+from inspect import Signature, Parameter, _ParameterKind, signature
 from typing import Any
-
-from inspect import Signature, Parameter, signature
 from collections import UserDict
 
-from inspect import Signature, Parameter, _empty
 from collections.abc import Mapping
 from typing import Union, Callable
+
+_empty = Parameter.empty
 
 
 def mk_sig(obj: Union[Signature, Callable, Mapping, None] = None, return_annotations=_empty, **annotations):
@@ -414,7 +413,7 @@ def param_for_kind(name=None, kind='positional_or_keyword', with_default=False, 
     It's annoying to have to compose parameters from scratch to testing things.
     This tool should help making it less annoying.
 
-    >>> param_kinds = list(filter(lambda x: x.upper() == x, Parameter.__dict__))
+    >>> from py2mint.signatures import param_kinds
     >>> list(map(param_for_kind, param_kinds))
     [<Parameter "POSITIONAL_ONLY">, <Parameter "POSITIONAL_OR_KEYWORD">, <Parameter "VAR_POSITIONAL">, <Parameter "KEYWORD_ONLY">, <Parameter "VAR_KEYWORD">]
     >>> param_for_kind.positional_or_keyword()
