@@ -16,7 +16,8 @@ def remember_last_key_written_to(cls=None, *, only_if_new_key=False,
     :param name: The name you want the decorated class to have
     :param same_name_as_class: If you want to use the name of the decorated class itself.
 
-    :return:
+    :return: A decorated class (if the class was given), or a class decorator (if cls=None).
+
     >>> def test(s):
     ...     # test:
     ...     s['hello'] = 'you'
