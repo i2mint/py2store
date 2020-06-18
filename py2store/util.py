@@ -7,6 +7,74 @@ from inspect import signature
 from warnings import warn
 from typing import Any, Hashable, Callable, Iterable, Optional
 
+from typing import Any, Callable
+
+
+def norm_kv_filt(kv_filt: Callable[[Any], bool]):
+    """Prepare a boolean function to be used with `filter` when fed an iterable of (k, v) pairs.
+
+    So you have a mapping. Say a dict `d`. Now you want to go through d.items(),
+    filtering based on the keys, or the values, or both.
+
+    It's not hard to do, really. If you're using a dict you might use a dict comprehension,
+    or in the general case you might do a `filter(lambda kv: my_filt(kv[0], kv[1]), d.items())`
+    if you have a `my_filt` that works wiith k and v, etc.
+
+    But thought simple, it can become a bit muddled.
+    `norm_kv_filt` simplifies this by allowing you to bring your own filtering boolean function,
+    whether it's a key-based, value-based, or key-value-based one, and it will make a
+    ready-to-use with `filter` function for you.
+
+    Only thing: Your function needs to call a key `k` and a value `v`.
+    But hey, it's alright, if you have a function that calls things differently, just do
+    something like
+    ```
+        new_filt_func = lambda k, v: your_filt_func(..., key=k, ..., value=v, ...)
+    ```
+    and all will be fine.
+
+    :param kv_filt: callable (starting with signature (k), (v), or (k, v)), and returning  a boolean
+    :return: A normalized callable.
+
+    >>> d = {'a': 1, 'b': 2, 'c': 3, 'd': 4}
+    >>> list(filter(norm_kv_filt(lambda k: k in {'b', 'd'}), d.items()))
+    [('b', 2), ('d', 4)]
+    >>> list(filter(norm_kv_filt(lambda v: v > 2), d.items()))
+    [('c', 3), ('d', 4)]
+    >>> list(filter(norm_kv_filt(lambda k, v: (v > 1) & (k != 'c')), d.items()))
+    [('b', 2), ('d', 4)]
+    """
+    if kv_filt is None:
+        return None  # because `filter` works with a callable, or None, so we align
+
+    raise_msg = (f"kv_filt should be callable (starting with signature (k), (v), or (k, v)),"
+                 "and returning  a boolean. What you gave me was {fv_filt}")
+    assert callable(kv_filt), raise_msg
+
+    params = list(signature(kv_filt).parameters.values())
+    assert len(params), raise_msg
+    _kv_filt = kv_filt
+    if params[0].name == 'v':
+        def kv_filt(k, v):
+            return _kv_filt(v)
+    elif params[0].name == 'k':
+        if len(params) > 1:
+            if params[1].name != 'v':
+                raise ValueError(raise_msg)
+        else:
+            def kv_filt(k, v):
+                return _kv_filt(k)
+    else:
+        raise ValueError(raise_msg)
+
+    def __kv_filt(kv_item):
+        return kv_filt(*kv_item)
+
+    __kv_filt.__name__ = kv_filt.__name__
+
+    return __kv_filt
+
+
 var_str_p = re.compile('\W|^(?=\d)')
 
 Item = Any
