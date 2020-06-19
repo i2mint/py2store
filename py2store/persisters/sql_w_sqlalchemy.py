@@ -1,4 +1,7 @@
 from functools import partial
+
+import sqlalchemy
+
 from py2store.util import ModuleNotFoundErrorNiceMessage
 
 with ModuleNotFoundErrorNiceMessage():
@@ -179,6 +182,13 @@ SqlAlchemyDatabaseCollection = SqlDbCollection
 
 
 class SQLAlchemyPersister(Persister):
+
+    TYPE_INTEGER = sqlalchemy.INTEGER
+    TYPE_STRING = sqlalchemy.String
+    TYPE_BOOLEAN = sqlalchemy.BOOLEAN
+    TYPE_BLOB = sqlalchemy.BLOB
+    TYPE_TEXT = sqlalchemy.TEXT
+
     """
     A basic SQL DB persister written with SQLAlchemy.
     """
@@ -187,8 +197,8 @@ class SQLAlchemyPersister(Persister):
             self,
             uri='sqlite:///my_sqlite.db',
             collection_name='py2store_default_table',
-            key_fields=('id',),
-            data_fields=('data',),
+            key_fields = {'_id': TYPE_INTEGER},
+            data_fields = {'data': TYPE_STRING},
             autocommit=True,
             **db_kwargs
     ):
@@ -252,11 +262,11 @@ class SQLAlchemyPersister(Persister):
             table_name,
             Base.metadata,
             *[
-                Column(key, String(), primary_key=True, index=True)
+                Column(key, self._key_fields[key], primary_key=True, index=True)
                 for key in self._key_fields
             ],
             *[
-                Column(name, String())
+                Column(name, self._data_fields[name])
                 for name in self._data_fields
             ],
         )
