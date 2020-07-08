@@ -103,14 +103,12 @@ class WavSerializationMixin:
 
 
 from py2store.base import Store
-from functools import wraps
 
 
 class WavLocalFileStore(Store):
-    @wraps(LocalBinaryStore.__init__)
-    def __init__(self, path_format, assert_sr=None,
+    def __init__(self, path_format, assert_sr=None, max_levels=None,
                  dtype=DFLT_DTYPE, format='WAV', subtype=None, endian=None):
-        persister = LocalBinaryStore(path_format)
+        persister = LocalBinaryStore(path_format, max_levels)
         super().__init__(persister)
         t = WavSerializationMixin(assert_sr=assert_sr, dtype=dtype, format=format,
                                   subtype=subtype, endian=endian)
@@ -118,9 +116,9 @@ class WavLocalFileStore(Store):
 
 
 class WavLocalFileStore2(WavSerializationMixin, LocalBinaryStore):
-    def __init__(self, path_format, assert_sr=None,
+    def __init__(self, path_format, assert_sr=None, max_levels=None,
                  dtype=DFLT_DTYPE, format='WAV', subtype=None, endian=None):
-        RelativePathFormatStoreEnforcingFormat.__init__(self, path_format)
+        LocalBinaryStore.__init__(self, path_format, max_levels)
         WavSerializationMixin.__init__(self, assert_sr=assert_sr, dtype=dtype, format=format,
                                        subtype=subtype, endian=endian)
 
