@@ -1204,6 +1204,85 @@ kv_wrap.ingoing_vals = _kv_wrap_ingoing_vals
 kv_wrap.ingoing_vals_wrt_to_keys = _ingoing_vals_wrt_to_keys
 kv_wrap.outcoming_vals_wrt_to_keys = _outcoming_vals_wrt_to_keys
 
+
+def mk_wrapper(wrap_cls):
+    """
+
+    You have a wrapper class and you want to make a wrapper out of it,
+    that is, a decorator factory with which you can make wrappers, like this:
+    ```
+    wrapper = mk_wrapper(wrap_cls)
+    ```
+    that you can then use to transform stores like thiis:
+    ```
+    MyStore = wrapper(**wrapper_kwargs)(StoreYouWantToTransform)
+    ```
+
+    :param wrap_cls:
+    :return:
+
+    >>> class RelPath:
+    ...     def __init__(self, root):
+    ...         self.root = root
+    ...         self._root_length = len(root)
+    ...     def _key_of_id(self, _id):
+    ...         return _id[self._root_length:]
+    ...     def _id_of_key(self, k):
+    ...         return self.root + k
+    >>> relpath_wrap = mk_wrapper(RelPath)
+    >>> RelDict = relpath_wrap(root='foo/')(dict)
+    >>> s = RelDict()
+    >>> s['bar'] = 42
+    >>> assert list(s) == ['bar']
+    >>> assert s['bar'] == 42
+    >>> assert str(s) == "{'foo/bar': 42}"  # reveals that actually, behind the scenes, there's a "foo/" prefix
+    """
+
+    @wraps(wrap_cls)
+    def wrapper(*args, **kwargs):
+        return kv_wrap(wrap_cls(*args, **kwargs))
+
+    return wrapper
+
+
+def add_wrapper_method(wrap_cls=None, *, method_name='wrapper'):
+    """Decorator that adds a wrapper method (itself a decorator) to a wrapping class
+    Clear?
+    See `mk_wrapper` function and doctest example if not.
+
+    What `add_wrapper_method` does is just to add a `"wrapper"` method
+    (or another name if you ask for it) to `wrap_cls`, so that you can use that
+    class for it's purpose of transforming stores more conveniently.
+
+    :param wrap_cls: The wrapper class (the definitioin of the transformation.
+        If None, the functiion will make a decorator to decorate wrap_cls later
+    :param method_name: The method name you want to use (default is 'wrapper')
+
+    >>>
+    >>> @add_wrapper_method
+    ... class RelPath:
+    ...     def __init__(self, root):
+    ...         self.root = root
+    ...         self._root_length = len(root)
+    ...     def _key_of_id(self, _id):
+    ...         return _id[self._root_length:]
+    ...     def _id_of_key(self, k):
+    ...         return self.root + k
+    ...
+    >>> RelDict = RelPath.wrapper(root='foo/')(dict)
+    >>> s = RelDict()
+    >>> s['bar'] = 42
+    >>> assert list(s) == ['bar']
+    >>> assert s['bar'] == 42
+    >>> assert str(s) == "{'foo/bar': 42}"  # reveals that actually, behind the scenes, there's a "foo/" prefix
+    """
+    if wrap_cls is None:
+        return partial(add_wrapper_method, method_name=method_name)
+    else:
+        setattr(wrap_cls, method_name, mk_wrapper(wrap_cls))
+        return wrap_cls
+
+
 ########################################################################################################################
 # Aliasing
 

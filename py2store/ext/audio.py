@@ -1,9 +1,9 @@
 from io import BytesIO
-from py2store.stores.local_store import RelativePathFormatStoreEnforcingFormat
 from py2store.stores.local_store import LocalBinaryStore
-
+from py2store.trans import add_wrapper_method
 from py2store.util import ModuleNotFoundErrorNiceMessage
 
+# TODO: Offer some functionality based on builtins only (and compare performance to soundfile equivalent)
 with ModuleNotFoundErrorNiceMessage():
     import soundfile as sf
 
@@ -57,6 +57,7 @@ class PcmSerializationMixin:
         return sf.read(BytesIO(data), **self._rw_kwargs)[0]
 
 
+@add_wrapper_method
 class WfSrSerializationMixin:
     _read_format = DFLT_FORMAT
     _rw_kwargs = dict(dtype=DFLT_DTYPE, subtype=None, endian=None)
@@ -76,6 +77,7 @@ class WfSrSerializationMixin:
         return b.read()
 
 
+@add_wrapper_method
 class WavSerializationMixin:
     _rw_kwargs = dict(format='WAV', subtype=None, endian=None)
     _read_kwargs = dict(dtype=DFLT_DTYPE)
