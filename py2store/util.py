@@ -158,7 +158,8 @@ def format_invocation(name='', args=(), kwargs=None):
 
 def groupby(items: Iterable[Item],
             key: Callable[[Item], Hashable],
-            val: Optional[Callable[[Item], Any]] = None
+            val: Optional[Callable[[Item], Any]] = None,
+            group_factory=list
             ) -> dict:
     """Groups items according to group keys updated from those items through the given (item_to_)key function.
 
@@ -166,6 +167,10 @@ def groupby(items: Iterable[Item],
         items: iterable of items
         key: The function that computes a key from an item. Needs to return a hashable.
         val: An optional function that computes a val from an item. If not given, the item itself will be taken.
+        group_factory: The function to make new (empty) group objects and accumulate group items.
+            group_items = group_collector() will be called to make a new empty group collection
+            group_items.append(x) will be called to add x to that collection
+            The default is `list`
 
     Returns: A dict of {group_key: items_in_that_group, ...}
 
@@ -184,7 +189,7 @@ def groupby(items: Iterable[Item],
     >>> groupby(tokens, lambda w: ['words', 'stopwords'][int(w in stopwords)])
     {'stopwords': ['the', 'in', 'a'], 'words': ['fox', 'is', 'box']}
     """
-    groups = defaultdict(list)
+    groups = defaultdict(group_factory)
     if val is None:
         for item in items:
             groups[key(item)].append(item)

@@ -8,6 +8,22 @@ from py2store.key_mappers.paths import mk_relative_path_store
 from py2store.persisters.local_files import inf, ensure_slash_suffix, iter_filepaths_in_folder_recursively, \
     iter_dirpaths_in_folder_recursively
 
+
+def mk_tmp_py2store_dir(dirname=''):
+    from tempfile import gettempdir
+    tmpdir = os.path.join(gettempdir(), dirname)
+    os.path.isdir(tmpdir) or os.mkdir(tmpdir)  # make the directory if it doesn't exist
+    return tmpdir
+
+
+def mk_absolute_path(path_format):
+    if path_format.startswith('~'):
+        path_format = os.path.expanduser(path_format)
+    elif path_format.startswith('.'):
+        path_format = os.path.abspath(path_format)
+    return path_format
+
+
 # TODO: subpath: Need to be able to allow named and unnamed file format markers (i.e {} and {named})
 
 _dflt_not_valid_error_msg = "Key not valid (usually because does not exist or access not permitted): {}"
