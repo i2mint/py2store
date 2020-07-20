@@ -78,6 +78,22 @@ class WfSrSerializationMixin:
 
 
 @add_wrapper_method
+class WfSerializationMixin(WfSrSerializationMixin):
+    def __init__(self, assert_sr=None, dtype=DFLT_DTYPE, format=DFLT_FORMAT, subtype=None, endian=None):
+        super().__init__(dtype, format, subtype, endian)
+        self.assert_sr = assert_sr
+
+    def _obj_of_data(self, data):
+        wf, sr = super()._obj_of_data(data)
+        if self.assert_sr is not None and sr != self.assert_sr:
+            raise SampleRateAssertionError(f"{self.assert_sr} expected but I encountered {sr}")
+        return wf
+
+    def _data_of_obj(self, obj):
+        return super()._data_of_obj((obj, self.sr))
+
+
+@add_wrapper_method
 class WavSerializationMixin:
     _rw_kwargs = dict(format='WAV', subtype=None, endian=None)
     _read_kwargs = dict(dtype=DFLT_DTYPE)

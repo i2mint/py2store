@@ -462,6 +462,7 @@ def tuple_keypath_and_val(p, k, v):
     return p, v
 
 
+# TODO: More docs and doctests. This one even merits an extensive usage and example tutorial!
 def kv_walk(v: Mapping,
             yield_func=asis,  # (p, k, v) -> what you want the gen to yield
             walk_filt=val_is_mapping,  # (p, k, v) -> whether explore the nested structure v further
