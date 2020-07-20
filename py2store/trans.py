@@ -10,7 +10,7 @@ from itertools import chain
 
 
 ########################################################################################################################
-# Utils
+# Internal Utils
 
 def get_class_name(cls, dflt_name=None):
     name = getattr(cls, '__qualname__', None)
@@ -138,6 +138,24 @@ def mk_read_only(o):
 
 def is_iterable(x):
     return isinstance(x, Iterable)
+
+
+def add_ipython_key_completions(store):
+    """Add tab completion that shows you the keys of the store.
+    Note: ipython already adds local path listing automatically,
+     so you'll still get those along with your valid store keys.
+    """
+
+    def _ipython_key_completions_(self):
+        return self.keys()
+
+    if isinstance(store, type):
+        store._ipython_key_completions_ = _ipython_key_completions_
+    else:
+        setattr(store,
+                '_ipython_key_completions_',
+                types.MethodType(_ipython_key_completions_, store))
+    return store
 
 
 ########################################################################################################################

@@ -70,7 +70,7 @@ def _path_to_module_str(path, root_path):
 @cached_keys(keys_cache=set, name='Ddir')
 class Ddir(KvReader):
     def __init__(self, obj, key_filt=not_underscore_prefixed):
-        self._source = obj
+        self.src = obj
         self._key_filt = key_filt
         if hasattr(obj, '__name__'):
             self.__name__ = obj.__name__
@@ -92,10 +92,16 @@ class Ddir(KvReader):
         return cls(foo, key_filt)
 
     def __iter__(self):
-        yield from filter(self._key_filt, dir(self._source))
+        yield from filter(self._key_filt, dir(self.src))
 
     def __getitem__(self, k):
-        return self.__class__(getattr(self._source, k))
+        return self.__class__(getattr(self.src, k))
 
     def __repr__(self):
-        return f"{self.__class__.__qualname__}({self._source}, {self._key_filt})"
+        return f"{self.__class__.__qualname__}({self.src}, {self._key_filt})"
+
+    @property
+    def _source(self):
+        from warnings import warn
+        warn("Deprecated: Use .src instead of ._source", DeprecationWarning, 2)
+        return self.src
