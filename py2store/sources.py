@@ -1,6 +1,6 @@
 # from py2store.util import lazyprop, num_of_args
 from py2store import KvReader, cached_keys
-
+from py2store.util import copy_attrs_from
 
 class FuncReader(KvReader):
     """Reader that seeds itself from a data fetching function list
@@ -66,16 +66,14 @@ def _path_to_module_str(path, root_path):
     return '.'.join(path_parts)
 
 
+
 # Pattern:
 @cached_keys(keys_cache=set, name='Ddir')
 class Ddir(KvReader):
     def __init__(self, obj, key_filt=not_underscore_prefixed):
         self.src = obj
         self._key_filt = key_filt
-        if hasattr(obj, '__name__'):
-            self.__name__ = obj.__name__
-        if hasattr(obj, '__qualname__'):
-            self.__qualname__ = obj.__qualname__
+        copy_attrs_from(self.src, to_obj=self, attrs=('__name__', '__qualname__', '__module__'))
 
     @classmethod
     def module_from_path(cls, path, key_filt=not_underscore_prefixed, name=None, root_path=None):

@@ -392,7 +392,9 @@ def cached_keys(store=None,
         return WrapperStore(store_instance)
     else:
         store_cls = store
-        name = name or 'IterCached' + get_class_name(store_cls)
+        # name = name or 'IterCached' + get_class_name(store_cls)
+        name = name or get_class_name(store_cls)
+        __module__ = __module__ or getattr(store_cls, '__module__', None)
         cached_cls = type(name, (store_cls,), {'_keys_cache': None})
 
         # The following class is not the class that will be returned, but the class from which we'll take the methods

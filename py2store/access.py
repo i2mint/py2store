@@ -257,6 +257,9 @@ try:
 
         stores_json_path_format = os.path.join(user_configs_dirpath, 'stores', 'json', '{}.json')
         mystores = MyStores(ExtLessJsonStore(stores_json_path_format))
+        from py2store.trans import add_ipython_key_completions
+
+        mystores = add_ipython_key_completions(mystores)
         mystores.dirpath = user_configs_dirpath
 
     else:

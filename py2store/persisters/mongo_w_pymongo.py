@@ -1,5 +1,5 @@
-from py2store.base import KvCollection, KvReader, Persister
-from py2store.util import ModuleNotFoundErrorNiceMessage, lazyprop
+from py2store.base import KvReader, Persister
+from py2store.util import ModuleNotFoundErrorNiceMessage
 from functools import wraps
 
 with ModuleNotFoundErrorNiceMessage():

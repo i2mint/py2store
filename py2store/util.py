@@ -10,6 +10,13 @@ from typing import Any, Hashable, Callable, Iterable, Optional
 from typing import Any, Callable
 
 
+def copy_attrs_from(from_obj, to_obj, attrs):
+    for attr in attrs:
+        if hasattr(from_obj, attr):
+            setattr(to_obj, attr, getattr(from_obj, attr))
+    return to_obj
+
+
 def norm_kv_filt(kv_filt: Callable[[Any], bool]):
     """Prepare a boolean function to be used with `filter` when fed an iterable of (k, v) pairs.
 

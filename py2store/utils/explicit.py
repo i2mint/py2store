@@ -1,8 +1,9 @@
 from collections.abc import Mapping
-from typing import Callable, Collection
+from typing import Callable
+from typing import Collection as CollectionType
 
 from py2store import Store
-from py2store.base import KvCollection, KvReader
+from py2store.base import Collection, KvReader
 from py2store.trans import kv_wrap
 from py2store.key_mappers.paths import PrefixRelativizationMixin
 from py2store.util import max_common_prefix
@@ -43,9 +44,9 @@ class ObjReader:
     >>> pr = ObjReader(_obj_of_key=read_file)
     >>> file_where_this_code_is = __file__  # it should be THIS file you're reading right now!
     >>> print(pr[file_where_this_code_is][:100])  # print the first 100 characters of this file
-    from collections.abc import Mapping, Collection
+    from collections.abc import Mapping
     from typing import Callable
-    from py2store.util impor
+    from typing import Collection as Col
     """
 
     def __init__(self, _obj_of_key: Callable):
@@ -64,7 +65,7 @@ class ObjReader:
 
 
 # TODO: Revisit ExplicitKeys and ExplicitKeysWithPrefixRelativization. Not extendible to full store!
-class ExplicitKeys(KvCollection):
+class ExplicitKeys(Collection):
     """
     py2store.base.Keys implementation that gets it's keys explicitly from a collection given at initialization time.
     The key_collection must be a collections.abc.Collection (such as list, tuple, set, etc.)
@@ -80,8 +81,8 @@ class ExplicitKeys(KvCollection):
 
     __slots__ = ('_key_collection',)
 
-    def __init__(self, key_collection: Collection):
-        assert isinstance(key_collection, Collection), \
+    def __init__(self, key_collection: CollectionType):
+        assert isinstance(key_collection, CollectionType), \
             "key_collection must be a collections.abc.Collection, i.e. have a __len__, __contains__, and __len__." \
             "The key_collection you gave me was a {}".format(type(key_collection))
         self._key_collection = key_collection
@@ -101,7 +102,7 @@ class ExplicitKeysSource(ExplicitKeys, ObjReader, KvReader):
     An object source that uses an explicit keys collection and a specified function to read contents for a key.
     """
 
-    def __init__(self, key_collection: Collection, _obj_of_key: Callable):
+    def __init__(self, key_collection: CollectionType, _obj_of_key: Callable):
         """
 
         :param key_collection: The collection of keys that this source handles
@@ -131,6 +132,50 @@ class ExplicitKeysStore(ExplicitKeys, Store):
     def __init__(self, store, key_collection):
         Store.__init__(self, store)
         ExplicitKeys.__init__(self, key_collection)
+
+
+def invertible_maps(mapping=None, inv_mapping=None):
+    """Returns two maps that are inverse of each other.
+    Raises an AssertionError iif both maps are None, or if the maps are not inverse of each other
+
+    Get a pair of invertible maps
+    >>> invertible_maps({1: 11, 2: 22})
+    ({1: 11, 2: 22}, {11: 1, 22: 2})
+    >>> invertible_maps(None, {11: 1, 22: 2})
+    ({1: 11, 2: 22}, {11: 1, 22: 2})
+
+    If two maps are given and invertible, you just get them back
+    >>> invertible_maps({1: 11, 2: 22}, {11: 1, 22: 2})
+    ({1: 11, 2: 22}, {11: 1, 22: 2})
+
+    Or if they're not invertible
+    >>> invertible_maps({1: 11, 2: 22}, {11: 1, 22: 'ha, not what you expected!'})
+    Traceback (most recent call last):
+      ...
+    AssertionError: mapping and inv_mapping are not inverse of each other!
+
+    >>> invertible_maps(None, None)
+    Traceback (most recent call last):
+      ...
+    ValueError: You need to specify one or both maps
+    """
+    if inv_mapping is None and mapping is None:
+        raise ValueError("You need to specify one or both maps")
+    if inv_mapping is None:
+        assert hasattr(mapping, 'items')
+        inv_mapping = {v: k for k, v in mapping.items()}
+        assert len(inv_mapping) == len(mapping), \
+            "The values of mapping are not unique, so the mapping is not invertible"
+    elif mapping is None:
+        assert hasattr(inv_mapping, 'items')
+        mapping = {v: k for k, v in inv_mapping.items()}
+        assert len(mapping) == len(inv_mapping), \
+            "The values of inv_mapping are not unique, so the mapping is not invertible"
+    else:
+        assert (len(mapping) == len(inv_mapping)) and (mapping == {v: k for k, v in inv_mapping.items()}), \
+            "mapping and inv_mapping are not inverse of each other!"
+
+    return mapping, inv_mapping
 
 
 class ExplicitKeyMap:
@@ -163,22 +208,7 @@ class ExplicitKeyMap:
           ...
         AssertionError: id_of_key and key_of_id_map are not inverse of each other!
         """
-        if key_of_id is None and id_of_key is None:
-            raise ValueError("You need to specify key_of_id_map, or id_of_key_map, or both")
-        if key_of_id is None:
-            assert hasattr(id_of_key, 'items')
-            key_of_id = {v: k for k, v in id_of_key.items()}
-            assert len(key_of_id) == len(id_of_key), \
-                "The values of id_of_key are not unique, so the mapping is not invertible"
-        elif id_of_key is None:
-            assert hasattr(key_of_id, 'items')
-            id_of_key = {v: k for k, v in key_of_id.items()}
-            assert len(id_of_key) == len(key_of_id), \
-                "The values of key_of_id are not unique, so the mapping is not invertible"
-        else:
-            assert (len(id_of_key) == len(key_of_id)) and (id_of_key == {v: k for k, v in key_of_id.items()}), \
-                "id_of_key and key_of_id_map are not inverse of each other!"
-
+        id_of_key, key_of_id = invertible_maps(id_of_key, key_of_id)
         self.key_of_id_map = key_of_id
         self.id_of_key_map = id_of_key
 
@@ -204,7 +234,7 @@ class ExplicitKeymapReader(ExplicitKeys, Store):
     def __init__(self, store, key_of_id=None, id_of_key=None):
         key_trans = ExplicitKeyMap(key_of_id=key_of_id, id_of_key=id_of_key)
         Store.__init__(self, kv_wrap(key_trans)(store))
-        ExplicitKeys.__init__(self, id_of_key.keys())
+        ExplicitKeys.__init__(self, key_trans.id_of_key_map.keys())
 
 
 class ExplicitKeysWithPrefixRelativization(PrefixRelativizationMixin, Store):
