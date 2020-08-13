@@ -3,6 +3,27 @@ import string
 dflt_formatter = string.Formatter()
 
 
+# For testing:
+# position =  "all/{}/is/{}/position"
+# position_explicit =  "all/{1}/is/{0}/position"
+# position_hybrid =  "all/{}/is/{0}/position/{except}{this}"
+# keyword = "all/{this}/is/{with}/keywords"
+# hybrid = "and/{this}/is/{}/hybrid"
+
+def parse_str_format(str_format):
+    return list(dflt_formatter.parse(str_format))
+
+
+def get_explicit_positions(parsed_str_format):
+    """
+    >>> parsed = parse_str_format("all/{}/is/{2}/position/{except}{this}{0}")
+    >>> get_explicit_positions(parsed)
+    {0, 2}
+    """
+    return set(map(int, filter(lambda x: isinstance(x, str) and str.isnumeric(x),
+                               (x[1] for x in parsed_str_format))))
+
+
 def compile_str_from_parsed(parsed):
     """The (quasi-)inverse of string.Formatter.parse.
 
