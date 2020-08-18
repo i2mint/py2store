@@ -6,6 +6,7 @@ with ModuleNotFoundErrorNiceMessage():
     from botocore.client import Config, BaseClient
     from botocore.exceptions import ClientError
     import boto3
+    from boto3 import client
     from boto3.resources.base import ServiceResource
 
     S3BucketType = NewType('S3BucketType', ServiceResource)  # TODO: hack -- find how to import an actual Bucket type
@@ -40,111 +41,35 @@ def get_s3_client(aws_access_key_id,
                   endpoint_url=DFLT_AWS_S3_ENDPOINT,
                   verify=DFLT_BOTO_CLIENT_VERIFY,
                   config=DFLT_CONFIG):
-    return boto3.client('s3',
-                        endpoint_url=endpoint_url,
-                        aws_access_key_id=aws_access_key_id,
-                        aws_secret_access_key=aws_secret_access_key,
-                        verify=verify,
-                        config=config)
+    return client('s3',
+                  endpoint_url=endpoint_url,
+                  aws_access_key_id=aws_access_key_id,
+                  aws_secret_access_key=aws_secret_access_key,
+                  verify=verify,
+                  config=config)
 
 
-def get_s3_resource(aws_access_key_id,
-                    aws_secret_access_key,
-                    endpoint_url=DFLT_AWS_S3_ENDPOINT,
-                    verify=DFLT_BOTO_CLIENT_VERIFY,
-                    config=DFLT_CONFIG):
-    """
-    Get boto3 s3 resource.
-    :param aws_access_key_id:
-    :param aws_secret_access_key:
-    :param endpoint_url:
-    :param verify:
-    :param signature_version:
-    :return:
-    """
-    return boto3.resource('s3',
-                          endpoint_url=endpoint_url,
-                          aws_access_key_id=aws_access_key_id,
-                          aws_secret_access_key=aws_secret_access_key,
-                          verify=verify,
-                          config=config)
+def isdir(key: str):
+    return key.endswith('/')
 
 
-def get_s3_bucket(name,
-                  aws_access_key_id,
-                  aws_secret_access_key,
-                  endpoint_url=DFLT_AWS_S3_ENDPOINT,
-                  verify=DFLT_BOTO_CLIENT_VERIFY,
-                  config=DFLT_CONFIG):
-    s3 = get_s3_resource(endpoint_url=endpoint_url,
-                         aws_access_key_id=aws_access_key_id,
-                         aws_secret_access_key=aws_secret_access_key,
-                         verify=verify,
-                         config=config)
-    return s3.Bucket(name)
-
-
-# TODO: I wanted boto3.resources.factory.s3.ObjectSummary but couldn't find it
-from boto3.resources.base import ServiceResource
-
-
-def isdir(obj_summary: ServiceResource):
-    return obj_summary.size == 0 and obj_summary.key.endswith
-
-
-def isfile(obj_summary: ServiceResource):
-    return not isdir(obj_summary)
-
-
-def _s3_resource_initializer(self, aws_access_key_id,
-                             aws_secret_access_key,
-                             endpoint_url=DFLT_AWS_S3_ENDPOINT,
-                             verify=DFLT_BOTO_CLIENT_VERIFY,
-                             config=DFLT_CONFIG):
-    self._source = get_s3_resource(endpoint_url=endpoint_url,
-                                   aws_access_key_id=aws_access_key_id,
-                                   aws_secret_access_key=aws_secret_access_key,
-                                   verify=verify,
-                                   config=config)
+def isfile(key: str):
+    return not key.endswith('')
 
 
 from py2store.trans import cached_keys
 
-
-@cached_keys(keys_cache=list)
-class S3ResourceCollection(Collection):
-    _source = None  # to tell lint about it (TODO: Find less hacky way to talk to lint)
-    __init__ = _s3_resource_initializer
-
-    def __iter__(self) -> Iterable[S3BucketType]:
-        return self._source.buckets.all()
+#
+# @cached_keys(keys_cache=list)
+# class S3ResourceCollection(Collection):
+#     _source = None  # to tell lint about it (TODO: Find less hacky way to talk to lint)
+#     __init__ = _s3_resource_initializer
+#
+#     def __iter__(self) -> Iterable[S3BucketType]:
+#         return self._source.buckets.all()
 
 
 from functools import wraps
-
-
-def extract_key(d):
-    return d['Key']
-
-
-def extract_prefix(d):
-    return d['Prefix']
-
-
-def get_file_contents_for_key(bucket, k: str):
-    try:
-        b = BytesIO()
-        bucket.download_fileobj(k, b)
-        b.seek(0)
-        return b.read()
-    except Exception as e:
-        raise NoSuchKeyError("Key wasn't found: {}".format(k))
-
-
-# def get_dir_key(bucket, k: str):
-#   raise NotImplemented("not yet")
-
-from io import BytesIO
 from dataclasses import dataclass
 
 
@@ -200,7 +125,7 @@ class S3BucketBaseReader(KvReader):
 
     def __getitem__(self, k: str):
         self.validate_key(k)
-        if not k.endswith('/'):
+        if isfile(k):
             try:
                 return self._source.get_object(Bucket=self.bucket, Key=k)
             except Exception as e:
@@ -247,32 +172,6 @@ class S3BucketBaseReader(KvReader):
     @staticmethod
     def mk_client(**resource_kwargs):
         return get_s3_client(**resource_kwargs)
-    #
-    # @classmethod
-    # def from_s3_resource_kwargs(cls, bucket_name, filt=None, resource_kwargs=None):
-    #     s3_resource = get_s3_resource(**(resource_kwargs or {}))
-    #     return cls.from_s3_resource(bucket_name, s3_resource, filt=filt)
-    #
-    # @classmethod
-    # def from_s3_resource(cls,
-    #                      bucket_name,
-    #                      s3_resource,
-    #                      filt=None
-    #                      ):
-    #     s3_bucket = s3_resource.Bucket(bucket_name)
-    #     return cls(s3_bucket, filt=filt)
-    #
-    # @classmethod
-    # def from_s3_resource_kwargs_and_prefix(cls, bucket_name, _prefix: str = '', resource_kwargs=None):
-    #     return cls.from_s3_resource_kwargs(bucket_name, dict(Prefix=_prefix), resource_kwargs)
-    #
-    # @classmethod
-    # def from_s3_resource_and_prefix(cls,
-    #                                 bucket_name,
-    #                                 s3_resource,
-    #                                 _prefix=''
-    #                                 ):
-    #     return cls.from_s3_resource(bucket_name, s3_resource, filt=dict(Prefix=_prefix))
 
 
 # TODO: Everything below needs to be done under the form of the new base
@@ -282,38 +181,31 @@ S3BucketReader = S3BucketBaseReader
 
 class S3BucketRW(S3BucketReader, KvPersister):
     def __setitem__(self, k, v):
-        pass
+        self.validate_key(k)
+        return self._source.put_object(Bucket=self.bucket, Key=k, Body=v)
         # TODO: Use self._source.upload_fileobj instead
         # return k.put(Body=v)
 
     def __delitem__(self, k):
-        pass
-        # TODO: Use self._source.delete_objects instead
-        # try:
-        #     return k.delete()
-        # except Exception as e:
-        #     if hasattr(e, '__name__'):
-        #         if e.__name__ == 'NoSuchKey':
-        #             raise NoSuchKeyError("Key wasn't found: {}".format(k))
-        #     raise  # if you got so far
-
+        self.validate_key(k)
+        return self._source.delete_object(Bucket=self.bucket, Key=k)
 
 # TODO: Make some stores that have more convenient interfaces
 #   (e.g. see existing py2store.store.s3_store and rewrite versions of those stores that use the
 #   present new way)
 
-# Pattern: reader from collection + mapping maker.
-# TODO: Make a special factory out of the pattern
-class S3ResourceReader(S3ResourceCollection):
-    item_cls = S3BucketReader
-
-    @wraps(S3ResourceCollection.__init__)
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._source = {b.name: b for b in super().__iter__()}
-
-    def __iter__(self) -> Iterable[S3BucketType]:
-        yield from self._source
-
-    def __getitem__(self, k):
-        return self.item_cls(self._source[k])
+# # Pattern: reader from collection + mapping maker.
+# # TODO: Make a special factory out of the pattern
+# class S3ResourceReader(S3ResourceCollection):
+#     item_cls = S3BucketReader
+#
+#     @wraps(S3ResourceCollection.__init__)
+#     def __init__(self, *args, **kwargs):
+#         super().__init__(*args, **kwargs)
+#         self._source = {b.name: b for b in super().__iter__()}
+#
+#     def __iter__(self) -> Iterable[S3BucketType]:
+#         yield from self._source
+#
+#     def __getitem__(self, k):
+#         return self.item_cls(self._source[k])
