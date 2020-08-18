@@ -110,15 +110,16 @@ def extract_prefix(d):
     return d['Prefix']
 
 
-# def get_file_key(bucket, k: str):
-#     try:
-#         b = BytesIO()
-#         bucket.download_fileobj(k, b)
-#         b.seek(0)
-#         return b.read()
-#     except Exception as e:
-#         raise NoSuchKeyError("Key wasn't found: {}".format(k))
-#
+def get_file_contents_for_key(bucket, k: str):
+    try:
+        b = BytesIO()
+        bucket.download_fileobj(k, b)
+        b.seek(0)
+        return b.read()
+    except Exception as e:
+        raise NoSuchKeyError("Key wasn't found: {}".format(k))
+
+
 # def get_dir_key(bucket, k: str):
 #   raise NotImplemented("not yet")
 
@@ -127,6 +128,7 @@ from io import BytesIO
 
 class S3BucketBaseReader(KvReader):
     def __init__(self, s3_bucket, filt=None,
+                 get_file_contents_for_key=get_file_contents_for_key,
                  with_file_resp_item=extract_key,
                  with_dir_resp_item=extract_prefix):
         self._source = s3_bucket
@@ -134,23 +136,19 @@ class S3BucketBaseReader(KvReader):
         self.bucket_name = s3_bucket.name
         self.filt = filt or {}
         self._prefix = self.filt.get('Prefix', '')
+        self.get_file_contents_for_key = get_file_contents_for_key
         self.with_file_resp_item = with_file_resp_item
         self.with_dir_resp_item = with_dir_resp_item
 
     def __getitem__(self, k: str):
         if not k.endswith('/'):
-            try:
-                b = BytesIO()
-                self._source.download_fileobj(k, b)
-                b.seek(0)
-                return b.read()
-            except Exception as e:
-                raise NoSuchKeyError("Key wasn't found: {}".format(k))
+            return self.get_file_contents_for_key(self._source, k)
         else:  # assume it's a "directory"
             filt = self.filt.copy()
             filt.update(Prefix=k)
             return self.__class__(s3_bucket=self._source,
                                   filt=filt,
+                                  get_file_contents_for_key=get_file_contents_for_key,
                                   with_file_resp_item=self.with_file_resp_item,
                                   with_dir_resp_item=self.with_dir_resp_item)
 
