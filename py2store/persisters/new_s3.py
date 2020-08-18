@@ -127,45 +127,46 @@ from io import BytesIO
 
 
 class S3BucketBaseReader(KvReader):
-    def __init__(self, s3_bucket, filt=None,
-                 get_file_contents_for_key=get_file_contents_for_key,
-                 with_file_resp_item=extract_key,
-                 with_dir_resp_item=extract_prefix):
+    def __init__(self, s3_bucket,
+                 filt=None,
+                 with_files=True,
+                 with_directories=True):
         self._source = s3_bucket
         self._client = s3_bucket.meta.client
         self.bucket_name = s3_bucket.name
         self.filt = filt or {}
         self._prefix = self.filt.get('Prefix', '')
-        self.get_file_contents_for_key = get_file_contents_for_key
-        self.with_file_resp_item = with_file_resp_item
-        self.with_dir_resp_item = with_dir_resp_item
+        self.with_files = with_files
+        self.with_directories = with_directories
 
     def __getitem__(self, k: str):
         if not k.endswith('/'):
-            return self.get_file_contents_for_key(self._source, k)
+            try:
+                b = BytesIO()
+                self._source.download_fileobj(k, b)
+                b.seek(0)
+                return b.read()
+            except Exception as e:
+                raise NoSuchKeyError("Key wasn't found: {}".format(k))
         else:  # assume it's a "directory"
             filt = self.filt.copy()
             filt.update(Prefix=k)
             return self.__class__(s3_bucket=self._source,
                                   filt=filt,
-                                  get_file_contents_for_key=get_file_contents_for_key,
-                                  with_file_resp_item=self.with_file_resp_item,
-                                  with_dir_resp_item=self.with_dir_resp_item)
+                                  with_files=self.with_files,
+                                  with_directories=self.with_directories)
 
-    @lazyprop
-    def _object_list_paginator(self):
-        return self._client.get_paginator('list_objects')
+    def object_list_pages(self):
+        yield from self._client.get_paginator('list_objects').paginate(Bucket=self.bucket_name, **self.filt)
 
     def __iter__(self):
-        for resp in self._object_list_paginator.paginate(Bucket=self.bucket_name, **self.filt):
-            if callable(self.with_file_resp_item) and 'Contents' in resp:
+        for resp in self.object_list_pages():
+            if self.with_files and 'Contents' in resp:
                 for d in resp['Contents']:
-                    yield self.with_file_resp_item(d)
-            if callable(self.with_dir_resp_item) and 'CommonPrefixes' in resp:
+                    yield d['Key']
+            if self.with_directories and 'CommonPrefixes' in resp:
                 for d in resp['CommonPrefixes']:
-                    yield self.with_dir_resp_item(d)
-        # yield from self._source.objects.filter(**self.filt)
-        # return filter(isfile, self._source.objects.filter(**self.filt))
+                    yield d['Prefix']
 
     # TODO: Not sufficient in the presence of filt. Need to validate key against more of filt's fields.
     def is_valid_key(self, k):
