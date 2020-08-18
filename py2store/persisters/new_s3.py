@@ -150,6 +150,32 @@ from dataclasses import dataclass
 
 @dataclass
 class S3BucketBaseReader(KvReader):
+    """Base bucket reader. Keys are strings, values are http responses (dicts).
+
+    To get the actual contents from the response `v` you can do `v['Body'].read()`, or more sophisticated-ly:
+    ```
+    if v['ResponseMetadata']['HTTPStatusCode'] == 200:
+        return v['Body'].read()
+    else:
+        raise RuntimeError(f"HttpError (code {v['ResponseMetadata']['HTTPStatusCode']})")
+    ```
+
+    But know that `body = v['Body']` is a `botocore.response.StreamingBody` instance, and as such, you have not
+    only the `body.read(amt=None)` but also
+    - `body.iter_chunks(chunk_size=1024)` that may be useful for large binary data, or
+    - `body.iter_lines(chunk_size=1024)` that may be useful for large text data.
+
+    S3BucketBaseReader is really meant to be wrapped and/or subclassed into interfaces that do that for you.
+
+    Example use:
+    ```
+    resource_kwargs = get_configs()  # get (at least) aws_access_key_id and aws_secret_access_key
+    r = S3BucketBaseReader(S3BucketBaseReader.mk_client(**resources_kwargs), bucket='bucket_name', prefix='my_stuff/')
+    list(r)  # will list file and folder names
+    r['my_stuff/music/']  # will give you another S3BucketBaseReader for that "subfolder"
+    r['my_stuff/music/with_meaning.mp3']  # will give you the response object for the contents of the file
+    ```
+    """
     client: BaseClient
     bucket: str
     prefix: str = ''
