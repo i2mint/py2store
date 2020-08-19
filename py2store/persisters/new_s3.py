@@ -125,8 +125,16 @@ class Resp:
         return path_get(d, ['Contents'], on_error)
 
     @staticmethod
+    def key(d, on_error: OnErrorType = raise_on_error):
+        return path_get(d, ['Key'], on_error)
+
+    @staticmethod
     def common_prefixes(d, on_error: OnErrorType = return_empty_tuple_on_error):
         return path_get(d, ['CommonPrefixes'], on_error)
+
+    @staticmethod
+    def prefix(d, on_error: OnErrorType = raise_on_error):
+        return path_get(d, ['Prefix'], on_error)
 
     @staticmethod
     def buckets(d, on_error: OnErrorType = return_empty_tuple_on_error):
@@ -203,9 +211,17 @@ class S3BucketBaseReader(KvReader):
 
     def __post_init__(self):
         if self.prefix.endswith('*'):
-            warn(f"Ending with a * is a special and untested case. If you know what you're doing, go ahead though!")
+            # msg = f"Ending with a * is a special and untested case. If you know what you're doing, go ahead though!"
             self.prefix = self.prefix[:-1]  # remove the *
+            if not self.prefix.endswith('/'):  # add the / if it's not there
+                self.prefix += '/'
             _filt = dict(Prefix=self.prefix)  # without the Delimiter='/'
+            if self.with_directories:
+                self.with_directories = False
+                msg = "Arg was with_directories=True, which doesn't play along with " \
+                      "the recursive files case (because your prefix ended with *), " \
+                      "so I changed that to be False instead. "
+                warn(msg)
         else:
             if not self.prefix.endswith('/'):
                 self.prefix += '/'
@@ -241,11 +257,13 @@ class S3BucketBaseReader(KvReader):
         for resp in self.object_list_pages():
             Resp.ascertain_200_status_code(resp)
             if self.with_files:
-                for d in Resp.contents(resp):
-                    yield d['Key']
+                yield from filter(lambda k: not k.endswith('/'), map(Resp.key, Resp.contents(resp)))
+                # for d in Resp.contents(resp):
+                #     yield d['Key']
             if self.with_directories:
-                for d in Resp.common_prefixes(resp):
-                    yield d['Prefix']
+                yield from map(Resp.prefix, Resp.common_prefixes(resp))
+                # for d in Resp.common_prefixes(resp):
+                #     yield d['Prefix']
 
     def head_object(self, k) -> dict:
         self.validate_key(k)
@@ -332,7 +350,7 @@ class S3AbsPathBodyStore(Store):
     def __init__(self, *args, **kwargs):
         persister = S3BucketBasePersister(*args, **kwargs)
         super().__init__(persister)
-        self.prefix = self.store.prefix
+        # self.prefix = self.store.prefix  # don't need that anymore, since store forwards attr access now!
 
     def _obj_of_data(self, data):
         Resp.ascertain_200_status_code(data)
