@@ -21,7 +21,7 @@ class S3AbsPathBinaryStore(Store):
         self._prefix = self.store._prefix
 
     def _id_of_key(self, k):
-        return self.store._s3_bucket.Object(key=k)
+        return self.store._source.Object(key=k)
 
     def _key_of_id(self, _id):
         return _id.key

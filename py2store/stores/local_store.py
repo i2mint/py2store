@@ -278,8 +278,8 @@ LocalStore = QuickStore  # alias
 
 
 class DirStore(Store):
-    """
-    Store whose keys are directory names and values are subdirectory names.
+    """A store for local directories.
+    Keys are directory names and values are subdirectory DirStores.
 
     >>> from py2store import __file__
     >>> import os
@@ -294,7 +294,8 @@ class DirStore(Store):
         self._prefix = rootdir
 
         key_wrap = PrefixRelativization(_prefix=rootdir)
-        self._id_of_key = lambda k: key_wrap._id_of_key(k) + os.sep
+        os_sep = os.sep
+        self._id_of_key = lambda k: key_wrap._id_of_key(k) + os_sep
         self._key_of_id = lambda k: key_wrap._key_of_id(k)[:-1]
 
         # TODO: Look into alternatives for the raison d'etre of _new_node and _class_name

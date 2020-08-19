@@ -191,7 +191,8 @@ class S3BucketPersister(KvPersister):
     # Planning on deprecating this one in favor of S3BucketRW
     def __init__(self, bucket_name: str, _s3_bucket, _prefix: str = ''):
         self.bucket_name = bucket_name
-        self._s3_bucket = _s3_bucket
+        self._s3_bucket = _s3_bucket  # kept for back-compatibility and reference (so we know what source is)
+        self._source = _s3_bucket  # to be the new consistent source
         self._prefix = _prefix
 
     def __getitem__(self, k):
@@ -213,7 +214,7 @@ class S3BucketPersister(KvPersister):
             raise  # if you got so far
 
     def __iter__(self):
-        return filter(isfile, self._s3_bucket.objects.filter(Prefix=self._prefix))
+        return filter(isfile, self._source.objects.filter(Prefix=self._prefix))
 
     def __contains__(self, k):
         try:
