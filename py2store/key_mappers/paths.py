@@ -150,7 +150,7 @@ class PrefixRelativizationMixin:
         return _id[self._prefix_length:]
 
 
-def mk_relative_path_store(store_cls, name=None, with_key_validation=False, prefix_attr='_prefix'):
+def mk_relative_path_store(store_cls, name=None, with_key_validation=False, prefix_attr='_prefix', __module__=None):
     """
 
     Args:
@@ -180,13 +180,14 @@ def mk_relative_path_store(store_cls, name=None, with_key_validation=False, pref
 
     """
     name = name or ('RelPath' + store_cls.__name__)
+    __module__ = __module__ or getattr(store_cls, '__module__', None)
 
     cls = type(name, (PrefixRelativizationMixin, Store), {})
 
     @wraps(store_cls.__init__)
     def __init__(self, *args, **kwargs):
         Store.__init__(self, store=store_cls(*args, **kwargs))
-        prefix = recursive_get_attr(self.store, '_prefix', '')
+        prefix = recursive_get_attr(self.store, prefix_attr, '')
         setattr(self, prefix_attr, prefix)  # TODO: Might need descriptor to enable assignment
 
     cls.__init__ = __init__
@@ -200,6 +201,9 @@ def mk_relative_path_store(store_cls, name=None, with_key_validation=False, pref
                 raise KeyError(f"Key not valid (usually because does not exist or access not permitted): {k}")
 
         cls._id_of_key = _id_of_key
+
+    if __module__ is not None:
+        cls.__module__ = __module__
 
     return cls
 

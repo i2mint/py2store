@@ -1,7 +1,8 @@
 from functools import partial, wraps
-from typing import Iterable, NewType, Union
+from typing import Iterable, NewType, Union, Callable, Any
 from collections.abc import Mapping
 from dataclasses import dataclass
+from warnings import warn
 
 from py2store.util import ModuleNotFoundErrorNiceMessage
 
@@ -47,13 +48,27 @@ def return_empty_tuple_on_error(d: dict):
     return ()
 
 
-def path_get(mapping, path, on_error=raise_on_error, caught_errors=(KeyError,)):
+OnErrorType = Union[Callable[[dict], Any], str]
+
+
+def path_get(mapping, path,
+             on_error: OnErrorType = raise_on_error,
+             caught_errors=(KeyError,)):
     result = mapping
     for k in path:
         try:
             result = result[k]
         except caught_errors as error:
-            return on_error(dict(mapping=mapping, path=path, result=result, k=k, error=error))
+            if callable(on_error):
+                return on_error(dict(mapping=mapping, path=path, result=result, k=k, error=error))
+            elif isinstance(on_error, str):
+                try:
+                    raise error.__class__(on_error)  # use on_error as a message, raising the same error class
+                except Exception:
+                    raise S3KeyError(on_error)  # if that doesn't work, just raise a S3KeyError
+            else:
+                raise ValueError(f"on_error should be a callable (input is a dict) or a string. "
+                                 f"Was: {on_error}")
     return result
 
 
@@ -97,22 +112,29 @@ def isfile(key: str):
     return not key.endswith('/')
 
 
-class Resp(dict):
+# TODO: Consider pros/cons of subclassing or delegating dict.
+# TODO: Consider reducing visual noise with staticmethod|partial composition
+# Pattern: Named nested access (glom etc.)
+class Resp:
     @staticmethod
-    def status_code(d):
-        return path_get(d, ['ResponseMetadata', 'HTTPStatusCode'], raise_on_error)
+    def status_code(d, on_error: OnErrorType = raise_on_error):
+        return path_get(d, ['ResponseMetadata', 'HTTPStatusCode'], on_error)
 
     @staticmethod
-    def contents(d):
-        return path_get(d, ['Contents'], return_empty_tuple_on_error)
+    def contents(d, on_error: OnErrorType = return_empty_tuple_on_error):
+        return path_get(d, ['Contents'], on_error)
 
     @staticmethod
-    def common_prefixes(d):
-        return path_get(d, ['CommonPrefixes'], return_empty_tuple_on_error)
+    def common_prefixes(d, on_error: OnErrorType = return_empty_tuple_on_error):
+        return path_get(d, ['CommonPrefixes'], on_error)
 
     @staticmethod
-    def buckets(d):
-        return path_get(d, ['Buckets'], return_empty_tuple_on_error)
+    def buckets(d, on_error: OnErrorType = return_empty_tuple_on_error):
+        return path_get(d, ['Buckets'], on_error)
+
+    @staticmethod
+    def body(d, on_error: OnErrorType = return_none_on_error):
+        return path_get(d, ['Body'], on_error)
 
     @staticmethod
     def ascertain_status_code(d, status_code=200, raise_error=S3HttpError, *error_args, **error_kwargs):
@@ -121,10 +143,12 @@ class Resp(dict):
 
     @staticmethod
     def ascertain_200_status_code(d):
-        if Resp.status_code(d) != 200:
+        status_code = Resp.status_code(d, return_none_on_error)
+        if status_code != 200:
             if 'ResponseMetadata' in d:
                 raise S3Not200StatusCodeError(
-                    f"Status code was not 200. ResponseMetadata is {d['ResponseMetadata']}")
+                    f"Status code was not 200. Was {d['ResponseMetadata']}. "
+                    f"ResponseMetadata is {d['ResponseMetadata']}")
             else:
                 raise S3Not200StatusCodeError(
                     f"Status code was not 200. In fact, the response dict didn't even have a ResponseMetadata key")
@@ -178,9 +202,18 @@ class S3BucketBaseReader(KvReader):
                                   with_directories=self.with_directories)
 
     def __post_init__(self):
+        if self.prefix.endswith('*'):
+            warn(f"Ending with a * is a special and untested case. If you know what you're doing, go ahead though!")
+            self.prefix = self.prefix[:-1]  # remove the *
+            _filt = dict(Prefix=self.prefix)  # without the Delimiter='/'
+        else:
+            if not self.prefix.endswith('/'):
+                self.prefix += '/'
+            _filt = dict(Prefix=self.prefix, Delimiter='/')
         self.client = ensure_client(self.client)
         self._source = self.client
-        self._filt = dict(Prefix=self.prefix, Delimiter='/')
+        self._filt = _filt
+        self._prefix = self.prefix  # legacy: Some wrappers expect _prefix name.
 
     def is_valid_key(self, k) -> bool:
         return isinstance(k, str) and k.startswith(self.prefix)
@@ -286,3 +319,53 @@ class S3BaseReader(S3Collection, KvReader):
 
     def __getitem__(self, k):
         return self.item_getter(k)
+
+
+import pickle
+from py2store.base import Store
+# from py2store.persisters.s3_w_boto3 import S3BucketPersister
+from py2store.key_mappers.paths import mk_relative_path_store
+
+
+class S3AbsPathBodyStore(Store):
+    @wraps(S3BucketBasePersister.__init__)
+    def __init__(self, *args, **kwargs):
+        persister = S3BucketBasePersister(*args, **kwargs)
+        super().__init__(persister)
+        self.prefix = self.store.prefix
+
+    def _obj_of_data(self, data):
+        Resp.ascertain_200_status_code(data)
+        return Resp.body(data, on_error=f"Couldn't get the body from: {data}")
+
+
+class S3AbsPathBinaryStore(S3AbsPathBodyStore):
+    def _obj_of_data(self, data):
+        body = super()._obj_of_data(data)
+        return body.read()  # Note: This part has other options (like iter_chunks(), etc.)
+
+    # def _id_of_key(self, k):
+    #     return self.store._source.Object(key=k)
+    #
+    # def _key_of_id(self, _id):
+    #     return _id.key
+
+
+S3BinaryStore = mk_relative_path_store(S3AbsPathBinaryStore, 'S3BinaryStore', prefix_attr='prefix')
+
+
+class S3TextStore(S3BinaryStore):
+    def _obj_of_data(self, data):
+        return data.decode()
+
+
+S3StringStore = S3TextStore
+
+
+class S3PickleStore(S3BinaryStore):
+
+    def _obj_of_data(self, data):
+        return pickle.loads(data)
+
+    def _data_of_obj(self, obj):
+        return pickle.dumps(obj)
