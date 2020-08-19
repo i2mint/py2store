@@ -1,6 +1,9 @@
-from functools import partial
-from typing import Iterable, NewType
-from py2store.util import ModuleNotFoundErrorNiceMessage, lazyprop
+from functools import partial, wraps
+from typing import Iterable, NewType, Union
+from collections.abc import Mapping
+from dataclasses import dataclass
+
+from py2store.util import ModuleNotFoundErrorNiceMessage
 
 with ModuleNotFoundErrorNiceMessage():
     from botocore.client import Config, BaseClient
@@ -26,6 +29,34 @@ class KeyNotValidError(S3KeyError): ...
 class GetItemForKeyError(S3KeyError): ...
 
 
+class S3HttpError(RuntimeError): ...
+
+
+class S3Not200StatusCodeError(S3HttpError): ...
+
+
+def raise_on_error(d: dict):
+    raise
+
+
+def return_none_on_error(d: dict):
+    return None
+
+
+def return_empty_tuple_on_error(d: dict):
+    return ()
+
+
+def path_get(mapping, path, on_error=raise_on_error, caught_errors=(KeyError,)):
+    result = mapping
+    for k in path:
+        try:
+            result = result[k]
+        except caught_errors as error:
+            return on_error(dict(mapping=mapping, path=path, result=result, k=k, error=error))
+    return result
+
+
 encode_as_utf8 = partial(str, encoding='utf-8')
 
 # TODO: Make capability of overriding defaults externally.
@@ -49,28 +80,54 @@ def get_s3_client(aws_access_key_id,
                   config=config)
 
 
+def ensure_client(candidate_client):
+    """Ensure input is a BaseClient (either kwargs to make one, or already a BaseClient instance."""
+    if isinstance(candidate_client, Mapping):
+        return get_s3_client(**candidate_client)  # consider candidate_client as kwargs to make one
+    # TODO: Be more precise (botocore.client.S3 doesn't exist, so took BaseClient):
+    assert isinstance(candidate_client, BaseClient)
+    return candidate_client
+
+
 def isdir(key: str):
     return key.endswith('/')
 
 
 def isfile(key: str):
-    return not key.endswith('')
+    return not key.endswith('/')
 
 
-from py2store.trans import cached_keys
+class Resp(dict):
+    @staticmethod
+    def status_code(d):
+        return path_get(d, ['ResponseMetadata', 'HTTPStatusCode'], raise_on_error)
 
-#
-# @cached_keys(keys_cache=list)
-# class S3ResourceCollection(Collection):
-#     _source = None  # to tell lint about it (TODO: Find less hacky way to talk to lint)
-#     __init__ = _s3_resource_initializer
-#
-#     def __iter__(self) -> Iterable[S3BucketType]:
-#         return self._source.buckets.all()
+    @staticmethod
+    def contents(d):
+        return path_get(d, ['Contents'], return_empty_tuple_on_error)
 
+    @staticmethod
+    def common_prefixes(d):
+        return path_get(d, ['CommonPrefixes'], return_empty_tuple_on_error)
 
-from functools import wraps
-from dataclasses import dataclass
+    @staticmethod
+    def buckets(d):
+        return path_get(d, ['Buckets'], return_empty_tuple_on_error)
+
+    @staticmethod
+    def ascertain_status_code(d, status_code=200, raise_error=S3HttpError, *error_args, **error_kwargs):
+        if Resp.status_code(d) != status_code:
+            raise raise_error(*error_args, **error_kwargs)
+
+    @staticmethod
+    def ascertain_200_status_code(d):
+        if Resp.status_code(d) != 200:
+            if 'ResponseMetadata' in d:
+                raise S3Not200StatusCodeError(
+                    f"Status code was not 200. ResponseMetadata is {d['ResponseMetadata']}")
+            else:
+                raise S3Not200StatusCodeError(
+                    f"Status code was not 200. In fact, the response dict didn't even have a ResponseMetadata key")
 
 
 @dataclass
@@ -94,7 +151,7 @@ class S3BucketBaseReader(KvReader):
 
     Example use:
     ```
-    resource_kwargs = get_configs()  # get (at least) aws_access_key_id and aws_secret_access_key
+    client_kwargs = get_configs()  # get (at least) aws_access_key_id and aws_secret_access_key
     r = S3BucketBaseReader(S3BucketBaseReader.mk_client(**resources_kwargs), bucket='bucket_name', prefix='my_stuff/')
     list(r)  # will list file and folder names
     r['my_stuff/music/']  # will give you another S3BucketBaseReader for that "subfolder"
@@ -107,11 +164,25 @@ class S3BucketBaseReader(KvReader):
     with_files: bool = True
     with_directories: bool = True
 
+    def file_obj_for_key(self, k) -> dict:
+        try:
+            return self._source.get_object(Bucket=self.bucket, Key=k)
+        except Exception as e:
+            raise GetItemForKeyError(f"Problem retrieving value for key: {k}")
+
+    def dir_obj_for_key(self, k) -> KvReader:
+        return S3BucketBaseReader(client=self._source,
+                                  bucket=self.bucket,
+                                  prefix=k,
+                                  with_files=self.with_files,
+                                  with_directories=self.with_directories)
+
     def __post_init__(self):
+        self.client = ensure_client(self.client)
         self._source = self.client
         self._filt = dict(Prefix=self.prefix, Delimiter='/')
 
-    def is_valid_key(self, k):
+    def is_valid_key(self, k) -> bool:
         return isinstance(k, str) and k.startswith(self.prefix)
 
     def validate_key(self, k):
@@ -123,38 +194,31 @@ class S3BucketBaseReader(KvReader):
             else:
                 raise KeyNotValidError(f"Not a valid key: {k}")
 
-    def __getitem__(self, k: str):
+    def __getitem__(self, k: str) -> Union[dict, KvReader]:
         self.validate_key(k)
         if isfile(k):
-            try:
-                return self._source.get_object(Bucket=self.bucket, Key=k)
-            except Exception as e:
-                raise GetItemForKeyError(f"Problem retrieving value for key: {k}")
+            return self.file_obj_for_key(k)
         else:  # assume it's a "directory"
-            return self.__class__(client=self._source,
-                                  bucket=self.bucket,
-                                  prefix=k,
-                                  with_files=self.with_files,
-                                  with_directories=self.with_directories)
+            return self.dir_obj_for_key(k)
 
-    def object_list_pages(self):
-        # TODO: compare list_objects to list_object_v2. Should we switch?
+    def object_list_pages(self) -> Iterable[dict]:
         yield from self._source.get_paginator('list_objects').paginate(Bucket=self.bucket, **self._filt)
 
-    def __iter__(self):
+    def __iter__(self) -> Iterable[str]:
         for resp in self.object_list_pages():
-            if self.with_files and 'Contents' in resp:
-                for d in resp['Contents']:
+            Resp.ascertain_200_status_code(resp)
+            if self.with_files:
+                for d in Resp.contents(resp):
                     yield d['Key']
-            if self.with_directories and 'CommonPrefixes' in resp:
-                for d in resp['CommonPrefixes']:
+            if self.with_directories:
+                for d in Resp.common_prefixes(resp):
                     yield d['Prefix']
 
-    def head_object(self, k):
+    def head_object(self, k) -> dict:
         self.validate_key(k)
         return self._source.head_object(Bucket=self.bucket, Key=k)
 
-    def __contains__(self, k):
+    def __contains__(self, k) -> bool:
         try:
             self.head_object(k)
             return True  # if all went well
@@ -170,42 +234,55 @@ class S3BucketBaseReader(KvReader):
 
     @wraps(get_s3_client)
     @staticmethod
-    def mk_client(**resource_kwargs):
-        return get_s3_client(**resource_kwargs)
+    def mk_client(**client_kwargs):
+        return get_s3_client(**client_kwargs)
 
 
-# TODO: Everything below needs to be done under the form of the new base
-# Assigning the alias "S3BucketReader" to be "S3BucketBaseReader" just to make the module load.
-S3BucketReader = S3BucketBaseReader
-
-
-class S3BucketRW(S3BucketReader, KvPersister):
-    def __setitem__(self, k, v):
+class S3BucketBasePersister(S3BucketBaseReader, KvPersister):
+    def __setitem__(self, k, v) -> dict:
         self.validate_key(k)
         return self._source.put_object(Bucket=self.bucket, Key=k, Body=v)
-        # TODO: Use self._source.upload_fileobj instead
-        # return k.put(Body=v)
 
-    def __delitem__(self, k):
+    def __delitem__(self, k) -> dict:
         self.validate_key(k)
         return self._source.delete_object(Bucket=self.bucket, Key=k)
+        # TODO: Figure out how to detect if the key existed or not from the return value, so one can use this
+        #   to align with the common behavior of `del s[k]` when `k` doesn't exist.
+        #   Would like to avoid having to do an additional request to do `if k in s: ...`
+
+
+@dataclass
+class S3Collection(Collection):
+    client: BaseClient
+
+    def __post_init__(self):
+        self.client = ensure_client(self.client)
+        assert isinstance(self.client, BaseClient)
+        self._source = self.client
+
+    def __iter__(self) -> Iterable[str]:
+        resp = self._source.list_buckets()
+        Resp.ascertain_200_status_code(resp)
+        yield from (bucket['Name'] for bucket in Resp.buckets(resp))
+
+    @wraps(get_s3_client)
+    @staticmethod
+    def mk_client(**client_kwargs):
+        return get_s3_client(**client_kwargs)
+
 
 # TODO: Make some stores that have more convenient interfaces
 #   (e.g. see existing py2store.store.s3_store and rewrite versions of those stores that use the
 #   present new way)
 
-# # Pattern: reader from collection + mapping maker.
-# # TODO: Make a special factory out of the pattern
-# class S3ResourceReader(S3ResourceCollection):
-#     item_cls = S3BucketReader
-#
-#     @wraps(S3ResourceCollection.__init__)
-#     def __init__(self, *args, **kwargs):
-#         super().__init__(*args, **kwargs)
-#         self._source = {b.name: b for b in super().__iter__()}
-#
-#     def __iter__(self) -> Iterable[S3BucketType]:
-#         yield from self._source
-#
-#     def __getitem__(self, k):
-#         return self.item_cls(self._source[k])
+def get_bucket_reader(s3_collection, bucket):
+    return S3BucketBaseReader(s3_collection._source, bucket)
+
+
+# Pattern: reader from collection + mapping maker.
+# TODO: Make a special factory out of the pattern
+class S3BaseReader(S3Collection, KvReader):
+    item_getter = get_bucket_reader
+
+    def __getitem__(self, k):
+        return self.item_getter(k)
