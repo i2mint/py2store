@@ -6,7 +6,7 @@ from io import StringIO, BytesIO
 
 from py2store import LocalBinaryStore
 from py2store.slib.s_zipfile import FilesOfZip
-from py2store.slib.s_configparser import ConfigReader
+from py2store.slib.s_configparser import ConfigReader, ConfigStore
 from py2store.util import imdict
 
 
@@ -37,12 +37,6 @@ dflt_incoming_val_trans_for_key = {
     '.ini': lambda v: ConfigReader(v, interpolation=ConfigReader.ExtendedInterpolation()),
 }
 
-synset_of_ext = {'.ini': {'.cnf', '.conf', '.config'}}
-for user_this, for_these_extensions in synset_of_ext.items():
-    if user_this in dflt_incoming_val_trans_for_key:
-        for ext in for_these_extensions:
-            dflt_incoming_val_trans_for_key[ext] = dflt_incoming_val_trans_for_key[user_this]
-
 dflt_outgoing_val_trans_for_key = {
     '.bin': identity_method,
     '.csv': csv_fileobj,
@@ -50,7 +44,15 @@ dflt_outgoing_val_trans_for_key = {
     '.pkl': lambda v: pickle.dumps(v),
     '.pickle': lambda v: pickle.dumps(v),
     '.json': lambda v: json.dumps(v).encode(),
+    '.ini': lambda v: ConfigStore(v, interpolation=ConfigReader.ExtendedInterpolation()),
 }
+
+synset_of_ext = {'.ini': {'.cnf', '.conf', '.config'}}
+for _user_this, _for_these_extensions in synset_of_ext.items():
+    for _d in [dflt_incoming_val_trans_for_key, dflt_outgoing_val_trans_for_key]:
+        if _user_this in _d:
+            for _ext in _for_these_extensions:
+                _d[_ext] = _d[_user_this]
 
 
 # TODO: Different misc objects (function, class, default instance) should be a aligned more
@@ -147,8 +149,11 @@ def get_obj(k, store=LocalBinaryStore(path_format=''),
             import urllib.request
             with urllib.request.urlopen(k) as response:
                 v = response.read()
-
     else:
+        # if k.startswith('.') or k.startswith('..'):
+        #     k = os.path.abspath(k)
+        # elif k.startswith('~'):
+        #     k = os.path.expanduser(k)
         v = store[k]
     trans_func = (incoming_val_trans_for_key or {}).get(func_key(k), dflt_incoming_val_trans)
     return trans_func(v)
@@ -210,7 +215,7 @@ misc_objs_get.dflt_incoming_val_trans_for_key = dflt_incoming_val_trans_for_key
 
 
 class MiscStoreMixin(MiscReaderMixin):
-    """Mixin to transform incoming and outgoing vals according to the key their under.
+    r"""Mixin to transform incoming and outgoing vals according to the key their under.
     Warning: If used as a subclass, this mixin should (in general) be placed before the store
 
     >>> # Make a class to wrap a dict with a layer that transforms written and read values
@@ -254,9 +259,10 @@ class MiscStoreMixin(MiscReaderMixin):
     ...         assert pickle.loads(v) == data_to_write['a.pkl']
     a.bin: b'abc123'
     a.reverse_this: b'abc123'
-    a.csv: b'event,year\\r\\n Magna Carta,1215\\r\\n Guido,1956\\r\\n'
+    a.csv: b'event,year\r\n Magna Carta,1215\r\n Guido,1956\r\n'
     a.txt: b'this is not a text'
-    a.json: {"str": "field", "int": 42, "float": 3.14, "array": [1, 2], "nested": {"a": 1, "b": 2}}
+    a.json: b'{"str": "field", "int": 42, "float": 3.14, "array": [1, 2], "nested": {"a": 1, "b": 2}}'
+
     """
     _dflt_outgoing_val_trans_for_key = staticmethod(identity_method)
     _outgoing_val_trans_for_key = dflt_outgoing_val_trans_for_key

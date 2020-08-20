@@ -9,7 +9,7 @@ from py2store.util import ModuleNotFoundErrorNiceMessage
 with ModuleNotFoundErrorNiceMessage():
     from botocore.client import Config, BaseClient
     from botocore.exceptions import ClientError
-    import boto3
+    from botocore.response import StreamingBody
     from boto3 import client
     from boto3.resources.base import ServiceResource
 
@@ -104,11 +104,11 @@ def ensure_client(candidate_client):
     return candidate_client
 
 
-def isdir(key: str):
+def isdir_key(key: str):
     return key.endswith('/')
 
 
-def isfile(key: str):
+def isfile_key(key: str):
     return not key.endswith('/')
 
 
@@ -153,7 +153,11 @@ class Resp:
     def ascertain_200_status_code(d):
         status_code = Resp.status_code(d, return_none_on_error)
         if status_code != 200:
-            if 'ResponseMetadata' in d:
+            if not isinstance(d, dict):
+                raise S3Not200StatusCodeError(
+                    "Yeah, that's not even a dict, so doubt it's even a response."
+                    f"I'm expecting a response over here. Instead I got a {type(d)}")
+            elif 'ResponseMetadata' in d:
                 raise S3Not200StatusCodeError(
                     f"Status code was not 200. Was {d['ResponseMetadata']}. "
                     f"ResponseMetadata is {d['ResponseMetadata']}")
@@ -203,11 +207,11 @@ class S3BucketBaseReader(KvReader):
             raise GetItemForKeyError(f"Problem retrieving value for key: {k}")
 
     def dir_obj_for_key(self, k) -> KvReader:
-        return S3BucketBaseReader(client=self._source,
-                                  bucket=self.bucket,
-                                  prefix=k,
-                                  with_files=self.with_files,
-                                  with_directories=self.with_directories)
+        return self.__class__(client=self._source,
+                              bucket=self.bucket,
+                              prefix=k,
+                              with_files=self.with_files,
+                              with_directories=self.with_directories)
 
     def __post_init__(self):
         if self.prefix.endswith('*'):
@@ -218,10 +222,6 @@ class S3BucketBaseReader(KvReader):
             _filt = dict(Prefix=self.prefix)  # without the Delimiter='/'
             if self.with_directories:
                 self.with_directories = False
-                msg = "Arg was with_directories=True, which doesn't play along with " \
-                      "the recursive files case (because your prefix ended with *), " \
-                      "so I changed that to be False instead. "
-                warn(msg)
         else:
             if not self.prefix.endswith('/'):
                 self.prefix += '/'
@@ -245,7 +245,7 @@ class S3BucketBaseReader(KvReader):
 
     def __getitem__(self, k: str) -> Union[dict, KvReader]:
         self.validate_key(k)
-        if isfile(k):
+        if isfile_key(k):
             return self.file_obj_for_key(k)
         else:  # assume it's a "directory"
             return self.dir_obj_for_key(k)
@@ -344,37 +344,63 @@ from py2store.base import Store
 # from py2store.persisters.s3_w_boto3 import S3BucketPersister
 from py2store.key_mappers.paths import mk_relative_path_store
 
-
-class S3AbsPathBodyStore(Store):
-    @wraps(S3BucketBasePersister.__init__)
-    def __init__(self, *args, **kwargs):
-        persister = S3BucketBasePersister(*args, **kwargs)
-        super().__init__(persister)
-        # self.prefix = self.store.prefix  # don't need that anymore, since store forwards attr access now!
-
-    def _obj_of_data(self, data):
-        Resp.ascertain_200_status_code(data)
-        return Resp.body(data, on_error=f"Couldn't get the body from: {data}")
+from py2store.trans import wrap_kvs
 
 
-class S3AbsPathBinaryStore(S3AbsPathBodyStore):
-    def _obj_of_data(self, data):
-        body = super()._obj_of_data(data)
-        return body.read()  # Note: This part has other options (like iter_chunks(), etc.)
+def _get_body_when_file(k, v):
+    if isfile_key(k):
+        Resp.ascertain_200_status_code(v)
+        return Resp.body(v, on_error=f"Couldn't get the body from: {v}")
+    else:
+        return v
 
-    # def _id_of_key(self, k):
-    #     return self.store._source.Object(key=k)
-    #
-    # def _key_of_id(self, _id):
-    #     return _id.key
+
+S3AbsPathBodyStore = wrap_kvs(S3BucketBasePersister,
+                              name='S3AbsPathBodyStore',
+                              postget=_get_body_when_file)
+
+
+def _read_body_when_file(k, v):
+    if isfile_key(k):
+        return v.read()
+    else:
+        return v
+
+
+S3AbsPathBinaryStore = wrap_kvs(S3AbsPathBodyStore,
+                                name='S3AbsPathBinaryStore',
+                                postget=_read_body_when_file)
+
+## Note: Alternative definition, using subclassing and checking value to determine if file (body) or not
+# class S3AbsPathBinaryStore(S3AbsPathBodyStore):
+#     def _obj_of_data(self, data):
+#         body_or_dirobj = super()._obj_of_data(data)
+#         if isinstance(body_or_dirobj, StreamingBody):
+#             return body_or_dirobj.read()  # Note: This part has other options (like iter_chunks(), etc.)
+#         else:
+#             return body_or_dirobj
 
 
 S3BinaryStore = mk_relative_path_store(S3AbsPathBinaryStore, 'S3BinaryStore', prefix_attr='prefix')
 
 
+def asis_if_not_bytes(method):
+    @wraps(method)
+    def wrapped_method(self, data):
+        if isinstance(data, bytes):
+            return method(self, data)
+        else:
+            return data
+
+    return wrapped_method
+
+
 class S3TextStore(S3BinaryStore):
     def _obj_of_data(self, data):
-        return data.decode()
+        if isinstance(data, bytes):
+            return data.decode()
+        else:
+            return data
 
 
 S3StringStore = S3TextStore

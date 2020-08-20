@@ -12,6 +12,12 @@ from itertools import chain
 ########################################################################################################################
 # Internal Utils
 
+def ensure_set(x):
+    if isinstance(x, str):
+        x = [x]
+    return set(x)
+
+
 def get_class_name(cls, dflt_name=None):
     name = getattr(cls, '__qualname__', None)
     if name is None:
@@ -860,7 +866,9 @@ def _wrap_ingoing(store_cls,
 
 def wrap_kvs(store=None, name=None, *,
              key_of_id=None, id_of_key=None, obj_of_data=None, data_of_obj=None, preset=None, postget=None,
-             __module__=None
+             __module__=None,
+             outcoming_key_methods=(), outcoming_value_methods=(),
+             ingoing_key_methods=(), ingoing_value_methods=(),
              ):
     r"""Make a Store that is wrapped with the given key/val transformers.
 
@@ -990,16 +998,26 @@ def wrap_kvs(store=None, name=None, *,
     >>> d['foo.pkl'] = obj  # 'save' obj as pickle
     >>> d['foo.pkl']
     [['a', 'b', 'c'], ['d', 'e', 'f']]
+
+    # TODO: Add tests for outcoming_key_methods etc.
     """
+
     if store is None:
         return partial(wrap_kvs, name=name, key_of_id=key_of_id, id_of_key=id_of_key, obj_of_data=obj_of_data,
-                       data_of_obj=data_of_obj, preset=preset, postget=postget, __module__=__module__)
+                       data_of_obj=data_of_obj, preset=preset, postget=postget, __module__=__module__,
+                       outcoming_key_methods=outcoming_key_methods, outcoming_value_methods=outcoming_value_methods,
+                       ingoing_key_methods=ingoing_key_methods, ingoing_value_methods=ingoing_value_methods,
+                       )
     elif not isinstance(store, type):  # then consider it to be an instance
         store_instance = store
         WrapperStore = wrap_kvs(Store, name=name,
                                 key_of_id=key_of_id, id_of_key=id_of_key,
                                 obj_of_data=obj_of_data, data_of_obj=data_of_obj,
-                                postget=postget, __module__=__module__)
+                                postget=postget, __module__=__module__,
+                                outcoming_key_methods=outcoming_key_methods,
+                                outcoming_value_methods=outcoming_value_methods,
+                                ingoing_key_methods=ingoing_key_methods, ingoing_value_methods=ingoing_value_methods,
+                                )
         return WrapperStore(store_instance)
     else:  # it's a class we're wrapping
         name = name or store.__qualname__ + 'Wrapped'
@@ -1014,11 +1032,23 @@ def wrap_kvs(store=None, name=None, *,
 
         # outcoming ####################################################################################################
 
-        _wrap_outcoming(store_cls, '_key_of_id', key_of_id)
-        _wrap_outcoming(store_cls, '_obj_of_data', obj_of_data)
+        for method_name in {'_key_of_id'} | ensure_set(outcoming_key_methods):
+            _wrap_outcoming(store_cls, method_name, key_of_id)
 
-        _wrap_ingoing(store_cls, '_id_of_key', id_of_key)
-        _wrap_ingoing(store_cls, '_data_of_obj', data_of_obj)
+        for method_name in {'_obj_of_data'} | ensure_set(outcoming_value_methods):
+            _wrap_outcoming(store_cls, method_name, obj_of_data)
+
+        for method_name in {'_id_of_key'} | ensure_set(ingoing_key_methods):
+            _wrap_ingoing(store_cls, method_name, id_of_key)
+
+        for method_name in {'_data_of_obj'} | ensure_set(ingoing_value_methods):
+            _wrap_ingoing(store_cls, method_name, data_of_obj)
+
+        # _wrap_outcoming(store_cls, '_key_of_id', key_of_id)
+        # _wrap_outcoming(store_cls, '_obj_of_data', obj_of_data)
+        #
+        # _wrap_ingoing(store_cls, '_id_of_key', id_of_key)
+        # _wrap_ingoing(store_cls, '_data_of_obj', data_of_obj)
 
         if postget is not None:
             if num_of_args(postget) < 2:

@@ -1,9 +1,10 @@
 from configparser import ConfigParser
 from configparser import BasicInterpolation, ExtendedInterpolation
+from functools import wraps
+from io import BytesIO, StringIO
 
+from py2store.trans import kv_wrap_persister_cls
 from py2store.utils.signatures import update_signature_with_signatures_from_funcs as change_sig
-
-from py2store.base import KvReader
 
 _test_config_str = """[Simple Values]
 key=value
@@ -31,7 +32,7 @@ empty string value here =
 # like this
 ; or this
 
-# By default only in an empty line.https://otosense.slack.com/archives/CB11V1D2Q
+# By default only in an empty line.
 # Inline comments can be harmful because they prevent users
 # from using the delimiting characters as parts of values.
 # That being said, this can be customized.
@@ -49,12 +50,226 @@ empty string value here =
 """
 
 
+def persist_after_operation(method_func):
+    @wraps(method_func)
+    def _method_func(self, *args, **kwargs):
+        output = method_func(self, *args, **kwargs)
+        self.persist()
+        return output
+
+    return _method_func
+
+
+def super_and_persist(super_cls, method_name):
+    """
+    To be able to do this:
+    ```
+    __setitem__ = super_and_persist(ConfigParser, '__setitem__')
+    __delitem__ = super_and_persist(ConfigParser, '__delitem__')
+    ```
+    in your class definition block.
+
+    I thought I needed to wrap more method this way, but as it turns out, I might not,
+    so I prefer open code.
+    """
+
+    @persist_after_operation
+    @wraps(getattr(super_cls, method_name))
+    def method_func(self, *args, **kwargs):
+        method_obj = getattr(super(ConfigStore, self), method_name)
+        return method_obj(*args, **kwargs)
+
+    return method_func
+
+
+ConfigParserStore = kv_wrap_persister_cls(ConfigParser, name='ConfigParserStore')
+
+
 # TODO: ConfigParser is already a mapping, but pros/cons of subclassing?
 #   For instance, it has it's get method already, but it is not consistent with the get of collections.abc.Mapping
 # TODO: Extend to a KvPersister (include __setitem__ and __delitem__)
 #   Relevant methods: add_section, write, remove_section. Need to decide on auto-persistence.
 #   In fact, the reader is already a writer (from ConfigParser), but need to manage persistence.
-class ConfigReader(KvReader, ConfigParser):
+class ConfigStore(ConfigParserStore):
+    r"""Persister (read, write, delete) for ini configs.
+
+    You can read ini formated configurations with ConfigStore (though if you want to
+    just read, you should use ConfigReader instead -- since ConfigReader disables
+    write and delete operations.
+
+    See ConfigReader for more examples of how to use ConfigStore.
+    We'll mainly focus on write and delete operations here.
+
+    >>> import os
+    >>> from py2store.slib.s_configparser import ConfigStore, ConfigReader
+    >>> ini_filepath = 'config_store_test.ini'
+    >>> if os.path.isfile(ini_filepath):
+    ...     os.remove(ini_filepath)
+    >>>
+    >>> os.path.isfile(ini_filepath)  # File doesn't exist
+    False
+    >>>
+    >>> s = ConfigStore(ini_filepath)
+    >>> list(s)  # There's always a default (by default empty)
+    ['DEFAULT']
+    >>>
+    >>> os.path.isfile(ini_filepath)  # But the file still doesn't exist (the DEFAULT is virtual)
+    False
+    >>>
+    >>> # Now let's make a config
+    >>> s['nothing'] = {'special': 'about', 'number': 42}
+    >>> list(s)
+    ['DEFAULT', 'nothing']
+    >>>
+    >>> os.path.isfile(ini_filepath)  # But NOW the file exists (ConfigStore will automatically write to file)
+    True
+    >>> s['add'] = {'more': 'sections'}
+    >>> list(s)
+    ['DEFAULT', 'nothing', 'add']
+
+    >>> # and yes, that config can now be read
+    >>> config_reader = ConfigReader(ini_filepath)
+    >>> list(config_reader)
+    ['DEFAULT', 'nothing', 'add']
+    >>>
+    >>> config_reader['nothing']
+    <Section: nothing>
+    >>>
+    >>> dict(config_reader['nothing'])  # note that 42 is now a string (that's the ini format for you!)
+    {'special': 'about', 'number': '42'}
+    >>> dict(config_reader['DEFAULT'])  # and DEFAULT is empty
+    {}
+
+    You can delete sections
+    >>> del s['add']
+
+    But you'll need to refresh your reader to see the effect.
+    >>> list(config_reader)
+    ['DEFAULT', 'nothing', 'add']
+    >>> config_reader = ConfigReader(ini_filepath)
+    >>> list(config_reader)
+    ['DEFAULT', 'nothing']
+
+    You can use `update` to write several sections at the same time.
+    Note that existing sections will be completely overwritten.
+    >>> s.update({'nothing': {'like': 'you'}, 'new_section': {'a': 'b', 'c': 'd'}})
+    >>> ConfigReader(ini_filepath).to_dict()
+    {'DEFAULT': {}, 'nothing': {'like': 'you'}, 'new_section': {'a': 'b', 'c': 'd'}}
+
+    **Warning: On the other hand, updating a section will not persist the updates**
+
+    Updates are automatically persisted at the top level, as shown in the example above.
+    This means you can change a section entirely, but partial updates of a section
+    will not be persisted.
+
+    You'll see the updated section in the store.
+    >>> s['nothing'].update({'something': 'else'})
+    >>> dict(s['nothing'])
+    {'like': 'you', 'something': 'else'}
+
+    But it's not automatically persisted
+    >>> dict(ConfigReader(ini_filepath)['nothing'])
+    {'like': 'you'}
+
+    ... unless you ask for it explicitly
+    >>> s.persist()
+    >>> dict(ConfigReader(ini_filepath)['nothing'])
+    {'like': 'you', 'something': 'else'}
+
+    # TODO: Could make section updates auto-persistent by wrapping configparser.SectionProxy
+
+    For your convenience, the ConfigStore is also a context manager, that will,
+    you guessed, persist stuff when (and only when) you exit it.
+
+    >>> ConfigReader(ini_filepath).to_dict()
+    {'DEFAULT': {}, 'nothing': {'like': 'you', 'something': 'else'}, 'new_section': {'a': 'b', 'c': 'd'}}
+    >>> with ConfigStore(ini_filepath) as s:
+    ...     del s['new_section']  # that's usually immediately persisted. This time, it'll wait to be
+    ...     del s['nothing']['something']  # delete the something field of nothing section
+    ...     s['nothing'].update({'like': 'that', 'ever': 'happened'})  # update 'like' config and add an 'ever' one
+    >>> ConfigReader(ini_filepath).to_dict()
+    {'DEFAULT': {}, 'nothing': {'like': 'that', 'ever': 'happened'}}
+
+        """
+    space_around_delimiters = True
+    BasicInterpolation = BasicInterpolation
+    ExtendedInterpolation = ExtendedInterpolation
+
+    @change_sig(ConfigParser)
+    def __init__(self, source, defaults=None, dict_type=dict, allow_no_value=False, **kwargs):
+        super().__init__(defaults, dict_type, allow_no_value, **kwargs)
+
+        self._within_context_manager = False
+
+        if isinstance(source, str):
+            if '\n' in source:
+                self.read_string(source)
+                source_kind = 'string'
+            else:
+                self.read(source)
+                source_kind = 'filepath'
+        elif isinstance(source, bytes):
+            self.read_string(source.decode())
+            source_kind = 'bytes'
+        elif isinstance(source, dict):
+            self.read_dict(source)
+            source_kind = 'dict'
+        elif hasattr(source, 'read'):
+            self.read_file(source)
+            source_kind = 'stream'
+        else:
+            self.read(source)
+            source_kind = 'unknown'
+        self.source = source
+        self.source_kind = source_kind
+
+    def to_dict(self):
+        return {section: dict(section_contents) for section, section_contents in self.items()}
+
+    def persist(self):
+        """Persists the data (if not in a context manager).
+        Persists means to call
+        """
+        if not self._within_context_manager:
+            if self.source_kind == 'filepath':
+                with open(self.source, 'w') as fp:
+                    return self.write(fp, self.space_around_delimiters)
+            else:
+                if self.source_kind == 'stream':
+                    target = self.source
+                    return self.write(target, self.space_around_delimiters)
+                elif self.source_kind in {'string', 'bytes'}:
+                    target = {'string': StringIO, 'bytes': BytesIO}.get(self.source_kind)()
+                    self.write(target, self.space_around_delimiters)
+                    target.seek(0)
+                    return target
+                elif self.source_kind == 'dict':
+                    return self.to_dict()
+                else:
+                    raise ValueError(f"Unknown source_kind: {self.source_kind}")
+
+    def __enter__(self):
+        self._within_context_manager = True
+        return self
+
+    def __exit__(self, *exc_details):
+        self._within_context_manager = False
+        output = self.persist()
+        return output
+
+    @persist_after_operation
+    def __setitem__(self, k, v):
+        super(ConfigStore, self).__setitem__(k, v)
+
+    @persist_after_operation
+    def __delitem__(self, k):
+        super(ConfigStore, self).__delitem__(k)
+
+    # __setitem__ = super_and_persist(ConfigParser, '__setitem__')
+    # __delitem__ = super_and_persist(ConfigParser, '__delitem__')
+
+
+class ConfigReader(ConfigStore):
     r"""A KvReader to read config files
     >>> from py2store.slib.s_configparser import ConfigReader
     >>>
@@ -102,28 +317,13 @@ class ConfigReader(KvReader, ConfigParser):
     ['DEFAULT', 'Simple Values', 'All Values Are Strings', 'Multiline Values', 'No Values', 'You can use comments', 'Sections Can Be Indented']
     >>> list(c['Simple Values'])
     ['key', 'spaces in keys', 'spaces in values', 'spaces around the delimiter', 'you can also use']
-    """
+        """
 
-    BasicInterpolation = BasicInterpolation
-    ExtendedInterpolation = ExtendedInterpolation
+    def persist(self):
+        raise NotImplementedError("persist disabled for ConfigReader")
 
-    @change_sig(ConfigParser)
-    def __init__(self, source, defaults=None, dict_type=dict, allow_no_value=False, **kwargs):
-        super().__init__(defaults, dict_type, allow_no_value, **kwargs)
-        self.source = source
-        if isinstance(source, str):
-            if '\n' in source:
-                self.read_string(source)
-            else:
-                self.read(source)
-        elif isinstance(source, bytes):
-            self.read_string(source.decode())
-        elif isinstance(source, dict):
-            self.read_dict(source)
-        elif hasattr(source, 'read'):
-            self.read_file(source)
-        else:
-            self.read(source)
+    def __setitem__(self, k, v):
+        raise NotImplementedError("__setitem__ disabled for ConfigReader")
 
-    def to_dict(self):
-        return {section: dict(section_contents) for section, section_contents in self.items()}
+    def __delitem__(self, k):
+        raise NotImplementedError("__delitem__ disabled for ConfigReader")
