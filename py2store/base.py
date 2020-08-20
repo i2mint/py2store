@@ -85,7 +85,7 @@ class Collection(CollectionABC):
             return next(iter(self))
 
 
-KvCollection = Collection  # alias meant for back-compatibility. Would like to deprecated
+# KvCollection = Collection  # alias meant for back-compatibility. Would like to deprecated
 
 
 # def getitem_based_contains(self, x) -> bool:
@@ -465,18 +465,19 @@ def tuple_keypath_and_val(p, k, v):
 # TODO: More docs and doctests. This one even merits an extensive usage and example tutorial!
 def kv_walk(v: Mapping,
             yield_func=asis,  # (p, k, v) -> what you want the gen to yield
-            walk_filt=val_is_mapping,  # (p, k, v) -> whether explore the nested structure v further
+            walk_filt=val_is_mapping,  # (p, k, v) -> whether to explore the nested structure v further
             pkv_to_pv=tuple_keypath_and_val,
             p=()
             ):
     """
 
     :param v:
-    :param yield_func:
-    :param walk_filt:
-    :param pkv_to_pv:
-    :param p:
-    :return:
+    :param yield_func: (pp, k, vv) -> what ever you want the gen to yield
+    :param walk_filt: (p, k, vv) -> (bool) whether to explore the nested structure v further
+    :param pkv_to_pv:  (p, k, v) -> (pp, vv)
+        where pp is a form of p + k (update of the path with the new node k)
+        and vv is the value that will be used by both walk_filt and yield_func
+    :param p: The path to v
 
     >>> d = {'a': 1, 'b': {'c': 2, 'd': 3}}
     >>> list(kv_walk(d))

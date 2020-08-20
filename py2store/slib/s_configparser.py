@@ -254,8 +254,7 @@ class ConfigStore(ConfigParserStore):
 
     def __exit__(self, *exc_details):
         self._within_context_manager = False
-        output = self.persist()
-        return output
+        return self.persist()
 
     @persist_after_operation
     def __setitem__(self, k, v):

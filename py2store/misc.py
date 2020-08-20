@@ -218,6 +218,8 @@ class MiscStoreMixin(MiscReaderMixin):
     r"""Mixin to transform incoming and outgoing vals according to the key their under.
     Warning: If used as a subclass, this mixin should (in general) be placed before the store
 
+    See also: preset and postget args from wrap_kvs decorator from py2store.trans.
+
     >>> # Make a class to wrap a dict with a layer that transforms written and read values
     >>> class MiscStore(MiscStoreMixin, dict):
     ...     def __init__(self, d,

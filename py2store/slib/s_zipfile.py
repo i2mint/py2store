@@ -212,7 +212,10 @@ class FilesOfZip(ZipReader):
         super().__init__(zip_file, prefix=prefix, open_kws=open_kws, file_info_filt=ZipReader.FILES_ONLY)
 
 
-class OverwriteNotAllowed(FileExistsError): ...
+from py2store.errors import OverWritesNotAllowedError
+
+
+class OverwriteNotAllowed(FileExistsError, OverWritesNotAllowedError): ...
 
 
 class EmptyZipError(KeyError, FileNotFoundError): ...
