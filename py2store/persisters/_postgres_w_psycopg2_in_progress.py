@@ -3,7 +3,8 @@ from py2store.base import Persister
 try:
     import psycopg2
 except ImportError as e:
-    raise ImportError(f"""
+    raise ImportError(
+        f"""
     It seems you don't have psycopg2 (which is required here).
     Try installing it by running
         pip install psycopg2
@@ -11,22 +12,24 @@ except ImportError as e:
     Or just google it, like everyone...
     -------- Original error message --------
     {e}
-    """)
+    """
+    )
 
 raise NotImplementedError("Unfinished module.")
 
 
 class DBPersister(Persister):
     def __init__(self, db_name, user, password, **kwargs):
-        port = kwargs.get('port', "5432")
-        host = kwargs.get('host', "127.0.0.1")
-        self.table = kwargs.get('table', 'py2store')
+        port = kwargs.get("port", "5432")
+        host = kwargs.get("host", "127.0.0.1")
+        self.table = kwargs.get("table", "py2store")
         self.connection = psycopg2.connect(
             user=user,
             database=db_name,
             password=password,
             port=port,
-            host=host)
+            host=host,
+        )
         self.cursor = self.connection.cursor()
 
     def __getitem__(self, key):

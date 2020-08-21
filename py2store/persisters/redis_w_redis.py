@@ -19,8 +19,8 @@ from functools import wraps
 
 
 class RedisType:
-    string = b'string'
-    list = b'list'
+    string = b"string"
+    list = b"list"
 
 
 with ModuleNotFoundErrorNiceMessage():
@@ -43,6 +43,7 @@ class RedisFactories:
 
 # TODO: Check:
 #   Redis object seems to have getitem, setitem and delitem, so might already have Mapping API
+
 
 class RedisBytesCollection(Collection, RedisFactories):
     @wraps(Redis.__init__)
@@ -105,6 +106,7 @@ class RedisBytesPersister(RedisBytesReader, KvPersister):
     ...     del s[k]
     >>>
     """
+
     write_kwargs = dict(ex=None, px=None, nx=False, xx=False, keepttl=False)
 
     def __setitem__(self, k, v):
@@ -189,10 +191,16 @@ class RedisList(MutableSequence):
         else:  # assume it's a slice, and modify it to conform to inclusive Redis slicing
             try:
                 if i.step is not None:
-                    raise NotImplementedError("Slicing is so far only implemented without step")
-                return self._source.lrange(self._name, i.start or 0, i.stop - 1)
+                    raise NotImplementedError(
+                        "Slicing is so far only implemented without step"
+                    )
+                return self._source.lrange(
+                    self._name, i.start or 0, i.stop - 1
+                )
             except AttributeError:
-                raise KeyError(f"Index should be an integer or a slice object. Was {i}")
+                raise KeyError(
+                    f"Index should be an integer or a slice object. Was {i}"
+                )
 
     def __iter__(self):
         # TODO: Find a more efficient way to do this.
@@ -206,7 +214,8 @@ class RedisList(MutableSequence):
 
     def __delitem__(self, i):  # TODO: Implement
         raise NotImplementedError(
-            "Don't know how to (efficiently/directly) delete a single middle item.")
+            "Don't know how to (efficiently/directly) delete a single middle item."
+        )
 
     def append(self, v):
         return self._source.rpushx(self._name, v)

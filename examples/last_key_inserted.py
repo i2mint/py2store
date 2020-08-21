@@ -1,8 +1,9 @@
 from functools import wraps, partial
 
 
-def remember_last_key_written_to(cls=None, *, only_if_new_key=False,
-                                 name=None, same_name_as_class=False):
+def remember_last_key_written_to(
+        cls=None, *, only_if_new_key=False, name=None, same_name_as_class=False
+):
     """A decorator to get a class that remembers the last key that was written to.
     Note that this is the last key that THIS STORE wrote to, not the last key that was
     written to the DB.
@@ -56,8 +57,11 @@ def remember_last_key_written_to(cls=None, *, only_if_new_key=False,
     3
     """
     if cls is None:
-        return partial(remember_last_key_written_to, name=name, same_name_as_class=True)
+        return partial(
+            remember_last_key_written_to, name=name, same_name_as_class=True
+        )
     else:
+
         class S(cls):
             @wraps(cls.__init__)
             def __init__(self, *args, **kwargs):
@@ -65,11 +69,14 @@ def remember_last_key_written_to(cls=None, *, only_if_new_key=False,
                 self._last_key_written_to = None
 
             if only_if_new_key:
+
                 def __setitem__(self, k, v):
                     if k not in self:
                         self._last_key_written_to = k
                     return super().__setitem__(k, v)
+
             else:
+
                 def __setitem__(self, k, v):
                     self._last_key_written_to = k
                     return super().__setitem__(k, v)

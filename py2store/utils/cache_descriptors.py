@@ -28,9 +28,12 @@ class _CachedProperty(object):
     def __init__(self, func, *names):
         global ncaches
         ncaches += 1
-        self.data = (func, names,
-                     "_v_cached_property_key_%s" % ncaches,
-                     "_v_cached_property_value_%s" % ncaches)
+        self.data = (
+            func,
+            names,
+            "_v_cached_property_key_%s" % ncaches,
+            "_v_cached_property_value_%s" % ncaches,
+        )
         update_wrapper(self, func)
 
     def __get__(self, inst, class_):
@@ -70,11 +73,15 @@ def CachedProperty(*args):
     """
 
     if not args:  # @CachedProperty()
-        return _CachedProperty  # A callable that produces the decorated function
+        return (
+            _CachedProperty  # A callable that produces the decorated function
+        )
 
     arg1 = args[0]
     names = args[1:]
-    if callable(arg1):  # @CachedProperty, *or* thing = CachedProperty(thing, ...)
+    if callable(
+            arg1
+    ):  # @CachedProperty, *or* thing = CachedProperty(thing, ...)
         return _CachedProperty(arg1, *names)
 
     # @CachedProperty( 'n' )
@@ -107,7 +114,6 @@ class Lazy(object):
 
 
 class readproperty(object):
-
     def __init__(self, func):
         self.func = func
         update_wrapper(self, func)
@@ -127,7 +133,6 @@ class cachedIn(object):
         self.attribute_name = attribute_name
 
     def __call__(self, func):
-
         def get(instance):
             try:
                 value = getattr(instance, self.attribute_name)

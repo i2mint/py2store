@@ -40,7 +40,9 @@ class AffineConverter(object):
         return (self.inv(x) for x in seq)
 
 
-def get_affine_converter_and_inverse(offset=0, scale=1, source_type_cast=None, target_type_cast=None):
+def get_affine_converter_and_inverse(
+        offset=0, scale=1, source_type_cast=None, target_type_cast=None
+):
     """
     Getting two affine functions with given scale and offset, that are inverse of each other. Namely (for input val):
         (val - offset) * scale and val / scale + offset
@@ -76,41 +78,64 @@ def get_affine_converter_and_inverse(offset=0, scale=1, source_type_cast=None, t
     if offset != 0:
         if scale != 1:
             if target_type_cast is None:
+
                 def affine_converter(val):
                     return (val - offset) * scale
+
             else:
+
                 def affine_converter(val):
                     return target_type_cast((val - offset) * scale)
+
             if source_type_cast is None:
+
                 def inverse_affine_converter(val):
                     return val / scale + offset
+
             else:
+
                 def inverse_affine_converter(val):
                     return source_type_cast(val / scale + offset)
+
         else:  # scale 1, so can be ignored
             if target_type_cast is None:
+
                 def affine_converter(val):
                     return val - offset
+
             else:
+
                 def affine_converter(val):
                     return target_type_cast(val - offset)
+
             if source_type_cast is None:
+
                 def inverse_affine_converter(val):
                     return val + offset
+
             else:
+
                 def inverse_affine_converter(val):
                     return source_type_cast(val + offset)
+
     else:  # no offset
         if target_type_cast is None:
+
             def affine_converter(val):
                 return scale * val
+
         else:
+
             def affine_converter(val):
                 return target_type_cast(scale * val)
+
         if source_type_cast is None:
+
             def inverse_affine_converter(val):
                 return val / scale
+
         else:
+
             def inverse_affine_converter(val):
                 return source_type_cast(val / scale)
 

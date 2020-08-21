@@ -1,24 +1,25 @@
 from py2store.base import Persister
 from ftplib import FTP, all_errors
 import os.path
-from io import  BytesIO
+from io import BytesIO
+
 
 def remote_mkdir(ftp, remote_directory):
     """
     Change to this directory, recursively making new folders if needed.
     returns: True if any folders were created.
     """
-    if remote_directory == '/':
+    if remote_directory == "/":
         # absolute path so change directory to root
-        ftp.cwd('/')
+        ftp.cwd("/")
         return False
-    if remote_directory == '':
+    if remote_directory == "":
         # top-level relative directory must exist
         return False
     try:
-        ftp.cwd(remote_directory) # sub-directory exists
+        ftp.cwd(remote_directory)  # sub-directory exists
     except all_errors:
-        dirname, basename = os.path.split(remote_directory.rstrip('/'))
+        dirname, basename = os.path.split(remote_directory.rstrip("/"))
         remote_mkdir(ftp, dirname)  # make parent directories
         ftp.mkd(basename)  # sub-directory missing, so created it
         ftp.cwd(basename)
@@ -58,13 +59,14 @@ class FtpPersister(Persister):
     0
     """
 
-    def __init__(self,
-                 user='dlpuser@dlptest.com',
-                 password='fLDScD4Ynth0p4OJ6bW6qCxjh',
-                 url='ftp.dlptest.com',
-                 rootdir='./py2store',
-                 encoding='utf8'
-                 ):
+    def __init__(
+            self,
+            user="dlpuser@dlptest.com",
+            password="fLDScD4Ynth0p4OJ6bW6qCxjh",
+            url="ftp.dlptest.com",
+            rootdir="./py2store",
+            encoding="utf8",
+    ):
         self._ftp = FTP(host=url, user=user, passwd=password)
         self._rootdir = rootdir
         self._encoding = encoding
@@ -79,7 +81,7 @@ class FtpPersister(Persister):
 
     def __setitem__(self, k, v):
         bio = BytesIO(bytearray(v, encoding=self._encoding))
-        self._ftp.storbinary('STOR {}'.format(k), bio)
+        self._ftp.storbinary("STOR {}".format(k), bio)
 
     def __delitem__(self, k):
         if len(k) > 0:
@@ -104,7 +106,7 @@ class FtpPersister(Persister):
         return False
 
     def __iter__(self):
-        yield from [f for f in self._ftp.nlst() if f != '.' and f != '..']
+        yield from [f for f in self._ftp.nlst() if f != "." and f != ".."]
 
     def __len__(self):
         files = self._ftp.nlst()

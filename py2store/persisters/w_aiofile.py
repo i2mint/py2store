@@ -3,7 +3,10 @@ import os
 
 from py2store.base import KvReader, KvPersister
 from py2store.key_mappers.paths import mk_relative_path_store
-from py2store.filesys import FileCollection, validate_key_and_raise_key_error_on_exception
+from py2store.filesys import (
+    FileCollection,
+    validate_key_and_raise_key_error_on_exception,
+)
 from py2store.util import ModuleNotFoundWarning
 
 with ModuleNotFoundWarning(f"Missing third-party package: aiofile"):
@@ -14,7 +17,7 @@ _dflt_not_found_error_msg = "Key not found: {}"
 
 
 class AioFileBytesReader(FileCollection, KvReader):
-    _read_open_kwargs = dict(mode='rb')
+    _read_open_kwargs = dict(mode="rb")
 
     @validate_key_and_raise_key_error_on_exception  # TODO: does this also wrap the async?
     async def __getitem__(self, k):  # noqa
@@ -46,14 +49,16 @@ class AioFileBytesReader(FileCollection, KvReader):
         """
 
         async with AIOFile(k, **self._read_open_kwargs) as fp:
-            v = await fp.read()  # Question: Is it faster if we just did `return await fp.read(), instead of assign?
+            v = (
+                await fp.read()
+            )  # Question: Is it faster if we just did `return await fp.read(), instead of assign?
         return v
         # with open(k, **self._read_open_kwargs) as fp:
         #     return fp.read()
 
 
 class AioFileBytesPersister(AioFileBytesReader, KvPersister):
-    _write_open_kwargs = dict(mode='wb')
+    _write_open_kwargs = dict(mode="wb")
 
     @validate_key_and_raise_key_error_on_exception
     async def asetitem(self, k, v):
@@ -93,22 +98,24 @@ class AioFileBytesPersister(AioFileBytesReader, KvPersister):
     #         return fp.write(v)
 
 
-RelPathAioFileBytesReader = mk_relative_path_store(AioFileBytesReader,
-                                                   name='RelPathAioFileBytesReader',
-                                                   prefix_attr='rootdir')
+RelPathAioFileBytesReader = mk_relative_path_store(
+    AioFileBytesReader, name="RelPathAioFileBytesReader", prefix_attr="rootdir"
+)
 
 
 class AioFileStringReader(AioFileBytesReader):
-    _read_open_kwargs = dict(AioFileBytesReader._read_open_kwargs, mode='rt')
+    _read_open_kwargs = dict(AioFileBytesReader._read_open_kwargs, mode="rt")
 
 
 class AioFileStringPersister(AioFileBytesPersister):
-    _write_open_kwargs = dict(AioFileBytesPersister._write_open_kwargs, mode='wt')
+    _write_open_kwargs = dict(
+        AioFileBytesPersister._write_open_kwargs, mode="wt"
+    )
 
 
-RelPathFileStringReader = mk_relative_path_store(AioFileStringReader,
-                                                 name='RelPathFileStringReader',
-                                                 prefix_attr='rootdir')
+RelPathFileStringReader = mk_relative_path_store(
+    AioFileStringReader, name="RelPathFileStringReader", prefix_attr="rootdir"
+)
 
 ########## The simple store we made during meeting ################################################################
 

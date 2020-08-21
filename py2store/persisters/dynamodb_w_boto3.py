@@ -8,7 +8,7 @@ class NoSuchKeyError(KeyError):
 
 
 class DynamoDbPersister(Persister):
-    '''
+    """
     A basic DynamoDb via Boto3 persister.
     >>> from py2store.persisters.dynamodb_w_boto3 import DynamoDbPersister
     >>> s = DynamoDbPersister()
@@ -52,19 +52,25 @@ class DynamoDbPersister(Persister):
     ...   print(f"{key}: {val}")
     {'name': 'vitalik'}: {'proj': 'ethereum', 'yob': Decimal('1994'), 'bdfl': True}
     {'name': 'guido'}: {'proj': 'python', 'yob': Decimal('1956'), 'bdfl': False}
-    '''
+    """
+
     def __init__(
             self,
-            aws_access_key_id='',
-            aws_secret_access_key='',
-            region_name='us-west-2',
+            aws_access_key_id="",
+            aws_secret_access_key="",
+            region_name="us-west-2",
             endpoint_url="http://localhost:8000",
-            table_name='py2store',
-            key_fields=('key',),
-            data_fields=('data',)
+            table_name="py2store",
+            key_fields=("key",),
+            data_fields=("data",),
     ):
-        self._dynamodb = boto3.resource('dynamodb', region_name=region_name, endpoint_url=endpoint_url,
-                                  aws_access_key_id=aws_access_key_id, aws_secret_access_key=aws_secret_access_key)
+        self._dynamodb = boto3.resource(
+            "dynamodb",
+            region_name=region_name,
+            endpoint_url=endpoint_url,
+            aws_access_key_id=aws_access_key_id,
+            aws_secret_access_key=aws_secret_access_key,
+        )
         if isinstance(key_fields, str):
             key_fields = (key_fields,)
 
@@ -75,21 +81,29 @@ class DynamoDbPersister(Persister):
 
         self._data_fields = data_fields
 
-        key_schema = [{'AttributeName': k, 'KeyType': 'HASH'} for k in self._key_fields]
-        attribute_definition = [{'AttributeName': k, 'AttributeType': 'S'} for k in self._key_fields]
+        key_schema = [
+            {"AttributeName": k, "KeyType": "HASH"} for k in self._key_fields
+        ]
+        attribute_definition = [
+            {"AttributeName": k, "AttributeType": "S"}
+            for k in self._key_fields
+        ]
 
         try:
-            self._table = self._dynamodb.create_table(TableName=table_name,
-                                                      KeySchema=key_schema,
-                                                      AttributeDefinitions=attribute_definition,
-                                                      ProvisionedThroughput={
-                                                            'ReadCapacityUnits': 5,
-                                                            'WriteCapacityUnits': 5,
-                                                        }
-                                                      )
+            self._table = self._dynamodb.create_table(
+                TableName=table_name,
+                KeySchema=key_schema,
+                AttributeDefinitions=attribute_definition,
+                ProvisionedThroughput={
+                    "ReadCapacityUnits": 5,
+                    "WriteCapacityUnits": 5,
+                },
+            )
             # Wait until the table creation complete.
-            self._table.meta.client.get_waiter('table_exists').wait(TableName='Employee')
-            print('Table has been created, please continue to insert data.')
+            self._table.meta.client.get_waiter("table_exists").wait(
+                TableName="Employee"
+            )
+            print("Table has been created, please continue to insert data.")
         except Exception:
             self._table = self._dynamodb.Table(table_name)
             pass
@@ -100,7 +114,7 @@ class DynamoDbPersister(Persister):
                 k = (k,)
                 k = {att: key for att, key in zip(self._key_fields, k)}
             response = self._table.get_item(Key=k)
-            d = response['Item']
+            d = response["Item"]
             return {x: d[x] for x in d if x not in self._key_fields}
         except Exception as e:
             raise NoSuchKeyError("Key wasn't found: {}".format(k))
@@ -128,15 +142,18 @@ class DynamoDbPersister(Persister):
                 key = k
             self._table.delete_item(Key=key)
         except Exception as e:
-            if hasattr(e, '__name__'):
-                if e.__name__ == 'NoSuchKey':
+            if hasattr(e, "__name__"):
+                if e.__name__ == "NoSuchKey":
                     raise NoSuchKeyError("Key wasn't found: {}".format(k))
             raise  # if you got so far
 
     def __iter__(self):
         response = self._table.scan()
-        yield from [{x: d[x] for x in d if x in self._key_fields} for d in response['Items']]
+        yield from [
+            {x: d[x] for x in d if x in self._key_fields}
+            for d in response["Items"]
+        ]
 
     def __len__(self):
         response = self._table.scan()
-        return len(response['Items'])
+        return len(response["Items"])

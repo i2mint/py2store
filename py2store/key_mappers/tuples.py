@@ -19,12 +19,16 @@ __assert_condition = partial(_assert_condition, err_cls=KeyValidationError)
 
 
 def tuple_of_dict(d, fields):
-    __assert_condition(len(fields) == len(d), f"len(d)={len(d)} but len(fields)={len(fields)}")
+    __assert_condition(
+        len(fields) == len(d), f"len(d)={len(d)} but len(fields)={len(fields)}"
+    )
     return tuple(d[f] for f in fields)
 
 
 def dict_of_tuple(d, fields):
-    __assert_condition(len(fields) == len(d), f"len(d)={len(d)} but len(fields)={len(fields)}")
+    __assert_condition(
+        len(fields) == len(d), f"len(d)={len(d)} but len(fields)={len(fields)}"
+    )
     return {f: x for f, x in zip(fields, d)}
 
 
@@ -54,7 +58,9 @@ def tuple_of_str(d, compiled_regex):
     if m:
         return m.groups()
     else:
-        raise KeyValidationError(f"The string {d} didn't match the pattern {compiled_regex}")
+        raise KeyValidationError(
+            f"The string {d} didn't match the pattern {compiled_regex}"
+        )
 
 
 def str_of_dict(d, str_format):
@@ -69,7 +75,9 @@ def dict_of_str(d, compiled_regex):
     if m:
         return m.groupdict()
     else:
-        raise KeyValidationError(f"The string {d} didn't match the pattern {compiled_regex}")
+        raise KeyValidationError(
+            f"The string {d} didn't match the pattern {compiled_regex}"
+        )
 
 
 def mk_str_of_obj(attrs):
@@ -122,7 +130,7 @@ def mk_obj_of_str(constructor):
     return obj_of_str
 
 
-def dsv_of_list(d, sep=','):
+def dsv_of_list(d, sep=","):
     """
     Converting a list of strings to a dsv (delimiter-separated values) string.
 
@@ -152,7 +160,7 @@ def dsv_of_list(d, sep=','):
     return sep.join(d)
 
 
-def list_of_dsv(d, sep=','):
+def list_of_dsv(d, sep=","):
     """
     Converting a dsv (delimiter-separated values) string to the list of it's components.
 
@@ -176,7 +184,9 @@ def list_of_dsv(d, sep=','):
     >>> list_of_dsv('', sep='@')  # when the string is empty
     []
     """
-    if not d:  # doing this, because split returns [''] on an empty string (bad choice if you ask me!)
+    if (
+            not d
+    ):  # doing this, because split returns [''] on an empty string (bad choice if you ask me!)
         return []
     else:
         return d.split(sep)
@@ -187,10 +197,10 @@ def _test_dsv_of_list(n_tests=100, max_n_elements=10, max_sep_length=3):
     import string
 
     alphanumeric = string.digits + string.ascii_lowercase
-    non_alphanumeric = ''.join(set(string.printable).difference(alphanumeric))
+    non_alphanumeric = "".join(set(string.printable).difference(alphanumeric))
 
     def random_string(length=7, character_set=alphanumeric):
-        return ''.join(random.choice(character_set) for _ in range(length))
+        return "".join(random.choice(character_set) for _ in range(length))
 
     for i in range(n_tests):
         for n_elements in random.choice(range(1, max_n_elements + 1)):
@@ -199,8 +209,10 @@ def _test_dsv_of_list(n_tests=100, max_n_elements=10, max_sep_length=3):
             sep = random_string(sep_length, non_alphanumeric)
             dsv_line = dsv_of_list(words, sep)
             dsv_words = list_of_dsv(dsv_line, sep)
-            assert all(dsv_words == words), f"Expected:\n\t{words}\nGot:\n\t{dsv_words}"
+            assert all(
+                dsv_words == words
+            ), f"Expected:\n\t{words}\nGot:\n\t{dsv_words}"
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     _test_dsv_of_list()

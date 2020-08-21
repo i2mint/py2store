@@ -11,7 +11,7 @@ class MongoCollectionReader(KvReader):
 
     """
 
-    def __init__(self, mgc=None, key_fields=('_id',), data_fields=None):
+    def __init__(self, mgc=None, key_fields=("_id",), data_fields=None):
         if mgc is None:
             mgc = _mk_dflt_mgc()
         self._mgc = mgc
@@ -21,26 +21,38 @@ class MongoCollectionReader(KvReader):
             pass
 
         self._key_projection = {k: True for k in key_fields}
-        if '_id' not in key_fields:
-            self._key_projection.update(_id=False)  # need to explicitly specify this since mongo includes _id by dflt
+        if "_id" not in key_fields:
+            self._key_projection.update(
+                _id=False
+            )  # need to explicitly specify this since mongo includes _id by dflt
         if data_fields is None:
             data_fields = {k: False for k in key_fields}
         elif not isinstance(data_fields, dict):
             data_fields = {k: True for k in data_fields}
-            if '_id' not in data_fields:
-                data_fields['_id'] = False
+            if "_id" not in data_fields:
+                data_fields["_id"] = False
         self._data_fields = data_fields
         self._key_fields = key_fields
 
     @classmethod
-    def from_params(cls, db_name='py2store', collection_name='test', key_fields=('_id',), data_fields=None,
-                    mongo_client=None):
+    def from_params(
+            cls,
+            db_name="py2store",
+            collection_name="test",
+            key_fields=("_id",),
+            data_fields=None,
+            mongo_client=None,
+    ):
         if mongo_client is None:
             mongo_client = MongoClient()
         elif isinstance(mongo_client, dict):
             mongo_client = MongoClient(**mongo_client)
 
-        return cls(mgc=mongo_client[db_name][collection_name], key_fields=key_fields, data_fields=data_fields)
+        return cls(
+            mgc=mongo_client[db_name][collection_name],
+            key_fields=key_fields,
+            data_fields=data_fields,
+        )
 
     def __getitem__(self, k):
         doc = self._mgc.find_one(k, projection=self._data_fields)
@@ -131,12 +143,19 @@ class MongoClientReader(KvReader):
         yield from self._mongo_client.list_database_names()
 
     def __getitem__(self, k):
-        return MongoDbReader(db_name=k, mongo_client=self._mongo_client)  # or just wrap self._mongo_client[k]?
+        return MongoDbReader(
+            db_name=k, mongo_client=self._mongo_client
+        )  # or just wrap self._mongo_client[k]?
 
 
 class MongoDbReader(KvReader):
-    def __init__(self, db_name='py2store', collection_store_cls=MongoCollectionReader,
-                 mongo_client=None, **mongo_client_kwargs):
+    def __init__(
+            self,
+            db_name="py2store",
+            collection_store_cls=MongoCollectionReader,
+            mongo_client=None,
+            **mongo_client_kwargs,
+    ):
         if mongo_client is None:
             self._mongo_client = MongoClient(**mongo_client_kwargs)
         elif isinstance(mongo_client, dict):
@@ -155,7 +174,7 @@ class MongoDbReader(KvReader):
 
 
 def _mk_dflt_mgc():
-    return MongoClient()['py2store']['test']
+    return MongoClient()["py2store"]["test"]
 
 
 class OldMongoPersister(Persister):
@@ -207,8 +226,14 @@ class OldMongoPersister(Persister):
     {'first': 'Vitalik', 'last': 'Buterin'} --> {'yob': 1994, 'proj': 'ethereum', 'bdfl': True}
     """
 
-    def __init__(self, db_name='py2store', collection_name='test', key_fields=('_id',), data_fields=None,
-                 mongo_client_kwargs=None):
+    def __init__(
+            self,
+            db_name="py2store",
+            collection_name="test",
+            key_fields=("_id",),
+            data_fields=None,
+            mongo_client_kwargs=None,
+    ):
         if mongo_client_kwargs is None:
             mongo_client_kwargs = {}
         self._mongo_client = MongoClient(**mongo_client_kwargs)
@@ -221,14 +246,16 @@ class OldMongoPersister(Persister):
             pass
 
         self._key_projection = {k: True for k in key_fields}
-        if '_id' not in key_fields:
-            self._key_projection.update(_id=False)  # need to explicitly specify this since mongo includes _id by dflt
+        if "_id" not in key_fields:
+            self._key_projection.update(
+                _id=False
+            )  # need to explicitly specify this since mongo includes _id by dflt
         if data_fields is None:
             data_fields = {k: False for k in key_fields}
         elif not isinstance(data_fields, dict):
             data_fields = {k: True for k in data_fields}
-            if '_id' not in data_fields:
-                data_fields['_id'] = False
+            if "_id" not in data_fields:
+                data_fields["_id"] = False
         self._data_fields = data_fields
         self._key_fields = key_fields
 
@@ -256,10 +283,20 @@ class OldMongoPersister(Persister):
 
 
 class OldMongoInsertPersister(OldMongoPersister):
-
-    def __init__(self, db_name='py2store', collection_name='test', data_fields=None, mongo_client_kwargs=None):
-        super().__init__(db_name=db_name, collection_name=collection_name, data_fields=data_fields,
-                         key_fields=('_id',), mongo_client_kwargs=mongo_client_kwargs)
+    def __init__(
+            self,
+            db_name="py2store",
+            collection_name="test",
+            data_fields=None,
+            mongo_client_kwargs=None,
+    ):
+        super().__init__(
+            db_name=db_name,
+            collection_name=collection_name,
+            data_fields=data_fields,
+            key_fields=("_id",),
+            mongo_client_kwargs=mongo_client_kwargs,
+        )
 
     def append(self, v):
         return self._mgc.insert_one(v)

@@ -1,7 +1,10 @@
 from functools import wraps
 
 from py2store.base import Store
-from py2store.persisters.sql_w_sqlalchemy import SQLAlchemyPersister, SqlDbReader
+from py2store.persisters.sql_w_sqlalchemy import (
+    SQLAlchemyPersister,
+    SqlDbReader,
+)
 from py2store.util import lazyprop
 
 
@@ -18,7 +21,9 @@ class SQLAlchemyTupleStore(SQLAlchemyStore):
         return self.store._key_fields
 
     def _id_of_key(self, k):
-        return {field: field_val for field, field_val in zip(self._key_fields, k)}
+        return {
+            field: field_val for field, field_val in zip(self._key_fields, k)
+        }
 
     def _key_of_id(self, obj):
         return tuple(getattr(obj, x) for x in self._key_fields)
@@ -28,7 +33,10 @@ class SQLAlchemyTupleStore(SQLAlchemyStore):
         return self.store._data_fields
 
     def _data_of_obj(self, data):
-        return {field: field_val for field, field_val in zip(self._data_fields, data)}
+        return {
+            field: field_val
+            for field, field_val in zip(self._data_fields, data)
+        }
 
     def _obj_of_data(self, obj):
         return tuple(getattr(obj, x) for x in self._data_fields)
@@ -41,7 +49,6 @@ from py2store.util import ModuleNotFoundErrorNiceMessage
 
 with ModuleNotFoundErrorNiceMessage():
     import pandas as pd
-
 
     class DfSqlDbReader(SqlDbReader):
         def __getitem__(self, k):

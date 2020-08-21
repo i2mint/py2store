@@ -9,26 +9,31 @@ try:
 except ModuleNotFoundError:
     from ut.util.code.findimports import ModuleGraph
 except ModuleNotFoundError:
-    raise ModuleNotFoundError("You'll need the findimports module for that! Try `pip install findimports`")
+    raise ModuleNotFoundError(
+        "You'll need the findimports module for that! Try `pip install findimports`"
+    )
 
 from py2store import Collection, KvReader, lazyprop, wrap_kvs
 
 
 class MyModuleGraph(ModuleGraph):
-    def __init__(self, root,
-                 trackUnusedNames=False,
-                 all_unused=False,
-                 external_dependencies=True,
-                 warn_about_duplicates=False,
-                 verbose=False,
-                 ignore_parse_path_warnings=False):
+    def __init__(
+            self,
+            root,
+            trackUnusedNames=False,
+            all_unused=False,
+            external_dependencies=True,
+            warn_about_duplicates=False,
+            verbose=False,
+            ignore_parse_path_warnings=False,
+    ):
         super().__init__()
         self._root = root
         if isinstance(root, str) and not os.path.exists(root):
             root = import_module(root)
         if isinstance(root, ModuleType):
             root = root.__file__
-            if root.endswith('__init__.py'):
+            if root.endswith("__init__.py"):
                 root = os.path.dirname(root)
         assert isinstance(root, str) and os.path.exists(root)
         self._rootpath = root
@@ -42,7 +47,7 @@ class MyModuleGraph(ModuleGraph):
         # TODO: This doesn't work. Warnings still showing. Repair!
         if ignore_parse_path_warnings:
             with warnings.catch_warnings():
-                warnings.filterwarnings('ignore')
+                warnings.filterwarnings("ignore")
                 self.parsePathname(self._rootpath)
         else:
             self.parsePathname(self._rootpath)
@@ -55,7 +60,9 @@ class ModulesColl(Collection):
 
     @lazyprop
     def _modules(self):
-        return {module: module.modname for module in self._source.listModules()}
+        return {
+            module: module.modname for module in self._source.listModules()
+        }
 
     @lazyprop
     def _modobj_of_modname(self):
@@ -89,7 +96,12 @@ def modname_to_modobj(self, modname):
     return self.store._modobj_of_modname[modname]
 
 
-@wrap_kvs(name='ModuleImports', key_of_id=modobj_to_modname, id_of_key=modname_to_modobj, __module__=__name__)
+@wrap_kvs(
+    name="ModuleImports",
+    key_of_id=modobj_to_modname,
+    id_of_key=modname_to_modobj,
+    __module__=__name__,
+)
 class ModuleImports(ModuleImportsBase):
     @staticmethod
     def _key_to_val(k):
@@ -97,7 +109,7 @@ class ModuleImports(ModuleImportsBase):
 
     def print_kvs(self):
         for k, v in self.items():
-            print(f"{k}" + '\n' + '\n'.join('    ' + x for x in v))
+            print(f"{k}" + "\n" + "\n".join("    " + x for x in v))
 
 
 # A few useful applications #####################################################################################
@@ -119,18 +131,22 @@ def standard_lib_names_gen(include_underscored=True):
     >>> assert {'__pycache__', 'LICENSE.txt', 'config-3.8-darwin', '.DS_Store'}.isdisjoint(standard_lib_names)
     """
     import os
-    yield from {'itertools', 'sys'}  # exceptions that don't have a .py or package
+
+    yield from {
+        "itertools",
+        "sys",
+    }  # exceptions that don't have a .py or package
     for filename in os.listdir(standard_lib_dir):
-        if not include_underscored and filename.startswith('_'):
+        if not include_underscored and filename.startswith("_"):
             continue
-        if filename == 'site-packages':
+        if filename == "site-packages":
             continue
         filepath = os.path.join(standard_lib_dir, filename)
         name, ext = os.path.splitext(filename)
-        if filename.endswith('.py') and os.path.isfile(filepath):
+        if filename.endswith(".py") and os.path.isfile(filepath):
             if str.isidentifier(name):
                 yield name
-        elif os.path.isdir(filepath) and '__init__.py' in os.listdir(filepath):
+        elif os.path.isdir(filepath) and "__init__.py" in os.listdir(filepath):
             yield name
 
 
@@ -159,6 +175,7 @@ def imports_for(root, post=set):
     >>> assert imports_for(wave) == {'warnings', 'builtins', 'sys', 'audioop', 'chunk', 'struct', 'collections'}
     """
     import itertools
+
     m = ModuleImports(root)
     imports_gen = itertools.chain.from_iterable(tuple(v) for v in m.values())
     if callable(post):
@@ -172,9 +189,20 @@ from collections import Counter
 
 imports_for.set = partial(imports_for, post=set)
 imports_for.counter = partial(imports_for, post=Counter)
-imports_for.most_common = partial(imports_for, post=lambda x: Counter(x).most_common())
-imports_for.first_level = partial(imports_for, post=lambda x: set(xx.split('.')[0] for xx in x))
-imports_for.first_level_count = partial(imports_for, post=lambda x: Counter(xx.split('.')[0] for xx in x))
+imports_for.most_common = partial(
+    imports_for, post=lambda x: Counter(x).most_common()
+)
+imports_for.first_level = partial(
+    imports_for, post=lambda x: set(xx.split(".")[0] for xx in x)
+)
+imports_for.first_level_count = partial(
+    imports_for, post=lambda x: Counter(xx.split(".")[0] for xx in x)
+)
 imports_for.third_party = partial(
     imports_for,
-    post=lambda module: set(xx.split('.')[0] for xx in module if xx.split('.')[0] not in standard_lib_names))
+    post=lambda module: set(
+        xx.split(".")[0]
+        for xx in module
+        if xx.split(".")[0] not in standard_lib_names
+    ),
+)

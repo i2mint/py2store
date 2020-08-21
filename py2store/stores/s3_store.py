@@ -9,14 +9,16 @@ with ModuleNotFoundErrorNiceMessage():
 
 DFLT_AWS_S3_ENDPOINT = "https://s3.amazonaws.com"
 DFLT_BOTO_CLIENT_VERIFY = None
-DFLT_SIGNATURE_VERSION = 's3v4'
+DFLT_SIGNATURE_VERSION = "s3v4"
 DFLT_CONFIG = Config(signature_version=DFLT_SIGNATURE_VERSION)
 
 
 class S3AbsPathBinaryStore(Store):
     # @wraps(S3BucketPersister.from_s3_resource_kwargs)
-    def __init__(self, bucket_name, _prefix: str = '', resource_kwargs=None):
-        persister = S3BucketPersister.from_s3_resource_kwargs(bucket_name, _prefix, resource_kwargs)
+    def __init__(self, bucket_name, _prefix: str = "", resource_kwargs=None):
+        persister = S3BucketPersister.from_s3_resource_kwargs(
+            bucket_name, _prefix, resource_kwargs
+        )
         super().__init__(persister)
         self._prefix = self.store._prefix
 
@@ -27,7 +29,7 @@ class S3AbsPathBinaryStore(Store):
         return _id.key
 
 
-S3BinaryStore = mk_relative_path_store(S3AbsPathBinaryStore, 'S3BinaryStore')
+S3BinaryStore = mk_relative_path_store(S3AbsPathBinaryStore, "S3BinaryStore")
 
 
 class S3TextStore(S3BinaryStore):
@@ -39,7 +41,6 @@ S3StringStore = S3TextStore
 
 
 class S3PickleStore(S3BinaryStore):
-
     def _obj_of_data(self, data):
         return pickle.loads(data)
 

@@ -48,6 +48,7 @@ def copy_attrs(target, source, attrs, raise_error_if_an_attr_is_missing=True):
 
 def copy_attrs_from(from_obj, to_obj, attrs):
     from warnings import warn
+
     warn(f"Deprecated. Use copy_attrs instead.", DeprecationWarning)
     copy_attrs(to_obj, from_obj, attrs)
     return to_obj
@@ -90,23 +91,29 @@ def norm_kv_filt(kv_filt: Callable[[Any], bool]):
     if kv_filt is None:
         return None  # because `filter` works with a callable, or None, so we align
 
-    raise_msg = (f"kv_filt should be callable (starting with signature (k), (v), or (k, v)),"
-                 "and returning  a boolean. What you gave me was {fv_filt}")
+    raise_msg = (
+        f"kv_filt should be callable (starting with signature (k), (v), or (k, v)),"
+        "and returning  a boolean. What you gave me was {fv_filt}"
+    )
     assert callable(kv_filt), raise_msg
 
     params = list(signature(kv_filt).parameters.values())
     assert len(params), raise_msg
     _kv_filt = kv_filt
-    if params[0].name == 'v':
+    if params[0].name == "v":
+
         def kv_filt(k, v):
             return _kv_filt(v)
-    elif params[0].name == 'k':
+
+    elif params[0].name == "k":
         if len(params) > 1:
-            if params[1].name != 'v':
+            if params[1].name != "v":
                 raise ValueError(raise_msg)
         else:
+
             def kv_filt(k, v):
                 return _kv_filt(k)
+
     else:
         raise ValueError(raise_msg)
 
@@ -118,12 +125,12 @@ def norm_kv_filt(kv_filt: Callable[[Any], bool]):
     return __kv_filt
 
 
-var_str_p = re.compile('\W|^(?=\d)')
+var_str_p = re.compile("\W|^(?=\d)")
 
 Item = Any
 
 
-def add_attrs(remember_added_attrs=True, if_attr_exists='raise', **attrs):
+def add_attrs(remember_added_attrs=True, if_attr_exists="raise", **attrs):
     """Make a function that will add attributes to an obj.
     Originally meant to be used as a decorator of a function, to inject
     >>> from py2store.util import add_attrs
@@ -144,14 +151,18 @@ def add_attrs(remember_added_attrs=True, if_attr_exists='raise', **attrs):
         attrs_added = []
         for attr_name, attr_val in attrs.items():
             if hasattr(obj, attr_name):
-                if if_attr_exists == 'raise':
-                    raise AttributeError(f"Attribute {attr_name} already exists in {obj}")
-                elif if_attr_exists == 'warn':
+                if if_attr_exists == "raise":
+                    raise AttributeError(
+                        f"Attribute {attr_name} already exists in {obj}"
+                    )
+                elif if_attr_exists == "warn":
                     warn(f"Attribute {attr_name} already exists in {obj}")
-                elif if_attr_exists == 'skip':
+                elif if_attr_exists == "skip":
                     continue
                 else:
-                    raise ValueError(f"Unknown value for if_attr_exists: {if_attr_exists}")
+                    raise ValueError(
+                        f"Unknown value for if_attr_exists: {if_attr_exists}"
+                    )
             setattr(obj, attr_name, attr_val)
             attrs_added.append(attr_name)
 
@@ -171,7 +182,7 @@ def attrs_of(obj):
     return set(dir(obj))
 
 
-def format_invocation(name='', args=(), kwargs=None):
+def format_invocation(name="", args=(), kwargs=None):
     """Given a name, positional arguments, and keyword arguments, format
     a basic Python-style function call.
 
@@ -184,26 +195,27 @@ def format_invocation(name='', args=(), kwargs=None):
 
     """
     kwargs = kwargs or {}
-    a_text = ', '.join([repr(a) for a in args])
+    a_text = ", ".join([repr(a) for a in args])
     if isinstance(kwargs, dict):
         kwarg_items = [(k, kwargs[k]) for k in sorted(kwargs)]
     else:
         kwarg_items = kwargs
-    kw_text = ', '.join(['%s=%r' % (k, v) for k, v in kwarg_items])
+    kw_text = ", ".join(["%s=%r" % (k, v) for k, v in kwarg_items])
 
     all_args_text = a_text
     if all_args_text and kw_text:
-        all_args_text += ', '
+        all_args_text += ", "
     all_args_text += kw_text
 
-    return '%s(%s)' % (name, all_args_text)
+    return "%s(%s)" % (name, all_args_text)
 
 
-def groupby(items: Iterable[Item],
-            key: Callable[[Item], Hashable],
-            val: Optional[Callable[[Item], Any]] = None,
-            group_factory=list
-            ) -> dict:
+def groupby(
+        items: Iterable[Item],
+        key: Callable[[Item], Hashable],
+        val: Optional[Callable[[Item], Any]] = None,
+        group_factory=list,
+) -> dict:
     """Groups items according to group keys updated from those items through the given (item_to_)key function.
 
     Args:
@@ -268,11 +280,14 @@ def regroupby(items, *key_funcs, **named_key_funcs):
     else:
         key_func, *key_funcs = key_funcs
         groups = groupby(items, key=key_func)
-        return {group_key: regroupby(group_items, *key_funcs) for group_key, group_items in groups.items()}
+        return {
+            group_key: regroupby(group_items, *key_funcs)
+            for group_key, group_items in groups.items()
+        }
 
 
 def ntup(**kwargs):
-    return namedtuple('NamedTuple', list(kwargs))(**kwargs)
+    return namedtuple("NamedTuple", list(kwargs))(**kwargs)
 
 
 def str_to_var_str(s: str) -> str:
@@ -286,7 +301,7 @@ def str_to_var_str(s: str) -> str:
     >>> str_to_var_str('99_ballons')
     '_99_ballons'
     """
-    return var_str_p.sub('_', s)
+    return var_str_p.sub("_", s)
 
 
 # TODO: Make it work with a store, without having to load and store the values explicitly.
@@ -317,10 +332,11 @@ class DictAttr:
     >>> da._dict  # the hidden dict that is wrapped
     {'life': 42, 'true': 'love'}
     """
+
     _dict = None
 
     def __init__(self, **kwargs):
-        super().__setattr__('_dict', {})
+        super().__setattr__("_dict", {})
         for k, v in kwargs.items():
             setattr(self, k, v)
 
@@ -431,8 +447,10 @@ class lazyprop:
     """
 
     def __init__(self, func):
-        self.__doc__ = getattr(func, '__doc__')
-        self.__isabstractmethod__ = getattr(func, '__isabstractmethod__', False)
+        self.__doc__ = getattr(func, "__doc__")
+        self.__isabstractmethod__ = getattr(
+            func, "__isabstractmethod__", False
+        )
         self.func = func
 
     def __get__(self, instance, cls):
@@ -444,7 +462,7 @@ class lazyprop:
 
     def __repr__(self):
         cn = self.__class__.__name__
-        return '<%s func=%s>' % (cn, self.func)
+        return "<%s func=%s>" % (cn, self.func)
 
 
 from functools import lru_cache, wraps
@@ -507,14 +525,17 @@ class lazyprop_w_sentinel(lazyprop):
     generating "len"
     3
     """
-    sentinel_prefix = 'sentinel_of__'
+
+    sentinel_prefix = "sentinel_of__"
 
     def __get__(self, instance, cls):
         if instance is None:
             return self
         else:
             value = instance.__dict__[self.func.__name__] = self.func(instance)
-            setattr(instance, self.sentinel_prefix + self.func.__name__, True)  # my hack
+            setattr(
+                instance, self.sentinel_prefix + self.func.__name__, True
+            )  # my hack
             return value
 
     @classmethod
@@ -532,7 +553,9 @@ class MutableStruct(Struct):
     def extend(self, **attr_val_dict):
         for attr in attr_val_dict.keys():
             if hasattr(self, attr):
-                raise AttributeError(f"The attribute {attr} already exists. Delete it if you want to reuse it!")
+                raise AttributeError(
+                    f"The attribute {attr} already exists. Delete it if you want to reuse it!"
+                )
         for attr, val in attr_val_dict.items():
             setattr(self, attr, val)
 
@@ -544,7 +567,7 @@ def max_common_prefix(a):
     :return: the smallest common prefix of all strings in a
     """
     if not a:
-        return ''
+        return ""
     # Note: Try to optimize by using a min_max function to give me both in one pass. The current version is still faster
     s1 = min(a)
     s2 = max(a)
@@ -594,7 +617,9 @@ class DelegatedAttribute:
     #     return self.delegate(instance)(*args, **kwargs)
 
 
-def delegate_as(delegate_cls, to='delegate', include=frozenset(), exclude=frozenset()):
+def delegate_as(
+        delegate_cls, to="delegate", include=frozenset(), exclude=frozenset()
+):
     raise NotImplementedError("Didn't manage to make this work fully")
     # turn include and ignore into sets, if they aren't already
     include = set(include)
@@ -622,7 +647,7 @@ class HashableMixin:
 
 class ImmutableMixin:
     def _immutable(self, *args, **kws):
-        raise TypeError('object is immutable')
+        raise TypeError("object is immutable")
 
     __setitem__ = _immutable
     __delitem__ = _immutable
@@ -635,11 +660,14 @@ class ImmutableMixin:
 
 class imdict(dict, HashableMixin, ImmutableMixin):
     """ A frozen hashable dict """
+
     pass
 
 
 def move_files_of_folder_to_trash(folder):
-    trash_dir = os.path.join(os.getenv("HOME"), '.Trash')  # works with mac (perhaps linux too?)
+    trash_dir = os.path.join(
+        os.getenv("HOME"), ".Trash"
+    )  # works with mac (perhaps linux too?)
     assert os.path.isdir(trash_dir), f"{trash_dir} directory not found"
 
     for f in os.listdir(folder):
@@ -662,7 +690,8 @@ class ModuleNotFoundErrorNiceMessage:
             if self.msg is not None:
                 warn(self.msg)
             else:
-                raise ModuleNotFoundError(f"""
+                raise ModuleNotFoundError(
+                    f"""
 It seems you don't have required `{exc_val.name}` package for this Store.
 Try installing it by running:
 
@@ -670,7 +699,8 @@ Try installing it by running:
     
 in your terminal.
 For more information: https://pypi.org/project/{exc_val.name}
-            """)
+            """
+                )
 
 
 class ModuleNotFoundWarning:

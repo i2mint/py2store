@@ -3,23 +3,32 @@ from os import stat as os_stat
 from functools import wraps
 
 from py2store.base import Collection, KvReader, KvPersister
-from py2store.key_mappers.naming import mk_pattern_from_template_and_format_dict
+from py2store.key_mappers.naming import (
+    mk_pattern_from_template_and_format_dict,
+)
 from py2store.key_mappers.paths import mk_relative_path_store
-from py2store.persisters.local_files import inf, ensure_slash_suffix, iter_filepaths_in_folder_recursively, \
-    iter_dirpaths_in_folder_recursively
+from py2store.persisters.local_files import (
+    inf,
+    ensure_slash_suffix,
+    iter_filepaths_in_folder_recursively,
+    iter_dirpaths_in_folder_recursively,
+)
 
 
-def mk_tmp_py2store_dir(dirname=''):
+def mk_tmp_py2store_dir(dirname=""):
     from tempfile import gettempdir
+
     tmpdir = os.path.join(gettempdir(), dirname)
-    os.path.isdir(tmpdir) or os.mkdir(tmpdir)  # make the directory if it doesn't exist
+    os.path.isdir(tmpdir) or os.mkdir(
+        tmpdir
+    )  # make the directory if it doesn't exist
     return tmpdir
 
 
 def mk_absolute_path(path_format):
-    if path_format.startswith('~'):
+    if path_format.startswith("~"):
         path_format = os.path.expanduser(path_format)
-    elif path_format.startswith('.'):
+    elif path_format.startswith("."):
         path_format = os.path.abspath(path_format)
     return path_format
 
@@ -48,39 +57,50 @@ def validate_key_and_raise_key_error_on_exception(func):
 
 
 class FileSysCollection(Collection):
-
-    def __init__(self, rootdir, subpath='', pattern_for_field=None, max_levels=None):
+    def __init__(
+            self, rootdir, subpath="", pattern_for_field=None, max_levels=None
+    ):
         if max_levels is None:
             max_levels = inf
         subpath_implied_min_levels = len(subpath.split(os.path.sep)) - 1
-        assert max_levels >= subpath_implied_min_levels, \
-            f"max_levels is {max_levels}, but subpath {subpath} would imply at least {subpath_implied_min_levels}"
+        assert (
+                max_levels >= subpath_implied_min_levels
+        ), f"max_levels is {max_levels}, but subpath {subpath} would imply at least {subpath_implied_min_levels}"
         pattern_for_field = pattern_for_field or {}
         self.rootdir = ensure_slash_suffix(rootdir)
         self.subpath = subpath
-        self._key_pattern = mk_pattern_from_template_and_format_dict(os.path.join(rootdir, subpath), pattern_for_field)
+        self._key_pattern = mk_pattern_from_template_and_format_dict(
+            os.path.join(rootdir, subpath), pattern_for_field
+        )
         self._max_levels = max_levels
 
     def is_valid_key(self, k):
         return bool(self._key_pattern.match(k))
 
-    def validate_key(self, k, err_msg_format=_dflt_not_valid_error_msg, err_type=KeyValidationError):
+    def validate_key(
+            self,
+            k,
+            err_msg_format=_dflt_not_valid_error_msg,
+            err_type=KeyValidationError,
+    ):
         if not self.is_valid_key(k):
             raise err_type(err_msg_format.format(k))
 
 
 class DirCollection(FileSysCollection):
-
     def __iter__(self):
-        yield from filter(self.is_valid_key,
-                          iter_dirpaths_in_folder_recursively(self.rootdir, max_levels=self._max_levels))
+        yield from filter(
+            self.is_valid_key,
+            iter_dirpaths_in_folder_recursively(
+                self.rootdir, max_levels=self._max_levels
+            ),
+        )
 
     def __contains__(self, k):
         return self.is_valid_key(k) and os.path.isdir(k)
 
 
 class FileCollection(FileSysCollection):
-
     def __iter__(self):
         """
         Iterator of valid filepaths.
@@ -93,8 +113,12 @@ class FileCollection(FileSysCollection):
         >>> filepath in files_in_this_dir
         True
         """
-        yield from filter(self.is_valid_key,
-                          iter_filepaths_in_folder_recursively(self.rootdir, max_levels=self._max_levels))
+        yield from filter(
+            self.is_valid_key,
+            iter_filepaths_in_folder_recursively(
+                self.rootdir, max_levels=self._max_levels
+            ),
+        )
 
     def __contains__(self, k):
         """
@@ -119,8 +143,15 @@ class FileInfoReader(FileCollection):
 
 
 class FileBytesReader(FileCollection, KvReader):
-    _read_open_kwargs = dict(mode='rb', buffering=-1, encoding=None, errors=None, newline=None, closefd=True,
-                             opener=None)
+    _read_open_kwargs = dict(
+        mode="rb",
+        buffering=-1,
+        encoding=None,
+        errors=None,
+        newline=None,
+        closefd=True,
+        opener=None,
+    )
 
     @validate_key_and_raise_key_error_on_exception
     def __getitem__(self, k):
@@ -155,8 +186,15 @@ class FileBytesReader(FileCollection, KvReader):
 
 
 class FileBytesPersister(FileBytesReader, KvPersister):
-    _write_open_kwargs = dict(mode='wb', buffering=-1, encoding=None, errors=None, newline=None, closefd=True,
-                              opener=None)
+    _write_open_kwargs = dict(
+        mode="wb",
+        buffering=-1,
+        encoding=None,
+        errors=None,
+        newline=None,
+        closefd=True,
+        opener=None,
+    )
 
     @validate_key_and_raise_key_error_on_exception
     def __setitem__(self, k, v):
@@ -168,19 +206,19 @@ class FileBytesPersister(FileBytesReader, KvPersister):
         os.remove(k)
 
 
-RelPathFileBytesReader = mk_relative_path_store(FileBytesReader,
-                                                name='RelPathFileBytesReader',
-                                                prefix_attr='rootdir')
+RelPathFileBytesReader = mk_relative_path_store(
+    FileBytesReader, name="RelPathFileBytesReader", prefix_attr="rootdir"
+)
 
 
 class FileStringReader(FileBytesReader):
-    _read_open_kwargs = dict(FileBytesReader._read_open_kwargs, mode='rt')
+    _read_open_kwargs = dict(FileBytesReader._read_open_kwargs, mode="rt")
 
 
 class FileStringPersister(FileBytesPersister):
-    _write_open_kwargs = dict(FileBytesPersister._write_open_kwargs, mode='wt')
+    _write_open_kwargs = dict(FileBytesPersister._write_open_kwargs, mode="wt")
 
 
-RelPathFileStringReader = mk_relative_path_store(FileStringReader,
-                                                 name='RelPathFileStringReader',
-                                                 prefix_attr='rootdir')
+RelPathFileStringReader = mk_relative_path_store(
+    FileStringReader, name="RelPathFileStringReader", prefix_attr="rootdir"
+)

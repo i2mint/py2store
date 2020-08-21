@@ -4,8 +4,10 @@ from py2store import wrap_kvs
 
 from io import BytesIO
 
-with ModuleNotFoundErrorNiceMessage("docx wasn't found. Search and install python-docx package. "
-                                    "For example, you could do: pip install python-docx"):
+with ModuleNotFoundErrorNiceMessage(
+        "docx wasn't found. Search and install python-docx package. "
+        "For example, you could do: pip install python-docx"
+):
     import docx  # https://automatetheboringstuff.com/chapter13/
 
 
@@ -19,13 +21,17 @@ def get_text_from_docx(doc):
     fullText = []
     for para in doc.paragraphs:
         fullText.append(para.text)
-    return '\n'.join(fullText)
+    return "\n".join(fullText)
 
 
 def bytes_to_doc(doc_bytes):
     return docx.Document(BytesIO(doc_bytes))
 
 
-LocalDocxStore = wrap_kvs(LocalBinaryStore, 'LocalDocxStore', obj_of_data=bytes_to_doc)
+LocalDocxStore = wrap_kvs(
+    LocalBinaryStore, "LocalDocxStore", obj_of_data=bytes_to_doc
+)
 
-LocalDocxTextStore = wrap_kvs(LocalDocxStore, 'LocalDocxTextStore', obj_of_data=get_text_from_docx)
+LocalDocxTextStore = wrap_kvs(
+    LocalDocxStore, "LocalDocxTextStore", obj_of_data=get_text_from_docx
+)

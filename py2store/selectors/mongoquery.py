@@ -14,6 +14,7 @@ from six import string_types
 
 class QueryError(Exception):
     """ Query error exception """
+
     pass
 
 
@@ -65,12 +66,15 @@ class Query(object):
             return _Undefined()
 
     def _path_exists(self, operator, condition, entry):
-        keys_list = list(operator.split('.'))
+        keys_list = list(operator.split("."))
         for i, k in enumerate(keys_list):
             if isinstance(entry, Sequence) and not k.isdigit():
                 for elem in entry:
-                    operator = '.'.join(keys_list[i:])
-                    if self._path_exists(operator, condition, elem) == condition:
+                    operator = ".".join(keys_list[i:])
+                    if (
+                            self._path_exists(operator, condition, elem)
+                            == condition
+                    ):
                         return condition
                 return not condition
             elif isinstance(entry, Sequence):
@@ -83,8 +87,8 @@ class Query(object):
 
     def _process_condition(self, operator, condition, entry):
         if isinstance(condition, Mapping) and "$exists" in condition:
-            if isinstance(operator, string_types) and operator.find('.') != -1:
-                return self._path_exists(operator, condition['$exists'], entry)
+            if isinstance(operator, string_types) and operator.find(".") != -1:
+                return self._path_exists(operator, condition["$exists"], entry)
             elif condition["$exists"] != (operator in entry):
                 return False
             elif tuple(condition.keys()) == ("$exists",):
@@ -95,7 +99,8 @@ class Query(object):
                     return getattr(self, "_" + operator[1:])(condition, entry)
                 except AttributeError:
                     raise QueryError(
-                        "{!r} operator isn't supported".format(operator))
+                        "{!r} operator isn't supported".format(operator)
+                    )
             else:
                 try:
                     extracted_data = self._extract(entry, operator.split("."))
@@ -243,7 +248,7 @@ class Query(object):
             15: str,  # JavaScript (with scope)
             16: int,  # 32-bit integer
             17: int,  # Timestamp
-            18: int  # 64-bit integer
+            18: int,  # 64-bit integer
         }
         bson_alias = {
             "double": 1,
@@ -264,17 +269,20 @@ class Query(object):
         }
 
         if condition == "number":
-            return any([
-                isinstance(entry, bson_type[bson_alias[alias]])
-                for alias in ["double", "int", "long"]
-            ])
+            return any(
+                [
+                    isinstance(entry, bson_type[bson_alias[alias]])
+                    for alias in ["double", "int", "long"]
+                ]
+            )
 
         # resolves bson alias, or keeps original condition value
         condition = bson_alias.get(condition, condition)
 
         if condition not in bson_type:
             raise QueryError(
-                "$type has been used with unknown type {!r}".format(condition))
+                "$type has been used with unknown type {!r}".format(condition)
+            )
 
         return isinstance(entry, bson_type.get(condition))
 
@@ -294,14 +302,13 @@ class Query(object):
             return False
         try:
             regex = re.match(
-                r"\A/(.+)/([imsx]{,4})\Z",
-                condition,
-                flags=re.DOTALL
+                r"\A/(.+)/([imsx]{,4})\Z", condition, flags=re.DOTALL
             )
         except TypeError:
             raise QueryError(
                 "{!r} is not a regular expression "
-                "and should be a string".format(condition))
+                "and should be a string".format(condition)
+            )
 
         flags = 0
         if regex:
@@ -317,7 +324,9 @@ class Query(object):
         except Exception as error:
             raise QueryError(
                 "{!r} failed to execute with error {!r}".format(
-                    condition, error))
+                    condition, error
+                )
+            )
         return bool(match)
 
     _options = _text = _where = _not_implemented
@@ -327,10 +336,7 @@ class Query(object):
     #################
 
     def _all(self, condition, entry):
-        return all(
-            self._match(item, entry)
-            for item in condition
-        )
+        return all(self._match(item, entry) for item in condition)
 
     def _elemMatch(self, condition, entry):
         # pylint: disable=invalid-name

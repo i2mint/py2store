@@ -57,18 +57,16 @@ class ArangoDbPersister(Persister):
 
     def __init__(
             self,
-            user='root',
-            password='root',
-            url='http://127.0.0.1:8529',
-            db_name='py2store',
-            collection_name='test',
-            key_fields=('key',),  # _id, _key and _rev are reserved by db
-            key_fields_separator='::',
+            user="root",
+            password="root",
+            url="http://127.0.0.1:8529",
+            db_name="py2store",
+            collection_name="test",
+            key_fields=("key",),  # _id, _key and _rev are reserved by db
+            key_fields_separator="::",
     ):
         self._connection = Connection(
-            arangoURL=url,
-            username=user,
-            password=password,
+            arangoURL=url, username=user, password=password,
         )
 
         self._db_name = db_name
@@ -82,7 +80,9 @@ class ArangoDbPersister(Persister):
 
         # If collection not created:
         if not self._adb.hasCollection(self._collection_name):
-            self._collection = self._adb.createCollection(name=self._collection_name)
+            self._collection = self._adb.createCollection(
+                name=self._collection_name
+            )
 
         self._collection = self._adb[self._collection_name]
 
@@ -137,8 +137,7 @@ class ArangoDbPersister(Persister):
         data = {
             key: doc[key]
             for key in doc
-            if key not in self._reserved and
-               key not in self._key_fields
+            if key not in self._reserved and key not in self._key_fields
         }
         return data
 
@@ -162,10 +161,7 @@ class ArangoDbPersister(Persister):
         docs = self._collection.fetchAll()
 
         yield from (
-            {
-                key_name: doc[key_name]
-                for key_name in self._key_fields
-            }
+            {key_name: doc[key_name] for key_name in self._key_fields}
             for doc in docs
         )
 

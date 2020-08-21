@@ -42,6 +42,7 @@ class PathGetMixin:
     >>> assert s['a.b'] == {'c': 42}
     >>> assert s['a.b.c'] == 42
     """
+
     _path_type: type = tuple
 
     def __getitem__(self, k):
@@ -150,7 +151,13 @@ class PrefixRelativizationMixin:
         return _id[self._prefix_length:]
 
 
-def mk_relative_path_store(store_cls, name=None, with_key_validation=False, prefix_attr='_prefix', __module__=None):
+def mk_relative_path_store(
+        store_cls,
+        name=None,
+        with_key_validation=False,
+        prefix_attr="_prefix",
+        __module__=None,
+):
     """
 
     Args:
@@ -179,26 +186,31 @@ def mk_relative_path_store(store_cls, name=None, with_key_validation=False, pref
     ...         self._prefix = _prefix
 
     """
-    name = name or ('RelPath' + store_cls.__name__)
-    __module__ = __module__ or getattr(store_cls, '__module__', None)
+    name = name or ("RelPath" + store_cls.__name__)
+    __module__ = __module__ or getattr(store_cls, "__module__", None)
 
     cls = type(name, (PrefixRelativizationMixin, Store), {})
 
     @wraps(store_cls.__init__)
     def __init__(self, *args, **kwargs):
         Store.__init__(self, store=store_cls(*args, **kwargs))
-        prefix = recursive_get_attr(self.store, prefix_attr, '')
-        setattr(self, prefix_attr, prefix)  # TODO: Might need descriptor to enable assignment
+        prefix = recursive_get_attr(self.store, prefix_attr, "")
+        setattr(
+            self, prefix_attr, prefix
+        )  # TODO: Might need descriptor to enable assignment
 
     cls.__init__ = __init__
 
     if with_key_validation:
+
         def _id_of_key(self, k):
             _id = super(cls, self)._id_of_key(k)
             if self.store.is_valid_key(_id):
                 return _id
             else:
-                raise KeyError(f"Key not valid (usually because does not exist or access not permitted): {k}")
+                raise KeyError(
+                    f"Key not valid (usually because does not exist or access not permitted): {k}"
+                )
 
         cls._id_of_key = _id_of_key
 

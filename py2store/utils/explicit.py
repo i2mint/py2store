@@ -13,7 +13,7 @@ class ObjLoader(object):
     def __init__(self, data_of_key, obj_of_data=None):
         self.data_of_key = data_of_key
         if obj_of_data is not None or not callable(obj_of_data):
-            raise TypeError('serializer must be None or a callable')
+            raise TypeError("serializer must be None or a callable")
         self.obj_of_data = obj_of_data
 
     def __call__(self, k):
@@ -54,14 +54,21 @@ class ObjReader:
 
     @classmethod
     def from_composition(cls, data_of_key, obj_of_data=None):
-        return cls(_obj_of_key=ObjLoader(data_of_key=data_of_key, obj_of_data=obj_of_data))
+        return cls(
+            _obj_of_key=ObjLoader(
+                data_of_key=data_of_key, obj_of_data=obj_of_data
+            )
+        )
 
     def __getitem__(self, k):
         try:
             return self._obj_of_key(k)
         except Exception as e:
-            raise KeyError("KeyError in {} when trying to __getitem__({}): {}".format(
-                e.__class__.__name__, k, e))
+            raise KeyError(
+                "KeyError in {} when trying to __getitem__({}): {}".format(
+                    e.__class__.__name__, k, e
+                )
+            )
 
 
 # TODO: Revisit ExplicitKeys and ExplicitKeysWithPrefixRelativization. Not extendible to full store!
@@ -79,12 +86,15 @@ class ExplicitKeys(Collection):
     ['foo', 'bar', 'alice']
     """
 
-    __slots__ = ('_key_collection',)
+    __slots__ = ("_key_collection",)
 
     def __init__(self, key_collection: CollectionType):
-        assert isinstance(key_collection, CollectionType), \
-            "key_collection must be a collections.abc.Collection, i.e. have a __len__, __contains__, and __len__." \
-            "The key_collection you gave me was a {}".format(type(key_collection))
+        assert isinstance(key_collection, CollectionType), (
+            "key_collection must be a collections.abc.Collection, i.e. have a __len__, __contains__, and __len__."
+            "The key_collection you gave me was a {}".format(
+                type(key_collection)
+            )
+        )
         self._key_collection = key_collection
 
     def __iter__(self):
@@ -162,24 +172,29 @@ def invertible_maps(mapping=None, inv_mapping=None):
     if inv_mapping is None and mapping is None:
         raise ValueError("You need to specify one or both maps")
     if inv_mapping is None:
-        assert hasattr(mapping, 'items')
+        assert hasattr(mapping, "items")
         inv_mapping = {v: k for k, v in mapping.items()}
-        assert len(inv_mapping) == len(mapping), \
-            "The values of mapping are not unique, so the mapping is not invertible"
+        assert len(inv_mapping) == len(
+            mapping
+        ), "The values of mapping are not unique, so the mapping is not invertible"
     elif mapping is None:
-        assert hasattr(inv_mapping, 'items')
+        assert hasattr(inv_mapping, "items")
         mapping = {v: k for k, v in inv_mapping.items()}
-        assert len(mapping) == len(inv_mapping), \
-            "The values of inv_mapping are not unique, so the mapping is not invertible"
+        assert len(mapping) == len(
+            inv_mapping
+        ), "The values of inv_mapping are not unique, so the mapping is not invertible"
     else:
-        assert (len(mapping) == len(inv_mapping)) and (mapping == {v: k for k, v in inv_mapping.items()}), \
-            "mapping and inv_mapping are not inverse of each other!"
+        assert (len(mapping) == len(inv_mapping)) and (
+                mapping == {v: k for k, v in inv_mapping.items()}
+        ), "mapping and inv_mapping are not inverse of each other!"
 
     return mapping, inv_mapping
 
 
 class ExplicitKeyMap:
-    def __init__(self, *, key_of_id: Mapping = None, id_of_key: Mapping = None):
+    def __init__(
+            self, *, key_of_id: Mapping = None, id_of_key: Mapping = None
+    ):
         """
 
         :param key_of_id:
@@ -252,7 +267,8 @@ class ExplicitKeysWithPrefixRelativization(PrefixRelativizationMixin, Store):
     >>> list(keys)
     ['of/foo', 'of/bar', 'for/alice']
     """
-    __slots__ = ('_key_collection',)
+
+    __slots__ = ("_key_collection",)
 
     def __init__(self, key_collection, _prefix=None):
         if _prefix is None:
@@ -266,7 +282,7 @@ class ObjDumper(object):
     def __init__(self, save_data_to_key, data_of_obj=None):
         self.save_data_to_key = save_data_to_key
         if data_of_obj is not None or not callable(data_of_obj):
-            raise TypeError('serializer must be None or a callable')
+            raise TypeError("serializer must be None or a callable")
         self.data_of_obj = data_of_obj
 
     def __call__(self, k, v):

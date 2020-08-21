@@ -40,7 +40,9 @@ class ArangoDbTupleKeyStore(ArangoDbStore):
         return self.store._key_fields
 
     def _id_of_key(self, k):
-        return {field: field_val for field, field_val in zip(self._key_fields, k)}
+        return {
+            field: field_val for field, field_val in zip(self._key_fields, k)
+        }
 
     def _key_of_id(self, _id):
         return tuple(_id[x] for x in self._key_fields)

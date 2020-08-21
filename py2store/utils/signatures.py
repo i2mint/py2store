@@ -9,7 +9,11 @@ from typing import Union, Callable
 _empty = Parameter.empty
 
 
-def mk_sig(obj: Union[Signature, Callable, Mapping, None] = None, return_annotations=_empty, **annotations):
+def mk_sig(
+        obj: Union[Signature, Callable, Mapping, None] = None,
+        return_annotations=_empty,
+        **annotations,
+):
     """Convenience function to make a signature or inject annotations to an existing one.
 
     Note: If you don't need
@@ -29,18 +33,26 @@ def mk_sig(obj: Union[Signature, Callable, Mapping, None] = None, return_annotat
     if obj is None:
         return Signature()
     if callable(obj):
-        obj = Signature.from_callable(obj)  # get a signature object from a callable
+        obj = Signature.from_callable(
+            obj
+        )  # get a signature object from a callable
     if isinstance(obj, Signature):
         obj = obj.parameters  # get the parameters attribute from a signature
     params = dict(obj)  # get a writable copy of parameters
     if not annotations:
         return Signature(params.values(), return_annotation=return_annotations)
     else:
-        assert set(annotations) <= set(params), \
-            f"These argument names weren't found in the signature: {set(annotations) - set(params)}"
+        assert set(annotations) <= set(
+            params
+        ), f"These argument names weren't found in the signature: {set(annotations) - set(params)}"
         for name, annotation in annotations.items():
             p = params[name]
-            params[name] = Parameter(name=name, kind=p.kind, default=p.default, annotation=annotation)
+            params[name] = Parameter(
+                name=name,
+                kind=p.kind,
+                default=p.default,
+                annotation=annotation,
+            )
         return Signature(params.values(), return_annotation=return_annotations)
 
 
@@ -49,14 +61,21 @@ def mk_sig_from_args(*args_without_default, **args_with_defaults):
     >>> mk_sig_from_args('a', 'b', c=1, d='bar')
     <Signature (a, b, c=1, d='bar')>
     """
-    assert all(isinstance(x, str) for x in args_without_default), "all default-less arguments must be strings"
+    assert all(
+        isinstance(x, str) for x in args_without_default
+    ), "all default-less arguments must be strings"
     kind = Parameter.POSITIONAL_OR_KEYWORD
     params = [Parameter(name, kind=kind) for name in args_without_default]
-    params += [Parameter(name, kind=kind, default=default) for name, default in args_with_defaults.items()]
+    params += [
+        Parameter(name, kind=kind, default=default)
+        for name, default in args_with_defaults.items()
+    ]
     return Signature(params)
 
 
-def insert_annotations(s: Signature, *, return_annotation=_empty, **annotations):
+def insert_annotations(
+        s: Signature, *, return_annotation=_empty, **annotations
+):
     """Insert annotations in a signature.
     (Note: not really insert but returns a copy of input signature)
     >>> from inspect import signature
@@ -71,12 +90,15 @@ def insert_annotations(s: Signature, *, return_annotation=_empty, **annotations)
     ...
     AssertionError: These argument names weren't found in the signature: {'e'}
     """
-    assert set(annotations) <= set(s.parameters), \
-        f"These argument names weren't found in the signature: {set(annotations) - set(s.parameters)}"
+    assert set(annotations) <= set(
+        s.parameters
+    ), f"These argument names weren't found in the signature: {set(annotations) - set(s.parameters)}"
     params = dict(s.parameters)
     for name, annotation in annotations.items():
         p = params[name]
-        params[name] = Parameter(name=name, kind=p.kind, default=p.default, annotation=annotation)
+        params[name] = Parameter(
+            name=name, kind=p.kind, default=p.default, annotation=annotation
+        )
     return Signature(params.values(), return_annotation=return_annotation)
 
 
@@ -126,11 +148,16 @@ mappingproxy = type(Signature().parameters)
 
 # PATTERN: tree crud pattern
 def signature_to_dict(sig: Signature):
-    return {'parameters': sig.parameters, 'return_annotation': sig.return_annotation}
+    return {
+        "parameters": sig.parameters,
+        "return_annotation": sig.return_annotation,
+    }
 
 
 # TODO: will we need more options for the priority argument? Like position?
-def update_signature_with_signatures_from_funcs(*funcs, priority: str = 'last'):
+def update_signature_with_signatures_from_funcs(
+        *funcs, priority: str = "last"
+):
     """Make a decorator that will merge the signatures of given funcs to the signature of the wrapped func.
     By default, the funcs signatures will be placed last, but can be given priority by asking priority = 'first'
 
@@ -157,14 +184,22 @@ def update_signature_with_signatures_from_funcs(*funcs, priority: str = 'last'):
     if not isinstance(priority, str):
         raise TypeError("priority should be a string")
 
-    if priority == 'last':
+    if priority == "last":
+
         def transform_signature(func):
-            func.__signature__ = _merged_signatures_of_func_list([func] + list(funcs))
+            func.__signature__ = _merged_signatures_of_func_list(
+                [func] + list(funcs)
+            )
             return func
-    elif priority == 'first':
+
+    elif priority == "first":
+
         def transform_signature(func):
-            func.__signature__ = _merged_signatures_of_func_list(list(funcs) + [func])
+            func.__signature__ = _merged_signatures_of_func_list(
+                list(funcs) + [func]
+            )
             return func
+
     else:
         raise ValueError("priority should be 'last' or 'first'")
 
@@ -190,18 +225,18 @@ def common_and_diff_argnames(func1: callable, func2: callable) -> dict:
     p1 = signature(func1).parameters
     p2 = signature(func2).parameters
     return {
-        'common': [x for x in p1 if x in p2],
-        'func1_not_func2': [x for x in p1 if x not in p2],
-        'func2_not_func1': [x for x in p2 if x not in p1],
+        "common": [x for x in p1 if x in p2],
+        "func1_not_func2": [x for x in p1 if x not in p2],
+        "func2_not_func1": [x for x in p2 if x not in p1],
     }
 
 
 dflt_name_for_kind = {
-    Parameter.VAR_POSITIONAL: 'args',
-    Parameter.VAR_KEYWORD: 'kwargs',
+    Parameter.VAR_POSITIONAL: "args",
+    Parameter.VAR_KEYWORD: "kwargs",
 }
 
-arg_order_for_param_tuple = ('name', 'default', 'annotation', 'kind')
+arg_order_for_param_tuple = ("name", "default", "annotation", "kind")
 
 
 def mk_param(param, dflt_kind=Parameter.POSITIONAL_OR_KEYWORD):
@@ -222,24 +257,32 @@ def mk_param(param, dflt_kind=Parameter.POSITIONAL_OR_KEYWORD):
     """
     if isinstance(param, str):  # then consider param to be the argument name
         param = dict(name=param)
-    elif isinstance(param, _ParameterKind):  # then consider param to be the argument kind
+    elif isinstance(
+            param, _ParameterKind
+    ):  # then consider param to be the argument kind
         name = dflt_name_for_kind.get(param, None)
         if name is not None:
             param = dict(name=name, kind=param)
         else:
-            raise ValueError("If param is an inspect._ParameterKind, is must be VAR_POSITIONAL or VAR_KEYWORD")
+            raise ValueError(
+                "If param is an inspect._ParameterKind, is must be VAR_POSITIONAL or VAR_KEYWORD"
+            )
     elif isinstance(param, tuple):
         param = dict(zip(arg_order_for_param_tuple, param))
 
     if isinstance(param, dict):
-        param = dict({'kind': dflt_kind}, **param)
+        param = dict({"kind": dflt_kind}, **param)
         param = Parameter(**param)
 
-    assert isinstance(param, Parameter), "param should be an inspect.Parameter at this point!"
+    assert isinstance(
+        param, Parameter
+    ), "param should be an inspect.Parameter at this point!"
     return param
 
 
-def mk_signature(parameters, *, return_annotation=_empty, __validate_parameters__=True):
+def mk_signature(
+        parameters, *, return_annotation=_empty, __validate_parameters__=True
+):
     """Make an inspect.Signature object with less boilerplate verbosity.
     Args:
         signature: A list of parameter specifications. This could be an inspect.Parameter object or anything that
@@ -276,11 +319,16 @@ def mk_signature(parameters, *, return_annotation=_empty, __validate_parameters_
     else:
         parameters = list(map(mk_param, parameters))
 
-    return Signature(parameters,
-                     return_annotation=return_annotation, __validate_parameters__=__validate_parameters__)
+    return Signature(
+        parameters,
+        return_annotation=return_annotation,
+        __validate_parameters__=__validate_parameters__,
+    )
 
 
-def set_signature_of_func(func, parameters, *, return_annotation=_empty, __validate_parameters__=True):
+def set_signature_of_func(
+        func, parameters, *, return_annotation=_empty, __validate_parameters__=True
+):
     """Set the signature of a function, with sugar.
 
     Args:
@@ -316,23 +364,25 @@ def set_signature_of_func(func, parameters, *, return_annotation=_empty, __valid
     <Signature (**kws) -> str>
 
     """
-    func.__signature__ = mk_signature(parameters,
-                                      return_annotation=return_annotation,
-                                      __validate_parameters__=__validate_parameters__)
+    func.__signature__ = mk_signature(
+        parameters,
+        return_annotation=return_annotation,
+        __validate_parameters__=__validate_parameters__,
+    )
     # Not returning func so it's clear(er) that the function is transformed in place
 
 
 # TODO: It seems the better choice would be to oblige the user to deal with return annotation explicitly
+
 
 def _merge_sig_dicts(sig1_dict, sig2_dict):
     """Merge two signature dicts. A in dict.update(sig1_dict, **sig2_dict), but specialized for signature dicts.
     If sig1_dict and sig2_dict both define a parameter or return annotation, sig2_dict decides on what the output is.
     """
     return {
-        'parameters':
-            dict(sig1_dict['parameters'], **sig2_dict['parameters']),
-        'return_annotation':
-            sig2_dict['return_annotation'] or sig1_dict['return_annotation']
+        "parameters": dict(sig1_dict["parameters"], **sig2_dict["parameters"]),
+        "return_annotation": sig2_dict["return_annotation"]
+                             or sig1_dict["return_annotation"],
     }
 
 
@@ -356,7 +406,11 @@ def _merge_signatures(sig1, sig2):
     """
     sig1_dict = signature_to_dict(sig1)
     # remove variadic kinds from sig1
-    sig1_dict['parameters'] = {k: v for k, v in sig1_dict['parameters'].items() if v.kind not in var_kinds}
+    sig1_dict["parameters"] = {
+        k: v
+        for k, v in sig1_dict["parameters"].items()
+        if v.kind not in var_kinds
+    }
     return mk_signature(**_merge_sig_dicts(sig1_dict, signature_to_dict(sig2)))
 
 
@@ -397,7 +451,9 @@ def _merged_signatures_of_func_list(funcs, return_annotation: Any = _empty):
 
     s = reduce(_merge_signatures, map(signature, funcs))
 
-    if return_annotation in funcs:  # then you want the return annotation of a specific func of funcs
+    if (
+            return_annotation in funcs
+    ):  # then you want the return annotation of a specific func of funcs
         return_annotation = signature(return_annotation).return_annotation
 
     return s.replace(return_annotation=return_annotation)
@@ -407,7 +463,12 @@ def _merged_signatures_of_func_list(funcs, return_annotation: Any = _empty):
 from functools import partial
 
 
-def param_for_kind(name=None, kind='positional_or_keyword', with_default=False, annotation=Parameter.empty):
+def param_for_kind(
+        name=None,
+        kind="positional_or_keyword",
+        with_default=False,
+        annotation=Parameter.empty,
+):
     """Function to easily and flexibly make inspect.Parameter objects for testing.
 
     It's annoying to have to compose parameters from scratch to testing things.
@@ -427,22 +488,33 @@ def param_for_kind(name=None, kind='positional_or_keyword', with_default=False, 
     name = name or f"{kind}"
     kind_obj = getattr(Parameter, str(kind).upper())
     kind = str(kind_obj).lower()
-    default = f"dflt_{kind}" if with_default and kind not in {'var_positional', 'var_keyword'} else Parameter.empty
-    return Parameter(name=name,
-                     kind=kind_obj,
-                     default=default,
-                     annotation=annotation)
+    default = (
+        f"dflt_{kind}"
+        if with_default and kind not in {"var_positional", "var_keyword"}
+        else Parameter.empty
+    )
+    return Parameter(
+        name=name, kind=kind_obj, default=default, annotation=annotation
+    )
 
 
 param_kinds = list(filter(lambda x: x.upper() == x, Parameter.__dict__))
 
 for kind in param_kinds:
     lower_kind = kind.lower()
-    setattr(param_for_kind, lower_kind,
-            partial(param_for_kind, kind=kind))
-    setattr(param_for_kind, 'with_default',
-            partial(param_for_kind, with_default=True))
-    setattr(getattr(param_for_kind, lower_kind), 'with_default',
-            partial(param_for_kind, kind=kind, with_default=True))
-    setattr(getattr(param_for_kind, 'with_default'), lower_kind,
-            partial(param_for_kind, kind=kind, with_default=True))
+    setattr(param_for_kind, lower_kind, partial(param_for_kind, kind=kind))
+    setattr(
+        param_for_kind,
+        "with_default",
+        partial(param_for_kind, with_default=True),
+    )
+    setattr(
+        getattr(param_for_kind, lower_kind),
+        "with_default",
+        partial(param_for_kind, kind=kind, with_default=True),
+    )
+    setattr(
+        getattr(param_for_kind, "with_default"),
+        lower_kind,
+        partial(param_for_kind, kind=kind, with_default=True),
+    )

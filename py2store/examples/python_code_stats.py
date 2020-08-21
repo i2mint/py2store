@@ -46,13 +46,13 @@ from inspect import getsource
 
 psep = os.path.sep
 
-DFLT_ON_ERROR = 'ignore'  # could be 'print', 'ignore', or 'raise'
+DFLT_ON_ERROR = "ignore"  # could be 'print', 'ignore', or 'raise'
 
-empty_line = re.compile('^\s*$')
-comment_line_p = re.compile('^\s+#.+$')
-line_p = re.compile('\n|\r|\n\r|\r\n')
-only_py_ext = lambda path: path.endswith('.py')
-no_test_folder = lambda path: 'test' not in path.split(psep)
+empty_line = re.compile("^\s*$")
+comment_line_p = re.compile("^\s+#.+$")
+line_p = re.compile("\n|\r|\n\r|\r\n")
+only_py_ext = lambda path: path.endswith(".py")
+no_test_folder = lambda path: "test" not in path.split(psep)
 
 
 def lines(string):
@@ -61,7 +61,9 @@ def lines(string):
 
 def _num_lines_of_function_code(obj: FunctionType):
     assert isinstance(obj, FunctionType)
-    return len(getsource(obj).split('\n')) - len((obj.__doc__ or '').split('\n'))
+    return len(getsource(obj).split("\n")) - len(
+        (obj.__doc__ or "").split("\n")
+    )
 
 
 def _root_dir_and_name(root):
@@ -71,7 +73,9 @@ def _root_dir_and_name(root):
     :return:
     """
     if isinstance(root, str) and not os.path.dirname(root):
-        root = __import__(root)  # assume it's a dot path string of a module and try to import it
+        root = __import__(
+            root
+        )  # assume it's a dot path string of a module and try to import it
     if isinstance(root, ModuleType):
         root = os.path.dirname(root.__file__)
     if root.endswith(psep):
@@ -87,7 +91,7 @@ def _path_to_module_str(path, root_path):
     :param root_path: The path that's assumed to be on the python path
     :return:
     """
-    assert path.endswith('.py')
+    assert path.endswith(".py")
     path = path[:-3]
 
     if root_path.endswith(psep):
@@ -95,9 +99,9 @@ def _path_to_module_str(path, root_path):
     root_path, root_package = _root_dir_and_name(root_path)
     len_root = len(root_path) + 1
     path_parts = path[len_root:].split(psep)
-    if path_parts[-1] == '__init__.py':
+    if path_parts[-1] == "__init__.py":
         path_parts = path_parts[:-1]
-    return '.'.join(path_parts)
+    return ".".join(path_parts)
 
 
 def modules_info_gen(root, filepath_filt=only_py_ext, on_error=DFLT_ON_ERROR):
@@ -127,38 +131,57 @@ def modules_info_gen(root, filepath_filt=only_py_ext, on_error=DFLT_ON_ERROR):
     for k, code_str in pycode.items():
         try:
             name = _path_to_module_str(k, root)
-            module_store = Ddir.module_from_path(k, key_filt=lambda x: not x.startswith('__'),
-                                                 name=name)
+            module_store = Ddir.module_from_path(
+                k, key_filt=lambda x: not x.startswith("__"), name=name
+            )
 
-            def obj_filt(obj):  # to make sure we only analyze objects defined in module itself, not imported
-                obj_module = getattr(obj, '__module__', None)
+            def obj_filt(
+                    obj,
+            ):  # to make sure we only analyze objects defined in module itself, not imported
+                obj_module = getattr(obj, "__module__", None)
                 if obj_module:
                     return obj_module == name
 
-            objs = list(filter(obj_filt, (vv._source for vv in module_store.values())))
+            objs = list(
+                filter(obj_filt, (vv._source for vv in module_store.values()))
+            )
             yield {
-                'filepath': k,
-                'lines': len(lines(code_str)),
-                'empty_lines': sum(bool(empty_line.match(line)) for line in lines(code_str)),
-                'comment_lines': sum(bool(comment_line_p.match(line)) for line in lines(code_str)),
-                'docs_lines': sum(len(lines(obj.__doc__ or '')) for obj in objs),
-                'function_lines': sum(
-                    _num_lines_of_function_code(obj) for obj in objs if isinstance(obj, FunctionType)),
-                'num_of_functions': sum(isinstance(obj, FunctionType) for obj in objs),
-                'num_of_classes': sum(isinstance(obj, type) for obj in objs),
+                "filepath": k,
+                "lines": len(lines(code_str)),
+                "empty_lines": sum(
+                    bool(empty_line.match(line)) for line in lines(code_str)
+                ),
+                "comment_lines": sum(
+                    bool(comment_line_p.match(line))
+                    for line in lines(code_str)
+                ),
+                "docs_lines": sum(
+                    len(lines(obj.__doc__ or "")) for obj in objs
+                ),
+                "function_lines": sum(
+                    _num_lines_of_function_code(obj)
+                    for obj in objs
+                    if isinstance(obj, FunctionType)
+                ),
+                "num_of_functions": sum(
+                    isinstance(obj, FunctionType) for obj in objs
+                ),
+                "num_of_classes": sum(isinstance(obj, type) for obj in objs),
             }
         except Exception as e:
-            if on_error == 'print':
+            if on_error == "print":
                 print(f"Problem with {k}: {str(e)[:50]}\n")
-            elif on_error == 'ignore':
+            elif on_error == "ignore":
                 pass
-            elif on_error == 'yield':
-                yield {'filepath': k, 'error': e}
+            elif on_error == "yield":
+                yield {"filepath": k, "error": e}
             else:
                 raise
 
 
-def modules_info_df(root, filepath_filt=only_py_ext, index_field=None, on_error=DFLT_ON_ERROR):
+def modules_info_df(
+        root, filepath_filt=only_py_ext, index_field=None, on_error=DFLT_ON_ERROR
+):
     """
     A pandas DataFrame of stats of the root (package or directory thereof).
     :param root: module or directory path
@@ -182,12 +205,13 @@ def modules_info_df(root, filepath_filt=only_py_ext, index_field=None, on_error=
     """
 
     import pandas as pd
+
     d = list(modules_info_gen(root, filepath_filt, on_error=on_error))
 
     if index_field is None:
         dirpath, dirname = _root_dir_and_name(root)
         root = os.path.join(dirpath, dirname)
-        index_field = lambda x: _path_to_module_str(x.pop('filepath'), root)
+        index_field = lambda x: _path_to_module_str(x.pop("filepath"), root)
 
     if isinstance(index_field, str):
         return pd.DataFrame(d).set_index(index_field)
@@ -196,7 +220,9 @@ def modules_info_df(root, filepath_filt=only_py_ext, index_field=None, on_error=
         return pd.DataFrame(index=index, data=d)
 
 
-def modules_info_df_stats(root, filepath_filt=only_py_ext, index_field=None, on_error=DFLT_ON_ERROR):
+def modules_info_df_stats(
+        root, filepath_filt=only_py_ext, index_field=None, on_error=DFLT_ON_ERROR
+):
     """
     A pandas Series of statistics over all modules of some root (package or directory thereof).
     :param root: module or directory path
@@ -237,16 +263,23 @@ def modules_info_df_stats(root, filepath_filt=only_py_ext, index_field=None, on_
     df = modules_info_df(root, filepath_filt, index_field, on_error=on_error)
     df = df.sum()
     cols = set(df.index.values)
-    for col in ['empty_lines', 'comment_lines', 'doc_lines', 'function_lines']:
-        if {col, 'lines'}.issubset(cols):
-            df[f'{col}_ratio'] = df[col] / df['lines']
-    if {'num_of_functions', 'function_lines'}.issubset(cols):
-        df['mean_lines_per_function'] = df['function_lines'] / df['num_of_functions']
+    for col in ["empty_lines", "comment_lines", "doc_lines", "function_lines"]:
+        if {col, "lines"}.issubset(cols):
+            df[f"{col}_ratio"] = df[col] / df["lines"]
+    if {"num_of_functions", "function_lines"}.issubset(cols):
+        df["mean_lines_per_function"] = (
+                df["function_lines"] / df["num_of_functions"]
+        )
 
     return df
 
 
-def stats_of(modules, filepath_filt=only_py_ext, index_field=None, on_error=DFLT_ON_ERROR):
+def stats_of(
+        modules,
+        filepath_filt=only_py_ext,
+        index_field=None,
+        on_error=DFLT_ON_ERROR,
+):
     """
     A dataframe of stats of the input modules.
 
@@ -273,11 +306,14 @@ def stats_of(modules, filepath_filt=only_py_ext, index_field=None, on_error=DFLT
     num_of_classes             55.000000     3.000000    34.000000
     """
     import pandas as pd
+
     if isinstance(modules, str):
         modules = [modules]
     df = pd.concat([modules_info_df_stats(x) for x in modules], axis=1)
     df.columns = modules
-    put_at_the_end = [x for x in df.index if x.endswith('lines') or x.startswith('num')]
+    put_at_the_end = [
+        x for x in df.index if x.endswith("lines") or x.startswith("num")
+    ]
     put_at_the_front = [x for x in df.index if x not in put_at_the_end]
     df = df.loc[put_at_the_front + put_at_the_end]
     return df
@@ -285,10 +321,12 @@ def stats_of(modules, filepath_filt=only_py_ext, index_field=None, on_error=DFLT
 
 import collections
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from py2store.util import ModuleNotFoundErrorNiceMessage
 
     with ModuleNotFoundErrorNiceMessage():
         import argh
 
-        argh.dispatch_commands([modules_info_df, modules_info_df_stats, stats_of])
+        argh.dispatch_commands(
+            [modules_info_df, modules_info_df_stats, stats_of]
+        )

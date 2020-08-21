@@ -12,7 +12,10 @@ from py2store.util import lazyprop, fullpath
 def func_conjunction(func1, func2):
     """Returns a function that is equivalent to lambda x: func1(x) and func2(x)"""
     # Should assert that the input paramters of func1 and func2 are the same
-    assert inspect.signature(func1).parameters == inspect.signature(func2).parameters
+    assert (
+            inspect.signature(func1).parameters
+            == inspect.signature(func2).parameters
+    )
 
     @wraps(func2)
     def func(*args, **kwargs):
@@ -88,7 +91,9 @@ class ZipReader(KvReader):
         #  'odir/app/data/audio/d/1574288084739961/m/Ctor.json']
     """
 
-    def __init__(self, zip_file, prefix='', open_kws=None, file_info_filt=None):
+    def __init__(
+            self, zip_file, prefix="", open_kws=None, file_info_filt=None
+    ):
         """
 
         Args:
@@ -115,7 +120,9 @@ class ZipReader(KvReader):
         self.zip_file = zip_file
 
     @classmethod
-    def for_files_only(cls, zip_file, prefix='', open_kws=None, file_info_filt=None):
+    def for_files_only(
+            cls, zip_file, prefix="", open_kws=None, file_info_filt=None
+    ):
         if file_info_filt is None:
             file_info_filt = ZipReader.FILES_ONLY
         else:
@@ -128,9 +135,11 @@ class ZipReader(KvReader):
 
     @lazyprop
     def info_for_key(self):
-        return {x.filename: x for x in self.zip_file.infolist()
-                if x.filename.startswith(self.prefix) and self.file_info_filt(x)
-                }
+        return {
+            x.filename: x
+            for x in self.zip_file.infolist()
+            if x.filename.startswith(self.prefix) and self.file_info_filt(x)
+        }
 
     def __iter__(self):
         # using zip_file.infolist(), we could also filter for info (like directory/file)
@@ -141,7 +150,9 @@ class ZipReader(KvReader):
             with self.zip_file.open(k, **self.open_kws) as fp:
                 return fp.read()
         else:  # is a directory
-            return self.__class__(self.zip_file, k, self.open_kws, self.file_info_filt)
+            return self.__class__(
+                self.zip_file, k, self.open_kws, self.file_info_filt
+            )
 
     def __len__(self):
         return len(self.info_for_key)
@@ -159,12 +170,14 @@ class ZipReader(KvReader):
         return True
 
     def __repr__(self):
-        args_str = ', '.join((
-            f"'{self.zip_file.filename}'",
-            f"'{self.prefix}'",
-            f"{self.open_kws}",
-            f"{self.file_info_filt}"
-        ))
+        args_str = ", ".join(
+            (
+                f"'{self.zip_file.filename}'",
+                f"'{self.prefix}'",
+                f"{self.open_kws}",
+                f"{self.file_info_filt}",
+            )
+        )
         return f"{self.__class__.__name__}({args_str})"
 
 
@@ -172,10 +185,20 @@ class ZipFilesReader(FileCollection, KvReader):
     """A local file reader whose keys are the zip filepaths of the rootdir and values are corresponding ZipReaders.
     """
 
-    def __init__(self, rootdir, subpath='.+\.zip', pattern_for_field=None, max_levels=0,
-                 prefix='', open_kws=None, file_info_filt=ZipReader.FILES_ONLY):
+    def __init__(
+            self,
+            rootdir,
+            subpath=".+\.zip",
+            pattern_for_field=None,
+            max_levels=0,
+            prefix="",
+            open_kws=None,
+            file_info_filt=ZipReader.FILES_ONLY,
+    ):
         super().__init__(rootdir, subpath, pattern_for_field, max_levels)
-        self.zip_reader_kwargs = dict(prefix=prefix, open_kws=open_kws, file_info_filt=file_info_filt)
+        self.zip_reader_kwargs = dict(
+            prefix=prefix, open_kws=open_kws, file_info_filt=file_info_filt
+        )
 
     def __getitem__(self, k):
         return ZipReader(k, **self.zip_reader_kwargs)
@@ -191,16 +214,30 @@ class FlatZipFilesReader(ZipFilesReader):
     @lazyprop
     def _zip_readers(self):
         rootdir_len = len(self.rootdir)
-        return {path[rootdir_len:]: super(FlatZipFilesReader, self).__getitem__(path)
-                for path in super().__iter__()}
+        return {
+            path[rootdir_len:]: super(FlatZipFilesReader, self).__getitem__(
+                path
+            )
+            for path in super().__iter__()
+        }
 
     def __iter__(self):
-        for zip_relpath, zip_reader in self._zip_readers.items():  # go through the zip paths
-            for path_in_zip in zip_reader:  # go through the keys of the ZipReader (the zipped filepaths)
+        for (
+                zip_relpath,
+                zip_reader,
+        ) in self._zip_readers.items():  # go through the zip paths
+            for (
+                    path_in_zip
+            ) in (
+                    zip_reader
+            ):  # go through the keys of the ZipReader (the zipped filepaths)
                 yield (zip_relpath, path_in_zip)
 
     def __getitem__(self, k):
-        zip_relpath, path_in_zip = k  # k is a pair of the path to the zip file and the path of a file within it
+        (
+            zip_relpath,
+            path_in_zip,
+        ) = k  # k is a pair of the path to the zip file and the path of a file within it
         return self._zip_readers[zip_relpath][path_in_zip]
 
 
@@ -208,17 +245,24 @@ ZipFileReader = ZipFilesReader  # back-compatibility alias
 
 
 class FilesOfZip(ZipReader):
-    def __init__(self, zip_file, prefix='', open_kws=None):
-        super().__init__(zip_file, prefix=prefix, open_kws=open_kws, file_info_filt=ZipReader.FILES_ONLY)
+    def __init__(self, zip_file, prefix="", open_kws=None):
+        super().__init__(
+            zip_file,
+            prefix=prefix,
+            open_kws=open_kws,
+            file_info_filt=ZipReader.FILES_ONLY,
+        )
 
 
 from py2store.errors import OverWritesNotAllowedError
 
 
-class OverwriteNotAllowed(FileExistsError, OverWritesNotAllowedError): ...
+class OverwriteNotAllowed(FileExistsError, OverWritesNotAllowedError):
+    ...
 
 
-class EmptyZipError(KeyError, FileNotFoundError): ...
+class EmptyZipError(KeyError, FileNotFoundError):
+    ...
 
 
 class _EmptyZipReader(KvReader):
@@ -232,10 +276,14 @@ class _EmptyZipReader(KvReader):
         return []
 
     def __getitem__(self, k):
-        raise EmptyZipError("The store is empty: ZipStore(zip_filepath={self.zip_filepath})")
+        raise EmptyZipError(
+            "The store is empty: ZipStore(zip_filepath={self.zip_filepath})"
+        )
 
     def open(self, *args, **kwargs):
-        raise EmptyZipError(f"The zip file doesn't exist yet! Nothing was written in it: {self.zip_filepath}")
+        raise EmptyZipError(
+            f"The zip file doesn't exist yet! Nothing was written in it: {self.zip_filepath}"
+        )
         #
         # class OpenedNotExistingFile:
         #     zip_filepath = self.zip_filepath
@@ -253,7 +301,9 @@ class _EmptyZipReader(KvReader):
         # return OpenedNotExistingFile()
 
 
-from zipfile import ZIP_DEFLATED  # TODO: Do all systems have this? If not, need to choose dflt carefully
+from zipfile import (
+    ZIP_DEFLATED,
+)  # TODO: Do all systems have this? If not, need to choose dflt carefully
 from zipfile import BadZipFile
 
 DFLT_COMPRESSION = ZIP_DEFLATED
@@ -275,19 +325,32 @@ class ZipStore(KvPersister):
      wrapping ZipStore with caching layers if it is appropriate to you.
 
     """
-    _zipfile_init_kw = dict(compression=DFLT_COMPRESSION, allowZip64=True, compresslevel=None,
-                            strict_timestamps=True)
+
+    _zipfile_init_kw = dict(
+        compression=DFLT_COMPRESSION,
+        allowZip64=True,
+        compresslevel=None,
+        strict_timestamps=True,
+    )
     _open_kw = dict(pwd=None, force_zip64=False)
     _writestr_kw = dict(compress_type=None, compresslevel=None)
     zip_writer = None
 
     @wraps(ZipReader.__init__)
-    def __init__(self, zip_filepath, compression=DFLT_COMPRESSION, allow_overwrites=True, pwd=None):
+    def __init__(
+            self,
+            zip_filepath,
+            compression=DFLT_COMPRESSION,
+            allow_overwrites=True,
+            pwd=None,
+    ):
         self.zip_filepath = fullpath(zip_filepath)
         self.zip_filepath = zip_filepath
         self.zip_writer_opened = False
         self.allow_overwrites = allow_overwrites
-        self._zipfile_init_kw = dict(self._zipfile_init_kw, compression=compression)
+        self._zipfile_init_kw = dict(
+            self._zipfile_init_kw, compression=compression
+        )
         self._open_kw = dict(self._open_kw, pwd=pwd)
 
     @staticmethod
@@ -297,31 +360,44 @@ class ZipStore(KvPersister):
     @property
     def zip_reader(self):
         if os.path.isfile(self.zip_filepath):
-            return ZipFile(self.zip_filepath, mode='r', **self._zipfile_init_kw)
+            return ZipFile(
+                self.zip_filepath, mode="r", **self._zipfile_init_kw
+            )
         else:
             return _EmptyZipReader(self.zip_filepath)
 
     def __iter__(self):
         # using zip_file.infolist(), we could also filter for info (like directory/file)
-        yield from (fi.filename for fi in self.zip_reader.infolist() if self.files_only_filt(fi))
+        yield from (
+            fi.filename
+            for fi in self.zip_reader.infolist()
+            if self.files_only_filt(fi)
+        )
 
     def __getitem__(self, k):
-        with self.zip_reader.open(k, **dict(self._open_kw, mode='r')) as fp:
+        with self.zip_reader.open(k, **dict(self._open_kw, mode="r")) as fp:
             return fp.read()
 
     def __repr__(self):
-        args_str = ', '.join((
-            f"'{self.zip_filepath}'",
-            f"'allow_overwrites={self.allow_overwrites}'",
-        ))
+        args_str = ", ".join(
+            (
+                f"'{self.zip_filepath}'",
+                f"'allow_overwrites={self.allow_overwrites}'",
+            )
+        )
         return f"{self.__class__.__name__}({args_str})"
 
     def __contains__(self, k):
         try:
-            with self.zip_reader.open(k, **dict(self._open_kw, mode='r')) as fp:
+            with self.zip_reader.open(
+                    k, **dict(self._open_kw, mode="r")
+            ) as fp:
                 pass
             return True
-        except (KeyError, BadZipFile):  # BadZipFile is to catch when zip file exists, but is empty.
+        except (
+                KeyError,
+                BadZipFile,
+        ):  # BadZipFile is to catch when zip file exists, but is empty.
             return False
 
     # # TODO: Find better way to avoid duplicate keys!
@@ -346,16 +422,23 @@ class ZipStore(KvPersister):
             else:
                 if self.zip_writer_opened:
                     raise OverwriteNotAllowed(
-                        f"When using the context mode, you're not allowed to overwrite an existing key: {k}")
+                        f"When using the context mode, you're not allowed to overwrite an existing key: {k}"
+                    )
                 else:
-                    raise OverwriteNotAllowed(f"You're not allowed to overwrite an existing key: {k}")
+                    raise OverwriteNotAllowed(
+                        f"You're not allowed to overwrite an existing key: {k}"
+                    )
 
         if self.zip_writer_opened:
-            with self.zip_writer.open(k, **dict(self._open_kw, mode='w')) as fp:
+            with self.zip_writer.open(
+                    k, **dict(self._open_kw, mode="w")
+            ) as fp:
                 return fp.write(v)
         else:
-            with ZipFile(self.zip_filepath, mode='a', **self._zipfile_init_kw) as zip_writer:
-                with zip_writer.open(k, **dict(self._open_kw, mode='w')) as fp:
+            with ZipFile(
+                    self.zip_filepath, mode="a", **self._zipfile_init_kw
+            ) as zip_writer:
+                with zip_writer.open(k, **dict(self._open_kw, mode="w")) as fp:
                     return fp.write(v)
 
     def __delitem__(self, k):
@@ -366,7 +449,9 @@ class ZipStore(KvPersister):
         # raise NotImplementedError("zipfile, the backend of ZipStore, doesn't support deletion, so neither will we.")
 
     def open(self):
-        self.zip_writer = ZipFile(self.zip_filepath, mode='a', **self._zipfile_init_kw)
+        self.zip_writer = ZipFile(
+            self.zip_filepath, mode="a", **self._zipfile_init_kw
+        )
         self.zip_writer_opened = True
         return self
 

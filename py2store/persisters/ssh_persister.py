@@ -14,17 +14,17 @@ def remote_mkdir(sftp, remote_directory):
     Change to this directory, recursively making new folders if needed.
     returns: True if any folders were created.
     """
-    if remote_directory == '/':
+    if remote_directory == "/":
         # absolute path so change directory to root
-        sftp.chdir('/')
+        sftp.chdir("/")
         return False
-    if remote_directory == '':
+    if remote_directory == "":
         # top-level relative directory must exist
         return False
     try:
         sftp.chdir(remote_directory)  # sub-directory exists
     except IOError:
-        dirname, basename = os.path.split(remote_directory.rstrip('/'))
+        dirname, basename = os.path.split(remote_directory.rstrip("/"))
         remote_mkdir(sftp, dirname)  # make parent directories
         sftp.mkdir(basename)  # sub-directory missing, so created it
         sftp.chdir(basename)
@@ -66,12 +66,12 @@ class SshPersister(Persister):
 
     def __init__(
             self,
-            user='stud',
-            password='stud',
-            url='10.1.103.201',
-            rootdir='./py2store',
-            encoding='utf8'
-        ):
+            user="stud",
+            password="stud",
+            url="10.1.103.201",
+            rootdir="./py2store",
+            encoding="utf8",
+    ):
         self._ssh = paramiko.SSHClient()
         self._ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         self._ssh.connect(url, username=user, password=password)
@@ -81,12 +81,12 @@ class SshPersister(Persister):
         remote_mkdir(self._sftp, self._rootdir)
 
     def __getitem__(self, k):
-        remote_file = self._sftp.file(k, mode='r')
+        remote_file = self._sftp.file(k, mode="r")
         data = remote_file.read().decode(self._encoding)
         return data
 
     def __setitem__(self, k, v):
-        remote_file = self._sftp.file(k, mode='w')
+        remote_file = self._sftp.file(k, mode="w")
         remote_file.write(str(v).encode(self._encoding))
 
     def __delitem__(self, k):

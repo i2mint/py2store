@@ -42,7 +42,9 @@ class CouchDbTupleKeyStore(CouchDbStore):
         return self.store._key_fields
 
     def _id_of_key(self, k):
-        return {field: field_val for field, field_val in zip(self._key_fields, k)}
+        return {
+            field: field_val for field, field_val in zip(self._key_fields, k)
+        }
 
     def _key_of_id(self, _id):
         return tuple(_id[x] for x in self._key_fields)
@@ -50,12 +52,14 @@ class CouchDbTupleKeyStore(CouchDbStore):
 
 def test_couchdb_store(s=CouchDbStore(), k=None, v=None):
     if k is None:
-        k = {'_id': 'foo'}
+        k = {"_id": "foo"}
     if v is None:
-        v = {'val': 'bar'}
+        v = {"val": "bar"}
     if k in s:  # deleting all docs in tmp
         del s[k]
-    assert (k in s) is False  # see that key is not in store (and testing __contains__)
+    assert (
+                   k in s
+           ) is False  # see that key is not in store (and testing __contains__)
     orig_length = len(s)
     s[k] = v
     assert len(s) == orig_length + 1
@@ -68,12 +72,14 @@ def test_couchdb_store(s=CouchDbStore(), k=None, v=None):
     assert len(s) == 0
 
     # tuple as key test
-    s = CouchDbTupleKeyStore(key_fields=('_id', 'user'))
-    k = (1234, 'user')
-    v = {'name': 'bob', 'age': 42}
+    s = CouchDbTupleKeyStore(key_fields=("_id", "user"))
+    k = (1234, "user")
+    v = {"name": "bob", "age": 42}
     if k in s:  # deleting all docs in tmp
         del s[k]
-    assert (k in s) is False  # see that key is not in store (and testing __contains__)
+    assert (
+                   k in s
+           ) is False  # see that key is not in store (and testing __contains__)
     orig_length = len(s)
     s[k] = v
     assert len(s) == orig_length + 1
@@ -81,10 +87,10 @@ def test_couchdb_store(s=CouchDbStore(), k=None, v=None):
     assert s[k] == v
     assert s.get(k) == v
     assert v in list(s.values())
-    assert (k in s) is True # testing __contains__ again
+    assert (k in s) is True  # testing __contains__ again
     del s[k]
     assert len(s) == orig_length
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     test_couchdb_store()
