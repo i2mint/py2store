@@ -179,6 +179,10 @@ try:
         from functools import wraps
 
         if os.path.isdir(myconfigs_dirpath):
+            from py2store.mixins import OverWritesNotAllowedMixin
+
+
+            @OverWritesNotAllowedMixin.wrap
             class MyConfigs(MiscStoreMixin, LocalBinaryStore):
                 @wraps(LocalBinaryStore)
                 def __init__(self, *args, **kwargs):
@@ -218,19 +222,11 @@ try:
                 def rootdir(self):
                     return self._prefix
 
-                _only_read_msg = """
-                MyConfigs is meant to be a reader. 
-                Of course, we could make it so that you can write and delete configs too.
-                But we chose not too, to make dangerous (more) difficult. 
-                You're welcome to make a config writer yourself though, at your own risk.
-    
-                """
-
-                def __setitem__(self, k, v):
-                    raise NotImplementedError(self._only_read_msg)
-
-                def __delitem__(self, k, v):
-                    raise NotImplementedError(self._only_read_msg)
+                def __delitem__(self, k):
+                    raise NotImplementedError(
+                        "Deletion was disabled. "
+                        "MyConfigs wants to keep your configs safe, so if you want to delete this config, "
+                        "do it another way (like manually).")
 
 
             myconfigs = MyConfigs(myconfigs_dirpath)
