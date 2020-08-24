@@ -39,7 +39,7 @@ num_of_classes             55.000000     3.000000    34.000000
 import re
 import os
 from py2store import filtered_iter
-from py2store.sources import Ddir
+from py2store.sources import Attrs
 from py2store.filesys import FileStringReader
 from types import FunctionType, ModuleType
 from inspect import getsource
@@ -131,7 +131,7 @@ def modules_info_gen(root, filepath_filt=only_py_ext, on_error=DFLT_ON_ERROR):
     for k, code_str in pycode.items():
         try:
             name = _path_to_module_str(k, root)
-            module_store = Ddir.module_from_path(
+            module_store = Attrs.module_from_path(
                 k, key_filt=lambda x: not x.startswith("__"), name=name
             )
 

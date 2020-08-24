@@ -26,7 +26,8 @@ import os
 import importlib
 from warnings import warn
 from functools import reduce
-from py2store.util import DictAttr, str_to_var_str
+from py2store.util import str_to_var_str
+from py2store.sources import DictAttr
 
 FAK = "$fak"
 
