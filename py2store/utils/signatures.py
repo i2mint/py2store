@@ -4,6 +4,7 @@ from typing import Any, Union, Callable, Iterable
 from typing import Mapping as MappingType
 
 _empty = Parameter.empty
+empty = _empty
 
 _ParameterKind = type(Parameter(name='param_kind', kind=Parameter.POSITIONAL_OR_KEYWORD))
 ParamsType = Iterable[Parameter]
@@ -80,25 +81,36 @@ def ensure_param(p):
         raise TypeError(f"Don't know how to make {p} into a Parameter object")
 
 
-def ensure_params(obj: ParamsAble):
+def ensure_params(obj: ParamsAble = None):
     """Get an interable of Parameter instances from an object.
 
     :param obj:
     :return:
 
     From a callable:
+
     >>> def f(w, /, x: float = 1, y=1, *, z: int = 1): ...
     >>> ensure_params(f)
     [<Parameter "w">, <Parameter "x: float = 1">, <Parameter "y=1">, <Parameter "z: int = 1">]
 
     From an iterable of strings, dicts, or tuples
+
     >>> ensure_params(['xyz',
     ...     ('b', Parameter.empty, int), # if you want an annotation without a default use Parameter.empty
     ...     ('c', 2),  # if you just want a default, make it the second element of your tuple
     ...     dict(name='d', kind=Parameter.VAR_KEYWORD)])  # all kinds are by default PK: Use dict to specify otherwise.
     [<Parameter "xyz">, <Parameter "b: int">, <Parameter "c=2">, <Parameter "**d">]
+
+
+    If no input is given, an empty list is returned.
+
+    >>> ensure_params()  # equivalent to ensure_params(None)
+    []
+
     """
-    if isinstance(obj, Iterable):
+    if obj is None:
+        return []
+    elif isinstance(obj, Iterable):
         if isinstance(obj, str):
             obj = {'name': obj}
         if isinstance(obj, Mapping):
@@ -414,41 +426,8 @@ class Param(Parameter):
     VP = Parameter.VAR_POSITIONAL
     VK = Parameter.VAR_KEYWORD
 
-    def __init__(self, name, kind=PK, *, default=_empty, annotation=_empty):
+    def __init__(self, name, kind=PK, *, default=empty, annotation=empty):
         super().__init__(name, kind, default=default, annotation=annotation)
-
-
-# TODO: Not really using this or ParamsDict competitor -- consider extending or deprecating
-class Params(tuple):
-    """
-
-    >>> def foo(a, b: int, c=None, d: str='hi') -> int: ...
-    >>> def bar(b: int, e=0): ...
-    >>> Params.from_obj(foo) + Params.from_obj(bar)
-    (<Parameter "a">, <Parameter "b: int">, <Parameter "c=None">, <Parameter "d: str = 'hi'">, <Parameter "e=0">)
-    """
-
-    @classmethod
-    def from_obj(cls, obj=None):
-        if obj is None:
-            return cls()
-        elif isinstance(obj, Params):
-            return cls(x for x in obj)
-        else:
-            return cls(ensure_params(obj))
-
-    # TODO: Will only work in nice situations -- extend to work in more situations
-    def __add__(self, params):
-        existing_params = set(self)
-        existing_names = {p.name for p in existing_params}
-        new_params = [p for p in Params(params) if p not in existing_params]
-        if existing_names.intersection(p.name for p in new_params):
-            raise ValueError(
-                "You can't add two Params instances if they use the same names but "
-                "different kind, annotation, or default. This was obtained when you tried to add"
-                f"{self} and {params}")
-
-        return Params(list(self) + [p for p in Params(params) if p not in existing_params])
 
 
 def param_has_default_or_is_var_kind(p: Parameter):
@@ -467,13 +446,14 @@ class Sig(Signature, Mapping):
     """A subclass of inspect.Signature that has some extra api sugar, such as a dict-like interface, merging, ...
 
     You can construct a `Sig` object from a callable,
+
     >>> def f(w, /, x: float = 1, y=1, *, z: int = 1): ...
     >>> Sig(f)
     <Sig (w, /, x: float = 1, y=1, *, z: int = 1)>
 
     but also from any "ParamsAble" object. Such as...
-
     an iterable of Parameter instances, strings, tuples, or dicts:
+
     >>> Sig(['a', ('b', Parameter.empty, int), ('c', 2), ('d', 1.0, float),
     ...                dict(name='special', kind=Parameter.KEYWORD_ONLY, default=0)])
     <Sig (a, b: int, c=2, d: float = 1.0, *, special=0)>
@@ -493,14 +473,12 @@ class Sig(Signature, Mapping):
     >>> def f(w, /, x: float = 1, y=2, *, z: int = 3): ...
     >>>
     >>> s = Sig(f)
-    >>>
     >>> s.kinds  # doctest: +NORMALIZE_WHITESPACE
     {'w': <_ParameterKind.POSITIONAL_ONLY: 0>,
     'x': <_ParameterKind.POSITIONAL_OR_KEYWORD: 1>,
     'y': <_ParameterKind.POSITIONAL_OR_KEYWORD: 1>,
     'z': <_ParameterKind.KEYWORD_ONLY: 3>}
 
-    >>>
     >>> s.annotations
     {'x': <class 'float'>, 'z': <class 'int'>}
     >>> assert s.annotations == f.__annotations__  # same as what you get in `__annotations__`
@@ -514,6 +492,7 @@ class Sig(Signature, Mapping):
     Also, Sig instance is callable. It has the effect of inserting it's signature in the input
     (in `__signature__`, but also inserting the resulting `__defaults__` and `__kwdefaults__`).
     One of the intents is to be able to do things like:
+
     >>> import inspect
     >>> def f(w, /, x: float = 1, y=1, *, z: int = 1): ...
     >>> def g(i, w, j=2): ...
@@ -530,18 +509,46 @@ class Sig(Signature, Mapping):
     ...     ...
     >>> inspect.signature(some_func)
     <Signature (w, i, x: float = 1, y=1, j=2, c: int = 42)>
+
     """
 
     def __init__(self, obj: ParamsAble = None, *,
-                 return_annotation=_empty,
+                 return_annotation=empty,
                  __validate_parameters__=True, ):
         """Initialize a Sig instance.
         See Also: `ensure_params` to see what kind of objects you can make `Sig`s with.
 
-        :param obj: A ParamsAble object (callable, iterable of Parameter instances, or strings, tuples, or dicts...)
+        :param obj: A ParamsAble object, which could be:
+            - a callable,
+            - and iterable of Parameter instances
+            - an iterable of strings (representing annotation-less, default-less) argument names,
+            - tuples: (argname, default) or (argname, default, annotation),
+            - dicts: ``{'name': REQUIRED,...}`` with optional `kind`, `default` and `annotation` fields
+            - None (which will produce an argument-less Signature)
 
+        >>> Sig(['a', 'b', 'c'])
+        <Sig (a, b, c)>
+        >>> Sig(['a', ('b', None), ('c', 42, int)])  # specifying defaults and annotations
+        <Sig (a, b=None, c: int = 42)>
+        >>> import inspect
+        >>> Sig(['a', ('b', inspect._empty, int)])  # specifying an annotation without a default
+        <Sig (a, b: int)>
+        >>> Sig(['a', 'b', 'c'], return_annotation=str)  # specifying return annotation
+        <Sig (a, b, c) -> str>
 
+        But you can always specify parameters the "long" way
+
+        >>> Sig([inspect.Parameter(name='kws', kind=inspect.Parameter.VAR_KEYWORD)], return_annotation=str)
+        <Sig (**kws) -> str>
+
+        And note that:
+        >>> Sig()
+        <Sig ()>
+        >>> Sig(None)
+        <Sig ()>
         """
+        if callable(obj) and return_annotation is empty:
+            return_annotation = Signature.from_callable(obj).return_annotation
         super().__init__(ensure_params(obj),
                          return_annotation=return_annotation,
                          __validate_parameters__=__validate_parameters__)
@@ -641,6 +648,42 @@ class Sig(Signature, Mapping):
             {name: dflts[name] for name in dflts if name in ko_names}  # as known as __kwdefaults__ in python callables
         )
 
+    def to_signature_kwargs(self):
+        """The dict of keyword arguments to make this signature instance.
+
+        >>> def f(w, /, x: float = 2, y=1, *, z: int = 0) -> float: ...
+        >>> Sig(f).to_signature_kwargs()  # doctest: +NORMALIZE_WHITESPACE
+        {'parameters':
+            [<Parameter "w">,
+            <Parameter "x: float = 2">,
+            <Parameter "y=1">,
+            <Parameter "z: int = 0">],
+        'return_annotation': <class 'float'>}
+
+        Note that this does NOT return:
+        ```
+                {'parameters': self.parameters,
+                'return_annotation': self.return_annotation}
+        ```
+        which would not actually work as keyword arguments of ``Signature``.
+        Yeah, I know. Don't ask me, ask the authors of `Signature`!
+
+        Instead, `parammeters` will be ``list(self.parameters.values())``, which does work.
+
+        """
+        return {'parameters': list(self.parameters.values()),
+                'return_annotation': self.return_annotation}
+
+    def to_simple_signature(self):
+        """A builtin ``inspect.Signature`` instance equivalent (i.e. without the extra properties and methods)
+
+        >>> def f(w, /, x: float = 2, y=1, *, z: int = 0): ...
+        >>> Sig(f).to_simple_signature()
+        <Signature (w, /, x: float = 2, y=1, *, z: int = 0)>
+
+        """
+        return Signature(**self.to_signature_kwargs())
+
     @classmethod
     def from_objs(cls, *objs, **name_and_dflts):
         objs = list(objs)
@@ -711,12 +754,15 @@ class Sig(Signature, Mapping):
     def __getitem__(self, k):
         return self.parameters[k]
 
+    @property
     def has_var_kinds(self):
         return any(p.kind in var_param_kinds for p in set(self.values()))
 
+    @property
     def has_var_positional(self):
         return any(p.kind == VP for p in list(self.values()))
 
+    @property
     def has_var_keyword(self):
         return any(p.kind == VK for p in list(self.values()))
 
@@ -726,9 +772,9 @@ class Sig(Signature, Mapping):
 
         _msg = f"\nHappened during an attempt to merge {self} and {sig}"
 
-        assert not _self.has_var_keyword() or not _sig.has_var_keyword(), \
+        assert not _self.has_var_keyword or not _sig.has_var_keyword, \
             f"Can't merge two signatures if they both have a VAR_POSITIONAL parameter:{_msg}"
-        assert not _self.has_var_keyword() or not _sig.has_var_keyword(), \
+        assert not _self.has_var_keyword or not _sig.has_var_keyword, \
             "Can't merge two signatures if they both have a VAR_KEYWORD parameter:{_msg}"
         assert all((_self[name].kind, _self[name].default) == (_sig[name].kind, _sig[name].default)
                    for name in _self.keys() & _sig.keys()), \
@@ -794,6 +840,48 @@ class Sig(Signature, Mapping):
 
         """
         return self.merge_with_sig(sig)
+
+    def __radd__(self, sig: ParamsAble):
+        """Adding on the right.
+        The raison d'être for this is so that you can start your summing with any signature speccifying
+         object that Sig will be able to resolve into a signature. Like this:
+
+        >>> ['first_arg', ('second_arg', 42)] + Sig(lambda x, y: x * y)
+        <Sig (first_arg, x, y, second_arg=42)>
+
+        Note that the ``second_arg`` doesn't actually end up being the second argument because
+        it has a default and x and y don't. But if you did this:
+
+        >>> ['first_arg', ('second_arg', 42)] + Sig(lambda x=0, y=1: x * y)
+        <Sig (first_arg, second_arg=42, x=0, y=1)>
+
+        you'd get what you expect.
+
+        Of course, we could have just obliged you to say ``Sig(['first_arg', ('second_arg', 42)])``
+        explicitly and spare ourselves yet another method.
+        The reason we made ``__radd__`` is so we can make it handle 0 + Sig(...), so that you can
+        merge an iterable of signatures like this:
+
+        >>> def f(a, b, c): ...
+        >>> def g(c, b, e): ...
+        >>> sigs = map(Sig, [f, g])
+        >>> sum(sigs)
+        <Sig (a, b, c, e)>
+
+        Let's say, for whatever reason (don't ask me), you wanted to make a function that contains all the
+        arguments of all the functions of ``os.path`` (that don't contain any var arg kinds).
+
+        >>> import os.path
+        >>> funcs = list(filter(callable, (getattr(os.path, a) for a in dir(os.path) if not a.startswith('_'))))
+        >>> sigs = filter(lambda sig: not sig.has_var_kinds, map(Sig, funcs))
+        >>> sum(sigs)
+        <Sig (path, p, paths, m, filename, s, f1, f2, fp1, fp2, s1, s2, start=None)>
+        """
+        if sig == 0:  # so that we can do ``sum(iterable_of_sigs)``
+            sig = Sig([])
+        else:
+            sig = Sig(sig)
+        return sig.merge_with_sig(self)
 
     def remove_names(self, names):
         names = {p.name for p in ensure_params(names)}
@@ -941,7 +1029,7 @@ class Sig(Signature, Mapping):
         else:
             sig = self
 
-        no_var_kw = not sig.has_var_keyword()
+        no_var_kw = not sig.has_var_keyword
         if no_var_kw:  # has no var keyword kinds
             sig_relevant_kwargs = {name: kwargs[name] for name in sig if name in kwargs}  # take only what you need
         else:
@@ -1092,130 +1180,17 @@ class Sig(Signature, Mapping):
         return self.args_and_kwargs_from_kwargs(kwargs, allow_excess=True, ignore_kind=_ignore_kind)
 
 
-############################################################################################################
-# Below: Older stuff, in line to be deprecated at some point
-
-
-# TODO: Not really using this or Params competitor -- consider extending or deprecating
-class ParamsDict(dict):
-    """
-
-    >>> def foo(a, b: int, c=None, d: str='hi') -> int: ...
-    >>> def bar(b: float, d='hi'): ...
-    >>> ParamsDict(foo)
-    {'a': <Parameter "a">, 'b': <Parameter "b: int">, 'c': <Parameter "c=None">, 'd': <Parameter "d: str = 'hi'">}
-    >>> p = ParamsDict(bar)
-    >>> ParamsDict(p['b'])
-    {'b': <Parameter "b: float">}
-    >>> ParamsDict()
-    {}
-    >>> ParamsDict([p['d'], p['b']])
-    {'d': <Parameter "d='hi'">, 'b': <Parameter "b: float">}
-    """
-
-    def __init__(self, obj=None):
-        if obj is None:
-            params_dict = dict()
-
-        elif callable(obj):
-            params_dict = dict(signature(obj).parameters)
-        elif isinstance(obj, Parameter):
-            params_dict = {obj.name: obj}
-        else:
-            try:
-                params_dict = dict(obj)
-            except TypeError:
-                params_dict = {x.name: x for x in obj}
-
-        super().__init__(params_dict)
-
-    @classmethod
-    def from_signature(cls, sig):
-        """
-
-        :param sig:
-        :return:
-
-        >>> from inspect import signature, Signature
-        >>> def foo(a, b: int, c=None, d: str='hi') -> int: ...
-        >>> sig = signature(foo)
-        >>> assert isinstance(sig, Signature)
-        >>> params = ParamsDict.from_signature(sig)
-        >>> params
-        {'a': <Parameter "a">, 'b': <Parameter "b: int">, 'c': <Parameter "c=None">, 'd': <Parameter "d: str = 'hi'">}
-        """
-        return cls(sig.parameters.values())
-
-    @classmethod
-    def from_callable(cls, obj):
-        return cls.from_signature(signature(obj))
-
-    def __add__(self, params):
-        if isinstance(params, Parameter):
-            self.__class__([params])
-        elif isinstance(params, Signature):
-            self.__class__.from_signature(params)
-        else:
-            pass
-
-    def __setitem__(self, k, v):
-        pass
-
-    def validate(self):
-        for k, v in self.items():
-            assert isinstance(k, str), f"isinstance({k}, str)"
-            assert isinstance(v, Parameter), f"isinstance({v}, Parameter)"
-        return True
-
-
-def mk_sig(obj: Union[Signature, Callable, Mapping, None] = None, return_annotations=_empty, **annotations):
-    """Convenience function to make a signature or inject annotations to an existing one.
-
-    Note: If you don't need
-    >>> s = mk_sig(lambda a, b, c=1, d='bar': ..., b=int, d=str)
-    >>> s
-    <Signature (a, b: int, c=1, d: str = 'bar')>
-    >>> # showing that sig can take a signature input, and overwrite an existing annotation:
-    >>> mk_sig(s, a=list, b=float)  # note the b=float
-    <Signature (a: list, b: float, c=1, d: str = 'bar')>
-    >>> mk_sig()
-    <Signature ()>
-    >>> mk_sig(lambda a, b=2, c=3: ..., d=int)  # trying to annotate an argument that doesn't exist
-    Traceback (most recent call last):
-    ...
-    AssertionError: These argument names weren't found in the signature: {'d'}
-    """
-    if obj is None:
-        return Signature()
-    if callable(obj):
-        obj = Signature.from_callable(obj)  # get a signature object from a callable
-    if isinstance(obj, Signature):
-        obj = obj.parameters  # get the parameters attribute from a signature
-    params = dict(obj)  # get a writable copy of parameters
-    if not annotations:
-        return Signature(params.values(), return_annotation=return_annotations)
-    else:
-        assert set(annotations) <= set(params), \
-            f"These argument names weren't found in the signature: {set(annotations) - set(params)}"
-        for name, annotation in annotations.items():
-            p = params[name]
-            params[name] = Parameter(name=name, kind=p.kind, default=p.default, annotation=annotation)
-        return Signature(params.values(), return_annotation=return_annotations)
-
-
 def mk_sig_from_args(*args_without_default, **args_with_defaults):
     """Make a Signature instance by specifying args_without_default and args_with_defaults.
     >>> mk_sig_from_args('a', 'b', c=1, d='bar')
     <Signature (a, b, c=1, d='bar')>
     """
     assert all(isinstance(x, str) for x in args_without_default), "all default-less arguments must be strings"
-    kind = Parameter.POSITIONAL_OR_KEYWORD
-    params = [Parameter(name, kind=kind) for name in args_without_default]
-    params += [Parameter(name, kind=kind, default=default) for name, default in args_with_defaults.items()]
-    return Signature(params)
+    return Sig.from_objs(*args_without_default, **args_with_defaults).to_simple_signature()
 
 
-def insert_annotations(s: Signature, *, return_annotation=_empty, **annotations):
+# TODO: Encorporate in Sig
+def insert_annotations(s: Signature, *, return_annotation=empty, **annotations):
     """Insert annotations in a signature.
     (Note: not really insert but returns a copy of input signature)
     >>> from inspect import signature
@@ -1237,56 +1212,6 @@ def insert_annotations(s: Signature, *, return_annotation=_empty, **annotations)
         p = params[name]
         params[name] = Parameter(name=name, kind=p.kind, default=p.default, annotation=annotation)
     return Signature(params.values(), return_annotation=return_annotation)
-
-
-mappingproxy = type(Signature().parameters)
-
-
-# PATTERN: tree crud pattern
-def signature_to_dict(sig: Signature):
-    return {'parameters': sig.parameters, 'return_annotation': sig.return_annotation}
-
-
-# TODO: will we need more options for the priority argument? Like position?
-def update_signature_with_signatures_from_funcs(*funcs, priority: str = 'last'):
-    """Make a decorator that will merge the signatures of given funcs to the signature of the wrapped func.
-    By default, the funcs signatures will be placed last, but can be given priority by asking priority = 'first'
-
-    >>> def foo(a='a', b: int=0, c=None) -> int: ...
-    >>> def bar(b: float=0.0, d: str='hi') -> float: ...
-    >>> def something(y=(1, 2)): ...
-    >>> def another(y=10): ...
-    >>> @update_signature_with_signatures_from_funcs(foo, bar)
-    ... def hello(x: str='hi', y=1) -> str:
-    ...     pass
-    >>> signature(hello)
-    <Signature (x: str = 'hi', y=1, a='a', b: float = 0.0, c=None, d: str = 'hi')>
-    >>>
-    >>> # Try a different order and priority == 'first'. Notice the b arg type and default!
-    >>> add_foobar_to_signature_first = update_signature_with_signatures_from_funcs(bar, foo, priority='first')
-    >>> bar_foo_something = add_foobar_to_signature_first(something)
-    >>> signature(bar_foo_something)
-    <Signature (b: int = 0, d: str = 'hi', a='a', c=None, y=(1, 2))>
-    >>> # See how you can reuse the decorator several times
-    >>> bar_foo_another = add_foobar_to_signature_first(another)
-    >>> signature(bar_foo_another)
-    <Signature (b: int = 0, d: str = 'hi', a='a', c=None, y=10)>
-    """
-    if not isinstance(priority, str):
-        raise TypeError("priority should be a string")
-
-    if priority == 'last':
-        def transform_signature(func):
-            func.__signature__ = _merged_signatures_of_func_list([func] + list(funcs))
-            return func
-    elif priority == 'first':
-        def transform_signature(func):
-            func.__signature__ = _merged_signatures_of_func_list(list(funcs) + [func])
-            return func
-    else:
-        raise ValueError("priority should be 'last' or 'first'")
-
-    return transform_signature
 
 
 def common_and_diff_argnames(func1: callable, func2: callable) -> dict:
@@ -1322,83 +1247,7 @@ dflt_name_for_kind = {
 arg_order_for_param_tuple = ('name', 'default', 'annotation', 'kind')
 
 
-def mk_param(param, dflt_kind=Parameter.POSITIONAL_OR_KEYWORD):
-    """Make an inspect.Parameter object with less boilerplate verbosity.
-    Args:
-        param: Can be an inspect.Parameter itself, or something resolving to it:
-            - a string: Will be considered to be the argument name
-            - an inspect._ParameterKind type: Can only be Parameter.VAR_KEYWORD or Parameter.VAR_POSITIONAL,
-                will be taken as the kind, and the name will be decided according to the dflt_name_for_kind mapping.
-            - a tuple: Will use the arg_order_for_param_tuple to resolve what Parameter constructor arguments
-                the elements of the tuple correspond to.
-        dflt_kind: Default kind (of type _ParameterKind) to use if no other kind is specified.
-
-    Returns:
-        An inspect.Parameter object
-
-    See mk_signature for uses
-    """
-    if isinstance(param, str):  # then consider param to be the argument name
-        param = dict(name=param)
-    elif isinstance(param, _ParameterKind):  # then consider param to be the argument kind
-        name = dflt_name_for_kind.get(param, None)
-        if name is not None:
-            param = dict(name=name, kind=param)
-        else:
-            raise ValueError("If param is an inspect._ParameterKind, is must be VAR_POSITIONAL or VAR_KEYWORD")
-    elif isinstance(param, tuple):
-        param = dict(zip(arg_order_for_param_tuple, param))
-
-    if isinstance(param, dict):
-        param = dict({'kind': dflt_kind}, **param)
-        param = Parameter(**param)
-
-    assert isinstance(param, Parameter), "param should be an inspect.Parameter at this point!"
-    return param
-
-
-def mk_signature(parameters, *, return_annotation=_empty, __validate_parameters__=True):
-    """Make an inspect.Signature object with less boilerplate verbosity.
-    Args:
-        signature: A list of parameter specifications. This could be an inspect.Parameter object or anything that
-            the mk_param function can resolve into an inspect.Parameter object.
-        return_annotation: Passed on to inspect.Signature.
-        __validate_parameters__: Passed on to inspect.Signature.
-
-    Returns:
-        An inspect.Signature object
-
-    >>> mk_signature(['a', 'b', 'c'])
-    <Signature (a, b, c)>
-    >>> mk_signature(['a', ('b', None), ('c', 42, int)])  # specifying defaults and annotations
-    <Signature (a, b=None, c: int = 42)>
-    >>> import inspect
-    >>> mk_signature(['a', ('b', inspect._empty, int)])  # specifying an annotation without a default
-    <Signature (a, b: int)>
-    >>> mk_signature(['a', 'b', 'c'], return_annotation=str)  # specifying return annotation
-    <Signature (a, b, c) -> str>
-    >>>
-    >>> # But you can always specify parameters the "long" way
-    >>> mk_signature([inspect.Parameter(name='kws', kind=inspect.Parameter.VAR_KEYWORD)], return_annotation=str)
-    <Signature (**kws) -> str>
-    >>>
-    >>> # Note that mk_signature is an inverse of signature_to_dict:
-    >>> def foo(a, b: int=0, c=None) -> int: ...
-    >>> sig_foo = signature(foo)
-    >>> assert mk_signature(**signature_to_dict(sig_foo)) == sig_foo
-    """
-    if isinstance(parameters, Signature):
-        parameters = parameters.parameters.values()
-    elif isinstance(parameters, (mappingproxy, dict)):
-        parameters = parameters.values()
-    else:
-        parameters = list(map(mk_param, parameters))
-
-    return Signature(parameters,
-                     return_annotation=return_annotation, __validate_parameters__=__validate_parameters__)
-
-
-def set_signature_of_func(func, parameters, *, return_annotation=_empty, __validate_parameters__=True):
+def set_signature_of_func(func, parameters, *, return_annotation=empty, __validate_parameters__=True):
     """Set the signature of a function, with sugar.
 
     Args:
@@ -1434,89 +1283,11 @@ def set_signature_of_func(func, parameters, *, return_annotation=_empty, __valid
     <Signature (**kws) -> str>
 
     """
-    sig = mk_signature(parameters,
-                       return_annotation=return_annotation,
-                       __validate_parameters__=__validate_parameters__)
-    func.__signature__ = sig
+    sig = Sig(parameters,
+              return_annotation=return_annotation,
+              __validate_parameters__=__validate_parameters__)
+    func.__signature__ = sig.to_simple_signature()
     # Not returning func so it's clear(er) that the function is transformed in place
-
-
-# TODO: It seems the better choice would be to oblige the user to deal with return annotation explicitly
-
-def _merge_sig_dicts(sig1_dict, sig2_dict):
-    """Merge two signature dicts. A in dict.update(sig1_dict, **sig2_dict), but specialized for signature dicts.
-    If sig1_dict and sig2_dict both define a parameter or return annotation, sig2_dict decides on what the output is.
-    """
-    return {
-        'parameters':
-            dict(sig1_dict['parameters'], **sig2_dict['parameters']),
-        'return_annotation':
-            sig2_dict['return_annotation'] or sig1_dict['return_annotation']
-    }
-
-
-def _merge_signatures(sig1, sig2):
-    """Get the merged signatures of two signatures (sig2 is the final decider of conflics)
-    >>> def foo(a='a', b: int=0, c=None) -> int: ...
-    >>> def bar(b: float=0.0, d: str='hi') -> float: ...
-    >>> foo_sig = signature(foo)
-    >>> bar_sig = signature(bar)
-    >>> foo_sig
-    <Signature (a='a', b: int = 0, c=None) -> int>
-    >>> bar_sig
-    <Signature (b: float = 0.0, d: str = 'hi') -> float>
-    >>> _merge_signatures(foo_sig, bar_sig)
-    <Signature (a='a', b: float = 0.0, c=None, d: str = 'hi') -> float>
-    >>> _merge_signatures(bar_sig, foo_sig)
-    <Signature (b: int = 0, d: str = 'hi', a='a', c=None) -> int>
-    """
-    sig1_dict = signature_to_dict(sig1)
-    # remove variadic kinds from sig1
-    sig1_dict['parameters'] = {k: v for k, v in sig1_dict['parameters'].items() if v.kind not in var_param_kinds}
-    return mk_signature(**_merge_sig_dicts(sig1_dict, signature_to_dict(sig2)))
-
-
-def _merge_signatures_of_funcs(func1, func2):
-    """Get the merged signatures of two functions (func2 is the final decider of conflics)
-    >>> def foo(a='a', b: int=0, c=None) -> int: ...
-    >>> def bar(b: float=0.0, d: str='hi') -> float: ...
-    >>> _merge_signatures_of_funcs(foo, bar)
-    <Signature (a='a', b: float = 0.0, c=None, d: str = 'hi') -> float>
-    >>> _merge_signatures_of_funcs(bar, foo)
-    <Signature (b: int = 0, d: str = 'hi', a='a', c=None) -> int>
-    """
-    return _merge_signatures(signature(func1), signature(func2))
-
-
-def _merged_signatures_of_func_list(funcs, return_annotation: Any = _empty):
-    """
-    >>> def foo(a='a', b: int=0, c=None) -> int: ...
-    >>> def bar(b: float=0.0, d: str='hi') -> float: ...
-    >>> def hello(x: str='hi', y=1) -> str: ...
-    >>>
-    >>> # Test how the order of the functions affect the order of the parameters
-    >>> _merged_signatures_of_func_list([foo, bar, hello])
-    <Signature (a='a', b: float = 0.0, c=None, d: str = 'hi', x: str = 'hi', y=1)>
-    >>> _merged_signatures_of_func_list([hello, foo, bar])
-    <Signature (x: str = 'hi', y=1, a='a', b: float = 0.0, c=None, d: str = 'hi')>
-    >>> _merged_signatures_of_func_list([foo, bar, hello])
-    <Signature (a='a', b: float = 0.0, c=None, d: str = 'hi', x: str = 'hi', y=1)>
-    >>>
-    >>> # Test the return_annotation argument
-    >>> _merged_signatures_of_func_list([foo, bar], list)  # specifying that the return type is a list
-    <Signature (a='a', b: float = 0.0, c=None, d: str = 'hi') -> list>
-    >>> _merged_signatures_of_func_list([foo, bar], foo)  # specifying that the return type is a list
-    <Signature (a='a', b: float = 0.0, c=None, d: str = 'hi') -> int>
-    >>> _merged_signatures_of_func_list([foo, bar], bar)  # specifying that the return type is a list
-    <Signature (a='a', b: float = 0.0, c=None, d: str = 'hi') -> float>
-    """
-
-    s = reduce(_merge_signatures, map(signature, funcs))
-
-    if return_annotation in funcs:  # then you want the return annotation of a specific func of funcs
-        return_annotation = signature(return_annotation).return_annotation
-
-    return s.replace(return_annotation=return_annotation)
 
 
 ############# Tools for testing ########################################################################################

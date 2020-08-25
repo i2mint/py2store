@@ -4,7 +4,7 @@ from functools import wraps
 from io import BytesIO, StringIO
 
 from py2store.trans import kv_wrap_persister_cls
-from py2store.utils.signatures import update_signature_with_signatures_from_funcs as change_sig
+from py2store.utils.signatures import Sig
 
 _test_config_str = """[Simple Values]
 key=value
@@ -82,7 +82,9 @@ def super_and_persist(super_cls, method_name):
     return method_func
 
 
-ConfigParserStore = kv_wrap_persister_cls(ConfigParser, name='ConfigParserStore')
+ConfigParserStore = kv_wrap_persister_cls(
+    ConfigParser, name="ConfigParserStore"
+)
 
 
 # TODO: ConfigParser is already a mapping, but pros/cons of subclassing?
@@ -195,58 +197,81 @@ class ConfigStore(ConfigParserStore):
     BasicInterpolation = BasicInterpolation
     ExtendedInterpolation = ExtendedInterpolation
 
-    @change_sig(ConfigParser)
-    def __init__(self, source, defaults=None, dict_type=dict, allow_no_value=False, **kwargs):
+    @Sig(ConfigParser)
+    def __init__(
+            self,
+            source,
+            defaults=None,
+            dict_type=dict,
+            allow_no_value=False,
+            target_kind=None,
+            **kwargs,
+    ):
+
         super().__init__(defaults, dict_type, allow_no_value, **kwargs)
 
         self._within_context_manager = False
 
         if isinstance(source, str):
-            if '\n' in source:
+            if "\n" in source:
                 self.read_string(source)
-                source_kind = 'string'
+                source_kind = "string"
             else:
                 self.read(source)
-                source_kind = 'filepath'
+                source_kind = "filepath"
         elif isinstance(source, bytes):
             self.read_string(source.decode())
-            source_kind = 'bytes'
+            source_kind = "bytes"
         elif isinstance(source, dict):
             self.read_dict(source)
-            source_kind = 'dict'
-        elif hasattr(source, 'read'):
+            source_kind = "dict"
+        elif hasattr(source, "read"):
             self.read_file(source)
-            source_kind = 'stream'
+            source_kind = "stream"
         else:
             self.read(source)
-            source_kind = 'unknown'
+            source_kind = "unknown"
         self.source = source
         self.source_kind = source_kind
+        self.target_kind = target_kind or source_kind
 
     def to_dict(self):
-        return {section: dict(section_contents) for section, section_contents in self.items()}
+        return {
+            section: dict(section_contents)
+            for section, section_contents in self.items()
+        }
 
     def persist(self):
         """Persists the data (if not in a context manager).
         Persists means to call
         """
         if not self._within_context_manager:
-            if self.source_kind == 'filepath':
-                with open(self.source, 'w') as fp:
+            if self.target_kind == "filepath":
+                with open(self.source, "w") as fp:
                     return self.write(fp, self.space_around_delimiters)
             else:
-                if self.source_kind == 'stream':
+                if self.target_kind == "stream":
                     target = self.source
                     return self.write(target, self.space_around_delimiters)
-                elif self.source_kind in {'string', 'bytes'}:
-                    target = {'string': StringIO, 'bytes': BytesIO}.get(self.source_kind)()
-                    self.write(target, self.space_around_delimiters)
-                    target.seek(0)
-                    return target
-                elif self.source_kind == 'dict':
+                elif self.target_kind in {"string", "bytes"}:
+                    string_target = StringIO()
+                    self.write(string_target, self.space_around_delimiters)
+                    string_target.seek(0)
+                    string_data = string_target.read()
+                    if self.target_kind == "string":
+                        return string_data
+                    elif self.target_kind == "bytes":
+                        return string_data.encode()
+                    else:
+                        raise ValueError(
+                            f"Unknown target_kind: {self.target_kind}"
+                        )
+                elif self.target_kind == "dict":
                     return self.to_dict()
                 else:
-                    raise ValueError(f"Unknown source_kind: {self.source_kind}")
+                    raise ValueError(
+                        f"Unknown target_kind: {self.target_kind}"
+                    )
 
     def __enter__(self):
         self._within_context_manager = True
