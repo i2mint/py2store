@@ -1,6 +1,10 @@
+from typing import Mapping, Optional
+from inspect import getsource
+
 # from py2store.util import lazyprop, num_of_args
-from py2store import KvReader, cached_keys
+from py2store import KvReader, KvPersister, cached_keys
 from py2store.util import copy_attrs
+from py2store.utils.signatures import Sig
 
 
 class FuncReader(KvReader):
@@ -28,16 +32,26 @@ class FuncReader(KvReader):
     def __init__(self, funcs):
         # TODO: assert no free arguments (arguments are allowed but must all have defaults)
         self.funcs = funcs
-        self._func_of_name = {func.__name__: func for func in funcs}
+        self._func = {func.__name__: func for func in funcs}
 
     def __contains__(self, k):
-        return k in self._func_of_name
+        return k in self._func
 
     def __iter__(self):
-        yield from self._func_of_name
+        yield from self._func
 
     def __len__(self):
-        return len(self._func_of_name)
+        return len(self._func)
+
+    def __getitem__(self, k):
+        return self._func[k]()  # call the func
+
+
+class FuncDag(FuncReader):
+    def __init__(self, funcs, **kwargs):
+        super().__init__(funcs)
+        self._sig = {fname: Sig(func) for fname, func in self._func.items()}
+        # self._input_names = sum(self._sig)
 
     def __getitem__(self, k):
         return self._func_of_name[k]()  # call the func
@@ -67,17 +81,40 @@ def _path_to_module_str(path, root_path):
     return ".".join(path_parts)
 
 
-# Pattern:
-@cached_keys(keys_cache=set, name="Ddir")
-class Ddir(KvReader):
-    def __init__(self, obj, key_filt=not_underscore_prefixed):
+class ObjReader(KvReader):
+    def __init__(self, obj):
         self.src = obj
-        self._key_filt = key_filt
         copy_attrs(
-            self.src,
-            to_obj=self,
+            target=self,
+            source=self.src,
             attrs=("__name__", "__qualname__", "__module__"),
+            raise_error_if_an_attr_is_missing=False
         )
+
+    def __repr__(self):
+        return f"{self.__class__.__qualname__}({self.src})"
+
+    @property
+    def _source(self):
+        from warnings import warn
+
+        warn("Deprecated: Use .src instead of ._source", DeprecationWarning, 2)
+        return self.src
+
+
+# class SourceReader(KvReader):
+#     def __getitem__(self, k):
+#         return getsource(k)
+
+# class NestedObjReader(ObjReader):
+#     def __init__(self, obj, src_to_key, key_filt=None, ):
+
+# Pattern:
+@cached_keys(keys_cache=set, name="Attrs")
+class Attrs(ObjReader):
+    def __init__(self, obj, key_filt=not_underscore_prefixed):
+        super().__init__(obj)
+        self._key_filt = key_filt
 
     @classmethod
     def module_from_path(
@@ -105,9 +142,71 @@ class Ddir(KvReader):
     def __repr__(self):
         return f"{self.__class__.__qualname__}({self.src}, {self._key_filt})"
 
-    @property
-    def _source(self):
-        from warnings import warn
 
-        warn("Deprecated: Use .src instead of ._source", DeprecationWarning, 2)
-        return self.src
+Ddir = Attrs  # for back-compatibility, temporarily
+
+
+# TODO: Make it work with a store, without having to load and store the values explicitly.
+class DictAttr(KvPersister):
+    """Convenience class to hold Key-Val pairs with both a dict-like and struct-like interface.
+    The dict-like interface has just the basic get/set/del/iter/len
+    (all "dunders": none visible as methods). There is no get, update, etc.
+    This is on purpose, so that the only visible attributes (those you get by tab-completion for instance)
+    are the those you injected.
+
+    >>> da = DictAttr(foo='bar', life=42)
+    >>> da.foo
+    'bar'
+    >>> da['life']
+    42
+    >>> da.true = 'love'
+    >>> len(da)  # count the number of fields
+    3
+    >>> da['friends'] = 'forever'  # write as dict
+    >>> da.friends  # read as attribute
+    'forever'
+    >>> list(da)  # list fields (i.e. keys i.e. attributes)
+    ['foo', 'life', 'true', 'friends']
+    >>> list(da.items())
+    [('foo', 'bar'), ('life', 42), ('true', 'love'), ('friends', 'forever')]
+    >>> del da['friends']  # delete as dict
+    >>> del da.foo # delete as attribute
+    >>> list(da)
+    ['life', 'true']
+    >>> da._source  # the hidden dict that is wrapped
+    {'life': 42, 'true': 'love'}
+    """
+
+    _source = None
+
+    def __init__(self, _source: Optional[Mapping] = None, **keys_and_values):
+        if _source is not None:
+            assert isinstance(_source, Mapping)
+            self._source = _source
+        else:
+            super().__setattr__("_source", {})
+            for k, v in keys_and_values.items():
+                setattr(self, k, v)
+
+    def __getitem__(self, k):
+        return self._source[k]
+
+    def __setitem__(self, k, v):
+        setattr(self, k, v)
+
+    def __delitem__(self, k):
+        delattr(self, k)
+
+    def __iter__(self):
+        return iter(self._source.keys())
+
+    def __len__(self):
+        return len(self._source)
+
+    def __setattr__(self, k, v):
+        self._source[k] = v
+        super().__setattr__(k, v)
+
+    def __delattr__(self, k):
+        del self._source[k]
+        super().__delattr__(k)
