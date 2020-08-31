@@ -10,8 +10,10 @@ from py2store.slib.s_configparser import ConfigReader, ConfigStore
 from py2store.util import imdict
 
 
-def csv_fileobj(csv_data, *args, **kwargs):  # TODO: Use extended wraps func to inject
-    fp = StringIO('')
+def csv_fileobj(
+        csv_data, *args, **kwargs
+):  # TODO: Use extended wraps func to inject
+    fp = StringIO("")
     writer = csv.writer(fp)
     writer.writerows(csv_data, *args, **kwargs)
     fp.seek(0)
@@ -27,35 +29,42 @@ dflt_func_key = lambda self, k: os.path.splitext(k)[1]
 dflt_dflt_incoming_val_trans = staticmethod(identity_method)
 
 dflt_incoming_val_trans_for_key = {
-    '.bin': identity_method,
-    '.csv': lambda v: list(csv.reader(StringIO(v.decode()))),
-    '.txt': lambda v: v.decode(),
-    '.pkl': lambda v: pickle.loads(v),
-    '.pickle': lambda v: pickle.loads(v),
-    '.json': lambda v: json.loads(v),
-    '.zip': FilesOfZip,
-    '.ini': lambda v: ConfigReader(v, interpolation=ConfigReader.ExtendedInterpolation()),
+    ".bin": identity_method,
+    ".csv": lambda v: list(csv.reader(StringIO(v.decode()))),
+    ".txt": lambda v: v.decode(),
+    ".pkl": lambda v: pickle.loads(v),
+    ".pickle": lambda v: pickle.loads(v),
+    ".json": lambda v: json.loads(v),
+    ".zip": FilesOfZip,
+    ".ini": lambda v: ConfigStore(
+        v,
+        interpolation=ConfigReader.ExtendedInterpolation(),
+    ),
 }
 
 dflt_outgoing_val_trans_for_key = {
-    '.bin': identity_method,
-    '.csv': csv_fileobj,
-    '.txt': lambda v: v.encode(),
-    '.pkl': lambda v: pickle.dumps(v),
-    '.pickle': lambda v: pickle.dumps(v),
-    '.json': lambda v: json.dumps(v).encode(),
+    ".bin": identity_method,
+    ".csv": csv_fileobj,
+    ".txt": lambda v: v.encode(),
+    ".pkl": lambda v: pickle.dumps(v),
+    ".pickle": lambda v: pickle.dumps(v),
+    ".json": lambda v: json.dumps(v).encode(),
     '.ini': lambda v: ConfigStore(v, interpolation=ConfigReader.ExtendedInterpolation()),
 }
 
-synset_of_ext = {'.ini': {'.cnf', '.conf', '.config'}}
+synset_of_ext = {".ini": {".cnf", ".conf", ".config"}}
 for _user_this, _for_these_extensions in synset_of_ext.items():
-    for _d in [dflt_incoming_val_trans_for_key, dflt_outgoing_val_trans_for_key]:
+    for _d in [
+        dflt_incoming_val_trans_for_key,
+        dflt_outgoing_val_trans_for_key,
+    ]:
         if _user_this in _d:
             for _ext in _for_these_extensions:
                 _d[_ext] = _d[_user_this]
 
 
 # TODO: Different misc objects (function, class, default instance) should be a aligned more
+
 
 class MiscReaderMixin:
     """Mixin to transform incoming vals according to the key their under.
@@ -108,9 +117,12 @@ class MiscReaderMixin:
 
     _incoming_val_trans_for_key = imdict(dflt_incoming_val_trans_for_key)
 
-    def __init__(self, incoming_val_trans_for_key=None,
-                 dflt_incoming_val_trans=None,
-                 func_key=None):
+    def __init__(
+            self,
+            incoming_val_trans_for_key=None,
+            dflt_incoming_val_trans=None,
+            func_key=None,
+    ):
         if incoming_val_trans_for_key is not None:
             self._incoming_val_trans_for_key = incoming_val_trans_for_key
         if dflt_incoming_val_trans is not None:
@@ -120,7 +132,9 @@ class MiscReaderMixin:
 
     def __getitem__(self, k):
         func_key = self._func_key(k)
-        trans_func = self._incoming_val_trans_for_key.get(func_key, self._dflt_incoming_val_trans)
+        trans_func = self._incoming_val_trans_for_key.get(
+            func_key, self._dflt_incoming_val_trans
+        )
         return trans_func(super().__getitem__(k))
 
 
@@ -136,17 +150,24 @@ else:
 # TODO: For more flexibility, the default store should probably be a UriReader (that doesn't exist yet)
 #  If store argument of get_obj was a type instead of an instance, or if MiscReaderMixin was a transformer, if would
 #  be easier -- but would it make their individual concerns mixed?
-def get_obj(k, store=LocalBinaryStore(path_format=''),
-            incoming_val_trans_for_key=imdict(dflt_incoming_val_trans_for_key),
-            dflt_incoming_val_trans=identity_method,
-            func_key=lambda k: os.path.splitext(k)[1]):
+#   Also, preset and postget (trans.wrap_kvs(...)) now exist. Let's use them here.
+def get_obj(
+        k,
+        store=LocalBinaryStore(path_format=""),
+        incoming_val_trans_for_key=imdict(dflt_incoming_val_trans_for_key),
+        dflt_incoming_val_trans=identity_method,
+        func_key=lambda k: os.path.splitext(k)[1],
+):
     """A quick way to get an object, with default... everything (but the key, you know, a clue of what you want)"""
-    if k.startswith('http://') or k.startswith('https://'):
-        if (_dropbox_as_special_case and
-                (k.startswith('http://www.dropbox.com') or k.startswith('https://www.dropbox.com'))):
+    if k.startswith("http://") or k.startswith("https://"):
+        if _dropbox_as_special_case and (
+                k.startswith("http://www.dropbox.com")
+                or k.startswith("https://www.dropbox.com")
+        ):
             v = bytes_from_dropbox(k)
         else:
             import urllib.request
+
             with urllib.request.urlopen(k) as response:
                 v = response.read()
     else:
@@ -155,12 +176,14 @@ def get_obj(k, store=LocalBinaryStore(path_format=''),
         # elif k.startswith('~'):
         #     k = os.path.expanduser(k)
         v = store[k]
-    trans_func = (incoming_val_trans_for_key or {}).get(func_key(k), dflt_incoming_val_trans)
+    trans_func = (incoming_val_trans_for_key or {}).get(
+        func_key(k), dflt_incoming_val_trans
+    )
     return trans_func(v)
 
 
 # TODO: I'd really like to reuse MiscReaderMixin here! There's a lot of potential.
-#  Same comment as above.
+#  Same comment as for get_obj.
 class MiscGetter:
     """
     An object to write (and only write) to a store (default local files) with automatic deserialization
@@ -184,18 +207,26 @@ class MiscGetter:
     {'a': {'b': {'c': [1, 2, 3]}}}
     """
 
-    def __init__(self,
-                 store=LocalBinaryStore(path_format=''),
-                 incoming_val_trans_for_key=imdict(dflt_incoming_val_trans_for_key),
-                 dflt_incoming_val_trans=identity_method,
-                 func_key=lambda k: os.path.splitext(k)[1]):
+    def __init__(
+            self,
+            store=LocalBinaryStore(path_format=""),
+            incoming_val_trans_for_key=imdict(dflt_incoming_val_trans_for_key),
+            dflt_incoming_val_trans=identity_method,
+            func_key=lambda k: os.path.splitext(k)[1],
+    ):
         self.store = store
         self.incoming_val_trans_for_key = incoming_val_trans_for_key
         self.dflt_incoming_val_trans = dflt_incoming_val_trans
         self.func_key = func_key
 
     def __getitem__(self, k):
-        return get_obj(k, self.store, self.incoming_val_trans_for_key, self.dflt_incoming_val_trans, self.func_key)
+        return get_obj(
+            k,
+            self.store,
+            self.incoming_val_trans_for_key,
+            self.dflt_incoming_val_trans,
+            self.func_key,
+        )
 
     def __iter__(self):
         # Disabling "manually" to avoid iteration falling back on __getitem__ with integers
@@ -203,9 +234,11 @@ class MiscGetter:
         #   https://stackoverflow.com/questions/37941523/pip-uninstall-no-files-were-found-to-uninstall
         #   https://www.python.org/dev/peps/pep-0234/
 
-        raise NotImplementedError("By default, there's no iteration in MiscGetter. "
-                                  "But feel free to subclass if you "
-                                  "have a particular sense of what the iteration should yield!")
+        raise NotImplementedError(
+            "By default, there's no iteration in MiscGetter. "
+            "But feel free to subclass if you "
+            "have a particular sense of what the iteration should yield!"
+        )
 
 
 misc_objs_get = MiscGetter()
@@ -269,12 +302,17 @@ class MiscStoreMixin(MiscReaderMixin):
     _dflt_outgoing_val_trans_for_key = staticmethod(identity_method)
     _outgoing_val_trans_for_key = dflt_outgoing_val_trans_for_key
 
-    def __init__(self, incoming_val_trans_for_key=None,
-                 outgoing_val_trans_for_key=None,
-                 dflt_incoming_val_trans=None,
-                 dflt_outgoing_val_trans=None,
-                 func_key=None):
-        super().__init__(incoming_val_trans_for_key, dflt_incoming_val_trans, func_key)
+    def __init__(
+            self,
+            incoming_val_trans_for_key=None,
+            outgoing_val_trans_for_key=None,
+            dflt_incoming_val_trans=None,
+            dflt_outgoing_val_trans=None,
+            func_key=None,
+    ):
+        super().__init__(
+            incoming_val_trans_for_key, dflt_incoming_val_trans, func_key
+        )
         if outgoing_val_trans_for_key is not None:
             self._outgoing_val_trans_for_key = outgoing_val_trans_for_key
         if dflt_outgoing_val_trans is not None:
@@ -282,19 +320,27 @@ class MiscStoreMixin(MiscReaderMixin):
 
     def __setitem__(self, k, v):
         func_key = self._func_key(k)
-        trans_func = self._outgoing_val_trans_for_key.get(func_key, self._dflt_outgoing_val_trans_for_key)
+        trans_func = self._outgoing_val_trans_for_key.get(
+            func_key, self._dflt_outgoing_val_trans_for_key
+        )
         return super().__setitem__(k, trans_func(v))
 
 
 # TODO: I'd really like to reuse MiscStoreMixin here! There's a lot of potential.
 #  If store argument of get_obj was a type instead of an instance, or if MiscReaderMixin was a transformer, if would
 #  be easier -- but would it make their individual concerns mixed?
-def set_obj(k, v, store=LocalBinaryStore(path_format=''),
-            outgoing_val_trans_for_key=imdict(dflt_outgoing_val_trans_for_key),
-            func_key=lambda k: os.path.splitext(k)[1]):
+def set_obj(
+        k,
+        v,
+        store=LocalBinaryStore(path_format=""),
+        outgoing_val_trans_for_key=imdict(dflt_outgoing_val_trans_for_key),
+        func_key=lambda k: os.path.splitext(k)[1],
+):
     """A quick way to get an object, with default... everything (but the key, you know, a clue of what you want)"""
 
-    trans_func = outgoing_val_trans_for_key.get(func_key(k), dflt_outgoing_val_trans_for_key)
+    trans_func = outgoing_val_trans_for_key.get(
+        func_key(k), dflt_outgoing_val_trans_for_key
+    )
     store[k] = trans_func(v)
 
 
@@ -304,6 +350,7 @@ class MiscGetterAndSetter(MiscGetter):
     """
     An object to read and write (and nothing else) to a store (default local) with automatic (de)serialization
     according to a property of the key (default: file extension).
+
     >>> from py2store.misc import set_obj, misc_objs  # the function and the object
     >>> import json
     >>> import os
@@ -333,12 +380,14 @@ class MiscGetterAndSetter(MiscGetter):
 
     """
 
-    def __init__(self,
-                 store=LocalBinaryStore(path_format=''),
-                 incoming_val_trans_for_key=imdict(dflt_incoming_val_trans_for_key),
-                 outgoing_val_trans_for_key=imdict(dflt_outgoing_val_trans_for_key),
-                 dflt_incoming_val_trans=identity_method,
-                 func_key=lambda k: os.path.splitext(k)[1]):
+    def __init__(
+            self,
+            store=LocalBinaryStore(path_format=""),
+            incoming_val_trans_for_key=imdict(dflt_incoming_val_trans_for_key),
+            outgoing_val_trans_for_key=imdict(dflt_outgoing_val_trans_for_key),
+            dflt_incoming_val_trans=identity_method,
+            func_key=lambda k: os.path.splitext(k)[1],
+    ):
         self.store = store
         self.incoming_val_trans_for_key = incoming_val_trans_for_key
         self.outgoing_val_trans_for_key = outgoing_val_trans_for_key
@@ -346,7 +395,9 @@ class MiscGetterAndSetter(MiscGetter):
         self.func_key = func_key
 
     def __setitem__(self, k, v):
-        return set_obj(k, v, self.store, self.outgoing_val_trans_for_key, self.func_key)
+        return set_obj(
+            k, v, self.store, self.outgoing_val_trans_for_key, self.func_key
+        )
 
 
 misc_objs = MiscGetterAndSetter()

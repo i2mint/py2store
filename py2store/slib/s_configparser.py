@@ -197,7 +197,7 @@ class ConfigStore(ConfigParserStore):
     BasicInterpolation = BasicInterpolation
     ExtendedInterpolation = ExtendedInterpolation
 
-    @Sig(ConfigParser)
+    # @Sig(ConfigParser)
     def __init__(
             self,
             source,
