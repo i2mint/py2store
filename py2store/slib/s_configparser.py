@@ -4,7 +4,7 @@ from functools import wraps
 from io import BytesIO, StringIO
 
 from py2store.trans import kv_wrap_persister_cls
-from py2store.utils.signatures import Sig
+# from py2store.utils.signatures import Sig
 
 _test_config_str = """[Simple Values]
 key=value
@@ -197,18 +197,19 @@ class ConfigStore(ConfigParserStore):
     BasicInterpolation = BasicInterpolation
     ExtendedInterpolation = ExtendedInterpolation
 
-    # @Sig(ConfigParser)
+    # @Sig.from_objs(['source', ConfigParser.__init__, ('target_kind', None)])  # need to add source and target_kind
     def __init__(
             self,
             source,
+            *,
             defaults=None,
             dict_type=dict,
             allow_no_value=False,
             target_kind=None,
-            **kwargs,
+            **more_config_parser_kwargs,
     ):
 
-        super().__init__(defaults, dict_type, allow_no_value, **kwargs)
+        super().__init__(defaults, dict_type, allow_no_value, **more_config_parser_kwargs)
 
         self._within_context_manager = False
 
