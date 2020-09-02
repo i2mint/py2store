@@ -286,6 +286,117 @@ def regroupby(items, *key_funcs, **named_key_funcs):
         }
 
 
+GroupItems = Iterable[Item]
+from inspect import signature
+
+
+def igroupby(
+        items: Iterable[Item],
+        key: Callable[[Item], Hashable],
+        val: Optional[Callable[[Item], Any]] = None,
+        group_factory: Callable[[], GroupItems] = list,
+        group_release_cond: Callable[[Any, Any], bool] = lambda k, v: False,
+        release_remainding=True,
+        append_to_group_items: Callable[[GroupItems, Item], Any] = list.append
+) -> dict:
+    """The generator version of py2store groupby.
+    Groups items according to group keys updated from those items through the given (item_to_)key function,
+    yielding the groups according to a logic defined by ``group_release_cond``
+
+    Args:
+        items: iterable of items
+        key: The function that computes a key from an item. Needs to return a hashable.
+        val: An optional function that computes a val from an item. If not given, the item itself will be taken.
+        group_factory: The function to make new (empty) group objects and accumulate group items.
+            group_items = group_collector() will be called to make a new empty group collection
+            group_items.append(x) will be called to add x to that collection
+            The default is `list`
+        group_release_cond: A boolean function that will be applied, at every iteration,
+            to the accumulated items of the group that was just updated,
+            and determines (if True) if the (group_key, group_items) should be yielded.
+            The default is False, which results in
+            ``lambda group_key, group_items: False`` being used.
+        release_remainding: Once the input items have been consumed, there may still be some
+            items in the grouping "cache". ``release_remainding`` is a boolean that indicates whether
+            the contents of this cache should be released or not.
+
+    Yields: ``(group_key, items_in_that_group)`` pairs
+
+
+    The following will group numbers according to their parity (0 for even, 1 for odd),
+    releasing a list of numbers collected when that list reaches length 3:
+
+    >>> g = igroupby(items=range(11),
+    ...             key=lambda x: x % 2,
+    ...             group_release_cond=lambda k, v: len(v) == 3)
+    >>> list(g)
+    [(0, [0, 2, 4]), (1, [1, 3, 5]), (0, [6, 8, 10]), (1, [7, 9])]
+
+    If we specify ``release_remainding=False`` though, we won't get
+    >>> g = igroupby(items=range(11),
+    ...             key=lambda x: x % 2,
+    ...             group_release_cond=lambda k, v: len(v) == 3,
+    ...             release_remainding=False)
+    >>> list(g)
+    [(0, [0, 2, 4]), (1, [1, 3, 5]), (0, [6, 8, 10])]
+
+    # >>> grps = partial(igroupby, group_release_cond=False, release_remainding=True)
+
+
+    Below we show that, with the default ``group_release_cond = lambda k, v: False``
+    and release_remainding=True`` we have ``dict(igroupby(...)) == groupby(...)``
+
+    >>> from functools import partial
+    >>> from py2store import groupby
+    >>>
+    >>> kws = dict(items=range(11), key=lambda x: x % 3)
+    >>> assert (dict(igroupby(**kws)) == groupby(**kws)
+    ...         == {0: [0, 3, 6, 9], 1: [1, 4, 7, 10], 2: [2, 5, 8]})
+    >>>
+    >>> tokens = ['the', 'fox', 'is', 'in', 'a', 'box']
+    >>> kws = dict(items=tokens, key=len)
+    >>> assert (dict(igroupby(**kws)) == groupby(**kws)
+    ...         == {3: ['the', 'fox', 'box'], 2: ['is', 'in'], 1: ['a']})
+    >>>
+    >>> key_map = {1: 'one', 2: 'two'}
+    >>> kws.update(key=lambda x: key_map.get(len(x), 'more'))
+    >>> assert (dict(igroupby(**kws)) == groupby(**kws)
+    ...         == {'more': ['the', 'fox', 'box'], 'two': ['is', 'in'], 'one': ['a']})
+    >>>
+    >>> stopwords = {'the', 'in', 'a', 'on'}
+    >>> kws.update(key=lambda w: w in stopwords)
+    >>> assert (dict(igroupby(**kws)) == groupby(**kws)
+    ...         == {True: ['the', 'in', 'a'], False: ['fox', 'is', 'box']})
+    >>> kws.update(key=lambda w: ['words', 'stopwords'][int(w in stopwords)])
+    >>> assert (dict(igroupby(**kws)) == groupby(**kws)
+    ...         == {'stopwords': ['the', 'in', 'a'], 'words': ['fox', 'is', 'box']})
+
+    """
+    groups = defaultdict(group_factory)
+
+    assert callable(group_release_cond), (
+        "group_release_cond should be callable (filter boolean function) or False. "
+        f"Was {group_release_cond}")
+    assert len(signature(group_release_cond).parameters) == 2, (
+        "group_release_cond should take two inputs: The group_key and the group_items.\n"
+        f"The arguments of the function you gave me are: {signature(group_release_cond)}"
+    )
+    for item in items:
+        group_key = key(item)
+        group_items = groups[group_key]
+        if val is None:
+            append_to_group_items(group_items, item)
+        else:
+            append_to_group_items(group_items, val(item))
+        if group_release_cond(group_key, group_items):
+            yield group_key, group_items
+            del groups[group_key]
+
+    if release_remainding:
+        for group_key, group_items in groups.items():
+            yield group_key, group_items
+
+
 def ntup(**kwargs):
     return namedtuple("NamedTuple", list(kwargs))(**kwargs)
 

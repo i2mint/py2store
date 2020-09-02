@@ -3,7 +3,7 @@ from py2store.util import ModuleNotFoundIgnore
 
 file_sep = os.path.sep
 
-from py2store.util import lazyprop, groupby, regroupby
+from py2store.util import lazyprop, groupby, regroupby, igroupby
 from py2store.trans import add_ipython_key_completions
 
 # Imports to be able to easily get started...

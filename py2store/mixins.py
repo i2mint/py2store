@@ -1,11 +1,16 @@
 import json
-from py2store.errors import WritesNotAllowed, DeletionsNotAllowed, OverWritesNotAllowedError
+from py2store.errors import (
+    WritesNotAllowed,
+    DeletionsNotAllowed,
+    OverWritesNotAllowedError,
+)
 
 
 class SimpleJsonMixin:
     """simple json serialization.
     Useful to store and retrieve
     """
+
     _docsuffix = "Data is assumed to be a JSON string, and is loaded with json.loads and dumped with json.dumps"
 
     def _obj_of_data(self, data):
@@ -64,12 +69,13 @@ class IdentityValsWrapMixin:
 
 class IdentityKvWrapMixin(IdentityKeysWrapMixin, IdentityValsWrapMixin):
     """Transparent Keys and Vals Wrap"""
+
     pass
 
 
 from functools import partial
 
-encode_as_utf8 = partial(str, encoding='utf-8')
+encode_as_utf8 = partial(str, encoding="utf-8")
 
 
 class StringKvWrap(IdentityKvWrapMixin):
@@ -98,6 +104,7 @@ class FilteredKeysMixin:
 ########################################################################################################################
 # Mixins to disable specific operations
 
+
 class ReadOnlyMixin:
     """Put this as your first parent class to disallow write/delete operations"""
 
@@ -108,10 +115,17 @@ class ReadOnlyMixin:
         raise DeletionsNotAllowed("You can't delete with that Store")
 
     def clear(self):
-        raise DeletionsNotAllowed("You can't delete (so definitely not delete all) with that Store")
+        raise DeletionsNotAllowed(
+            "You can't delete (so definitely not delete all) with that Store"
+        )
 
     def pop(self, k):
-        raise DeletionsNotAllowed("You can't delete (including popping) with that Store")
+        raise DeletionsNotAllowed(
+            "You can't delete (including popping) with that Store"
+        )
+
+
+from py2store.util import copy_attrs
 
 
 class OverWritesNotAllowedMixin:
@@ -123,24 +137,44 @@ class OverWritesNotAllowedMixin:
     >>> p = TestPersister()
     >>> p['foo'] = 'bar'
     >>> #p['foo'] = 'bar2'  # will raise error
-    >>> try:
-    ...     p['foo'] = 'this value should not be store'
-    ... except OverWritesNotAllowedError as e:
-    ...     pass  # all is fine: OverWritesNotAllowedError is what we expect
-    ... else:
-    ...     raise RuntimeWarning("Actually, we EXPECT for an OverWritesNotAllowedError to be raised")
+    >>> p['foo'] = 'this value should not be stored' # doctest: +NORMALIZE_WHITESPACE
+    Traceback (most recent call last):
+      ...
+    py2store.errors.OverWritesNotAllowedError: key foo already exists and cannot be overwritten.
+        If you really want to write to that key, delete it before writing
+    >>> p['foo']  # foo is still bar
+    'bar'
+    >>> del p['foo']
+    >>> p['foo'] = 'this value WILL be stored'
+    >>> p['foo']
+    'this value WILL be stored'
     """
+
+    @staticmethod
+    def wrap(cls):
+        # TODO: Consider moving to trans and making instances wrappable too
+        class NoOverWritesClass(OverWritesNotAllowedMixin, cls):
+            ...
+
+        copy_attrs(
+            NoOverWritesClass, cls, ("__name__", "__qualname__", "__module__")
+        )
+        return NoOverWritesClass
 
     def __setitem__(self, k, v):
         if self.__contains__(k):
             raise OverWritesNotAllowedError(
                 "key {} already exists and cannot be overwritten. "
-                "If you really want to write to that key, delete it before writing".format(k))
-        super().__setitem__(k, v)
+                "If you really want to write to that key, delete it before writing".format(
+                    k
+                )
+            )
+        return super().__setitem__(k, v)
 
 
 ########################################################################################################################
 # Mixins to define mapping methods from others
+
 
 class GetBasedContainerMixin:
     def __contains__(self, k) -> bool:
@@ -187,7 +221,9 @@ class IterBasedSizedMixin:
         return count
 
 
-class IterBasedSizedContainerMixin(IterBasedSizedMixin, IterBasedContainerMixin):
+class IterBasedSizedContainerMixin(
+    IterBasedSizedMixin, IterBasedContainerMixin
+):
     """
     An ABC that defines
         (a) how to iterate over a collection of elements (keys) (__iter__)
@@ -203,6 +239,7 @@ class IterBasedSizedContainerMixin(IterBasedSizedMixin, IterBasedContainerMixin)
     offers mixin __len__ and __contains__ methods based on a given __iter__ method.
     Note that usually __len__ and __contains__ should be overridden to more, context-dependent, efficient methods.
     """
+
     pass
 
 

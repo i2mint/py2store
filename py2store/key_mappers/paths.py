@@ -185,6 +185,21 @@ def mk_relative_path_store(
     ...     def __init__(self, _prefix, *args, **kwargs):
     ...         self._prefix = _prefix
 
+    You can choose the name you want that prefix to have as an attribute (we'll still make
+    a hidden '_prefix' attribute for internal use, but at least you can have an attribute with the
+    name you want.
+
+    >>> MyRelStore = mk_relative_path_store(dict, with_key_validation=True, prefix_attr='rootdir')
+    >>> s = MyRelStore()
+    >>> s.rootdir = '/ROOT/'
+
+    >>> s['foo'] = 'bar'
+    >>> dict(s.items())  # gives us what you would expect
+    {'foo': 'bar'}
+    >>>  # but under the hood, the dict we wrapped actually contains the '/ROOT/' prefix
+    >>> dict(s.store)
+    {'/ROOT/foo': 'bar'}
+
     """
     name = name or ("RelPath" + store_cls.__name__)
     __module__ = __module__ or getattr(store_cls, "__module__", None)
@@ -201,7 +216,20 @@ def mk_relative_path_store(
 
     cls.__init__ = __init__
 
+    if prefix_attr != '_prefix':
+        assert not hasattr(store_cls, '_prefix'), f"You already have a _prefix attribute, " \
+                                                  f"but want the prefix name to be {prefix_attr}. " \
+                                                  f"That's not going to be easy for me."
+
+        @property
+        def _prefix(self):
+            return getattr(self, prefix_attr)
+
+        cls._prefix = _prefix
+
     if with_key_validation:
+        assert hasattr(store_cls, 'is_valid_key'), "If you want with_key_validation=True, " \
+                                                   "you'll need a method called is_valid_key to do the validation job"
 
         def _id_of_key(self, k):
             _id = super(cls, self)._id_of_key(k)
