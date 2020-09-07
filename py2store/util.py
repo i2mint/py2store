@@ -175,7 +175,9 @@ def add_attrs(remember_added_attrs=True, if_attr_exists="raise", **attrs):
 
 
 def fullpath(path):
-    return os.path.abspath(os.path.expanduser(path))
+    if path.startswith('~'):
+        path = os.path.expanduser(path)
+    return os.path.abspath(path)
 
 
 def attrs_of(obj):

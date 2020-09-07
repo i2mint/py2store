@@ -2,6 +2,7 @@ import os
 import json
 import pickle
 import csv
+import gzip
 from io import StringIO, BytesIO
 
 from py2store import LocalBinaryStore
@@ -36,6 +37,7 @@ dflt_incoming_val_trans_for_key = {
     ".pickle": lambda v: pickle.loads(v),
     ".json": lambda v: json.loads(v),
     ".zip": FilesOfZip,
+    ".gzip": gzip.decompress,
     ".ini": lambda v: ConfigStore(
         v,
         interpolation=ConfigReader.ExtendedInterpolation(),
@@ -49,10 +51,11 @@ dflt_outgoing_val_trans_for_key = {
     ".pkl": lambda v: pickle.dumps(v),
     ".pickle": lambda v: pickle.dumps(v),
     ".json": lambda v: json.dumps(v).encode(),
+    ".gzip": gzip.compress,
     '.ini': lambda v: ConfigStore(v, interpolation=ConfigReader.ExtendedInterpolation()),
 }
 
-synset_of_ext = {".ini": {".cnf", ".conf", ".config"}}
+synset_of_ext = {".ini": {".cnf", ".conf", ".config"}, '.gzip': [".gz"]}
 for _user_this, _for_these_extensions in synset_of_ext.items():
     for _d in [
         dflt_incoming_val_trans_for_key,
