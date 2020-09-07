@@ -171,10 +171,12 @@ def get_obj(
             with urllib.request.urlopen(k) as response:
                 v = response.read()
     else:
-        # if k.startswith('.') or k.startswith('..'):
-        #     k = os.path.abspath(k)
-        # elif k.startswith('~'):
-        #     k = os.path.expanduser(k)
+        if isinstance(store, LocalBinaryStore):  # being extra careful to only do this if default local store
+            # preprocessing the key if it starts with '.', '..', or '~'
+            if k.startswith('.') or k.startswith('..'):
+                k = os.path.abspath(k)
+            elif k.startswith('~'):
+                k = os.path.expanduser(k)
         v = store[k]
     trans_func = (incoming_val_trans_for_key or {}).get(
         func_key(k), dflt_incoming_val_trans
