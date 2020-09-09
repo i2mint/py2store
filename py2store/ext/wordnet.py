@@ -97,21 +97,54 @@ def wordnet_element_store_base(element_cls, __module__=__name__):
     return _WordnetElementStore
 
 
+# Parsing method from nltk.corpus.reader.wordnet.Lemma's documentation.
+# Documentation states "These methods all return lists of Lemmas"
+lemma_methods_returning_lemmas = set(re.findall("\w+", """
+    - antonyms
+    - hypernyms, instance_hypernyms
+    - hyponyms, instance_hyponyms
+    - member_holonyms, substance_holonyms, part_holonyms
+    - member_meronyms, substance_meronyms, part_meronyms
+    - topic_domains, region_domains, usage_domains
+    - attributes
+    - derivationally_related_forms
+    - entailments
+    - causes
+    - also_sees
+    - verb_groups
+    - similar_tos
+    - pertainyms
+"""))
+
+
 class KvLemma(wordnet_element_store_base(Lemma)):
     """
     >>> lm = KvLemma.from_name('vocal.a.01.vocal')
     >>> assert len(lm) == len(dict(lm)) == 33
     >>> sorted(lm.dict_of_non_empty_values().items()) #doctest: +NORMALIZE_WHITESPACE
-    [('antonyms', [Lemma('instrumental.a.01.instrumental')]),
+    [('antonyms', [KvLemma('instrumental.a.01.instrumental')]),
      ('count', 1),
-     ('derivationally_related_forms', [Lemma('vocalize.v.02.vocalize')]),
+     ('derivationally_related_forms', [KvLemma('vocalize.v.02.vocalize')]),
      ('key', 'vocal%3:01:02::'),
      ('lang', 'eng'),
      ('name', 'vocal'),
-     ('pertainyms', [Lemma('voice.n.02.voice')]),
-     ('synset', Synset('vocal.a.01')),
+     ('pertainyms', [KvLemma('voice.n.02.voice')]),
+     ('synset', KvSynset('vocal.a.01')),
      ('syntactic_marker', None)]
     """
+
+    def __getitem__(self, k):
+        attr = super().__getitem__(k)
+        if k in lemma_methods_returning_lemmas:
+            return list(map(KvLemma, attr))
+        elif k == 'synset':
+            return KvSynset(attr)
+        else:
+            return attr
+
+    def __repr__(self):
+        tup = type(self).__name__, self._synset._name, self._name
+        return "%s('%s.%s')" % tup
 
 
 # Parsing method from nltk.corpus.reader.wordnet.Synset's documentation.
@@ -188,7 +221,7 @@ class KvSynset(wordnet_element_store_base(Synset)):
     hypernyms: [KvSynset('sound_property.n.01')]
     hyponyms: [KvSynset('noisiness.n.01'), KvSynset('ring.n.01'), KvSynset('unison.n.03'), KvSynset('voice.n.01')]
     lemma_names: ['sound']
-    lemmas: [Lemma('sound.n.01.sound')]
+    lemmas: [KvLemma('sound.n.01.sound')]
     lexname: noun.attribute
     max_depth: 5
     min_depth: 5
@@ -206,6 +239,8 @@ class KvSynset(wordnet_element_store_base(Synset)):
             return [list(map(KvSynset, x)) for x in attr]
         elif k == 'hypernym_distances':
             return {(KvSynset(ss), dist) for ss, dist in attr}
+        elif k == 'lemmas':
+            return [KvLemma(lemma) for lemma in attr]
         else:
             return attr
 

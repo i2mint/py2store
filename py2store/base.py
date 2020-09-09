@@ -345,6 +345,9 @@ class Store(KvPersister):
         else:
             return getattr(self.store, attr)
 
+    def __hash__(self):
+        return self.store.__hash__()
+
     # Read ####################################################################
     def __getitem__(self, k: Key) -> Val:
         return self._obj_of_data(self.store[self._id_of_key(k)])

@@ -26,6 +26,8 @@ def identity_method(x):
 
 
 # TODO: Enhance default handling so users can have their own defaults (checking for local config file etc.)
+# Note: If you're tempted to add third-party cases here (like yaml, pandas):
+#   DO NOT!! Defaults must work only with builtins (or misc would be non-deterministic)
 dflt_func_key = lambda self, k: os.path.splitext(k)[1]
 dflt_dflt_incoming_val_trans = staticmethod(identity_method)
 
@@ -54,6 +56,7 @@ dflt_outgoing_val_trans_for_key = {
     ".gzip": gzip.compress,
     '.ini': lambda v: ConfigStore(v, interpolation=ConfigReader.ExtendedInterpolation()),
 }
+
 
 synset_of_ext = {".ini": {".cnf", ".conf", ".config"}, '.gzip': [".gz"]}
 for _user_this, _for_these_extensions in synset_of_ext.items():

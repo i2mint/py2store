@@ -624,6 +624,9 @@ def cached_keys(
         if __module__ is not None:
             cached_cls.__module__ = __module__
 
+        if hasattr(store_cls, '__doc__'):
+            cached_cls.__doc__ = store_cls.__doc__
+
         return cached_cls
 
 
@@ -700,6 +703,7 @@ def filtered_iter(
             else:  # it's a class we're wrapping
                 collection_cls = store
                 __module__ = __module__ or getattr(collection_cls, "__module__", None)
+
                 name = name or "Filtered" + get_class_name(collection_cls)
                 wrapped_cls = type(name, (collection_cls,), {})
 
@@ -770,6 +774,9 @@ def filtered_iter(
 
                 if __module__ is not None:
                     wrapped_cls.__module__ = __module__
+
+                if hasattr(collection_cls, '__doc__'):
+                    wrapped_cls.__doc__ = collection_cls.__doc__
 
                 return wrapped_cls
 
@@ -897,6 +904,9 @@ def kv_wrap_persister_cls(persister_cls, name=None):
     name = name or (persister_cls.__qualname__ + "PWrapped")
 
     cls = type(name, (Store,), {})
+
+    if hasattr(persister_cls, '__doc__'):
+        cls.__doc__ = persister_cls.__doc__
 
     @wraps(persister_cls.__init__)
     def __init__(self, *args, **kwargs):

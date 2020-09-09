@@ -86,25 +86,25 @@ class ExplicitKeys(Collection):
     ['foo', 'bar', 'alice']
     """
 
-    __slots__ = ("_key_collection",)
+    __slots__ = ("_keys_cache",)
 
-    def __init__(self, key_collection: CollectionType):
-        assert isinstance(key_collection, CollectionType), (
-            "key_collection must be a collections.abc.Collection, i.e. have a __len__, __contains__, and __len__."
-            "The key_collection you gave me was a {}".format(
-                type(key_collection)
-            )
-        )
-        self._key_collection = key_collection
+    # def __init__(self, key_collection: CollectionType):
+    #     assert isinstance(key_collection, CollectionType), (
+    #         "key_collection must be a collections.abc.Collection, i.e. have a __len__, __contains__, and __len__."
+    #         "The key_collection you gave me was a {}".format(
+    #             type(key_collection)
+    #         )
+    #     )
+    #     self._key_collection = key_collection
 
     def __iter__(self):
-        yield from self._key_collection
+        yield from self._keys_cache
 
     def __len__(self):
-        return len(self._key_collection)
+        return len(self._keys_cache)
 
     def __contains__(self, k):
-        return k in self._key_collection
+        return k in self._keys_cache
 
 
 class ExplicitKeysSource(ExplicitKeys, ObjReader, KvReader):
@@ -118,8 +118,8 @@ class ExplicitKeysSource(ExplicitKeys, ObjReader, KvReader):
         :param key_collection: The collection of keys that this source handles
         :param _obj_of_key: The function that returns the contents for a key
         """
-        ExplicitKeys.__init__(self, key_collection)
         ObjReader.__init__(self, _obj_of_key)
+        self._keys_cache = key_collection
 
 
 class ExplicitKeysStore(ExplicitKeys, Store):
@@ -141,7 +141,7 @@ class ExplicitKeysStore(ExplicitKeys, Store):
 
     def __init__(self, store, key_collection):
         Store.__init__(self, store)
-        ExplicitKeys.__init__(self, key_collection)
+        self._keys_cache = key_collection
 
 
 def invertible_maps(mapping=None, inv_mapping=None):
