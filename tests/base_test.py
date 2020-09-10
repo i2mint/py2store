@@ -8,17 +8,17 @@ class BaseTest:
     db = None  # Redefine me!
 
     key = {
-        'first_name': 'Robot',
-        'last_name': str(uuid4().hex),
+        "first_name": "Robot",
+        "last_name": str(uuid4().hex),
     }
     data = {
-        'height': '100sm',
-        'weight': '50kg',
-        'fav number': str(randint(1, 100)),
+        "height": "100sm",
+        "weight": "50kg",
+        "fav number": str(randint(1, 100)),
     }
 
     data_updated = data.copy()
-    data_updated['fav number'] = '9000'
+    data_updated["fav number"] = "9000"
 
     def test_crud(self):
         self._test_create()
@@ -62,12 +62,14 @@ class BaseTest:
 
 class BasePersisterTest(BaseTest):
     """ Base test for all Persisters. """
-    inexistent_key = {'first_name': 'inexistent key value'}
+
+    inexistent_key = {"first_name": "inexistent key value"}
 
 
 class BaseStoreTest(BaseTest):
     """ Base test for all Stores. """
-    inexistent_key = 'inexistent key'
+
+    inexistent_key = "inexistent key"
 
     key_fields = list(BaseTest.key.keys())
     data_fields = list(BaseTest.data.keys())
@@ -75,10 +77,12 @@ class BaseStoreTest(BaseTest):
 
 class BaseKeyTupleStoreTest(BaseStoreTest):
     """ Base test for all Stores with Keys as tuples. """
+
     key = tuple(BaseTest.key.values())
 
 
 class BaseTupleStoreTest(BaseKeyTupleStoreTest):
     """ Base test for all Stores with Keys and Values as tuples. """
+
     data = tuple(BaseTest.data.values())
     data_updated = tuple(BaseTest.data_updated.values())

@@ -28,12 +28,12 @@ def key_count(gen, start=0):
 
 def join_byte_values_and_key_as_current_utc_milliseconds(gen):
     k = int(time.time() * 1000)
-    yield k, b''.join(gen)
+    yield k, b"".join(gen)
 
 
 def join_string_values_and_key_as_current_utc_milliseconds(gen):
     k = int(time.time() * 1000)
-    yield k, ''.join(gen)
+    yield k, "".join(gen)
 
 
 def mk_kv_from_keygen(keygen=itertools.count()):
@@ -45,7 +45,7 @@ def mk_kv_from_keygen(keygen=itertools.count()):
 
 
 infinite_keycount_kvs = mk_kv_from_keygen(keygen=itertools.count())
-no_initial = type('NoInitial', (), {})()
+no_initial = type("NoInitial", (), {})()
 
 
 def mk_group_aggregator(item_to_kv, aggregator_op=add, initial=no_initial):
@@ -86,7 +86,9 @@ def mk_group_aggregator(item_to_kv, aggregator_op=add, initial=no_initial):
     return aggregator
 
 
-def mk_group_aggregator_with_key_func(item_to_key, aggregator_op=add, initial=no_initial):
+def mk_group_aggregator_with_key_func(
+        item_to_key, aggregator_op=add, initial=no_initial
+):
     """Make a generator transforming function that will
     (a) make a key for each given item,
     (b) group all items according to the key
@@ -121,8 +123,11 @@ def mk_group_aggregator_with_key_func(item_to_key, aggregator_op=add, initial=no
     >>> list(ag([1, 2, 3, 4, 5]))
     [(1, [1, 3, 5]), (0, [2, 4])]
     """
-    return mk_group_aggregator(item_to_kv=lambda item: (item_to_key(item), item),
-                               aggregator_op=aggregator_op, initial=initial)
+    return mk_group_aggregator(
+        item_to_kv=lambda item: (item_to_key(item), item),
+        aggregator_op=aggregator_op,
+        initial=initial,
+    )
 
 
 @flush_on_exit
@@ -151,11 +156,15 @@ class CumulAggregWrite:
     >>>
     """
 
-    def __init__(self, store, cache_to_kv=infinite_keycount_kvs, mk_cache=list):
+    def __init__(
+            self, store, cache_to_kv=infinite_keycount_kvs, mk_cache=list
+    ):
         self.store = store
         self.cache_to_kv = cache_to_kv
         self._mk_cache = mk_cache
-        self.cache = mk_cache()  # Note: Better a cache factory, or the same object with an empty() method.
+        self.cache = (
+            mk_cache()
+        )  # Note: Better a cache factory, or the same object with an empty() method.
 
     def __setitem__(self, k, v):
         self.cache.append((k, v))
@@ -178,7 +187,9 @@ class CumulAggregWrite:
 
 class CumulAggregWriteKvItems(CumulAggregWrite):
     def __init__(self, store):
-        super().__init__(store, cache_to_kv=lambda gen: iter(gen), mk_cache=list)
+        super().__init__(
+            store, cache_to_kv=lambda gen: iter(gen), mk_cache=list
+        )
 
 
 def condition_flush_on_every_write(cache):
@@ -187,8 +198,13 @@ def condition_flush_on_every_write(cache):
 
 
 class CumulAggregWriteWithAutoFlush(CumulAggregWrite):
-    def __init__(self, store, cache_to_kv=infinite_keycount_kvs, mk_cache=list,
-                 flush_cache_condition=condition_flush_on_every_write):
+    def __init__(
+            self,
+            store,
+            cache_to_kv=infinite_keycount_kvs,
+            mk_cache=list,
+            flush_cache_condition=condition_flush_on_every_write,
+    ):
         super().__init__(store, cache_to_kv, mk_cache)
         self.flush_cache_condition = flush_cache_condition
 

@@ -1,13 +1,8 @@
-
-
-
-
 ########################################################################################################################
 # LocalFile Daccs
 class PrefixValidationMixin(KeyValidation):
     def is_valid_key(self, k):
         return k.startswith(self._prefix)
-
 
 
 ########################################################################################################################
@@ -26,7 +21,7 @@ class LocalFileObjSource(AbstractObjSource):
         self._contents_of_file = contents_of_file
 
     @classmethod
-    def for_kind(cls, kind: str = 'dflt', **kwargs):
+    def for_kind(cls, kind: str = "dflt", **kwargs):
         """
         Makes a LocalFileObjSource using specific kind of serialization.
         :param path_format: the path_format to use for the LocalFileObjSource
@@ -59,5 +54,8 @@ class LocalFileObjSource(AbstractObjSource):
         try:
             return self._contents_of_file(k)
         except Exception as e:
-            raise KeyError("KeyError in {} when trying to __getitem__({}): {}".format(e.__class__.__name__, k, e))
-
+            raise KeyError(
+                "KeyError in {} when trying to __getitem__({}): {}".format(
+                    e.__class__.__name__, k, e
+                )
+            )

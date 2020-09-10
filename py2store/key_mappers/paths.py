@@ -42,6 +42,7 @@ class PathGetMixin:
     >>> assert s['a.b'] == {'c': 42}
     >>> assert s['a.b.c'] == 42
     """
+
     _path_type: type = tuple
 
     def __getitem__(self, k):
@@ -150,7 +151,13 @@ class PrefixRelativizationMixin:
         return _id[self._prefix_length:]
 
 
-def mk_relative_path_store(store_cls, name=None, with_key_validation=False, prefix_attr='_prefix'):
+def mk_relative_path_store(
+        store_cls,
+        name=None,
+        with_key_validation=False,
+        prefix_attr="_prefix",
+        __module__=None,
+):
     """
 
     Args:
@@ -178,28 +185,65 @@ def mk_relative_path_store(store_cls, name=None, with_key_validation=False, pref
     ...     def __init__(self, _prefix, *args, **kwargs):
     ...         self._prefix = _prefix
 
+    You can choose the name you want that prefix to have as an attribute (we'll still make
+    a hidden '_prefix' attribute for internal use, but at least you can have an attribute with the
+    name you want.
+
+    >>> MyRelStore = mk_relative_path_store(dict, with_key_validation=True, prefix_attr='rootdir')
+    >>> s = MyRelStore()
+    >>> s.rootdir = '/ROOT/'
+
+    >>> s['foo'] = 'bar'
+    >>> dict(s.items())  # gives us what you would expect
+    {'foo': 'bar'}
+    >>>  # but under the hood, the dict we wrapped actually contains the '/ROOT/' prefix
+    >>> dict(s.store)
+    {'/ROOT/foo': 'bar'}
+
     """
-    name = name or ('RelPath' + store_cls.__name__)
+    name = name or ("RelPath" + store_cls.__name__)
+    __module__ = __module__ or getattr(store_cls, "__module__", None)
 
     cls = type(name, (PrefixRelativizationMixin, Store), {})
 
     @wraps(store_cls.__init__)
     def __init__(self, *args, **kwargs):
         Store.__init__(self, store=store_cls(*args, **kwargs))
-        prefix = recursive_get_attr(self.store, '_prefix', '')
-        setattr(self, prefix_attr, prefix)  # TODO: Might need descriptor to enable assignment
+        prefix = recursive_get_attr(self.store, prefix_attr, "")
+        setattr(
+            self, prefix_attr, prefix
+        )  # TODO: Might need descriptor to enable assignment
 
     cls.__init__ = __init__
 
+    if prefix_attr != '_prefix':
+        assert not hasattr(store_cls, '_prefix'), f"You already have a _prefix attribute, " \
+                                                  f"but want the prefix name to be {prefix_attr}. " \
+                                                  f"That's not going to be easy for me."
+
+        @property
+        def _prefix(self):
+            return getattr(self, prefix_attr)
+
+        cls._prefix = _prefix
+
     if with_key_validation:
+        assert hasattr(store_cls, 'is_valid_key'), "If you want with_key_validation=True, " \
+                                                   "you'll need a method called is_valid_key to do the validation job"
+
         def _id_of_key(self, k):
             _id = super(cls, self)._id_of_key(k)
             if self.store.is_valid_key(_id):
                 return _id
             else:
-                raise KeyError(f"Key not valid (usually because does not exist or access not permitted): {k}")
+                raise KeyError(
+                    f"Key not valid (usually because does not exist or access not permitted): {k}"
+                )
 
         cls._id_of_key = _id_of_key
+
+    if __module__ is not None:
+        cls.__module__ = __module__
 
     return cls
 

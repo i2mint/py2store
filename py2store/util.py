@@ -1,18 +1,136 @@
 import os
 import shutil
 import re
-import sys
 from collections import namedtuple, defaultdict
 from inspect import signature
 from warnings import warn
 from typing import Any, Hashable, Callable, Iterable, Optional
 
-var_str_p = re.compile('\W|^(?=\d)')
+
+def copy_attrs(target, source, attrs, raise_error_if_an_attr_is_missing=True):
+    """Copy attributes from one object to another.
+    >>> class A:
+    ...     x = 0
+    >>> class B:
+    ...     x = 1
+    ...     yy = 2
+    ...     zzz = 3
+    >>> dict_of = lambda o: {a: getattr(o, a) for a in dir(A) if not a.startswith('_')}
+    >>> dict_of(A)
+    {'x': 0}
+    >>> copy_attrs(A, B, 'yy')
+    >>> dict_of(A)
+    {'x': 0, 'yy': 2}
+    >>> copy_attrs(A, B, ['x', 'zzz'])
+    >>> dict_of(A)
+    {'x': 1, 'yy': 2, 'zzz': 3}
+
+    But if you try to copy something that `B` (the source) doesn't have, copy_attrs will complain:
+    >>> copy_attrs(A, B, 'this_is_not_an_attr')
+    Traceback (most recent call last):
+        ...
+    AttributeError: type object 'B' has no attribute 'this_is_not_an_attr'
+
+    If you tell it not to complain, it'll just ignore attributes that are not in source.
+    >>> copy_attrs(A, B, ['nothing', 'here', 'exists'], raise_error_if_an_attr_is_missing=False)
+    >>> dict_of(A)
+    {'x': 1, 'yy': 2, 'zzz': 3}
+    """
+    if isinstance(attrs, str):
+        attrs = (attrs,)
+    if raise_error_if_an_attr_is_missing:
+        filt = lambda a: True
+    else:
+        filt = lambda a: hasattr(source, a)
+    for a in filter(filt, attrs):
+        setattr(target, a, getattr(source, a))
+
+
+def copy_attrs_from(from_obj, to_obj, attrs):
+    from warnings import warn
+
+    warn(f"Deprecated. Use copy_attrs instead.", DeprecationWarning)
+    copy_attrs(to_obj, from_obj, attrs)
+    return to_obj
+
+
+def norm_kv_filt(kv_filt: Callable[[Any], bool]):
+    """Prepare a boolean function to be used with `filter` when fed an iterable of (k, v) pairs.
+
+    So you have a mapping. Say a dict `d`. Now you want to go through d.items(),
+    filtering based on the keys, or the values, or both.
+
+    It's not hard to do, really. If you're using a dict you might use a dict comprehension,
+    or in the general case you might do a `filter(lambda kv: my_filt(kv[0], kv[1]), d.items())`
+    if you have a `my_filt` that works wiith k and v, etc.
+
+    But thought simple, it can become a bit muddled.
+    `norm_kv_filt` simplifies this by allowing you to bring your own filtering boolean function,
+    whether it's a key-based, value-based, or key-value-based one, and it will make a
+    ready-to-use with `filter` function for you.
+
+    Only thing: Your function needs to call a key `k` and a value `v`.
+    But hey, it's alright, if you have a function that calls things differently, just do
+    something like
+    ```
+        new_filt_func = lambda k, v: your_filt_func(..., key=k, ..., value=v, ...)
+    ```
+    and all will be fine.
+
+    :param kv_filt: callable (starting with signature (k), (v), or (k, v)), and returning  a boolean
+    :return: A normalized callable.
+
+    >>> d = {'a': 1, 'b': 2, 'c': 3, 'd': 4}
+    >>> list(filter(norm_kv_filt(lambda k: k in {'b', 'd'}), d.items()))
+    [('b', 2), ('d', 4)]
+    >>> list(filter(norm_kv_filt(lambda v: v > 2), d.items()))
+    [('c', 3), ('d', 4)]
+    >>> list(filter(norm_kv_filt(lambda k, v: (v > 1) & (k != 'c')), d.items()))
+    [('b', 2), ('d', 4)]
+    """
+    if kv_filt is None:
+        return None  # because `filter` works with a callable, or None, so we align
+
+    raise_msg = (
+        f"kv_filt should be callable (starting with signature (k), (v), or (k, v)),"
+        "and returning  a boolean. What you gave me was {fv_filt}"
+    )
+    assert callable(kv_filt), raise_msg
+
+    params = list(signature(kv_filt).parameters.values())
+    assert len(params), raise_msg
+    _kv_filt = kv_filt
+    if params[0].name == "v":
+
+        def kv_filt(k, v):
+            return _kv_filt(v)
+
+    elif params[0].name == "k":
+        if len(params) > 1:
+            if params[1].name != "v":
+                raise ValueError(raise_msg)
+        else:
+
+            def kv_filt(k, v):
+                return _kv_filt(k)
+
+    else:
+        raise ValueError(raise_msg)
+
+    def __kv_filt(kv_item):
+        return kv_filt(*kv_item)
+
+    __kv_filt.__name__ = kv_filt.__name__
+
+    return __kv_filt
+
+
+var_str_p = re.compile("\W|^(?=\d)")
 
 Item = Any
 
 
-def add_attrs(remember_added_attrs=True, if_attr_exists='raise', **attrs):
+def add_attrs(remember_added_attrs=True, if_attr_exists="raise", **attrs):
     """Make a function that will add attributes to an obj.
     Originally meant to be used as a decorator of a function, to inject
     >>> from py2store.util import add_attrs
@@ -33,14 +151,18 @@ def add_attrs(remember_added_attrs=True, if_attr_exists='raise', **attrs):
         attrs_added = []
         for attr_name, attr_val in attrs.items():
             if hasattr(obj, attr_name):
-                if if_attr_exists == 'raise':
-                    raise AttributeError(f"Attribute {attr_name} already exists in {obj}")
-                elif if_attr_exists == 'warn':
+                if if_attr_exists == "raise":
+                    raise AttributeError(
+                        f"Attribute {attr_name} already exists in {obj}"
+                    )
+                elif if_attr_exists == "warn":
                     warn(f"Attribute {attr_name} already exists in {obj}")
-                elif if_attr_exists == 'skip':
+                elif if_attr_exists == "skip":
                     continue
                 else:
-                    raise ValueError(f"Unknown value for if_attr_exists: {if_attr_exists}")
+                    raise ValueError(
+                        f"Unknown value for if_attr_exists: {if_attr_exists}"
+                    )
             setattr(obj, attr_name, attr_val)
             attrs_added.append(attr_name)
 
@@ -53,14 +175,16 @@ def add_attrs(remember_added_attrs=True, if_attr_exists='raise', **attrs):
 
 
 def fullpath(path):
-    return os.path.abspath(os.path.expanduser(path))
+    if path.startswith('~'):
+        path = os.path.expanduser(path)
+    return os.path.abspath(path)
 
 
 def attrs_of(obj):
     return set(dir(obj))
 
 
-def format_invocation(name='', args=(), kwargs=None):
+def format_invocation(name="", args=(), kwargs=None):
     """Given a name, positional arguments, and keyword arguments, format
     a basic Python-style function call.
 
@@ -73,31 +197,37 @@ def format_invocation(name='', args=(), kwargs=None):
 
     """
     kwargs = kwargs or {}
-    a_text = ', '.join([repr(a) for a in args])
+    a_text = ", ".join([repr(a) for a in args])
     if isinstance(kwargs, dict):
         kwarg_items = [(k, kwargs[k]) for k in sorted(kwargs)]
     else:
         kwarg_items = kwargs
-    kw_text = ', '.join(['%s=%r' % (k, v) for k, v in kwarg_items])
+    kw_text = ", ".join(["%s=%r" % (k, v) for k, v in kwarg_items])
 
     all_args_text = a_text
     if all_args_text and kw_text:
-        all_args_text += ', '
+        all_args_text += ", "
     all_args_text += kw_text
 
-    return '%s(%s)' % (name, all_args_text)
+    return "%s(%s)" % (name, all_args_text)
 
 
-def groupby(items: Iterable[Item],
-            key: Callable[[Item], Hashable],
-            val: Optional[Callable[[Item], Any]] = None
-            ) -> dict:
+def groupby(
+        items: Iterable[Item],
+        key: Callable[[Item], Hashable],
+        val: Optional[Callable[[Item], Any]] = None,
+        group_factory=list,
+) -> dict:
     """Groups items according to group keys updated from those items through the given (item_to_)key function.
 
     Args:
         items: iterable of items
         key: The function that computes a key from an item. Needs to return a hashable.
         val: An optional function that computes a val from an item. If not given, the item itself will be taken.
+        group_factory: The function to make new (empty) group objects and accumulate group items.
+            group_items = group_collector() will be called to make a new empty group collection
+            group_items.append(x) will be called to add x to that collection
+            The default is `list`
 
     Returns: A dict of {group_key: items_in_that_group, ...}
 
@@ -116,7 +246,7 @@ def groupby(items: Iterable[Item],
     >>> groupby(tokens, lambda w: ['words', 'stopwords'][int(w in stopwords)])
     {'stopwords': ['the', 'in', 'a'], 'words': ['fox', 'is', 'box']}
     """
-    groups = defaultdict(list)
+    groups = defaultdict(group_factory)
     if val is None:
         for item in items:
             groups[key(item)].append(item)
@@ -152,11 +282,125 @@ def regroupby(items, *key_funcs, **named_key_funcs):
     else:
         key_func, *key_funcs = key_funcs
         groups = groupby(items, key=key_func)
-        return {group_key: regroupby(group_items, *key_funcs) for group_key, group_items in groups.items()}
+        return {
+            group_key: regroupby(group_items, *key_funcs)
+            for group_key, group_items in groups.items()
+        }
+
+
+GroupItems = Iterable[Item]
+from inspect import signature
+
+
+def igroupby(
+        items: Iterable[Item],
+        key: Callable[[Item], Hashable],
+        val: Optional[Callable[[Item], Any]] = None,
+        group_factory: Callable[[], GroupItems] = list,
+        group_release_cond: Callable[[Any, Any], bool] = lambda k, v: False,
+        release_remainding=True,
+        append_to_group_items: Callable[[GroupItems, Item], Any] = list.append
+) -> dict:
+    """The generator version of py2store groupby.
+    Groups items according to group keys updated from those items through the given (item_to_)key function,
+    yielding the groups according to a logic defined by ``group_release_cond``
+
+    Args:
+        items: iterable of items
+        key: The function that computes a key from an item. Needs to return a hashable.
+        val: An optional function that computes a val from an item. If not given, the item itself will be taken.
+        group_factory: The function to make new (empty) group objects and accumulate group items.
+            group_items = group_collector() will be called to make a new empty group collection
+            group_items.append(x) will be called to add x to that collection
+            The default is `list`
+        group_release_cond: A boolean function that will be applied, at every iteration,
+            to the accumulated items of the group that was just updated,
+            and determines (if True) if the (group_key, group_items) should be yielded.
+            The default is False, which results in
+            ``lambda group_key, group_items: False`` being used.
+        release_remainding: Once the input items have been consumed, there may still be some
+            items in the grouping "cache". ``release_remainding`` is a boolean that indicates whether
+            the contents of this cache should be released or not.
+
+    Yields: ``(group_key, items_in_that_group)`` pairs
+
+
+    The following will group numbers according to their parity (0 for even, 1 for odd),
+    releasing a list of numbers collected when that list reaches length 3:
+
+    >>> g = igroupby(items=range(11),
+    ...             key=lambda x: x % 2,
+    ...             group_release_cond=lambda k, v: len(v) == 3)
+    >>> list(g)
+    [(0, [0, 2, 4]), (1, [1, 3, 5]), (0, [6, 8, 10]), (1, [7, 9])]
+
+    If we specify ``release_remainding=False`` though, we won't get
+    >>> g = igroupby(items=range(11),
+    ...             key=lambda x: x % 2,
+    ...             group_release_cond=lambda k, v: len(v) == 3,
+    ...             release_remainding=False)
+    >>> list(g)
+    [(0, [0, 2, 4]), (1, [1, 3, 5]), (0, [6, 8, 10])]
+
+    # >>> grps = partial(igroupby, group_release_cond=False, release_remainding=True)
+
+
+    Below we show that, with the default ``group_release_cond = lambda k, v: False``
+    and release_remainding=True`` we have ``dict(igroupby(...)) == groupby(...)``
+
+    >>> from functools import partial
+    >>> from py2store import groupby
+    >>>
+    >>> kws = dict(items=range(11), key=lambda x: x % 3)
+    >>> assert (dict(igroupby(**kws)) == groupby(**kws)
+    ...         == {0: [0, 3, 6, 9], 1: [1, 4, 7, 10], 2: [2, 5, 8]})
+    >>>
+    >>> tokens = ['the', 'fox', 'is', 'in', 'a', 'box']
+    >>> kws = dict(items=tokens, key=len)
+    >>> assert (dict(igroupby(**kws)) == groupby(**kws)
+    ...         == {3: ['the', 'fox', 'box'], 2: ['is', 'in'], 1: ['a']})
+    >>>
+    >>> key_map = {1: 'one', 2: 'two'}
+    >>> kws.update(key=lambda x: key_map.get(len(x), 'more'))
+    >>> assert (dict(igroupby(**kws)) == groupby(**kws)
+    ...         == {'more': ['the', 'fox', 'box'], 'two': ['is', 'in'], 'one': ['a']})
+    >>>
+    >>> stopwords = {'the', 'in', 'a', 'on'}
+    >>> kws.update(key=lambda w: w in stopwords)
+    >>> assert (dict(igroupby(**kws)) == groupby(**kws)
+    ...         == {True: ['the', 'in', 'a'], False: ['fox', 'is', 'box']})
+    >>> kws.update(key=lambda w: ['words', 'stopwords'][int(w in stopwords)])
+    >>> assert (dict(igroupby(**kws)) == groupby(**kws)
+    ...         == {'stopwords': ['the', 'in', 'a'], 'words': ['fox', 'is', 'box']})
+
+    """
+    groups = defaultdict(group_factory)
+
+    assert callable(group_release_cond), (
+        "group_release_cond should be callable (filter boolean function) or False. "
+        f"Was {group_release_cond}")
+    assert len(signature(group_release_cond).parameters) == 2, (
+        "group_release_cond should take two inputs: The group_key and the group_items.\n"
+        f"The arguments of the function you gave me are: {signature(group_release_cond)}"
+    )
+    for item in items:
+        group_key = key(item)
+        group_items = groups[group_key]
+        if val is None:
+            append_to_group_items(group_items, item)
+        else:
+            append_to_group_items(group_items, val(item))
+        if group_release_cond(group_key, group_items):
+            yield group_key, group_items
+            del groups[group_key]
+
+    if release_remainding:
+        for group_key, group_items in groups.items():
+            yield group_key, group_items
 
 
 def ntup(**kwargs):
-    return namedtuple('NamedTuple', list(kwargs))(**kwargs)
+    return namedtuple("NamedTuple", list(kwargs))(**kwargs)
 
 
 def str_to_var_str(s: str) -> str:
@@ -170,66 +414,7 @@ def str_to_var_str(s: str) -> str:
     >>> str_to_var_str('99_ballons')
     '_99_ballons'
     """
-    return var_str_p.sub('_', s)
-
-
-# TODO: Make it work with a store, without having to load and store the values explicitly.
-class DictAttr:
-    """Convenience class to hold Key-Val pairs with both a dict-like and struct-like interface.
-    The dict-like interface has just the basic get/set/del/iter/len
-    (all "dunders": none visible as methods). There is no get, update, etc.
-    This is on purpose, so that the only visible attributes (those you get by tab-completion for instance)
-    are the those you injected.
-
-    >>> da = DictAttr(foo='bar', life=42)
-    >>> da.foo
-    'bar'
-    >>> da['life']
-    42
-    >>> da.true = 'love'
-    >>> len(da)  # count the number of fields
-    3
-    >>> da['friends'] = 'forever'  # write as dict
-    >>> da.friends  # read as attribute
-    'forever'
-    >>> list(da)  # list fields (i.e. keys i.e. attributes)
-    ['foo', 'life', 'true', 'friends']
-    >>> del da['friends']  # delete as dict
-    >>> del da.foo # delete as attribute
-    >>> list(da)
-    ['life', 'true']
-    >>> da._dict  # the hidden dict that is wrapped
-    {'life': 42, 'true': 'love'}
-    """
-    _dict = None
-
-    def __init__(self, **kwargs):
-        super().__setattr__('_dict', {})
-        for k, v in kwargs.items():
-            setattr(self, k, v)
-
-    def __getitem__(self, k):
-        return self._dict[k]
-
-    def __setitem__(self, k, v):
-        setattr(self, k, v)
-
-    def __delitem__(self, k):
-        delattr(self, k)
-
-    def __iter__(self):
-        return iter(self._dict.keys())
-
-    def __len__(self):
-        return len(self._dict)
-
-    def __setattr__(self, k, v):
-        self._dict[k] = v
-        super().__setattr__(k, v)
-
-    def __delattr__(self, k):
-        del self._dict[k]
-        super().__delattr__(k)
+    return var_str_p.sub("_", s)
 
 
 def fill_with_dflts(d, dflt_dict=None):
@@ -315,8 +500,10 @@ class lazyprop:
     """
 
     def __init__(self, func):
-        self.__doc__ = getattr(func, '__doc__')
-        self.__isabstractmethod__ = getattr(func, '__isabstractmethod__', False)
+        self.__doc__ = getattr(func, "__doc__")
+        self.__isabstractmethod__ = getattr(
+            func, "__isabstractmethod__", False
+        )
         self.func = func
 
     def __get__(self, instance, cls):
@@ -328,7 +515,7 @@ class lazyprop:
 
     def __repr__(self):
         cn = self.__class__.__name__
-        return '<%s func=%s>' % (cn, self.func)
+        return "<%s func=%s>" % (cn, self.func)
 
 
 from functools import lru_cache, wraps
@@ -391,14 +578,17 @@ class lazyprop_w_sentinel(lazyprop):
     generating "len"
     3
     """
-    sentinel_prefix = 'sentinel_of__'
+
+    sentinel_prefix = "sentinel_of__"
 
     def __get__(self, instance, cls):
         if instance is None:
             return self
         else:
             value = instance.__dict__[self.func.__name__] = self.func(instance)
-            setattr(instance, self.sentinel_prefix + self.func.__name__, True)  # my hack
+            setattr(
+                instance, self.sentinel_prefix + self.func.__name__, True
+            )  # my hack
             return value
 
     @classmethod
@@ -416,7 +606,9 @@ class MutableStruct(Struct):
     def extend(self, **attr_val_dict):
         for attr in attr_val_dict.keys():
             if hasattr(self, attr):
-                raise AttributeError(f"The attribute {attr} already exists. Delete it if you want to reuse it!")
+                raise AttributeError(
+                    f"The attribute {attr} already exists. Delete it if you want to reuse it!"
+                )
         for attr, val in attr_val_dict.items():
             setattr(self, attr, val)
 
@@ -428,7 +620,7 @@ def max_common_prefix(a):
     :return: the smallest common prefix of all strings in a
     """
     if not a:
-        return ''
+        return ""
     # Note: Try to optimize by using a min_max function to give me both in one pass. The current version is still faster
     s1 = min(a)
     s2 = max(a)
@@ -478,7 +670,9 @@ class DelegatedAttribute:
     #     return self.delegate(instance)(*args, **kwargs)
 
 
-def delegate_as(delegate_cls, to='delegate', include=frozenset(), exclude=frozenset()):
+def delegate_as(
+        delegate_cls, to="delegate", include=frozenset(), exclude=frozenset()
+):
     raise NotImplementedError("Didn't manage to make this work fully")
     # turn include and ignore into sets, if they aren't already
     include = set(include)
@@ -506,7 +700,7 @@ class HashableMixin:
 
 class ImmutableMixin:
     def _immutable(self, *args, **kws):
-        raise TypeError('object is immutable')
+        raise TypeError("object is immutable")
 
     __setitem__ = _immutable
     __delitem__ = _immutable
@@ -519,11 +713,14 @@ class ImmutableMixin:
 
 class imdict(dict, HashableMixin, ImmutableMixin):
     """ A frozen hashable dict """
+
     pass
 
 
 def move_files_of_folder_to_trash(folder):
-    trash_dir = os.path.join(os.getenv("HOME"), '.Trash')  # works with mac (perhaps linux too?)
+    trash_dir = os.path.join(
+        os.getenv("HOME"), ".Trash"
+    )  # works with mac (perhaps linux too?)
     assert os.path.isdir(trash_dir), f"{trash_dir} directory not found"
 
     for f in os.listdir(folder):
@@ -546,7 +743,8 @@ class ModuleNotFoundErrorNiceMessage:
             if self.msg is not None:
                 warn(self.msg)
             else:
-                raise ModuleNotFoundError(f"""
+                raise ModuleNotFoundError(
+                    f"""
 It seems you don't have required `{exc_val.name}` package for this Store.
 Try installing it by running:
 
@@ -554,7 +752,8 @@ Try installing it by running:
     
 in your terminal.
 For more information: https://pypi.org/project/{exc_val.name}
-            """)
+            """
+                )
 
 
 class ModuleNotFoundWarning:

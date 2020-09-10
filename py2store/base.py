@@ -39,13 +39,28 @@ ItemIter = Iterable[Item]
 
 
 class AttrNames:
-    CollectionABC = {'__len__', '__iter__', '__contains__'}
-    Mapping = CollectionABC | {'keys', 'get', 'items', '__reversed__', 'values', '__getitem__'}
-    MutableMapping = Mapping | {'setdefault', 'pop', 'popitem', 'clear', 'update', '__delitem__', '__setitem__'}
+    CollectionABC = {"__len__", "__iter__", "__contains__"}
+    Mapping = CollectionABC | {
+        "keys",
+        "get",
+        "items",
+        "__reversed__",
+        "values",
+        "__getitem__",
+    }
+    MutableMapping = Mapping | {
+        "setdefault",
+        "pop",
+        "popitem",
+        "clear",
+        "update",
+        "__delitem__",
+        "__setitem__",
+    }
 
-    Collection = CollectionABC | {'head'}
-    KvReader = (Mapping | {'head'}) - {'__reversed__'}
-    KvPersister = (MutableMapping | {'head'}) - {'__reversed__'} - {'clear'}
+    Collection = CollectionABC | {"head"}
+    KvReader = (Mapping | {"head"}) - {"__reversed__"}
+    KvPersister = (MutableMapping | {"head"}) - {"__reversed__"} - {"clear"}
 
 
 class Collection(CollectionABC):
@@ -79,13 +94,13 @@ class Collection(CollectionABC):
         return count
 
     def head(self):
-        if hasattr(self, 'items'):
+        if hasattr(self, "items"):
             return next(iter(self.items()))
         else:
             return next(iter(self))
 
 
-KvCollection = Collection  # alias meant for back-compatibility. Would like to deprecated
+# KvCollection = Collection  # alias meant for back-compatibility. Would like to deprecated
 
 
 # def getitem_based_contains(self, x) -> bool:
@@ -200,7 +215,7 @@ def identity_func(x):
 static_identity_method = staticmethod(identity_func)
 
 
-class NoSuchItem():
+class NoSuchItem:
     pass
 
 
@@ -307,6 +322,8 @@ class Store(KvPersister):
     # __slots__ = ('_id_of_key', '_key_of_id', '_data_of_obj', '_obj_of_data')
 
     def __init__(self, store=dict):
+        self._wrapped_methods = set(dir(Store))
+
         if isinstance(store, type):
             store = store()
         self.store = store
@@ -318,13 +335,26 @@ class Store(KvPersister):
 
     _max_repr_size = None
 
+    # TODO: Test performance of alternative delegation methods (or no delegation at all).
+    #   A (very) quick test over a few methods shows that the addition of this "delegate the rest"
+    #   slows things down by 10% to 20%.
+    def __getattr__(self, attr):
+        """Delegate method to wrapped store if not part of wrapper store methods"""
+        if attr in self._wrapped_methods:
+            return getattr(self, attr)
+        else:
+            return getattr(self.store, attr)
+
+    def __hash__(self):
+        return self.store.__hash__()
+
     # Read ####################################################################
     def __getitem__(self, k: Key) -> Val:
         return self._obj_of_data(self.store[self._id_of_key(k)])
         # return self._obj_of_data(self.store.__getitem__(self._id_of_key(k)))
 
     def get(self, k: Key, default=None) -> Val:
-        if hasattr(self.store, 'get'):  # if store has a get method, use it
+        if hasattr(self.store, "get"):  # if store has a get method, use it
             data = self.store.get(self._id_of_key(k), no_such_item)
             if data is not no_such_item:
                 return self._obj_of_data(data)
@@ -373,16 +403,23 @@ class Store(KvPersister):
         except Exception as e:
 
             from warnings import warn
+
             if k is None:
                 raise
             else:
-                msg = f"Couldn't get data for the key {k}. This could be be...\n"
+                msg = (
+                    f"Couldn't get data for the key {k}. This could be be...\n"
+                )
                 msg += "... because it's not a store (just a collection, that doesn't have a __getitem__)\n"
-                msg += "... because there's a layer transforming outcoming keys that are not the ones the store actually " \
-                       "uses? If you didn't wrap the store with the inverse ingoing keys transformation, " \
-                       "that would happen.\n"
-                msg += "I'll ask the inner-layer what it's head is, but IT MAY NOT REFLECT the reality of your store " \
-                       "if you have some filtering, caching etc."
+                msg += (
+                    "... because there's a layer transforming outcoming keys that are not the ones the store actually "
+                    "uses? If you didn't wrap the store with the inverse ingoing keys transformation, "
+                    "that would happen.\n"
+                )
+                msg += (
+                    "I'll ask the inner-layer what it's head is, but IT MAY NOT REFLECT the reality of your store "
+                    "if you have some filtering, caching etc."
+                )
                 msg += f"The error messages was: \n{e}"
                 warn(msg)
 
@@ -419,13 +456,79 @@ class Store(KvPersister):
         if isinstance(self._max_repr_size, int):
             half = int(self._max_repr_size)
             if len(x) > self._max_repr_size:
-                x = x[:half] + '  ...  ' + x[-half:]
+                x = x[:half] + "  ...  " + x[-half:]
         return x
         # return self.store.__repr__()
 
 
 # Store.register(dict)  # TODO: Would this be a good idea? To make isinstance({}, Store) be True (though missing head())
 KvStore = Store  # alias with explict name
+
+########################################################################################################################
+# walking in trees
+
+
+inf = float("infinity")
+
+
+def val_is_mapping(p, k, v):
+    return isinstance(v, Mapping)
+
+
+def asis(p, k, v):
+    return p, k, v
+
+
+def tuple_keypath_and_val(p, k, v):
+    if p == ():  # we're just begining (the root),
+        p = (k,)  # so begin the path with the first key.
+    else:
+        p = (*p, k)  # extend the path (append the new key)
+    return p, v
+
+
+# TODO: More docs and doctests. This one even merits an extensive usage and example tutorial!
+def kv_walk(
+        v: Mapping,
+        yield_func=asis,  # (p, k, v) -> what you want the gen to yield
+        walk_filt=val_is_mapping,  # (p, k, v) -> whether to explore the nested structure v further
+        pkv_to_pv=tuple_keypath_and_val,
+        p=(),
+):
+    """
+
+    :param v:
+    :param yield_func: (pp, k, vv) -> what ever you want the gen to yield
+    :param walk_filt: (p, k, vv) -> (bool) whether to explore the nested structure v further
+    :param pkv_to_pv:  (p, k, v) -> (pp, vv)
+        where pp is a form of p + k (update of the path with the new node k)
+        and vv is the value that will be used by both walk_filt and yield_func
+    :param p: The path to v
+
+    >>> d = {'a': 1, 'b': {'c': 2, 'd': 3}}
+    >>> list(kv_walk(d))
+    [(('a',), 'a', 1), (('b', 'c'), 'c', 2), (('b', 'd'), 'd', 3)]
+    >>> list(kv_walk(d, lambda p, k, v: '.'.join(p)))
+    ['a', 'b.c', 'b.d']
+    """
+    # print(f"1: entered with: v={v}, p={p}")
+    for k, vv in v.items():
+        # print(f"2: item: k={k}, vv={vv}")
+        pp, vv = pkv_to_pv(
+            p, k, vv
+        )  # update the path with k (and preprocess v if necessary)
+        if walk_filt(
+                p, k, vv
+        ):  # should we recurse? (based on some function of p, k, v)
+            # print(f"3: recurse with: pp={pp}, vv={vv}\n")
+            yield from kv_walk(
+                vv, yield_func, walk_filt, pkv_to_pv, pp
+            )  # recurse
+        else:
+            # print(f"4: yield_func(pp={pp}, k={k}, vv={vv})\n --> {yield_func(pp, k, vv)}")
+            yield yield_func(
+                pp, k, vv
+            )  # yield something computed from p, k, vv
 
 
 def has_kv_store_interface(o):
@@ -437,8 +540,12 @@ def has_kv_store_interface(o):
     Returns: True if kv has the four key (in/out) and value (in/out) transformation methods
 
     """
-    return hasattr(o, '_id_of_key') and hasattr(o, '_key_of_id') \
-           and hasattr(o, '_data_of_obj') and hasattr(o, '_obj_of_data')
+    return (
+            hasattr(o, "_id_of_key")
+            and hasattr(o, "_key_of_id")
+            and hasattr(o, "_data_of_obj")
+            and hasattr(o, "_obj_of_data")
+    )
 
 
 from abc import ABCMeta, abstractmethod
@@ -469,6 +576,7 @@ class KeyValidationABC(metaclass=ABCMeta):
     Single purpose: store an object under a given key.
     How the object is serialized and or physically stored should be defined in a concrete subclass.
     """
+
     __slots__ = ()
 
     @abstractmethod
@@ -491,12 +599,3 @@ class KeyValidationABC(metaclass=ABCMeta):
 
 ########################################################################################################################
 # TODO: Delete when over with refactor
-
-#
-# class StoreMapping(Mapping):
-#     pass
-#
-#
-# class StoreMutableMapping(MutableMapping):
-#     def clear(self):
-#         raise DeletionsNotAllowed("Bulk deletes not allowed.")

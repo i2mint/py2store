@@ -1,4 +1,7 @@
 from functools import partial
+
+import sqlalchemy
+
 from py2store.util import ModuleNotFoundErrorNiceMessage
 
 with ModuleNotFoundErrorNiceMessage():
@@ -13,11 +16,12 @@ from py2store.base import Collection, KvReader
 from py2store.util import lazyprop, lazyprop_w_sentinel
 
 DFLT_SQL_PORT = 1433
-DFLT_SQL_HOST = 'localhost'
+DFLT_SQL_HOST = "localhost"
 
 
 # TODO: decorator to automatically retry (once) if the connection times out
 # --> from sqlalchemy.exc import OperationalError
+
 
 class SqlTableRowsCollection(Collection):
     """Base class wrapping an sql table.
@@ -33,35 +37,49 @@ class SqlTableRowsCollection(Collection):
         the number of rows will be updated to match number of rows cached.
     * column_names is a cached property
     """
-    _tmpl_count_rows_tmpl = 'SELECT COUNT(*) FROM {table_name}'
-    _tmpl_describe_tmpl = 'DESCRIBE {table_name}'
-    _tmpl_iter_tmpl = 'SELECT * FROM {table_name}'
 
-    def __init__(self, connection, table_name, batch_size=2000, limit=int(1e16)):
+    _tmpl_count_rows_tmpl = "SELECT COUNT(*) FROM {table_name}"
+    _tmpl_describe_tmpl = "DESCRIBE {table_name}"
+    _tmpl_iter_tmpl = "SELECT * FROM {table_name}"
+
+    def __init__(
+            self, connection, table_name, batch_size=2000, limit=int(1e16)
+    ):
         self.connection = connection
         self.table_name = table_name
-        self.iter_rows = partial(iter_rows, connection=connection, table_name=table_name,
-                                 batch_size=batch_size, limit=limit)
+        self.iter_rows = partial(
+            iter_rows,
+            connection=connection,
+            table_name=table_name,
+            batch_size=batch_size,
+            limit=limit,
+        )
 
     # Helpers ##########################################################################################################
     # QUESTION: Should helpers (_describe, _columns, etc.) should be methods/properties/lazyprops, and hidden or not?
 
     def count_rows(self):
-        return self.connection.execute(self._tmpl_count_rows_tmpl.format(table_name=self.table_name)).first()[0]
+        return self.connection.execute(
+            self._tmpl_count_rows_tmpl.format(table_name=self.table_name)
+        ).first()[0]
 
     @lazyprop
     def _row_count(self):
-        if lazyprop_w_sentinel.cache_is_active(self, '_rows'):
+        if lazyprop_w_sentinel.cache_is_active(self, "_rows"):
             return len(self._rows)
         else:
             return self.count_rows()
 
     def refresh_row_count(self):
         del self._row_count  # delete current
-        return self._row_count  # return current row count (mainly to refresh the lazyprop
+        return (
+            self._row_count
+        )  # return current row count (mainly to refresh the lazyprop
 
     def _describe(self):
-        return self.connection.execute(self._tmpl_describe_tmpl.format(table_name=self.table_name))
+        return self.connection.execute(
+            self._tmpl_describe_tmpl.format(table_name=self.table_name)
+        )
 
     @lazyprop
     def column_names(self):
@@ -69,7 +87,11 @@ class SqlTableRowsCollection(Collection):
 
     @lazyprop_w_sentinel
     def _rows(self):
-        rows = list(self.connection.execute(self._tmpl_iter_tmpl.format(table_name=self.table_name)))
+        rows = list(
+            self.connection.execute(
+                self._tmpl_iter_tmpl.format(table_name=self.table_name)
+            )
+        )
         self._row_count = len(rows)
         return rows
 
@@ -91,7 +113,9 @@ class SqlTableRowsCollection(Collection):
             assert start >= 0, "slice start can't be negative"
 
             if stop:
-                assert stop >= start, "slice stop must be at least the slice start"
+                assert (
+                        stop >= start
+                ), "slice stop must be at least the slice start"
                 return self.iter_rows(offset=start, limit=stop - start)
             elif start:
                 return self.iter_rows(offset=start)
@@ -136,14 +160,20 @@ class SqlDbCollection(Collection):
     @classmethod
     def from_config_dict(cls, config_dict):
         # handle defaults
-        config_dict = dict(dict(host=DFLT_SQL_HOST, port=DFLT_SQL_PORT), **config_dict)
+        config_dict = dict(
+            dict(host=DFLT_SQL_HOST, port=DFLT_SQL_PORT), **config_dict
+        )
 
         # validate input
-        expected_keys = {'user', 'pwd', 'host', 'port', 'database'}
-        assert {key for key in config_dict.keys() if key in expected_keys} == expected_keys, 'incomplete config'
+        expected_keys = {"user", "pwd", "host", "port", "database"}
+        assert {
+                   key for key in config_dict.keys() if key in expected_keys
+               } == expected_keys, "incomplete config"
 
         # make the uri
-        uri = 'mysql+pymysql://{user}:{pwd}@{host}:{port}/{database}'.format(**config_dict)  # connect to database
+        uri = "mysql+pymysql://{user}:{pwd}@{host}:{port}/{database}".format(
+            **config_dict
+        )  # connect to database
 
         # make an instance from uri
         o = cls.from_uri(uri)
@@ -151,11 +181,20 @@ class SqlDbCollection(Collection):
         return o
 
     @classmethod
-    def from_configs(cls, database, user='user', pwd='password', port=DFLT_SQL_PORT, host=DFLT_SQL_HOST):
-        return cls.from_config_dict(dict(database=database, user=user, pwd=pwd, port=port, host=host))
+    def from_configs(
+            cls,
+            database,
+            user="user",
+            pwd="password",
+            port=DFLT_SQL_PORT,
+            host=DFLT_SQL_HOST,
+    ):
+        return cls.from_config_dict(
+            dict(database=database, user=user, pwd=pwd, port=port, host=host)
+        )
 
     def __iter__(self):
-        yield from (x[0] for x in self.connection.execute('show tables'))
+        yield from (x[0] for x in self.connection.execute("show tables"))
 
 
 class SqlDbReader(SqlDbCollection, KvReader):
@@ -179,18 +218,25 @@ SqlAlchemyDatabaseCollection = SqlDbCollection
 
 
 class SQLAlchemyPersister(Persister):
+
+    TYPE_INTEGER = sqlalchemy.INTEGER
+    TYPE_STRING = sqlalchemy.String
+    TYPE_BOOLEAN = sqlalchemy.BOOLEAN
+    TYPE_BLOB = sqlalchemy.BLOB
+    TYPE_TEXT = sqlalchemy.TEXT
+
     """
     A basic SQL DB persister written with SQLAlchemy.
     """
 
     def __init__(
             self,
-            uri='sqlite:///my_sqlite.db',
-            collection_name='py2store_default_table',
-            key_fields=('id',),
-            data_fields=('data',),
+            uri="sqlite:///my_sqlite.db",
+            collection_name="py2store_default_table",
+            key_fields={"_id": TYPE_INTEGER},
+            data_fields={"data": TYPE_STRING},
             autocommit=True,
-            **db_kwargs
+            **db_kwargs,
     ):
         """
         :param uri: Uniform Resource Identifier of a database you would like to use.
@@ -252,11 +298,13 @@ class SQLAlchemyPersister(Persister):
             table_name,
             Base.metadata,
             *[
-                Column(key, String(), primary_key=True, index=True)
+                Column(
+                    key, self._key_fields[key], primary_key=True, index=True
+                )
                 for key in self._key_fields
             ],
             *[
-                Column(name, String())
+                Column(name, self._data_fields[name])
                 for name in self._data_fields
             ],
         )
@@ -310,7 +358,9 @@ class SQLAlchemyPersister(Persister):
     #     self.teardown()
 
 
-def iter_rows(connection, table_name, batch_size=1000, offset=0, limit=int(1e12)):
+def iter_rows(
+        connection, table_name, batch_size=1000, offset=0, limit=int(1e12)
+):
     """Iterate the over the rows of a table.
     The limit argument is mostly there to avoid an infinite loop, but can also be used to get ranges.
     """
@@ -319,7 +369,9 @@ def iter_rows(connection, table_name, batch_size=1000, offset=0, limit=int(1e12)
     for offset in range(offset, stop_offset, batch_size):
         if i >= limit:
             break
-        r = connection.execute(f'SELECT * FROM {table_name} LIMIT {batch_size} OFFSET {offset}')
+        r = connection.execute(
+            f"SELECT * FROM {table_name} LIMIT {batch_size} OFFSET {offset}"
+        )
         if r.rowcount:
             for i, x in enumerate(r.fetchall(), i):
                 if i < limit:

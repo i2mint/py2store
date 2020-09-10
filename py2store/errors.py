@@ -5,8 +5,12 @@ from inspect import signature
 # TODO: More on wrapped_callback: Handle *args too. Make it work with builtins (no signature!)
 # TODO: What about traceback?
 # TODO: Make it a more general and useful store decorator. Trans store into an getitem exception catching store.
-def items_with_caught_exceptions(d: Mapping, callback=None,
-                                 catch_exceptions=(Exception,), yield_callback_output=False):
+def items_with_caught_exceptions(
+        d: Mapping,
+        callback=None,
+        catch_exceptions=(Exception,),
+        yield_callback_output=False,
+):
     """
     Do what Mapping.items() does, but catching exceptions when getting the values for a key.
 
@@ -80,11 +84,14 @@ def items_with_caught_exceptions(d: Mapping, callback=None,
             def wrapped_callback(**kwargs):
                 kwargs = {k: v for k, v in kwargs.items() if k in params}
                 return callback(**kwargs)
+
         except ValueError:
+
             def wrapped_callback(k, e, d, i):
                 return callback(k, e, d, i)
 
     else:
+
         def wrapped_callback(k, e, d, i):
             pass  # do nothing
 
@@ -94,17 +101,20 @@ def items_with_caught_exceptions(d: Mapping, callback=None,
             yield k, v  # and if you do, yield the (k, v) pair
         except catch_exceptions as e:  # catch the specific exceptions you requested to catch
             t = wrapped_callback(k=k, e=e, d=d, i=i)  # call it
-            if yield_callback_output:  # if the user wants the output of the callback
+            if (
+                    yield_callback_output
+            ):  # if the user wants the output of the callback
                 yield t  # yield it
 
 
-def _assert_condition(condition, err_msg='', err_cls=AssertionError):
+def _assert_condition(condition, err_msg="", err_cls=AssertionError):
     if not condition:
         raise err_cls(err_msg)
 
 
 class KeyValidationError(ValueError):
     """Error to raise when a key is not valid"""
+
     pass
 
 
@@ -134,4 +144,5 @@ class IterationNotAllowed(OperationNotAllowed):
 
 class OverWritesNotAllowedError(OperationNotAllowed):
     """Error to raise when a key is not valid"""
+
     pass

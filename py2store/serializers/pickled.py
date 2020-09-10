@@ -7,7 +7,13 @@ rw_funcs_maker_for = dict()
 
 # TODO: Make (in a different module) a factory to encapsulate the common pattern of the next three functions, and others
 
-def mk_pickle_rw_funcs(fix_imports=True, protocol=None, pickle_encoding='ASCII', pickle_errors='strict'):
+
+def mk_pickle_rw_funcs(
+        fix_imports=True,
+        protocol=None,
+        pickle_encoding="ASCII",
+        pickle_errors="strict",
+):
     """Generates a reader and writer using pickle. That is, a pair of parametrized loads and dumps
 
     >>> read, write = mk_pickle_rw_funcs()
@@ -17,15 +23,22 @@ def mk_pickle_rw_funcs(fix_imports=True, protocol=None, pickle_encoding='ASCII',
     >>> assert d == deserialized_d
     """
     return (
-        partial(pickle.loads, fix_imports=fix_imports, encoding=pickle_encoding, errors=pickle_errors),
-        partial(pickle.dumps, protocol=protocol, fix_imports=fix_imports)
+        partial(
+            pickle.loads,
+            fix_imports=fix_imports,
+            encoding=pickle_encoding,
+            errors=pickle_errors,
+        ),
+        partial(pickle.dumps, protocol=protocol, fix_imports=fix_imports),
     )
 
 
-rw_funcs_maker_for['pickle'] = mk_pickle_rw_funcs
+rw_funcs_maker_for["pickle"] = mk_pickle_rw_funcs
 
 
-def mk_marshal_rw_funcs(**kwargs):  # TODO: Check actual arguments for marshal load and dump
+def mk_marshal_rw_funcs(
+        **kwargs,
+):  # TODO: Check actual arguments for marshal load and dump
     """Generates a reader and writer using marshal. That is, a pair of parametrized loads and dumps
 
     >>> read, write = mk_marshal_rw_funcs()
@@ -34,13 +47,10 @@ def mk_marshal_rw_funcs(**kwargs):  # TODO: Check actual arguments for marshal l
     >>> deserialized_d = read(serialized_d)
     >>> assert d == deserialized_d
     """
-    return (
-        partial(marshal.loads, **kwargs),
-        partial(marshal.dumps, **kwargs)
-    )
+    return (partial(marshal.loads, **kwargs), partial(marshal.dumps, **kwargs))
 
 
-rw_funcs_maker_for['marshal'] = mk_marshal_rw_funcs
+rw_funcs_maker_for["marshal"] = mk_marshal_rw_funcs
 
 ##### Extras (requiring some third-party packages ######################################################################
 
@@ -50,7 +60,9 @@ with ModuleNotFoundIgnore():
     import dill
 
 
-    def mk_dill_rw_funcs(ignore=None, protocol=None, byref=None, fmode=None, recurse=None):
+    def mk_dill_rw_funcs(
+            ignore=None, protocol=None, byref=None, fmode=None, recurse=None
+    ):
         """Generates a reader and writer using dill. That is, a pair of parametrized loads and dumps
 
         >>> read, write = mk_dill_rw_funcs()
@@ -62,11 +74,17 @@ with ModuleNotFoundIgnore():
 
         return (
             partial(dill.loads, ignore=ignore),
-            partial(dill.dumps, protocol=protocol, byref=byref, fmode=fmode, recurse=recurse)
+            partial(
+                dill.dumps,
+                protocol=protocol,
+                byref=byref,
+                fmode=fmode,
+                recurse=recurse,
+            ),
         )
 
 
-    rw_funcs_maker_for['dill'] = mk_dill_rw_funcs
+    rw_funcs_maker_for["dill"] = mk_dill_rw_funcs
 
 # class PickleMixin:
 #     """Local files store with pickle serialization"""

@@ -3,7 +3,9 @@ import json
 import marshal
 
 
-def mk_marshal_rw_funcs(**kwargs):  # TODO: Check actual arguments for marshal load and dump
+def mk_marshal_rw_funcs(
+        **kwargs,
+):  # TODO: Check actual arguments for marshal load and dump
     """Generates a reader and writer using marshal. That is, a pair of parametrized loads and dumps
 
     >>> read, write = mk_marshal_rw_funcs()

@@ -15,7 +15,9 @@ def _is_file_not_found_error(error_object):
     if isinstance(error_object, ApiError):
         if len(error_object.args) >= 2:
             err = error_object.args[1]
-            if isinstance(err, DownloadError) and isinstance(err.get_path(), DropboxLookupError):
+            if isinstance(err, DownloadError) and isinstance(
+                    err.get_path(), DropboxLookupError
+            ):
                 return True
     return False
 
@@ -49,16 +51,25 @@ class DropboxPersister(Persister):
     >>> del s['/py2store_data/test/_can_remove']
     """
 
-    def __init__(self, rootdir, oauth2_access_token,
-                 connection_kwargs=None, files_upload_kwargs=None,
-                 files_list_folder_kwargs=None, rev=None):
+    def __init__(
+            self,
+            rootdir,
+            oauth2_access_token,
+            connection_kwargs=None,
+            files_upload_kwargs=None,
+            files_list_folder_kwargs=None,
+            rev=None,
+    ):
 
         if connection_kwargs is None:
             connection_kwargs = {}
         if files_upload_kwargs is None:
-            files_upload_kwargs = {'mode': WriteMode.overwrite}
+            files_upload_kwargs = {"mode": WriteMode.overwrite}
         if files_list_folder_kwargs is None:
-            files_list_folder_kwargs = {'recursive': True, 'include_non_downloadable_files': False}
+            files_list_folder_kwargs = {
+                "recursive": True,
+                "include_non_downloadable_files": False,
+            }
 
         self._prefix = rootdir
         self._con = Dropbox(oauth2_access_token, **connection_kwargs)
@@ -87,7 +98,8 @@ class DropboxPersister(Persister):
 
         if not contents_response.status_code:
             raise ValueError(
-                "Response code wasn't 200 when trying to download a file (yet the file seems to exist).")
+                "Response code wasn't 200 when trying to download a file (yet the file seems to exist)."
+            )
 
         return contents_response.content
 
@@ -99,20 +111,20 @@ class DropboxPersister(Persister):
 
 
 def _entry_is_dir(entry):
-    return not hasattr(entry, 'is_downloadable')
+    return not hasattr(entry, "is_downloadable")
 
 
 def _entry_is_file(entry):
-    return hasattr(entry, 'is_downloadable')
+    return hasattr(entry, "is_downloadable")
 
 
 def _extend_path(path, extension):
-    extend_path = '/' + path + '/' + extension + '/'
-    extend_path.replace('//', '/')
+    extend_path = "/" + path + "/" + extension + "/"
+    extend_path.replace("//", "/")
     return extend_path
 
 
-class DropboxLinkPersister(ReadOnlyMixin, DropboxPersister):
+class DropboxLinkReaderWithToken(ReadOnlyMixin, DropboxPersister):
     def __init__(self, url, oauth2_access_token):
         self._con = Dropbox(oauth2_access_token)
         self.url = url
@@ -131,10 +143,14 @@ class DropboxLinkPersister(ReadOnlyMixin, DropboxPersister):
                 yield from self._get_path_gen_from_path(path=folder_path)
 
         if path_gen.has_more:
-            yield from self._get_path_gen_from_cursor(path_gen.cursor, path=path)
+            yield from self._get_path_gen_from_cursor(
+                path_gen.cursor, path=path
+            )
 
     def _get_path_gen_from_path(self, path):
-        path_gen = self._con.files_list_folder(path=path, recursive=False, shared_link=self.shared_link)
+        path_gen = self._con.files_list_folder(
+            path=path, recursive=False, shared_link=self.shared_link
+        )
         yield from self._yield_from_files_list_folder(path, path_gen)
 
     def _get_path_gen_from_cursor(self, cursor, path):
@@ -142,4 +158,4 @@ class DropboxLinkPersister(ReadOnlyMixin, DropboxPersister):
         yield from self._yield_from_files_list_folder(path, path_gen)
 
     def __iter__(self):
-        yield from self._get_path_gen_from_path(path='')
+        yield from self._get_path_gen_from_path(path="")

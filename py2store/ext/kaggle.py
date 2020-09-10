@@ -15,7 +15,7 @@ class DataInfoPaggedItems:
         # TODO: Atomize this code so it can't be broken by async
         page = self.n_pages()
         for i, v in enumerate(page_contents):
-            ref = v.get('ref', None)
+            ref = v.get("ref", None)
             if ref is not None:
                 self.ref_to_idx[ref] = (page, i)
         self.pages.append(page_contents)
@@ -55,11 +55,21 @@ class KaggleDatasetInfoReader(KvReader):
 
     """
 
-    def __init__(self, *, group=None, sort_by=None, filetype=None, license=None,
-                 tagids=None, search=None, user=None,
-                 start_page=0, max_n_pages=DFLT_MAX_PAGES,
-                 warn_if_there_are_more_items=False,
-                 **kwargs):
+    def __init__(
+            self,
+            *,
+            group=None,
+            sort_by=None,
+            filetype=None,
+            license=None,
+            tagids=None,
+            search=None,
+            user=None,
+            start_page=0,
+            max_n_pages=DFLT_MAX_PAGES,
+            warn_if_there_are_more_items=False,
+            **kwargs,
+    ):
         """
         :param async_req bool
         :param str group: Display datasets by a particular group
@@ -76,9 +86,19 @@ class KaggleDatasetInfoReader(KvReader):
         :param int min_size: Max Dataset Size (bytes)
         :param kwargs:
         """
-        explicit_fields = {'group', 'sort_by', 'filetype', 'license', 'tagids', 'search', 'user'}
+        explicit_fields = {
+            "group",
+            "sort_by",
+            "filetype",
+            "license",
+            "tagids",
+            "search",
+            "user",
+        }
         locs = locals()
-        kwargs.update(**{k: locs[k] for k in explicit_fields if locs[k] is not None})
+        kwargs.update(
+            **{k: locs[k] for k in explicit_fields if locs[k] is not None}
+        )
         self.dataset_filt = kwargs
         self._source = KaggleApi()
         self._source.authenticate()
@@ -91,7 +111,9 @@ class KaggleDatasetInfoReader(KvReader):
     def _info_items_gen(self):
         page_num = self.start_page
         while (page_num - self.start_page) < self.max_n_pages:
-            new_page_contents = self._source.datasets_list(page=page_num, **self.dataset_filt)
+            new_page_contents = self._source.datasets_list(
+                page=page_num, **self.dataset_filt
+            )
             if len(new_page_contents) > 0:
                 yield from new_page_contents
                 page_num += 1
@@ -102,7 +124,7 @@ class KaggleDatasetInfoReader(KvReader):
 
     @lazyprop
     def info_of_ref(self):
-        return {item['ref']: item for item in self.cached_info_items}
+        return {item["ref"]: item for item in self.cached_info_items}
 
     @lazyprop
     def cached_info_items(self):
@@ -126,9 +148,12 @@ class KaggleDatasetInfoReader(KvReader):
     def _warn_reached_max(self, n):
         if self.max_pages_reached and self.warn_if_there_are_more_items:
             from warnings import warn
-            warn(f"The container has {n} items, but the max number of pages"
-                 f"({self.max_n_pages}) was reached, so there may be more on kaggle than what you see! "
-                 "If you want more, set max_items to something higher (but beware of overusing your API rights)")
+
+            warn(
+                f"The container has {n} items, but the max number of pages"
+                f"({self.max_n_pages}) was reached, so there may be more on kaggle than what you see! "
+                "If you want more, set max_items to something higher (but beware of overusing your API rights)"
+            )
 
 
 # TODO: Make it less wasteful to get from a KaggleDatasetInfoReader to KaggleDatasetReader.
@@ -140,11 +165,14 @@ class KaggleBinaryDatasetReader(KaggleDatasetInfoReader):
         Will return the binary of the dataset, which should be saved to a file to be persisted.
         Note: Allows to access all valid references. Not just those within the current container.
         """
-        owner_slug, dataset_slug = k.split('/')
+        owner_slug, dataset_slug = k.split("/")
         response = self._source.process_response(
-            self._source.datasets_download_with_http_info(owner_slug=owner_slug,
-                                                          dataset_slug=dataset_slug,
-                                                          _preload_content=False))
+            self._source.datasets_download_with_http_info(
+                owner_slug=owner_slug,
+                dataset_slug=dataset_slug,
+                _preload_content=False,
+            )
+        )
         return response.read()
 
 

@@ -8,7 +8,7 @@ from py2store.base import Persister
 
 
 class GoogleDrivePersister(Persister):
-    '''
+    """
     A basic Google Drive persister implemented with the pydrive library.
     Keys must be names of files.
 
@@ -52,36 +52,45 @@ class GoogleDrivePersister(Persister):
     False
     >>> len(s)
     0
-    '''
+    """
 
-    def __init__(
-            self,
-            rootdir='py2store'
-    ):
+    def __init__(self, rootdir="py2store"):
         gauth = GoogleAuth()
         gauth.LocalWebserverAuth()  # Creates local webserver and auto handles authentication
         self._drive = GoogleDrive(gauth)
-        files = self.fetch_files('root')
+        files = self.fetch_files("root")
         for f in files:
-            if f['title'] == rootdir:
-                self._rootdir_id = f['id']
-                print('found')
+            if f["title"] == rootdir:
+                self._rootdir_id = f["id"]
+                print("found")
 
         if self._rootdir_id is None:
-            folder = self._drive.CreateFile({'title': rootdir, 'mimeType': 'application/vnd.google-apps.folder'})
+            folder = self._drive.CreateFile(
+                {
+                    "title": rootdir,
+                    "mimeType": "application/vnd.google-apps.folder",
+                }
+            )
             folder.Upload()
-            self._rootdir_id = folder['id']
+            self._rootdir_id = folder["id"]
 
     def __getitem__(self, k):
         files = self.fetch_files(self._rootdir_id)
         for f in files:
-            if f['title'] == k:
+            if f["title"] == k:
                 return f.GetContentString()
 
         raise KeyError(f"You can't access that key: {k}")
 
     def __setitem__(self, k, v):
-        f = self._drive.CreateFile({"title": k, "parents": [{"kind": "drive#fileLink", "id": self._rootdir_id}]})
+        f = self._drive.CreateFile(
+            {
+                "title": k,
+                "parents": [
+                    {"kind": "drive#fileLink", "id": self._rootdir_id}
+                ],
+            }
+        )
         f.SetContentString(str(v))
         f.Upload()
 
@@ -90,7 +99,7 @@ class GoogleDrivePersister(Persister):
             try:
                 files = self.fetch_files(self._rootdir_id)
                 for f in files:
-                    if f['title'] == k:
+                    if f["title"] == k:
                         f.Delete()
             except Exception:
                 raise KeyError(f"You can't removed that key: {k}")
@@ -104,7 +113,7 @@ class GoogleDrivePersister(Persister):
         try:
             files = self.fetch_files(self._rootdir_id)
             for f in files:
-                if f['title'] == k:
+                if f["title"] == k:
                     return True
         except Exception:
             return False
@@ -113,11 +122,13 @@ class GoogleDrivePersister(Persister):
 
     def __iter__(self):
         files = self.fetch_files(self._rootdir_id)
-        yield from [f['title'] for f in files]
+        yield from [f["title"] for f in files]
 
     def __len__(self):
         files = self.fetch_files(self._rootdir_id)
         return len(files)
 
     def fetch_files(self, id):
-        return self._drive.ListFile({'q': "'{}' in parents and trashed=false".format(id)}).GetList()
+        return self._drive.ListFile(
+            {"q": "'{}' in parents and trashed=false".format(id)}
+        ).GetList()

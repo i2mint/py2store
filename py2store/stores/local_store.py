@@ -5,7 +5,12 @@ from py2store.base import Store, Persister
 from py2store.core import PrefixRelativizationMixin, PrefixRelativization
 from py2store.key_mappers.paths import mk_relative_path_store
 from py2store.serializers.pickled import mk_pickle_rw_funcs
-from py2store.persisters.local_files import PathFormatPersister, DirpathFormatKeys, DirReader, ensure_slash_suffix
+from py2store.persisters.local_files import (
+    PathFormatPersister,
+    DirpathFormatKeys,
+    DirReader,
+    ensure_slash_suffix,
+)
 from py2store.filesys import DirCollection
 from py2store.mixins import SimpleJsonMixin
 
@@ -92,16 +97,21 @@ class PathFormatStore(PathFormatPersister, Persister):
     >>>
     >>> assert s != ss  # though pointing to identical content, o and oo are not equal since the paths are not equal!
     """
+
     pass
 
 
-RelPathLocalFileStore = mk_relative_path_store(PathFormatPersister, name='RelPathLocalFileStore')
-RelPathLocalFileStore.__doc__ = """Local file store using templated relative paths."""
+RelPathLocalFileStore = mk_relative_path_store(
+    PathFormatPersister, name="RelPathLocalFileStore"
+)
+RelPathLocalFileStore.__doc__ = (
+    """Local file store using templated relative paths."""
+)
 
-RelPathLocalFileStoreEnforcingFormat = mk_relative_path_store(PathFormatPersister,
-                                                              name='RelPathLocalFileStoreEnforcingFormat')
-RelPathLocalFileStoreEnforcingFormat.__doc__ = \
-    """A RelativePathFormatStore, but that won't allow one to use a key that is not valid 
+RelPathLocalFileStoreEnforcingFormat = mk_relative_path_store(
+    PathFormatPersister, name="RelPathLocalFileStoreEnforcingFormat"
+)
+RelPathLocalFileStoreEnforcingFormat.__doc__ = """A RelativePathFormatStore, but that won't allow one to use a key that is not valid 
     (according to the self.store.is_valid_key boolean method)"""
 
 # aliases for back compatibility
@@ -157,7 +167,9 @@ class PathFormatStoreWithPrefix(Store):
 # PathFormatStoreWithPrefix = store_wrap(PathFormatStore, 'PathFormatStoreWithPrefix')
 
 
-class RelativePathFormatStore2(PrefixRelativizationMixin, PathFormatStoreWithPrefix):
+class RelativePathFormatStore2(
+    PrefixRelativizationMixin, PathFormatStoreWithPrefix
+):
     pass
 
 
@@ -165,35 +177,55 @@ class LocalTextStore(RelativePathFormatStore):
     """Local files store for text data"""
 
     def __init__(self, path_format, max_levels=None):
-        super().__init__(path_format, max_levels=max_levels, mode='t')
+        super().__init__(path_format, max_levels=max_levels, mode="t")
 
 
 class LocalBinaryStore(RelativePathFormatStore):
     """Local files store for binary data"""
 
     def __init__(self, path_format, max_levels=None):
-        super().__init__(path_format, max_levels=max_levels, mode='b')
+        super().__init__(path_format, max_levels=max_levels, mode="b")
 
 
 class LocalPickleStore(RelativePathFormatStore):
     """Local files store with pickle serialization"""
 
-    def __init__(self, path_format, max_levels=None,
-                 fix_imports=True, protocol=None, pickle_encoding='ASCII', pickle_errors='strict',
-                 **open_kwargs):
-        super().__init__(path_format, max_levels=max_levels, mode='b', **open_kwargs)
-        self._loads, self._dumps = mk_pickle_rw_funcs(fix_imports, protocol, pickle_encoding, pickle_errors)
+    def __init__(
+            self,
+            path_format,
+            max_levels=None,
+            fix_imports=True,
+            protocol=None,
+            pickle_encoding="ASCII",
+            pickle_errors="strict",
+            **open_kwargs,
+    ):
+        super().__init__(
+            path_format, max_levels=max_levels, mode="b", **open_kwargs
+        )
+        self._loads, self._dumps = mk_pickle_rw_funcs(
+            fix_imports, protocol, pickle_encoding, pickle_errors
+        )
 
     @classmethod
-    def for_dill(cls, path_format, max_levels=None, open_kwargs=None, *args, **kwargs):
+    def for_dill(
+            cls, path_format, max_levels=None, open_kwargs=None, *args, **kwargs
+    ):
         from py2store.serializers.pickled import mk_dill_rw_funcs
+
         open_kwargs = open_kwargs or {}
         self = cls(path_format, max_levels=max_levels, **open_kwargs)
         self._loads, self._dumps = mk_dill_rw_funcs(*args, **kwargs)
         return self
 
     def __getitem__(self, k):
-        return self._loads(super().__getitem__(k))
+        try:
+            return self._loads(super().__getitem__(k))
+        except (ModuleNotFoundError, AttributeError) as e:
+            if isinstance(e, AttributeError) and "module" not in str(e):
+                raise
+            else:
+                raise type(e)(f"Some modules are missing to unpickle {k}: {e}")
 
     def __setitem__(self, k, v):
         return super().__setitem__(k, self._dumps(v))
@@ -211,16 +243,17 @@ class LocalJsonStore(SimpleJsonMixin, LocalTextStore):
 PickleStore = LocalPickleStore  # alias
 
 
-def mk_tmp_quick_store_dirpath(dirname=''):
+def mk_tmp_quick_store_dirpath(dirname=""):
     from tempfile import gettempdir
+
     temp_root = gettempdir()
     return os.path.join(temp_root, dirname)
 
 
 def mk_absolute_path(path_format):
-    if path_format.startswith('~'):
+    if path_format.startswith("~"):
         path_format = os.path.expanduser(path_format)
-    elif path_format.startswith('.'):
+    elif path_format.startswith("."):
         path_format = os.path.abspath(path_format)
     return path_format
 
@@ -230,17 +263,21 @@ class QuickLocalStoreMixin:
     at write time, as needed.
     """
 
-    _tmp_dirname = 'quick_store'
-    _docsuffix = ' with default temp root and auto dir generation on write.'
+    _tmp_dirname = "quick_store"
+    _docsuffix = " with default temp root and auto dir generation on write."
 
     @classmethod
-    def mk_tmp_quick_store_path_format(cls, subpath=''):
-        return mk_tmp_quick_store_dirpath(os.path.join(cls._tmp_dirname, subpath))
+    def mk_tmp_quick_store_path_format(cls, subpath=""):
+        return mk_tmp_quick_store_dirpath(
+            os.path.join(cls._tmp_dirname, subpath)
+        )
 
     def __init__(self, path_format=None, max_levels=None):
         if path_format is None:
             path_format = self.mk_tmp_quick_store_path_format()
-            print(f"No path_format was given, so taking one from a tmp dir. Namely:\n\t{path_format}")
+            print(
+                f"No path_format was given, so taking one from a tmp dir. Namely:\n\t{path_format}"
+            )
         else:
             path_format = mk_absolute_path(path_format)
         super().__init__(path_format, max_levels=max_levels)
@@ -272,8 +309,8 @@ LocalStore = QuickStore  # alias
 
 
 class DirStore(Store):
-    """
-    Store whose keys are directory names and values are subdirectory names.
+    """A store for local directories.
+    Keys are directory names and values are subdirectory DirStores.
 
     >>> from py2store import __file__
     >>> import os
@@ -288,7 +325,8 @@ class DirStore(Store):
         self._prefix = rootdir
 
         key_wrap = PrefixRelativization(_prefix=rootdir)
-        self._id_of_key = lambda k: key_wrap._id_of_key(k) + os.sep
+        os_sep = os.sep
+        self._id_of_key = lambda k: key_wrap._id_of_key(k) + os_sep
         self._key_of_id = lambda k: key_wrap._key_of_id(k)[:-1]
 
         # TODO: Look into alternatives for the raison d'etre of _new_node and _class_name

@@ -3,6 +3,35 @@ import string
 dflt_formatter = string.Formatter()
 
 
+# For testing:
+# position =  "all/{}/is/{}/position"
+# position_explicit =  "all/{1}/is/{0}/position"
+# position_hybrid =  "all/{}/is/{0}/position/{except}{this}"
+# keyword = "all/{this}/is/{with}/keywords"
+# hybrid = "and/{this}/is/{}/hybrid"
+
+
+def parse_str_format(str_format):
+    return list(dflt_formatter.parse(str_format))
+
+
+def get_explicit_positions(parsed_str_format):
+    """
+    >>> parsed = parse_str_format("all/{}/is/{2}/position/{except}{this}{0}")
+    >>> get_explicit_positions(parsed)
+    {0, 2}
+    """
+    return set(
+        map(
+            int,
+            filter(
+                lambda x: isinstance(x, str) and str.isnumeric(x),
+                (x[1] for x in parsed_str_format),
+            ),
+        )
+    )
+
+
 def compile_str_from_parsed(parsed):
     """The (quasi-)inverse of string.Formatter.parse.
 
@@ -28,7 +57,7 @@ def compile_str_from_parsed(parsed):
     >>> compile_str_from_parsed(parsed)
     'ROOT/{}/{0!r}/{1!i:format}/hello{:0.02f}TAIL'
     """
-    result = ''
+    result = ""
     for literal_text, field_name, format_spec, conversion in parsed:
         # output the literal text
         if literal_text:
@@ -36,25 +65,29 @@ def compile_str_from_parsed(parsed):
 
         # if there's a field, output it
         if field_name is not None:
-            result += '{'
-            if field_name != '':
+            result += "{"
+            if field_name != "":
                 result += field_name
             if conversion:
-                result += '!' + conversion
+                result += "!" + conversion
             if format_spec:
-                result += ':' + format_spec
-            result += '}'
+                result += ":" + format_spec
+            result += "}"
     return result
 
 
 def transform_format_str(format_str, parsed_tuple_trans_func):
     return compile_str_from_parsed(
-        map(lambda args: parsed_tuple_trans_func(*args), dflt_formatter.parse(format_str)))
+        map(
+            lambda args: parsed_tuple_trans_func(*args),
+            dflt_formatter.parse(format_str),
+        )
+    )
 
 
 def _empty_field_name(literal_text, field_name, format_spec, conversion):
     if field_name is not None:
-        return literal_text, '', format_spec, conversion
+        return literal_text, "", format_spec, conversion
     else:
         return literal_text, field_name, format_spec, conversion
 
@@ -119,8 +152,10 @@ def name_fields_in_format_str(format_str, field_names=None):
     return transform_format_str(format_str, _mk_naming_trans_func(field_names))
 
 
-no_hybrid_format_error = ValueError("cannot switch from manual field specification (i.e. {{number}} or {{name}}) "
-                                    "to automatic (i.e. {{}}) field numbering.")
+no_hybrid_format_error = ValueError(
+    "cannot switch from manual field specification (i.e. {{number}} or {{name}}) "
+    "to automatic (i.e. {{}}) field numbering."
+)
 
 
 def _is_not_none(x):
@@ -141,8 +176,15 @@ def format_params_in_str_format(format_string):
     >>> format_params_in_str_format(format_string)
     [0, 2, 0, None, 'name']
     """
-    return list(map(lambda x: int(x) if str.isnumeric(x) else x if x != '' else None,
-                    filter(_is_not_none, (x[1] for x in dflt_formatter.parse(format_string)))))
+    return list(
+        map(
+            lambda x: int(x) if str.isnumeric(x) else x if x != "" else None,
+            filter(
+                _is_not_none,
+                (x[1] for x in dflt_formatter.parse(format_string)),
+            ),
+        )
+    )
 
 
 def n_format_params_in_str_format(format_string):
@@ -177,7 +219,9 @@ def is_automatic_format_string(format_string):
     >>> is_manual_format_string('No formatting is both manual and automatic formatting!')
     True
     """
-    return is_automatic_format_params(format_params_in_str_format(format_string))
+    return is_automatic_format_params(
+        format_params_in_str_format(format_string)
+    )
 
 
 def is_hybrid_format_string(format_string):
@@ -201,8 +245,9 @@ def is_manual_format_params(format_params):
     """ Says if the format_params is from a manual specification
     See Also: is_automatic_format_params
     """
-    assert not isinstance(format_params, str), \
-        "format_params can't be a string (perhaps you meant is_manual_format_string?)"
+    assert not isinstance(
+        format_params, str
+    ), "format_params can't be a string (perhaps you meant is_manual_format_string?)"
     return all((x is not None) for x in format_params)
 
 
@@ -210,8 +255,9 @@ def is_automatic_format_params(format_params):
     """ Says if the format_params is from an automatic specification
     See Also: is_manual_format_params and is_hybrid_format_params
     """
-    assert not isinstance(format_params, str), \
-        "format_params can't be a string (perhaps you meant is_automatic_format_string?)"
+    assert not isinstance(
+        format_params, str
+    ), "format_params can't be a string (perhaps you meant is_automatic_format_string?)"
     return all((x is None) for x in format_params)
 
 
@@ -221,16 +267,21 @@ def is_hybrid_format_params(format_params):
     Yet, it can be useful for flexibility of expression (but will need to be resolved to be used).
     See Also: is_manual_format_params and is_automatic_format_params
     """
-    assert not isinstance(format_params, str), \
-        "format_params can't be a string (perhaps you meant is_hybrid_format_string?)"
-    return (not is_manual_format_params(format_params)) and (not is_automatic_format_params(format_params))
+    assert not isinstance(
+        format_params, str
+    ), "format_params can't be a string (perhaps you meant is_hybrid_format_string?)"
+    return (not is_manual_format_params(format_params)) and (
+        not is_automatic_format_params(format_params)
+    )
 
 
 def empty_arg_and_kwargs_for_format(format_string, fill_val=None):
     format_params = format_params_in_str_format(format_string)
     if is_manual_format_params(format_params):
         args_keys, kwargs_keys = args_and_kwargs_indices(format_string)
-        args = [fill_val] * (max(args_keys) + 1)  # max because e.g., sometimes, we have {0} and {2} without a {1}
+        args = [fill_val] * (
+                max(args_keys) + 1
+        )  # max because e.g., sometimes, we have {0} and {2} without a {1}
         kwargs = {k: fill_val for k in kwargs_keys}
     elif is_automatic_format_params(format_params):
         args = [fill_val] * len(format_params)

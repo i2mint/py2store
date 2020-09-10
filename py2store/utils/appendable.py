@@ -289,6 +289,113 @@ class mk_item2kv_for:
 
         return item2kv
 
+
+from collections.abc import Sequence
+from typing import Iterable, Optional
+
+NotAVal = type('NotAVal', (), {})()  # singleton instance to distinguish from None
+
+
+# class FixedSizeStack(Sequence):
+#     """A finite Sequence that can have no more than one element.
+#
+#     >>> t = FixedSizeStack(maxsize=1)
+#     >>> assert len(t) == 0
+#     >>>
+#     >>> t.append('something')
+#     >>> assert len(t) == 1
+#     >>> assert t[0] == 'something'
+#     >>>
+#     >>> t.append('something else')
+#     >>> assert len(t) == 1  # still only one item
+#     >>> assert t[0] == 'something'  # still the same item
+#     >>>
+#     >>> # Not that we'd ever these methods of FirstAppendOnly, but know that FirstAppendOnly is a collection.abc.Sequence, so...
+#     >>> t[:1] == t[:10] == t[::-1] == t[::-10] == t[0:2:10] == list(reversed(t)) == ['something']
+#     <stdin>:1: RuntimeWarning: coroutine 'AioFileBytesPersister.asetitem' was never awaited
+#     RuntimeWarning: Enable tracemalloc to get the object allocation traceback
+#     True
+#     >>>
+#     >>> t.count('something') == 1
+#     True
+#     >>> t.index('something') == 0
+#     True
+#     """
+#
+#     def __init__(self, iterable: Optional[Iterable] = None, *, maxsize: int):
+#         self.maxsize = maxsize
+#         self.data = [NotAVal] * maxsize
+#         # self.data = (isinstance(iterable, Iterable) and list(iterable)) or []
+#         # if iterable is not None:
+#         #     pass
+#         self.cursor = 0
+#
+#     def append(self, v):
+#         if self.cursor < self.maxsize:
+#             self.data[self.cursor] = v
+#             self.cursor += 1
+#
+#     def __len__(self):
+#         return self.cursor
+#
+#     def __getitem__(self, k):
+#         if isinstance(k, int):
+#             if k < self.cursor:
+#                 return self.data[k]
+#             else:
+#                 raise IndexError(f"There are only {len(self)} items: You asked for self[{k}].")
+#         elif isinstance(k, slice):
+#             return self.data[:self.cursor][k]
+#         else:
+#             raise IndexError(f"A {self.__class__} instance can only have one value, or none at all.")
+
+
+class FirstAppendOnly(Sequence):
+    """A finite Sequence that can have no more than one element.
+
+    >>> t = FirstAppendOnly()
+    >>> assert len(t) == 0
+    >>>
+    >>> t.append('something')
+    >>> assert len(t) == 1
+    >>> assert t[0] == 'something'
+    >>>
+    >>> t.append('something else')
+    >>> assert len(t) == 1  # still only one item
+    >>> assert t[0] == 'something'  # still the same item
+    >>>
+    >>> # Not that we'd ever these methods of FirstAppendOnly, but know that FirstAppendOnly is a collection.abc.Sequence, so...
+    >>> t[:1] == t[:10] == t[::-1] == t[::-10] == t[0:2:10] == list(reversed(t)) == ['something']
+    <stdin>:1: RuntimeWarning: coroutine 'AioFileBytesPersister.asetitem' was never awaited
+    RuntimeWarning: Enable tracemalloc to get the object allocation traceback
+    True
+    >>>
+    >>> t.count('something') == 1
+    True
+    >>> t.index('something') == 0
+    True
+    """
+
+    def __init__(self):
+        self.val = NotAVal
+
+    def append(self, v):
+        if self.val == NotAVal:
+            self.val = v
+
+    def __len__(self):
+        return int(self.val != NotAVal)
+
+    def __getitem__(self, k):
+        if len(self) == 0:
+            raise IndexError(f"There are no items in this {self.__class__} instance")
+        elif k == 0:
+            return self.val
+        elif isinstance(k, slice):
+            return [self.val][k]
+        else:
+            raise IndexError(f"A {self.__class__} instance can only have one value, or none at all.")
+
     # @staticmethod
     # def from
 

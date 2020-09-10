@@ -21,6 +21,7 @@ class iSliceStore(Mapping):
     >>> list(sliceable_s[:-1])
     ['bar', 'world']
     """
+
     def __init__(self, store):
         self.store = store
 

@@ -17,7 +17,9 @@ def _print_docs(docs):
 
 class Selection:
     def __iter__(self) -> Iterator:
-        raise NotImplementedError("Needs to be implemented by a concrete class")
+        raise NotImplementedError(
+            "Needs to be implemented by a concrete class"
+        )
 
     def __len__(self):
         count = 0
@@ -46,7 +48,9 @@ class FiltSelector(Selector):
         return filter(self._filt, self._docs.__iter__())
 
     def select(self, filt: callable) -> Selection:
-        return self.__class__(_docs=self._docs, _filt=self._filt_conjunction(filt))
+        return self.__class__(
+            _docs=self._docs, _filt=self._filt_conjunction(filt)
+        )
 
 
 class MgDfSelector(Selector):
@@ -72,13 +76,17 @@ class MgDfSelector(Selector):
     >>> next(iter(df_selector_2))
     {'bt': 0, 'tag': 'small', 'tt': 5}
     """
+
     def __init__(self, _df):
         if isinstance(_df, list) and isinstance(_df[0], dict):
             _df = pd.DataFrame(_df)
         self._df = _df
 
     def __iter__(self):
-        return ({k: v for k, v in d.items() if not pd.isnull(v)} for r, d in self._df.iterrows())
+        return (
+            {k: v for k, v in d.items() if not pd.isnull(v)}
+            for r, d in self._df.iterrows()
+        )
 
     def __len__(self):
         return len(self._df)
@@ -119,7 +127,7 @@ class MgDfSelector(Selector):
         {'bt': 30, 'tag': 'big', 'tt': 35}
         """
         selector_file_func = Query(selector).match
-        lidx = list(map(selector_file_func, self._df.to_dict(orient='rows')))
+        lidx = list(map(selector_file_func, self._df.to_dict(orient="rows")))
         return self.__class__(self._df[lidx])
         # Below are just ideas towards a more general (source, selector, selection) framework
         # selection = self.__class__(self._df[lidx])
@@ -136,6 +144,7 @@ class MgDfSelector(Selector):
 
 ########################################################################################################################
 # Other versions of MgDfSelector that are more amenable to generalization...
+
 
 class MgDfSelector2(Selector):
     """
@@ -177,7 +186,7 @@ class MgDfSelector2(Selector):
 
     def select(self, selector) -> Selector:
         selector_file_func = Query(selector).match
-        lidx = list(map(selector_file_func, self._docs.to_dict(orient='rows')))
+        lidx = list(map(selector_file_func, self._docs.to_dict(orient="rows")))
         return self.__class__(self._docs[lidx])
 
 
@@ -241,7 +250,7 @@ class LidxSelectorDf(LidxSelector):
         return (d.to_dict() for r, d in self._docs.iterrows())
 
     def to_dict(self):
-        return self._docs.to_dict(orient='rows')
+        return self._docs.to_dict(orient="rows")
 
     def _selector_func(self, selector):
         return Query(selector).match
