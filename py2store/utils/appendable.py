@@ -43,7 +43,9 @@ def define_extend_as_seq_of_appends(obj):
     [1, 2, 3, 10, 20]
 
     """
-    assert hasattr(obj, 'append'), f"Your object needs to have an append method! Object was: {obj}"
+    assert hasattr(
+        obj, "append"
+    ), f"Your object needs to have an append method! Object was: {obj}"
 
     def extend(self, items):
         for item in items:
@@ -57,7 +59,9 @@ def define_extend_as_seq_of_appends(obj):
     return obj
 
 
-def add_append_functionality_to_store_cls(store_cls, item2kv, new_store_name=None):
+def add_append_functionality_to_store_cls(
+        store_cls, item2kv, new_store_name=None
+):
     """Makes a new class with append (and consequential extend) methods
 
 
@@ -69,7 +73,7 @@ def add_append_functionality_to_store_cls(store_cls, item2kv, new_store_name=Non
     Returns: A subclass of store_cls with two additional methods: append, and extend.
 
 
-    >>> item_to_kv = lambda item: (item['L'], item)  # use value of 'a' as the key, and value is the item itself
+    >>> item_to_kv = lambda item: (item['L'], item)  # use value of 'L' as the key, and value is the item itself
     >>> MyStore = add_append_functionality_to_store_cls(dict, item_to_kv)
     >>> s = MyStore(); s.append({'L': 'let', 'I': 'it', 'G': 'go'}); list(s.items())
     [('let', {'L': 'let', 'I': 'it', 'G': 'go'})]
@@ -91,7 +95,7 @@ def add_append_functionality_to_store_cls(store_cls, item2kv, new_store_name=Non
     [(('go', 'let'), {'I': 'it'})]
     """
 
-    new_store_name = new_store_name or ('Appendable' + store_cls.__name__)
+    new_store_name = new_store_name or ("Appendable" + store_cls.__name__)
 
     def append(self, item):
         k, v = item2kv(item)
@@ -101,10 +105,13 @@ def add_append_functionality_to_store_cls(store_cls, item2kv, new_store_name=Non
         for item in items:
             self.append(item)
 
-    return type(new_store_name, (store_cls,), {'append': append, 'extend': extend})
+    return type(
+        new_store_name, (store_cls,), {"append": append, "extend": extend}
+    )
 
 
 ########################################################################################################################
+
 
 class mk_item2kv_for:
     """A bunch of functions to make item2kv functions
@@ -189,10 +196,15 @@ class mk_item2kv_for:
         >>> assert v == 'some data'  # just the item itself
 
         """
-        if offset_s == 0.0:  # splitting for extra speed (important in real time apps)
+        if (
+                offset_s == 0.0
+        ):  # splitting for extra speed (important in real time apps)
+
             def item2kv(item):
                 return time.time(), item
+
         else:
+
             def item2kv(item):
                 return time.time() + offset_s, item
 
@@ -293,9 +305,12 @@ class mk_item2kv_for:
 from collections.abc import Sequence
 from typing import Iterable, Optional
 
-NotAVal = type('NotAVal', (), {})()  # singleton instance to distinguish from None
+NotAVal = type(
+    "NotAVal", (), {}
+)()  # singleton instance to distinguish from None
 
 
+#
 # class FixedSizeStack(Sequence):
 #     """A finite Sequence that can have no more than one element.
 #
@@ -309,17 +324,16 @@ NotAVal = type('NotAVal', (), {})()  # singleton instance to distinguish from No
 #     >>> t.append('something else')
 #     >>> assert len(t) == 1  # still only one item
 #     >>> assert t[0] == 'something'  # still the same item
-#     >>>
-#     >>> # Not that we'd ever these methods of FirstAppendOnly, but know that FirstAppendOnly is a collection.abc.Sequence, so...
+#
+#     Not that we'd ever these methods of FirstAppendOnly,
+#     but know that FirstAppendOnly is a collection.abc.Sequence, so...
+#
 #     >>> t[:1] == t[:10] == t[::-1] == t[::-10] == t[0:2:10] == list(reversed(t)) == ['something']
-#     <stdin>:1: RuntimeWarning: coroutine 'AioFileBytesPersister.asetitem' was never awaited
-#     RuntimeWarning: Enable tracemalloc to get the object allocation traceback
 #     True
 #     >>>
-#     >>> t.count('something') == 1
-#     True
-#     >>> t.index('something') == 0
-#     True
+#     >>> assert t.count('something') == 1
+#     >>> assert t.index('something') == 0
+#
 #     """
 #
 #     def __init__(self, iterable: Optional[Iterable] = None, *, maxsize: int):
@@ -343,12 +357,16 @@ NotAVal = type('NotAVal', (), {})()  # singleton instance to distinguish from No
 #             if k < self.cursor:
 #                 return self.data[k]
 #             else:
-#                 raise IndexError(f"There are only {len(self)} items: You asked for self[{k}].")
+#                 raise IndexError(
+#                     f"There are only {len(self)} items: You asked for self[{k}]."
+#                 )
 #         elif isinstance(k, slice):
-#             return self.data[:self.cursor][k]
+#             return self.data[: self.cursor][k]
 #         else:
-#             raise IndexError(f"A {self.__class__} instance can only have one value, or none at all.")
-
+#             raise IndexError(
+#                 f"A {self.__class__} instance can only have one value, or none at all."
+#             )
+#
 
 class FirstAppendOnly(Sequence):
     """A finite Sequence that can have no more than one element.
@@ -388,13 +406,17 @@ class FirstAppendOnly(Sequence):
 
     def __getitem__(self, k):
         if len(self) == 0:
-            raise IndexError(f"There are no items in this {self.__class__} instance")
+            raise IndexError(
+                f"There are no items in this {self.__class__} instance"
+            )
         elif k == 0:
             return self.val
         elif isinstance(k, slice):
             return [self.val][k]
         else:
-            raise IndexError(f"A {self.__class__} instance can only have one value, or none at all.")
+            raise IndexError(
+                f"A {self.__class__} instance can only have one value, or none at all."
+            )
 
     # @staticmethod
     # def from
