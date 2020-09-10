@@ -278,7 +278,7 @@ class Lemmas(KvReader):
         return wn.all_lemma_names()
 
     def __getitem__(self, k):
-        return {ss.name: ss for ss in wn.synsets(k)}
+        return {ss.name(): KvSynset(ss) for ss in wn.synsets(k)}
 
 
 import numpy as np
