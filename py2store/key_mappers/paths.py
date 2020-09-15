@@ -2,6 +2,7 @@ from functools import wraps, reduce
 from dataclasses import dataclass
 from typing import Union
 import os
+from warnings import warn
 
 from py2store.base import Store
 from py2store.util import lazyprop
@@ -150,13 +151,15 @@ class PrefixRelativizationMixin:
     def _key_of_id(self, _id):
         return _id[self._prefix_length:]
 
+from py2store.trans import store_decorator
 
+@store_decorator
 def mk_relative_path_store(
         store_cls,
+        *,
         name=None,
         with_key_validation=False,
         prefix_attr="_prefix",
-        __module__=None,
 ):
     """
 
@@ -189,7 +192,7 @@ def mk_relative_path_store(
     a hidden '_prefix' attribute for internal use, but at least you can have an attribute with the
     name you want.
 
-    >>> MyRelStore = mk_relative_path_store(dict, with_key_validation=True, prefix_attr='rootdir')
+    >>> MyRelStore = mk_relative_path_store(dict, prefix_attr='rootdir')
     >>> s = MyRelStore()
     >>> s.rootdir = '/ROOT/'
 
@@ -201,9 +204,14 @@ def mk_relative_path_store(
     {'/ROOT/foo': 'bar'}
 
     """
-    name = name or ("RelPath" + store_cls.__name__)
-    __module__ = __module__ or getattr(store_cls, "__module__", None)
+    # name = name or ("RelPath" + store_cls.__name__)
+    # __module__ = __module__ or getattr(store_cls, "__module__", None)
 
+    if name is not None:
+        from warnings import warn
+        warn(f"The use of name argumment is deprecated. Use __name__ instead", DeprecationWarning)
+
+    name = ("RelPath" + store_cls.__name__)
     cls = type(name, (PrefixRelativizationMixin, Store), {})
 
     @wraps(store_cls.__init__)

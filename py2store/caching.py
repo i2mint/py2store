@@ -1,41 +1,74 @@
 from functools import wraps, partial
 from typing import Iterable, Union, Callable, Hashable, Any
 
+from py2store.trans import store_decorator
+
 
 ########################################################################################################################
 # Read caching
 
 # The following is a "Cache-Aside" read-cache with NO builtin cache update or refresh mechanism.
-def mk_memoizer(cache_store):
+def mk_memoizer(cache):
     def memoize(method):
         @wraps(method)
         def memoizer(self, k):
-            if k not in cache_store:
+            if k not in cache:
                 val = method(self, k)
-                cache_store[k] = val  # cache it
+                cache[k] = val  # cache it
                 return val
             else:
-                return cache_store[k]
+                return cache[k]
 
         return memoizer
 
     return memoize
 
 
+def _mk_cache_instance(cache=None, assert_attrs=()):
+    """Make a cache store (if it's not already) from a type or a callable, or just return dict.
+    Also assert the presence of given attributes
+
+    >>> _mk_cache_instance(dict(a=1, b=2))
+    {'a': 1, 'b': 2}
+    >>> _mk_cache_instance(None)
+    {}
+    >>> _mk_cache_instance(dict)
+    {}
+    >>> _mk_cache_instance(list, ('__getitem__', '__setitem__'))
+    []
+    >>> _mk_cache_instance(tuple, ('__getitem__', '__setitem__'))
+    Traceback (most recent call last):
+        ...
+    AssertionError: cache should have the __setitem__ method, but does not: ()
+
+    """
+    if isinstance(assert_attrs, str):
+        assert_attrs = (assert_attrs,)
+    if cache is None:
+        cache = {}  # use a dict (memory caching) by default
+    elif (isinstance(cache, type)  # if caching_store is a type...
+          or (not hasattr(cache, '__getitem__')  # ... or is a callable without a __getitem__
+              and callable(cache))):
+        cache = cache()  # ... assume it's a no-argument callable that makes the instance
+    for method in assert_attrs or ():
+        assert hasattr(cache, method), f"cache should have the {method} method, but does not: {cache}"
+    return cache
+
+
+@store_decorator
 def mk_cached_store(
-        store_cls_you_want_to_cache=None,
-        caching_store=None,
-        new_store_name=None,
-        __module__=None
+        store=None,
+        *,
+        cache=dict
 ):
     """
 
     Args:
-        store_cls_you_want_to_cache: The class of the store you want to cache
-        caching_store: The store you want to use to cacheAnything with a __setitem__(k, v) and a __getitem__(k).
+        store: The class of the store you want to cache
+        cache: The store you want to use to cache. Anything with a __setitem__(k, v) and a __getitem__(k).
             By default, it will use a dict
 
-    Returns: A subclass of the input store_cls_you_want_to_cache, but with caching (to caching_store)
+    Returns: A subclass of the input store, but with caching (to the cache store)
 
     >>> from py2store.caching import mk_cached_store
     >>> import time
@@ -51,7 +84,7 @@ def mk_cached_store(
     >>> d['a']  # Wow! Takes a long time to get 'a'
     1
     >>> cache = dict()
-    >>> CachedSlowDict = mk_cached_store(store_cls_you_want_to_cache=SlowDict, caching_store=cache)
+    >>> CachedSlowDict = mk_cached_store(store=SlowDict, cache=cache)
     >>>
     >>> s = CachedSlowDict({'a': 1, 'b': 2, 'c': 3})
     >>> print(f"store: {list(s)}\\ncache: {list(cache)}")
@@ -91,37 +124,25 @@ def mk_cached_store(
     >>>
     >>> # And by the way, your "cache wrapped" store hold a pointer to the cache it's using,
     >>> # so you can take a peep there if needed:
-    >>> s._caching_store
+    >>> s._cache
     {'a': 1, 'b': 2, 'd': 4}
     """
-    if store_cls_you_want_to_cache is None:
-        return partial()
-    else:
-        if caching_store is None:
-            caching_store = {}  # use a dict (memory caching) by default
-        elif (isinstance(caching_store, type)  # if caching_store is a type...
-              or (not hasattr(caching_store, '__getitem__')  # ... or is a callable without a __getitem__
-                  and callable(caching_store))):
-            caching_store = caching_store()  # ... assume it's a no-argument callable that makes the instance
 
-        class CachedStore(store_cls_you_want_to_cache):
-            _caching_store = caching_store
+    cache = _mk_cache_instance(cache, assert_attrs=('__getitem__',))
+    assert isinstance(store, type), f"store should be a type, was a {type(store)}: {store}"
 
-            @mk_memoizer(caching_store)
-            def __getitem__(self, k):
-                return super().__getitem__(k)
+    class CachedStore(store):
+        _cache = cache
 
-        if isinstance(new_store_name, str):
-            CachedStore.__name__ = new_store_name
+        @mk_memoizer(cache)
+        def __getitem__(self, k):
+            return super().__getitem__(k)
 
-        if __module__ is not None:
-            CachedStore.__module__ = __module__
-
-        return CachedStore
+    return CachedStore
 
 
 # TODO: Didn't finish this. Finish, doctest, and remove underscore
-def _pre_condition_containment(store_cls, bool_key_func, new_store_name=None):
+def _pre_condition_containment(store=None, *, bool_key_func):
     """Adds a custom boolean key function `bool_key_func` before the store_cls.__contains__ check is performed.
 
     It is meant to be used to create smart read caches.
@@ -130,12 +151,11 @@ def _pre_condition_containment(store_cls, bool_key_func, new_store_name=None):
     ago a cache item has been created, and returning False if the item is past it's expiry time.
     """
 
-    class PreContaimentStore(store_cls):
+    class PreContaimentStore(store):
         def __contains__(self, k):
             return bool_key_func(k) and super().__contains__(k)
 
-    if isinstance(new_store_name, str):
-        PreContaimentStore.__name__ = new_store_name
+    return PreContaimentStore
 
 
 def _slow_but_somewhat_general_hash(*args, **kwargs):
@@ -345,16 +365,26 @@ def flush_on_exit(cls):
 
 
 def mk_write_cached_store(
-        store_cls_you_want_to_cache, w_cache=None, flush_cache_condition=None
+        store,
+        *,
+        w_cache=dict,
+        flush_cache_condition=None
 ):
-    """
+    """Wrap a write cache around a store.
 
     Args:
-        store_cls_you_want_to_cache:
-        w_cache:
-        flush_cache_condition:
+        w_cache: The store to (write) cache to
+        flush_cache_condition: The condition to apply to the cache
+            to decide whether it's contents should be flushed or not
 
-    Returns:
+    A ``w_cache`` must have a clear method (that clears the cache's contents).
+    If you know what you're doing and want to add one to your input kv store,
+    you can do so by calling ``ensure_clear_to_kv_store(store)``
+    -- this will add a ``clear`` method inplace AND return the resulting store as well.
+
+    We didn't add this automatically because the first thing ``mk_write_cached_store`` will do is call clear,
+    to remove all the contents of the store.
+    You don't want to do this unwittingly and delete a bunch of precious data!!
 
     >>> from py2store.caching import mk_write_cached_store, ensure_clear_to_kv_store
     >>> from py2store import Store
@@ -426,24 +456,12 @@ def mk_write_cached_store(
     store: {0: 0, 1: 10, 2: 20, 3: 30, 4: 40, 5: 50, 6: 60} ----- store._w_cache: {}
     """
 
-    if w_cache is None:
-        w_cache = {}  # use a dict (memory caching) by default
+    w_cache = _mk_cache_instance(w_cache, ('clear', '__setitem__', 'items'))
 
-    if not hasattr(w_cache, "clear"):
-        raise TypeError(
-            "A w_cache must have a clear method (that clears the cache's contents). "
-            "If you know what you're doing and want to add one to your input kv store, "
-            "you can do so by calling ensure_clear_to_kv_store(store) -- this will add a "
-            "clear method inplace AND return the resulting store as well."
-            "We didn't add this automatically because the first thing mk_write_cached_store "
-            "will do is call clear, to remove all the contents of the store."
-            "You don't want to do this unwittingly and delete a bunch of precious data!!!"
-        )
-
-    w_cache.clear()
+    w_cache.clear()  # assure the cache is empty, by emptying it.
 
     @flush_on_exit
-    class WriteCachedStore(store_cls_you_want_to_cache):
+    class WriteCachedStore(store):
         _w_cache = w_cache
         _flush_cache_condition = staticmethod(flush_cache_condition)
 
@@ -465,7 +483,7 @@ def mk_write_cached_store(
                     self.flush_cache()
                 return r
 
-        if not hasattr(store_cls_you_want_to_cache, "flush"):
+        if not hasattr(store, "flush"):
 
             def flush(self, items: Iterable = tuple()):
                 for k, v in items:

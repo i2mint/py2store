@@ -209,7 +209,10 @@ class FileBytesPersister(FileBytesReader, KvPersister):
 
 
 RelPathFileBytesReader = mk_relative_path_store(
-    FileBytesReader, name="RelPathFileBytesReader", prefix_attr="rootdir", __module__=__name__
+    FileBytesReader,
+    prefix_attr="rootdir",
+    __name__="RelPathFileBytesReader",
+    __module__=__name__
 )
 
 
@@ -222,5 +225,7 @@ class FileStringPersister(FileBytesPersister):
 
 
 RelPathFileStringReader = mk_relative_path_store(
-    FileStringReader, name="RelPathFileStringReader", prefix_attr="rootdir"
+    FileStringReader,
+    prefix_attr="rootdir",
+    __name__="RelPathFileStringReader",
 )

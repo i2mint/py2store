@@ -102,14 +102,16 @@ class PathFormatStore(PathFormatPersister, Persister):
 
 
 RelPathLocalFileStore = mk_relative_path_store(
-    PathFormatPersister, name="RelPathLocalFileStore"
+    PathFormatPersister,
+    __name__="RelPathLocalFileStore"
 )
 RelPathLocalFileStore.__doc__ = (
     """Local file store using templated relative paths."""
 )
 
 RelPathLocalFileStoreEnforcingFormat = mk_relative_path_store(
-    PathFormatPersister, name="RelPathLocalFileStoreEnforcingFormat"
+    PathFormatPersister,
+    __name__="RelPathLocalFileStoreEnforcingFormat"
 )
 RelPathLocalFileStoreEnforcingFormat.__doc__ = """A RelativePathFormatStore, but that won't allow one to use a key that is not valid 
     (according to the self.store.is_valid_key boolean method)"""

@@ -19,8 +19,10 @@ _dflt_not_found_error_msg = "Key not found: {}"
 class AioFileBytesReader(FileCollection, KvReader):
     _read_open_kwargs = dict(mode="rb")
 
-    @validate_key_and_raise_key_error_on_exception  # TODO: does this also wrap the async?
-    async def __getitem__(self, k):  # noqa
+    __getitem__ = None
+
+    # @validate_key_and_raise_key_error_on_exception  # TODO: does this also wrap the async?
+    async def aget(self, k):  # noqa
         """
         Gets the bytes contents of the file k.
         >>> import os
@@ -29,11 +31,12 @@ class AioFileBytesReader(FileCollection, KvReader):
         >>> s = AioFileBytesReader(dirpath, max_levels=0)
         >>>
         >>> ####### Get the first 9 characters (as bytes) of this module #####################
-        >>> (await s[filepath])[:14]
+        >>> t = await s.aget(filepath)
+        >>> t[:14]
         b'import asyncio'
         >>>
         >>> ####### Test key validation #####################
-        >>> await s['not_a_valid_key']  # this key is not valid since not under the dirpath folder
+        >>> await s.aget('not_a_valid_key')  # this key is not valid since not under the dirpath folder
         Traceback (most recent call last):
             ...
         filesys.KeyValidationError: 'Key not valid (usually because does not exist or access not permitted): not_a_valid_key'
@@ -42,7 +45,7 @@ class AioFileBytesReader(FileCollection, KvReader):
         >>> # this key is valid, since under dirpath, but the file itself doesn't exist (hopefully for this test)
         >>> non_existing_file = os.path.join(dirpath, 'non_existing_file')
         >>> try:
-        ...     await s[non_existing_file]
+        ...     await s.aget(non_existing_file)
         ... except KeyError:
         ...     print("KeyError (not FileNotFoundError) was raised.")
         KeyError (not FileNotFoundError) was raised.
@@ -99,7 +102,9 @@ class AioFileBytesPersister(AioFileBytesReader, KvPersister):
 
 
 RelPathAioFileBytesReader = mk_relative_path_store(
-    AioFileBytesReader, name="RelPathAioFileBytesReader", prefix_attr="rootdir"
+    AioFileBytesReader,
+    prefix_attr="rootdir",
+    __name__="RelPathAioFileBytesReader",
 )
 
 
@@ -114,7 +119,9 @@ class AioFileStringPersister(AioFileBytesPersister):
 
 
 RelPathFileStringReader = mk_relative_path_store(
-    AioFileStringReader, name="RelPathFileStringReader", prefix_attr="rootdir"
+    AioFileStringReader,
+    prefix_attr="rootdir",
+    __name__="RelPathFileStringReader",
 )
 
 ########## The simple store we made during meeting ################################################################
