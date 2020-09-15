@@ -1,4 +1,4 @@
-from functools import wraps
+from functools import wraps, partial
 from typing import Iterable, Union, Callable, Hashable, Any
 
 
@@ -23,7 +23,10 @@ def mk_memoizer(cache_store):
 
 
 def mk_cached_store(
-        store_cls_you_want_to_cache, caching_store=None, new_store_name=None
+        store_cls_you_want_to_cache=None,
+        caching_store=None,
+        new_store_name=None,
+        __module__=None
 ):
     """
 
@@ -91,20 +94,30 @@ def mk_cached_store(
     >>> s._caching_store
     {'a': 1, 'b': 2, 'd': 4}
     """
-    if caching_store is None:
-        caching_store = {}  # use a dict (memory caching) by default
+    if store_cls_you_want_to_cache is None:
+        return partial()
+    else:
+        if caching_store is None:
+            caching_store = {}  # use a dict (memory caching) by default
+        elif (isinstance(caching_store, type)  # if caching_store is a type...
+              or (not hasattr(caching_store, '__getitem__')  # ... or is a callable without a __getitem__
+                  and callable(caching_store))):
+            caching_store = caching_store()  # ... assume it's a no-argument callable that makes the instance
 
-    class CachedStore(store_cls_you_want_to_cache):
-        _caching_store = caching_store
+        class CachedStore(store_cls_you_want_to_cache):
+            _caching_store = caching_store
 
-        @mk_memoizer(caching_store)
-        def __getitem__(self, k):
-            return super().__getitem__(k)
+            @mk_memoizer(caching_store)
+            def __getitem__(self, k):
+                return super().__getitem__(k)
 
-    if isinstance(new_store_name, str):
-        CachedStore.__name__ = new_store_name
+        if isinstance(new_store_name, str):
+            CachedStore.__name__ = new_store_name
 
-    return CachedStore
+        if __module__ is not None:
+            CachedStore.__module__ = __module__
+
+        return CachedStore
 
 
 # TODO: Didn't finish this. Finish, doctest, and remove underscore

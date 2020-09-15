@@ -38,7 +38,7 @@ num_of_classes             55.000000     3.000000    34.000000
 """
 import re
 import os
-from py2store import filtered_iter
+from py2store import filt_iter
 from py2store.sources import Attrs
 from py2store.filesys import FileStringReader
 from types import FunctionType, ModuleType
@@ -122,7 +122,7 @@ def modules_info_gen(root, filepath_filt=only_py_ext, on_error=DFLT_ON_ERROR):
     parent_dir, dirname = _root_dir_and_name(root)
     root = os.path.join(parent_dir, dirname)
 
-    @filtered_iter(filepath_filt)
+    @filt_iter(filepath_filt)
     class PyCodeReader(FileStringReader):
         pass
 

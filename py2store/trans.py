@@ -394,7 +394,7 @@ def cached_keys(
         keys_cache: Union[callable, Collection] = list,
         iter_to_container=None,  # deprecated: use keys_cache instead
         cache_update_method="update",
-        name: str = None, # TODO: might be able to be deprecated since included in store_decorator
+        name: str = None,  # TODO: might be able to be deprecated since included in store_decorator
         __module__=None,  # TODO: might be able to be deprecated since included in store_decorator
 ) -> Union[callable, KvReader]:
     """Make a class that wraps input class's __iter__ becomes cached.
@@ -790,10 +790,16 @@ cache_iter = cached_keys  # TODO: Alias, partial it and make it more like the or
 ########################################################################################################################
 # Filtering iteration
 
+
+def take_everything(key):
+    return True
+
+
 # TODO: Factor out the method injection pattern (e.g. __getitem__, __setitem__ and __delitem__ are nearly identical)
-# @store_decorator
-def filtered_iter(
-        filt: Union[callable, Iterable], store=None, *,
+@store_decorator
+def filt_iter(
+        store=None, *,
+        filt: Union[callable, Iterable] = take_everything,
         name=None, __module__=None  # TODO: might be able to be deprecated since included in store_decorator
 ):
     """Make a wrapper that will transform a store (class or instance thereof) into a sub-store (i.e. subset of keys).
@@ -806,7 +812,7 @@ def filtered_iter(
 
     Returns: A wrapper (that then needs to be applied to a store instance or class.
 
-    >>> filtered_dict = filtered_iter(filt=lambda k: (len(k) % 2) == 1)(dict)  # keep only odd length keys
+    >>> filtered_dict = filt_iter(filt=lambda k: (len(k) % 2) == 1)(dict)  # keep only odd length keys
     >>>
     >>> s = filtered_dict({'a': 1, 'bb': object, 'ccc': 'a string', 'dddd': [1, 2]})
     >>>
@@ -838,109 +844,94 @@ def filtered_iter(
     ...     pass
     """
 
-    if store is None:
-        if not callable(filt):  # if filt is not a callable...
-            # ... assume it's the collection of keys you want and make a filter function to filter those "in".
-            assert next(
-                iter(filt)
-            ), "filt should be a callable, or an iterable"
-            keys_that_should_be_filtered_in = set(filt)
+    # if store is None:
+    if not callable(filt):  # if filt is not a callable...
+        # ... assume it's the collection of keys you want and make a filter function to filter those "in".
+        assert next(
+            iter(filt)
+        ), "filt should be a callable, or an iterable"
+        keys_that_should_be_filtered_in = set(filt)
 
-            def filt(k):
-                return k in keys_that_should_be_filtered_in
+        def filt(k):
+            return k in keys_that_should_be_filtered_in
 
-        def wrap(store, name=name, __module__=__module__):
-            if not isinstance(
-                    store, type
-            ):  # then consider it to be an instance
-                store_instance = store
-                WrapperStore = filtered_iter(filt, name=name, __module__=__module__)(Store)
-                return WrapperStore(store_instance)
-            else:  # it's a class we're wrapping
-                collection_cls = store
-                __module__ = __module__ or getattr(collection_cls, "__module__", None)
+    __module__ = __module__ or getattr(store, "__module__", None)
 
-                name = name or "Filtered" + get_class_name(collection_cls)
-                wrapped_cls = type(name, (collection_cls,), {})
+    name = name or "Filtered" + get_class_name(store)
+    wrapped_cls = type(name, (store,), {})
 
-                def __iter__(self):
-                    yield from filter(
-                        filt, super(wrapped_cls, self).__iter__()
-                    )
+    def __iter__(self):
+        yield from filter(
+            filt, super(wrapped_cls, self).__iter__()
+        )
 
-                wrapped_cls.__iter__ = __iter__
+    wrapped_cls.__iter__ = __iter__
 
-                _define_keys_values_and_items_according_to_iter(wrapped_cls)
+    _define_keys_values_and_items_according_to_iter(wrapped_cls)
 
-                def __len__(self):
-                    c = 0
-                    for _ in self.__iter__():
-                        c += 1
-                    return c
+    def __len__(self):
+        c = 0
+        for _ in self.__iter__():
+            c += 1
+        return c
 
-                wrapped_cls.__len__ = __len__
+    wrapped_cls.__len__ = __len__
 
-                def __contains__(self, k):
-                    if filt(k):
-                        return super(wrapped_cls, self).__contains__(k)
-                    else:
-                        return False
+    def __contains__(self, k):
+        if filt(k):
+            return super(wrapped_cls, self).__contains__(k)
+        else:
+            return False
 
-                wrapped_cls.__contains__ = __contains__
+    wrapped_cls.__contains__ = __contains__
 
-                if hasattr(wrapped_cls, "__getitem__"):
+    if hasattr(wrapped_cls, "__getitem__"):
 
-                    def __getitem__(self, k):
-                        if filt(k):
-                            return super(wrapped_cls, self).__getitem__(k)
-                        else:
-                            raise KeyError(f"Key not in store: {k}")
+        def __getitem__(self, k):
+            if filt(k):
+                return super(wrapped_cls, self).__getitem__(k)
+            else:
+                raise KeyError(f"Key not in store: {k}")
 
-                    wrapped_cls.__getitem__ = __getitem__
+        wrapped_cls.__getitem__ = __getitem__
 
-                if hasattr(wrapped_cls, "get"):
+    if hasattr(wrapped_cls, "get"):
 
-                    def get(self, k, default=None):
-                        if filt(k):
-                            return super(wrapped_cls, self).get(k, default)
-                        else:
-                            return default
+        def get(self, k, default=None):
+            if filt(k):
+                return super(wrapped_cls, self).get(k, default)
+            else:
+                return default
 
-                    wrapped_cls.get = get
+        wrapped_cls.get = get
 
-                if hasattr(wrapped_cls, "__setitem__"):
+    if hasattr(wrapped_cls, "__setitem__"):
 
-                    def __setitem__(self, k, v):
-                        if filt(k):
-                            return super(wrapped_cls, self).__setitem__(k, v)
-                        else:
-                            raise KeyError(f"Key not in store: {k}")
+        def __setitem__(self, k, v):
+            if filt(k):
+                return super(wrapped_cls, self).__setitem__(k, v)
+            else:
+                raise KeyError(f"Key not in store: {k}")
 
-                    wrapped_cls.__setitem__ = __setitem__
+        wrapped_cls.__setitem__ = __setitem__
 
-                if hasattr(wrapped_cls, "__delitem__"):
+    if hasattr(wrapped_cls, "__delitem__"):
 
-                    def __delitem__(self, k):
-                        if filt(k):
-                            return super(wrapped_cls, self).__delitem__(k)
-                        else:
-                            raise KeyError(f"Key not in store: {k}")
+        def __delitem__(self, k):
+            if filt(k):
+                return super(wrapped_cls, self).__delitem__(k)
+            else:
+                raise KeyError(f"Key not in store: {k}")
 
-                    wrapped_cls.__delitem__ = __delitem__
+        wrapped_cls.__delitem__ = __delitem__
 
-                if __module__ is not None:
-                    wrapped_cls.__module__ = __module__
+    # if __module__ is not None:
+    #     wrapped_cls.__module__ = __module__
+    #
+    # if hasattr(collection_cls, '__doc__'):
+    #     wrapped_cls.__doc__ = store.__doc__
 
-                if hasattr(collection_cls, '__doc__'):
-                    wrapped_cls.__doc__ = collection_cls.__doc__
-
-                return wrapped_cls
-
-        return wrap
-    else:
-        return filtered_iter(
-            filt, store=None, name=name, __module__=__module__
-        )(store)
+    return wrapped_cls
 
 
 ########################################################################################################################
@@ -1911,3 +1902,158 @@ def insert_load_dump_aliases(store, delete=None, list=None, count=None):
         store.dump = types.MethodType(dump, store)
 
     return store
+
+
+########## To be deprecated ############################################################################################
+
+# TODO: Factor out the method injection pattern (e.g. __getitem__, __setitem__ and __delitem__ are nearly identical)
+
+def filtered_iter(
+        filt: Union[callable, Iterable], store=None, *,
+        name=None, __module__=None  # TODO: might be able to be deprecated since included in store_decorator
+):
+    """Make a wrapper that will transform a store (class or instance thereof) into a sub-store (i.e. subset of keys).
+
+    Args:
+        filt: A callable or iterable:
+            callable: Boolean filter function. A func taking a key and and returns True iff the key should be included.
+            iterable: The collection of keys you want to filter "in"
+        name: The name to give the wrapped class
+
+    Returns: A wrapper (that then needs to be applied to a store instance or class.
+
+    >>> filtered_dict = filtered_iter(filt=lambda k: (len(k) % 2) == 1)(dict)  # keep only odd length keys
+    >>>
+    >>> s = filtered_dict({'a': 1, 'bb': object, 'ccc': 'a string', 'dddd': [1, 2]})
+    >>>
+    >>> list(s)
+    ['a', 'ccc']
+    >>> 'a' in s  # True because odd (length) key
+    True
+    >>> 'bb' in s  # False because odd (length) key
+    False
+    >>> assert s.get('bb', None) == None
+    >>> len(s)
+    2
+    >>> list(s.keys())
+    ['a', 'ccc']
+    >>> list(s.values())
+    [1, 'a string']
+    >>> list(s.items())
+    [('a', 1), ('ccc', 'a string')]
+    >>> s.get('a')
+    1
+    >>> assert s.get('bb') is None
+    >>> s['x'] = 10
+    >>> list(s.items())
+    [('a', 1), ('ccc', 'a string'), ('x', 10)]
+    >>> try:
+    ...     s['xx'] = 'not an odd key'
+    ...     raise ValueError("This should have failed")
+    ... except KeyError:
+    ...     pass
+    """
+
+    if store is None:
+        if not callable(filt):  # if filt is not a callable...
+            # ... assume it's the collection of keys you want and make a filter function to filter those "in".
+            assert next(
+                iter(filt)
+            ), "filt should be a callable, or an iterable"
+            keys_that_should_be_filtered_in = set(filt)
+
+            def filt(k):
+                return k in keys_that_should_be_filtered_in
+
+        def wrap(store, name=name, __module__=__module__):
+            if not isinstance(
+                    store, type
+            ):  # then consider it to be an instance
+                store_instance = store
+                WrapperStore = filtered_iter(filt, name=name, __module__=__module__)(Store)
+                return WrapperStore(store_instance)
+            else:  # it's a class we're wrapping
+                collection_cls = store
+                __module__ = __module__ or getattr(collection_cls, "__module__", None)
+
+                name = name or "Filtered" + get_class_name(collection_cls)
+                wrapped_cls = type(name, (collection_cls,), {})
+
+                def __iter__(self):
+                    yield from filter(
+                        filt, super(wrapped_cls, self).__iter__()
+                    )
+
+                wrapped_cls.__iter__ = __iter__
+
+                _define_keys_values_and_items_according_to_iter(wrapped_cls)
+
+                def __len__(self):
+                    c = 0
+                    for _ in self.__iter__():
+                        c += 1
+                    return c
+
+                wrapped_cls.__len__ = __len__
+
+                def __contains__(self, k):
+                    if filt(k):
+                        return super(wrapped_cls, self).__contains__(k)
+                    else:
+                        return False
+
+                wrapped_cls.__contains__ = __contains__
+
+                if hasattr(wrapped_cls, "__getitem__"):
+
+                    def __getitem__(self, k):
+                        if filt(k):
+                            return super(wrapped_cls, self).__getitem__(k)
+                        else:
+                            raise KeyError(f"Key not in store: {k}")
+
+                    wrapped_cls.__getitem__ = __getitem__
+
+                if hasattr(wrapped_cls, "get"):
+
+                    def get(self, k, default=None):
+                        if filt(k):
+                            return super(wrapped_cls, self).get(k, default)
+                        else:
+                            return default
+
+                    wrapped_cls.get = get
+
+                if hasattr(wrapped_cls, "__setitem__"):
+
+                    def __setitem__(self, k, v):
+                        if filt(k):
+                            return super(wrapped_cls, self).__setitem__(k, v)
+                        else:
+                            raise KeyError(f"Key not in store: {k}")
+
+                    wrapped_cls.__setitem__ = __setitem__
+
+                if hasattr(wrapped_cls, "__delitem__"):
+
+                    def __delitem__(self, k):
+                        if filt(k):
+                            return super(wrapped_cls, self).__delitem__(k)
+                        else:
+                            raise KeyError(f"Key not in store: {k}")
+
+                    wrapped_cls.__delitem__ = __delitem__
+
+                if __module__ is not None:
+                    wrapped_cls.__module__ = __module__
+
+                if hasattr(collection_cls, '__doc__'):
+                    wrapped_cls.__doc__ = collection_cls.__doc__
+
+                return wrapped_cls
+
+        return wrap
+    else:
+        return filtered_iter(
+            filt, store=None, name=name, __module__=__module__
+        )(store)

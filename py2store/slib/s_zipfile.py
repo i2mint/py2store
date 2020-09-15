@@ -34,11 +34,11 @@ class ZipReader(KvReader):
 
     Note: If you get data zipped by a mac, you might get some junk along with it.
     Namely `__MACOSX` folders `.DS_Store` files. I won't rant about it, since others have.
-    But you might find it useful to remove them from view. One choice is to use `py2store.trans.filtered_iter`
+    But you might find it useful to remove them from view. One choice is to use `py2store.trans.filt_iter`
     to get a filtered view of the zips contents. In most cases, this should do the job:
     ```
     # applied to store instance or class:
-    store = filtered_iter(lambda x: not x.startswith('__MACOSX') and '.DS_Store' not in x)(store)
+    store = filt_iter(filt=lambda x: not x.startswith('__MACOSX') and '.DS_Store' not in x)(store)
     ```
 
     Another option is just to remove these from the zip file once and for all. In unix-like systems:
@@ -311,7 +311,7 @@ DFLT_COMPRESSION = ZIP_DEFLATED
 
 # TODO: Revise ZipReader and ZipFilesReader architecture and make ZipStore be a subclass of Reader if poss
 class ZipStore(KvPersister):
-    """
+    """Zip read and writing.
     When you want to read zips, there's the `FilesOfZip`, `ZipReader`, or `ZipFilesReader` we know and love.
 
     Sometimes though, you want to write to zips too. For this, we have `ZipStore`.

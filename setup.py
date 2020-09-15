@@ -13,7 +13,7 @@ ujoin = lambda *args: "/".join(args)
 
 root_url = "https://github.com/i2mint"
 name = "py2store"
-version = "0.0.7"
+version = "0.0.9"
 
 assert not root_url.endswith(
     "/"
