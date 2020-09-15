@@ -1954,6 +1954,14 @@ def filtered_iter(
     ...     pass
     """
 
+    from warnings import warn
+
+    warn("""filtered_iter is on it's way to be deprecated. Use filt_iter instead.
+     To do so, replace:
+        - imports of filtered_iter by filt_iter
+        - non-keyword arguments by explicitly using arg names, for instance:
+            ```filtered_iter(lambda x: True) -> filt_iter(filt=lambda x: True)```
+    """)
     if store is None:
         if not callable(filt):  # if filt is not a callable...
             # ... assume it's the collection of keys you want and make a filter function to filter those "in".
