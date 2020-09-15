@@ -57,6 +57,8 @@ def validate_key_and_raise_key_error_on_exception(func):
 
 
 class FileSysCollection(Collection):
+    # rootdir = None  # mentioning here so that the attribute is seen as an attribute before instantiation.
+
     def __init__(
             self, rootdir, subpath="", pattern_for_field=None, max_levels=None
     ):
@@ -207,7 +209,7 @@ class FileBytesPersister(FileBytesReader, KvPersister):
 
 
 RelPathFileBytesReader = mk_relative_path_store(
-    FileBytesReader, name="RelPathFileBytesReader", prefix_attr="rootdir"
+    FileBytesReader, name="RelPathFileBytesReader", prefix_attr="rootdir", __module__=__name__
 )
 
 
