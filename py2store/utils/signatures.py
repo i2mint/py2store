@@ -766,9 +766,49 @@ class Sig(Signature, Mapping):
     def has_var_keyword(self):
         return any(p.kind == VK for p in list(self.values()))
 
-    def merge_with_sig(self, sig: ParamsAble):
-        _self = Sig(ch_signature_to_all_pk(self))
-        _sig = Sig(ch_signature_to_all_pk(ensure_signature(sig)))
+    def merge_with_sig(self, sig: ParamsAble, ch_to_all_pk=False):
+        """Return a signature obtained by merging self signature with another signature.
+        Insofar as it can, given the kind precedence rules, the arguments of self will appear first.
+
+        :param sig: The signature to merge with.
+        :param ch_to_all_pk: Whether to change all kinds of both signatures to PK (POSITIONAL_OR_KEYWORD)
+        :return:
+
+        >>> from py2store.utils.signatures import Sig, KO
+        >>>
+        >>> def func(a=None, *, b=1, c=2): ...
+        ...
+        >>>
+        >>> s = Sig(func)
+        >>> s
+        <Sig (a=None, *, b=1, c=2)>
+
+        Observe where the new arguments ``d`` and ``e`` are placed,
+        according to whether they have defaults and what their kind is:
+
+        >>> s.merge_with_sig(['d', 'e'])
+        <Sig (d, e, a=None, *, b=1, c=2)>
+        >>> s.merge_with_sig(['d', ('e', 4)])
+        <Sig (d, a=None, e=4, *, b=1, c=2)>
+        >>> s.merge_with_sig(['d', dict(name='e', kind=KO, default=4)])
+        <Sig (d, a=None, *, b=1, c=2, e=4)>
+        >>> s.merge_with_sig([dict(name='d', kind=KO), dict(name='e', kind=KO, default=4)])
+        <Sig (a=None, *, d, b=1, c=2, e=4)>
+
+        If the kind of the params is not important, but order is, you can specify ``ch_to_all_pk=True``:
+
+        >>> s.merge_with_sig(['d', 'e'], ch_to_all_pk=True)
+        <Sig (d, e, a=None, b=1, c=2)>
+        >>> s.merge_with_sig([('d', 3), ('e', 4)], ch_to_all_pk=True)
+        <Sig (a=None, b=1, c=2, d=3, e=4)>
+
+        """
+        if ch_to_all_pk:
+            _self = Sig(ch_signature_to_all_pk(self))
+            _sig = Sig(ch_signature_to_all_pk(ensure_signature(sig)))
+        else:
+            _self = self
+            _sig = Sig(sig)
 
         _msg = f"\nHappened during an attempt to merge {self} and {sig}"
 
@@ -786,7 +826,7 @@ class Sig(Signature, Mapping):
         return self.__class__(params)
 
     def __add__(self, sig: ParamsAble):
-        """Merge two signatures
+        """Merge two signatures (casting all non-VAR kinds to POSITIONAL_OR_KEYWORD before hand)
 
         Important Notes:
         - The resulting Sig will loose it's return_annotation if it had one.
@@ -839,7 +879,7 @@ class Sig(Signature, Mapping):
         <Sig (w, x: float = 1, y=1, z: int = 1, d: float = 1.0, special=0)>
 
         """
-        return self.merge_with_sig(sig)
+        return self.merge_with_sig(sig, ch_to_all_pk=True)
 
     def __radd__(self, sig: ParamsAble):
         """Adding on the right.
