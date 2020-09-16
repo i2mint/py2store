@@ -48,7 +48,7 @@ def store_decorator(func):
     See how the signature of the wrapper has some extra inputs that were injected (__module__, __qualname__, etc.):
 
     >>> print(str(signature(remove_deletion)))
-    (store=None, msg='Deletions not allowed.', __module__=None, __qualname__=None, __name__=None, __doc__=None)
+    (store=None, *, msg='Deletions not allowed.', __module__=None, __qualname__=None, __name__=None, __doc__=None)
 
     Using it as a class decorator factory (the most common way):
 
@@ -140,8 +140,13 @@ def store_decorator(func):
     _func_wrapping_store_in_cls_if_not_type.func = func
 
     # @wraps(func)
-    @Sig.from_objs(func, [(a, None) for a in wrapper_assignments])
-    def wrapper(store, **kwargs):
+    wrapper_sig = Sig(func).merge_with_sig(
+        [dict(name=a, default=None, kind=KO) for a in wrapper_assignments],
+        ch_to_all_pk=False
+    )
+
+    @wrapper_sig
+    def wrapper(store=None, **kwargs):
         if store is None:  # then we want a factory
             return partial(_func_wrapping_store_in_cls_if_not_type, **kwargs)
         else:

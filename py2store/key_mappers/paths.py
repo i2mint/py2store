@@ -6,6 +6,7 @@ from warnings import warn
 
 from py2store.base import Store
 from py2store.util import lazyprop
+from py2store.trans import store_decorator
 from py2store.dig import recursive_get_attr
 
 path_sep = os.path.sep
