@@ -141,22 +141,22 @@ class PrefixRelativizationMixin:
     >>> s.store.items()
     dict_items([('/root/of/data/foo', 'bar'), ('/root/of/data/too', 'much')])
     """
+    _prefix_attr_name = '_prefix'
 
     @lazyprop
     def _prefix_length(self):
-        return len(self._prefix)
+        return len(getattr(self, self._prefix_attr_name))
 
     def _id_of_key(self, k):
-        return self._prefix + k
+        return getattr(self, self._prefix_attr_name) + k
 
     def _key_of_id(self, _id):
         return _id[self._prefix_length:]
 
-from py2store.trans import store_decorator
 
 @store_decorator
 def mk_relative_path_store(
-        store_cls,
+        store_cls=None,
         *,
         name=None,
         with_key_validation=False,
@@ -230,6 +230,11 @@ def mk_relative_path_store(
                                                   f"but want the prefix name to be {prefix_attr}. " \
                                                   f"That's not going to be easy for me."
 
+        # if not hasattr(cls, prefix_attr):
+        #     warn(f"You said you wanted prefix_attr='{prefix_attr}', "
+        #          f"but {cls} (the wrapped class) doesn't have a '{prefix_attr}'. "
+        #          f"I'll let it slide because perhaps the attribute is dynamic. But I'm warning you!!")
+
         @property
         def _prefix(self):
             return getattr(self, prefix_attr)
@@ -251,14 +256,15 @@ def mk_relative_path_store(
 
         cls._id_of_key = _id_of_key
 
-    if __module__ is not None:
-        cls.__module__ = __module__
+    # if __module__ is not None:
+    #     cls.__module__ = __module__
 
     return cls
 
 
 # TODO: Intended to replace the init-less PrefixRelativizationMixin
-class RelativePathMixin:
+#  (but should change name if so, since Mixins shouldn't have inits)
+class RelativePathKeyMapper:
     def __init__(self, prefix):
         self._prefix = prefix
         self._prefix_length = len(self._prefix)
@@ -297,7 +303,7 @@ def rel_path_wrap(o, _prefix):
 
     from py2store import kv_wrap
 
-    trans_obj = RelativePathMixin(_prefix)
+    trans_obj = RelativePathKeyMapper(_prefix)
     return kv_wrap(trans_obj)(o)
 
 # mk_relative_path_store_cls = mk_relative_path_store  # alias

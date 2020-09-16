@@ -55,6 +55,10 @@ def _mk_cache_instance(cache=None, assert_attrs=()):
     return cache
 
 
+# TODO: Make it so that the resulting store gets arguments to construct it's own cache
+#   right now, only cache instances or no-argument cache types can be used.
+#
+
 @store_decorator
 def mk_cached_store(
         store=None,
@@ -128,7 +132,7 @@ def mk_cached_store(
     {'a': 1, 'b': 2, 'd': 4}
     """
 
-    cache = _mk_cache_instance(cache, assert_attrs=('__getitem__',))
+    cache = _mk_cache_instance(cache, assert_attrs=('__getitem__', '__setitem__'))
     assert isinstance(store, type), f"store should be a type, was a {type(store)}: {store}"
 
     class CachedStore(store):
@@ -139,6 +143,79 @@ def mk_cached_store(
             return super().__getitem__(k)
 
     return CachedStore
+
+
+@store_decorator
+def mk_sourced_store(
+        store=None,
+        *,
+        source=None,
+        return_source_data=True
+):
+    """
+
+    Args:
+        store: The class of the store you want to cache
+        cache: The store you want to use to cache. Anything with a __setitem__(k, v) and a __getitem__(k).
+            By default, it will use a dict
+        return_source_data:
+    Returns: A subclass of the input store, but with caching (to the cache store)
+
+
+    :param store: The class of the store you're talking to. This store acts as the cache
+    :param source: The store that is used to populate the store (cache) when a key is missing there.
+    :param return_source_data:
+        If True, will return ``source[k]`` as is. This should be used only if ``store[k]`` would return the same.
+        If False, will first write to cache (``store[k] = source[k]``) then return ``store[k]``.
+        The latter introduces a performance hit (we write and then read again from the cache),
+        but ensures consistency (and is useful if the writing or the reading to/from store
+        transforms the data in some way.
+    :return:
+    """
+    assert source is not None, "You need to specify a source"
+
+    source = _mk_cache_instance(source, assert_attrs=('__getitem__',))
+
+    assert isinstance(store, type), f"store should be a type, was a {type(store)}: {store}"
+
+    if return_source_data:
+        class SourcedStore(store):
+            _src = source
+
+            def __getitem__(self, k):
+                if k not in self:
+                    # if you don't have it...
+                    v = self._src[k]  # ... get it from _src,
+                    self[k] = v  # ... store it in self
+                    return v  # ... and return it.
+                else:
+                    # if you have it, get it and return it
+                    return super().__getitem__(k)
+    else:
+        class SourcedStore(store):
+            _src = source
+
+            def __getitem__(self, k):
+                if k not in self:
+                    # if you don't have it...
+                    v = self._src[k]  # ... get it from _src,
+                    self[k] = v  # ... store it in self
+                return super().__getitem__(k)
+
+    return SourcedStore
+
+
+# cache = _mk_cache_instance(cache, assert_attrs=('__getitem__',))
+# assert isinstance(store, type), f"store should be a type, was a {type(store)}: {store}"
+#
+# class CachedStore(store):
+#     _cache = cache
+#
+#     @mk_memoizer(cache)
+#     def __getitem__(self, k):
+#         return super().__getitem__(k)
+#
+# return CachedStore
 
 
 # TODO: Didn't finish this. Finish, doctest, and remove underscore

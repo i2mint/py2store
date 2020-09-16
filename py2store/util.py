@@ -11,6 +11,7 @@ from functools import partial
 import functools
 
 # monkey patching WRAPPER_ASSIGNMENTS to get "proper" wrapping (adding defaults and kwdefaults
+# TODO: Verify this actually works.
 functools.WRAPPER_ASSIGNMENTS = (
     '__module__', '__name__', '__qualname__', '__doc__',
     '__annotations__', '__defaults__', '__kwdefaults__')

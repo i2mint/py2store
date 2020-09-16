@@ -27,11 +27,107 @@ def _all_but_first_arg_are_keyword_only(func):
 
 
 def store_decorator(func):
-    """
+    """Helper to make store decorators.
 
-    :param func:
-    :return:
+    You provide a class-decorating function ``func`` that takes a store type (and possibly additional params)
+    and returns another decorated store type.
 
+    ``store_decorator`` takes that ``func`` and provides an enhanced class decorator specialized for stores.
+    Namely it will:
+    - Add ``__module__``, ``__qualname__``, ``__name__`` and ``__doc__`` arguments to it
+    - Copy the aforementioned arguments to the decorated class, or copy the attributes of the original if not specified.
+    - Output a decorator that can be used in four different ways: a class/instance decorator/factory.
+
+    By class/instance decorator/factory we mean that if ``A`` is a class, ``a`` an instance of it,
+    and ``deco`` a decorator obtained with ``store_decorator(func)``,
+    we can use ``deco`` to
+    - class decorator: decorate a class
+    - class decorator factory: make a function that decorates classes
+    - instance decorator: decorate an instance of a store
+    - instancce decorator factor: make a function that decorates instances of stores
+
+    For example, say we have the following ``deco`` that we made with ``store_decorator``:
+
+    >>> @store_decorator
+    ... def deco(cls=None, *, x=1):
+    ...     # do stuff to cls, or a copy of it...
+    ...     cls.x = x  # like this for example
+    ...     return cls
+
+    And a class that has nothing to it:
+
+    >>> class A: ...
+
+    Nammely, it doesn't have an ``x``
+
+    >>> hasattr(A, 'x')
+    False
+
+    We make a ``decorated_A`` with ``deco`` (class decorator example)
+
+    >>> deco(A, x=42)
+    <class 'trans.A'>
+
+    and we see that we now have an ``x`` and it's 42
+
+    >>> hasattr(A, 'x')
+    True
+    >>> A.x
+    42
+
+    But we could have also made a factory to decorate ``A`` and anything else that comes our way.
+
+    >>> paint_it_42 = deco(x=42)
+    >>> decorated_A = paint_it_42(A)
+    >>> assert decorated_A.x == 42
+    >>> class B:
+    ...     x = 'destined to disappear'
+    >>> assert paint_it_42(B).x == 42
+
+    To be fair though, you'll probably see the factory usage appear in the following form,
+    where the class is decorated at definition time.
+
+    >>> @deco(x=42)
+    ... class B:
+    ...     pass
+    >>> assert B.x == 42
+
+    If your exists already, and you want to keep it as is (with the same name), you can
+    use subclassing to transform a copy of ``A`` instead, as below.
+    Also note in the following example, that ``deco`` was used without parentheses,
+    which is equivalent to ``@deco()``,
+    and yes, store_decorator makes that possible to, as long as your params have defaults
+
+    >>> @deco
+    ... class decorated_A(A):
+    ...     pass
+    >>> assert decorated_A.x == 1
+    >>> assert A.x == 42
+
+    Finally, you can also decorate instances:
+
+    >>> class A: ...
+    >>> a = A()
+    >>> hasattr(a, 'x')
+    False
+    >>> b = deco(a); assert b.x == 1; # b has an x and it's 1
+    >>> b = deco()(a); assert b.x == 1; # b has an x and it's 1
+    >>> b = deco(a, x=42); assert b.x == 42  # b has an x and it's 42
+    >>> b = deco(x=42)(a); assert b.x == 42; # b has an x and it's 42
+
+    WARNING: Note though that the type of ``b`` is not the same type as ``a``
+    >>> isinstance(b, a.__class__)
+    False
+
+    No, ``b`` is an instance of a ``py2store.base.Store``, which is a class containing an
+    instance of a store (here, ``a``).
+
+    >>> type(b)
+    <class 'py2store.base.Store'>
+    >>> b.store == a
+    True
+
+    Now, here's some more example, slightly closer to real usage
 
     >>> from py2store.trans import store_decorator
     >>> from inspect import signature
@@ -57,16 +153,17 @@ def store_decorator(func):
     >>> from collections import UserDict
     >>> @remove_deletion
     ... class WD(UserDict):
+    ...     "Here's the doc"
     ...     pass
     >>> wd = WD(x=5, y=7)
     >>> assert wd == UserDict(x=5, y=7)  # same as far as dict comparison goes
     >>> assert wd.__delitem__('x') == 'Deletions not allowed.'
+    >>> assert wd.__doc__ == "Here's the doc"
 
     As a class decorator "factory", with parameters:
 
     >>> @remove_deletion(msg='No way. I do not trust you!!')
-    ... class WD(UserDict):
-    ...     pass
+    ... class WD(UserDict): ...
     >>> wd = WD(x=5, y=7)
     >>> assert wd == UserDict(x=5, y=7)  # same as far as dict comparison goes
     >>> assert wd.__delitem__('x') == 'No way. I do not trust you!!'
@@ -79,7 +176,7 @@ def store_decorator(func):
 
     >>> @remove_deletion(__doc__="Hi, I'm a doc.")
     ... class WD(UserDict):
-    ...     pass
+    ...     "This is the original doc, that will be overritten"
     >>> assert WD.__doc__ == "Hi, I'm a doc."
 
 
@@ -110,7 +207,10 @@ def store_decorator(func):
 
     """
 
-    wrapper_assignments = ('__module__', '__qualname__', '__name__', '__doc__')
+    # wrapper_assignments = ('__module__', '__qualname__', '__name__', '__doc__', '__annotations__')
+    wrapper_assignments = (
+        '__module__', '__name__', '__qualname__', '__doc__',
+        '__annotations__', '__defaults__', '__kwdefaults__')
 
     @wraps(func)
     def _func_wrapping_store_in_cls_if_not_type(store, **kwargs):
@@ -151,8 +251,10 @@ def store_decorator(func):
             return partial(_func_wrapping_store_in_cls_if_not_type, **kwargs)
         else:
             wrapped_store_cls = _func_wrapping_store_in_cls_if_not_type(store, **kwargs)
+
             return wrapped_store_cls
 
+    # Make sure the wrapper (yes, also the wrapper) has the same key dunders as the func
     for a in wrapper_assignments:
         v = getattr(func, a, None)
         if v is not None:
@@ -530,6 +632,7 @@ def cached_keys(
     an updateable cache.
 
     Using `set` instead of `list`, after the `filter`.
+
     >>> cache_my_keys = cached_keys(keys_cache=set)
     >>> d = cache_my_keys(source)  # used as to transform an instance
     >>> sorted(d)  # using sorted because a set's order is not always the same
