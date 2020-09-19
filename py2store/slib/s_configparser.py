@@ -352,3 +352,19 @@ class ConfigReader(ConfigStore):
 
     def __delitem__(self, k):
         raise NotImplementedError("__delitem__ disabled for ConfigReader")
+
+# TODO: Need to wrap SectionProxy to make this work, since the obj and data here are
+#   those at a second level down.
+#   That is, when you do s['section']['key'] = obj, _data_of_obj gets activated on s, not s['section'] as desired
+# class ConfigStoreWithLists(ConfigStore):
+#     def _data_of_obj(self, obj):
+#         if isinstance(obj, list):
+#             return '\n'.join(obj)
+#         else:
+#             return super()._data_of_obj(obj)
+#
+#     def _obj_of_data(self, data):
+#         if data.startswith('\n'):
+#             return data.split('\n')
+#         else:
+#             return super()._obj_of_data(data)
