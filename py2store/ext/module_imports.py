@@ -7,8 +7,6 @@ import warnings
 try:
     from findimports import ModuleGraph
 except ModuleNotFoundError:
-    from ut.util.code.findimports import ModuleGraph
-except ModuleNotFoundError:
     raise ModuleNotFoundError(
         "You'll need the findimports module for that! Try `pip install findimports`"
     )
@@ -114,20 +112,35 @@ class ModuleImports(ModuleImportsBase):
 
 # A few useful applications #####################################################################################
 
+import pkgutil
+import builtins
+
+builtin_pkg_names = {x.name for x in pkgutil.iter_modules() if not x.ispkg}
+builtin_obj_names = {x.lower() for x in dir(builtins)}
+
+py_reserved_words = {
+    'and', 'as', 'assert', 'break', 'class', 'continue', 'def', 'del', 'elif', 'else', 'except', 'exec', 'finally',
+    'for', 'from', 'global', 'if', 'import', 'in', 'is', 'lambda', 'not', 'or', 'pass', 'print', 'raise', 'return',
+    'try', 'while', 'with', 'yield'
+}
+
+builtin_names = builtin_pkg_names | builtin_obj_names | py_reserved_words
+
 standard_lib_dir = os.path.dirname(os.__file__)
 
 
-def standard_lib_names_gen(include_underscored=True):
+def scan_locally_for_standard_lib_names(include_underscored=True):
     """
     Generates names of standard libs from python environment it was called from.
 
     :param include_underscored: Whether to include names that start with underscore or not.
 
+    :keyword standard lib, builtins
 
-    >>> standard_lib_names = set(standard_lib_names_gen(include_underscored=True))
+    >>> standard_lib_names = set(scan_locally_for_standard_lib_names(include_underscored=True))
     >>> # verify that a few known libs are there (including three folders and three py files)
     >>> assert {'collections', 'asyncio', 'os', 'dis', '__future__'}.issubset(standard_lib_names)
-    >>> # verify that other decoys are not in there
+    >>> # verify that other unwanted "decoys" are NOT in there
     >>> assert {'__pycache__', 'LICENSE.txt', 'config-3.8-darwin', '.DS_Store'}.isdisjoint(standard_lib_names)
     """
     import os
@@ -150,15 +163,13 @@ def standard_lib_names_gen(include_underscored=True):
             yield name
 
 
-standard_lib_names_gen.standard_lib_dir = standard_lib_dir
+scan_locally_for_standard_lib_names.standard_lib_dir = standard_lib_dir
 
-standard_lib_names = set(standard_lib_names_gen(include_underscored=True))
+scanned_standard_lib_names = set(scan_locally_for_standard_lib_names(include_underscored=True))
 
-import builtins
-
-builtin_names = set(dir(builtins))
-
-python_names = builtin_names | standard_lib_names
+python_names = builtin_names | scanned_standard_lib_names
+python_names.__doc__ = \
+    "A wide list of POTENTIAL builtin names (standard libs, reserved words, ...). Some false positives"
 
 
 def imports_for(root, post=set):
@@ -188,10 +199,16 @@ from functools import partial
 from collections import Counter
 
 imports_for.set = partial(imports_for, post=set)
+imports_for.set.__doc__ = "Set (so unordered and unique) imported names"
+
 imports_for.counter = partial(imports_for, post=Counter)
+imports_for.set.__doc__ = "imported names and their counts"
+
 imports_for.most_common = partial(
     imports_for, post=lambda x: Counter(x).most_common()
 )
+imports_for.set.__doc__ = "imported names and their counts, ordered by most common"
+
 imports_for.first_level = partial(
     imports_for, post=lambda x: set(xx.split(".")[0] for xx in x)
 )
@@ -203,6 +220,7 @@ imports_for.third_party = partial(
     post=lambda module: set(
         xx.split(".")[0]
         for xx in module
-        if xx.split(".")[0] not in standard_lib_names
+        if xx.split(".")[0] not in python_names
     ),
 )
+imports_for.set.__doc__ = "imported names that are not builtin names (most probably third party packages)"
