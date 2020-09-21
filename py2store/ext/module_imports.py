@@ -94,6 +94,7 @@ def modname_to_modobj(self, modname):
     return self.store._modobj_of_modname[modname]
 
 
+# TODO: Handle warnings -- there are way too many, way too often
 @wrap_kvs(
     name="ModuleImports",
     key_of_id=modobj_to_modname,
@@ -124,7 +125,7 @@ py_reserved_words = {
     'try', 'while', 'with', 'yield'
 }
 
-builtin_names = builtin_pkg_names | builtin_obj_names | py_reserved_words
+builtin_names = {'builtins'} | builtin_pkg_names | builtin_obj_names | py_reserved_words
 
 standard_lib_dir = os.path.dirname(os.__file__)
 
@@ -167,9 +168,8 @@ scan_locally_for_standard_lib_names.standard_lib_dir = standard_lib_dir
 
 scanned_standard_lib_names = set(scan_locally_for_standard_lib_names(include_underscored=True))
 
+# A wide list of POTENTIAL builtin names (standard libs, reserved words, ...). Some false positives
 python_names = builtin_names | scanned_standard_lib_names
-python_names.__doc__ = \
-    "A wide list of POTENTIAL builtin names (standard libs, reserved words, ...). Some false positives"
 
 
 def imports_for(root, post=set):
@@ -202,19 +202,23 @@ imports_for.set = partial(imports_for, post=set)
 imports_for.set.__doc__ = "Set (so unordered and unique) imported names"
 
 imports_for.counter = partial(imports_for, post=Counter)
-imports_for.set.__doc__ = "imported names and their counts"
+imports_for.counter.__doc__ = "imported names and their counts"
 
 imports_for.most_common = partial(
     imports_for, post=lambda x: Counter(x).most_common()
 )
-imports_for.set.__doc__ = "imported names and their counts, ordered by most common"
+imports_for.most_common.__doc__ = "imported names and their counts, ordered by most common"
 
 imports_for.first_level = partial(
     imports_for, post=lambda x: set(xx.split(".")[0] for xx in x)
 )
+imports_for.first_level.__doc__ = "set for imported first level names (e.g. 'os' instead of 'os.path.etc.)"
+
 imports_for.first_level_count = partial(
     imports_for, post=lambda x: Counter(xx.split(".")[0] for xx in x)
 )
+imports_for.first_level_count.__doc__ = "count of imported first level names (e.g. 'os' instead of 'os.path.etc.)"
+
 imports_for.third_party = partial(
     imports_for,
     post=lambda module: set(
@@ -223,4 +227,5 @@ imports_for.third_party = partial(
         if xx.split(".")[0] not in python_names
     ),
 )
-imports_for.set.__doc__ = "imported names that are not builtin names (most probably third party packages)"
+imports_for.third_party.__doc__ = \
+    "imported (first level) names that are not builtin names (most probably third party packages)"
