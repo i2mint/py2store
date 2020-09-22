@@ -138,7 +138,7 @@ class FileCollection(FileSysCollection):
         return self.is_valid_key(k) and os.path.isfile(k)
 
 
-class FileInfoReader(FileCollection):
+class FileInfoReader(FileCollection, KvReader):
     def __getitem__(self, k):
         self.validate_key(k)
         return os_stat(k)
