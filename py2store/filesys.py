@@ -187,6 +187,12 @@ class FileBytesReader(FileCollection, KvReader):
             return fp.read()
 
 
+class LocalFileDeleteMixin:
+    @validate_key_and_raise_key_error_on_exception
+    def __delitem__(self, k):
+        os.remove(k)
+
+
 class FileBytesPersister(FileBytesReader, KvPersister):
     _write_open_kwargs = dict(
         mode="wb",

@@ -23,6 +23,11 @@ wraps = functools.wraps
 wraps.__defaults__ = (functools.WRAPPER_ASSIGNMENTS, functools.WRAPPER_UPDATES)
 
 
+# @_wraps(_wraps)
+# def wraps(wrapped, *args, **kwargs):
+#     _wrapped = _wraps(wrapped, *args, **kwargs)
+#     for attr
+
 def copy_attrs(target, source, attrs, raise_error_if_an_attr_is_missing=True):
     """Copy attributes from one object to another.
 

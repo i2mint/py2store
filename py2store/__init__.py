@@ -69,6 +69,10 @@ from py2store.caching import (
     mk_write_cached_store,
 )
 
+from py2store.appendable import (
+    appendable
+)
+
 from py2store.stores.local_store import (
     PickleStore,
 )  # consider deprecating and use LocalPickleStore instead?

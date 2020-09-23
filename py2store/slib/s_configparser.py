@@ -4,6 +4,7 @@ from functools import wraps
 from io import BytesIO, StringIO
 
 from py2store.trans import kv_wrap_persister_cls
+
 # from py2store.utils.signatures import Sig
 
 _test_config_str = """[Simple Values]
@@ -353,6 +354,7 @@ class ConfigReader(ConfigStore):
     def __delitem__(self, k):
         raise NotImplementedError("__delitem__ disabled for ConfigReader")
 
+
 # TODO: Need to wrap SectionProxy to make this work, since the obj and data here are
 #   those at a second level down.
 #   That is, when you do s['section']['key'] = obj, _data_of_obj gets activated on s, not s['section'] as desired
@@ -368,3 +370,54 @@ class ConfigReader(ConfigStore):
 #             return data.split('\n')
 #         else:
 #             return super()._obj_of_data(data)
+
+
+from typing import Mapping, Iterable, Generator, Union
+import re
+
+
+# TODO: postprocess_ini_section_items and preprocess_ini_section_items: Add comma separated possibility?
+# TODO: Find out if configparse has an option to do this processing alreadys
+def postprocess_ini_section_items(items: Union[Mapping, Iterable]) -> Generator:
+    r"""Transform newline-separated string values into actual list of strings (assuming that intent)
+
+    >>> section_from_ini = {
+    ...     'name': 'aspyre',
+    ...     'keywords': '\n\tdocumentation\n\tpackaging\n\tpublishing'
+    ... }
+    >>> section_for_python = dict(postprocess_ini_section_items(section_from_ini))
+    >>> section_for_python
+    {'name': 'aspyre', 'keywords': ['documentation', 'packaging', 'publishing']}
+
+    """
+    splitter_re = re.compile('[\n\r\t]+')
+    if isinstance(items, Mapping):
+        items = items.items()
+    for k, v in items:
+        if v.startswith('\n'):
+            v = splitter_re.split(v[1:])
+            v = [vv.strip() for vv in v if vv.strip()]
+        yield k, v
+
+
+# TODO: Find out if configparse has an option to do this processing alreadys
+def preprocess_ini_section_items(items: Union[Mapping, Iterable]) -> Generator:
+    """Transform list values into newline-separated strings, in view of writing the value to a ini formatted section
+    >>> section = {
+    ...     'name': 'aspyre',
+    ...     'keywords': ['documentation', 'packaging', 'publishing']
+    ... }
+    >>> for_ini = dict(preprocess_ini_section_items(section))
+    >>> print('keywords =' + for_ini['keywords'])  # doctest: +NORMALIZE_WHITESPACE
+    keywords =
+        documentation
+        packaging
+        publishing
+
+    """
+    if isinstance(items, Mapping):
+        items = items.items()
+    for k, v in items:
+        if isinstance(v, list):
+            v = '\n\t' + '\n\t'.join(v)
+        yield k, v

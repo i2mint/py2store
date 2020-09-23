@@ -276,6 +276,66 @@ class RelativePathKeyMapper:
         return _id[self._prefix_length:]
 
 
+from py2store.key_mappers.naming import StrTupleDict
+from enum import Enum
+
+
+class PathKeyTypes(Enum):
+    str = 'str'
+    dict = 'dict'
+    tuple = 'tuple'
+    namedtuple = 'namedtuple'
+
+
+_method_names_for_path_type = {
+    PathKeyTypes.str: {'_id_of_key': StrTupleDict.simple_str_to_str,
+                        '_key_of_id': StrTupleDict.str_to_simple_str},
+    PathKeyTypes.dict: {'_id_of_key': StrTupleDict.dict_to_str,
+                        '_key_of_id': StrTupleDict.str_to_dict},
+    PathKeyTypes.tuple: {'_id_of_key': StrTupleDict.tuple_to_str,
+                         '_key_of_id': StrTupleDict.str_to_tuple},
+    PathKeyTypes.namedtuple: {'_id_of_key': StrTupleDict.namedtuple_to_str,
+                              '_key_of_id': StrTupleDict.str_to_namedtuple},
+}
+
+#
+# def str_to_simple_str(self, s: str):
+#     return self.sep.join(*self.str_to_tuple(s))
+#
+#
+# def simple_str_to_str(self, ss: str):
+#     self.tuple_to_str(self.si)
+
+# TODO: Add key and id type validation
+def str_template_key_trans(
+        template: str,
+        key_type: PathKeyTypes,
+        format_dict=None,
+        process_kwargs=None,
+        process_info_dict=None,
+        named_tuple_type_name="NamedTuple",
+        sep: str = path_sep,
+):
+    """Make a key trans object that translates from a string _id to a dict, tuple, or namedtuple key (and back)"""
+
+    assert key_type in PathKeyTypes, f"key_type was {key_type}. Needs to be one of these: {', '.join(PathKeyTypes)}"
+
+    class PathKeyMapper(StrTupleDict):
+        ...
+
+    setattr(PathKeyMapper, '_id_of_key', _method_names_for_path_type[key_type]['_id_of_key'])
+    setattr(PathKeyMapper, '_key_of_id', _method_names_for_path_type[key_type]['_key_of_id'])
+
+    key_trans = PathKeyMapper(template, format_dict, process_kwargs,
+                              process_info_dict, named_tuple_type_name, sep)
+
+    return key_trans
+
+
+str_template_key_trans.method_names_for_path_type = _method_names_for_path_type
+str_template_key_trans.key_types = PathKeyTypes
+
+
 # TODO: Merge with mk_relative_path_store
 def rel_path_wrap(o, _prefix):
     """
