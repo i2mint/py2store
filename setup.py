@@ -1,49 +1,89 @@
-from setuptools import setup, find_packages
+import os
+from configparser import ConfigParser
+from setuptools import find_packages
+from pack import read_configs
 
 
-def readme():
+def my_setup(print_params=True, **setup_kwargs):
+    from setuptools import setup
+    if print_params:
+        import json
+        print("Setup params -------------------------------------------------------")
+        print(json.dumps(setup_kwargs, indent=2))
+        print("--------------------------------------------------------------------")
+    setup(**setup_kwargs)
+
+
+# read the config file (get a dict with it's contents)
+root_dir = os.path.dirname(__file__)
+config_file = os.path.join(root_dir, 'setup.cfg')
+configs = read_configs(config_file, section='metadata')
+
+# parse out name and root_url
+name = configs['name']
+root_url = configs['root_url']
+version = configs.get('version', None)
+
+# Note: if version is not in config, version will be None,
+#  resulting in bumping the version or making it be 0.0.1 if the package is not found (i.e. first deploy)
+
+meta_data_dict = {k: v for k, v in configs.items()}
+
+# make the setup_kwargs
+setup_kwargs = dict(
+    meta_data_dict,
+    # You can add more key=val pairs here if they're missing in config file
+)
+
+# import os
+# name = os.path.split(os.path.dirname(__file__))[-1]
+
+if version is None:
     try:
-        with open("README.md") as f:
+        from pack import next_version_for_package
+
+        version = next_version_for_package(name)  # when you want to make a new package
+    except Exception as e:
+        print(f"Got an error trying to get the new version of {name} so will try to get the version from setup.cfg...")
+        print(f"{e}")
+        version = configs.get('version', None)
+        if version is None:
+            raise ValueError(f"Couldn't fetch the next version from PyPi (no API token?), "
+                             f"nor did I find a version in setup.cfg (metadata section).")
+
+
+def text_of_readme_md_file():
+    try:
+        with open('README.md') as f:
             return f.read()
     except:
         return ""
 
 
-ujoin = lambda *args: "/".join(args)
+ujoin = lambda *args: '/'.join(args)
 
-root_url = "https://github.com/i2mint"
-name = "py2store"
-version = "0.0.9"
+if root_url.endswith('/'):
+    root_url = root_url[:-1]
 
-assert not root_url.endswith(
-    "/"
-), f"root_url should not end with /: {root_url}"
-
-setup(
-    name="py2store",
-    version=f"{version}",
-    description="DAO for Python: Tools to create simple and consistent "
-                "interfaces to complicated and varied data sources.",
-    long_description=readme(),
-    long_description_content_type="text/markdown",
+dflt_kwargs = dict(
+    name=f"{name}",
+    version=f'{version}',
     url=f"{root_url}/{name}",
-    author="Thor Whalen",
-    license="Apache",
     packages=find_packages(),
-    install_requires=[],
     include_package_data=True,
-    zip_safe=False,
-    download_url=f"{root_url}/{name}/archive/v{version}.zip",
-    keywords=["storage", "interface"],
-    classifiers=[
-        "Development Status :: 3 - Alpha",
-        # Either
-        # "3 - Alpha",
-        # "4 - Beta" or
-        # "5 - Production/Stable" as the current state.
-        "Intended Audience :: Developers",
-        "Topic :: Software Development",
-        "License :: OSI Approved :: Apache Software License",
-        "Programming Language :: Python :: 3.7",
-    ],
+    platforms='any',
+    long_description=text_of_readme_md_file(),
+    long_description_content_type="text/markdown",
 )
+
+setup_kwargs = dict(dflt_kwargs, **setup_kwargs)
+
+##########################################################################################
+# Diagnose setup_kwargs
+_, containing_folder_name = os.path.split(os.path.dirname(__file__))
+if setup_kwargs['name'] != containing_folder_name:
+    print(f"!!!! containing_folder_name={containing_folder_name} but setup name is {setup_kwargs['name']}")
+
+##########################################################################################
+# Okay... set it up alright!
+my_setup(**setup_kwargs)
