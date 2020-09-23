@@ -102,14 +102,16 @@ class PathFormatStore(PathFormatPersister, Persister):
 
 
 RelPathLocalFileStore = mk_relative_path_store(
-    PathFormatPersister, name="RelPathLocalFileStore"
+    PathFormatPersister,
+    __name__="RelPathLocalFileStore"
 )
 RelPathLocalFileStore.__doc__ = (
     """Local file store using templated relative paths."""
 )
 
 RelPathLocalFileStoreEnforcingFormat = mk_relative_path_store(
-    PathFormatPersister, name="RelPathLocalFileStoreEnforcingFormat"
+    PathFormatPersister,
+    __name__="RelPathLocalFileStoreEnforcingFormat"
 )
 RelPathLocalFileStoreEnforcingFormat.__doc__ = """A RelativePathFormatStore, but that won't allow one to use a key that is not valid 
     (according to the self.store.is_valid_key boolean method)"""
@@ -258,9 +260,17 @@ def mk_absolute_path(path_format):
     return path_format
 
 
-class QuickLocalStoreMixin:
-    """A mixin that will choose a path_format if none given, and will create directories under the (temp) root,
-    at write time, as needed.
+class AutoMkDirsOnSetitemMixin:
+    """A mixin that will automatically create directories on setitem, when missing."""
+
+    def __setitem__(self, k, v):
+        dirname = os.path.dirname(os.path.join(self._prefix, k))
+        os.makedirs(dirname, exist_ok=True)
+        return super().__setitem__(k, v)
+
+
+class AutoMkPathformatMixin:
+    """A mixin that will choose a path_format if none given
     """
 
     _tmp_dirname = "quick_store"
@@ -282,10 +292,35 @@ class QuickLocalStoreMixin:
             path_format = mk_absolute_path(path_format)
         super().__init__(path_format, max_levels=max_levels)
 
-    def __setitem__(self, k, v):
-        dirname = os.path.dirname(os.path.join(self._prefix, k))
-        os.makedirs(dirname, exist_ok=1)
-        return super().__setitem__(k, v)
+
+class QuickLocalStoreMixin(AutoMkPathformatMixin, AutoMkDirsOnSetitemMixin):
+    """A mixin that will choose a path_format if none given,
+    and will automatically create directories on setitem, when missing.
+    """
+
+    # _tmp_dirname = "quick_store"
+    # _docsuffix = " with default temp root and auto dir generation on write."
+    #
+    # @classmethod
+    # def mk_tmp_quick_store_path_format(cls, subpath=""):
+    #     return mk_tmp_quick_store_dirpath(
+    #         os.path.join(cls._tmp_dirname, subpath)
+    #     )
+    #
+    # def __init__(self, path_format=None, max_levels=None):
+    #     if path_format is None:
+    #         path_format = self.mk_tmp_quick_store_path_format()
+    #         print(
+    #             f"No path_format was given, so taking one from a tmp dir. Namely:\n\t{path_format}"
+    #         )
+    #     else:
+    #         path_format = mk_absolute_path(path_format)
+    #     super().__init__(path_format, max_levels=max_levels)
+    #
+    # def __setitem__(self, k, v):
+    #     dirname = os.path.dirname(os.path.join(self._prefix, k))
+    #     os.makedirs(dirname, exist_ok=True)
+    #     return super().__setitem__(k, v)
 
 
 class QuickTextStore(QuickLocalStoreMixin, LocalTextStore):

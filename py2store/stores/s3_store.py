@@ -29,7 +29,11 @@ class S3AbsPathBinaryStore(Store):
         return _id.key
 
 
-S3BinaryStore = mk_relative_path_store(S3AbsPathBinaryStore, "S3BinaryStore")
+S3BinaryStore = mk_relative_path_store(
+    S3AbsPathBinaryStore,
+    __name__="S3BinaryStore",
+    __module__=__name__,
+)
 
 
 class S3TextStore(S3BinaryStore):

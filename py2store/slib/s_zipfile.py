@@ -2,11 +2,23 @@ import inspect
 import os
 from functools import wraps
 from io import BytesIO
-from zipfile import ZipFile
-
+from zipfile import (
+    ZipFile,
+    ZIP_STORED,
+    ZIP_DEFLATED,
+    ZIP_BZIP2,
+    ZIP_LZMA,
+)
 from py2store.base import KvReader, KvPersister
 from py2store.filesys import FileCollection
 from py2store.util import lazyprop, fullpath
+
+
+class COMPRESSION:
+    ZIP_STORED = ZIP_STORED  # The numeric constant for an uncompressed archive member.
+    ZIP_DEFLATED = ZIP_DEFLATED  # The numeric constant for the usual ZIP compression method. This requires zlib module.
+    ZIP_BZIP2 = ZIP_BZIP2  # The numeric constant for the BZIP2 compression method. This requires the bz2 module.
+    ZIP_LZMA = ZIP_LZMA  # The numeric constant for the LZMA compression method. This requires the lzma module.
 
 
 def func_conjunction(func1, func2):
@@ -34,11 +46,11 @@ class ZipReader(KvReader):
 
     Note: If you get data zipped by a mac, you might get some junk along with it.
     Namely `__MACOSX` folders `.DS_Store` files. I won't rant about it, since others have.
-    But you might find it useful to remove them from view. One choice is to use `py2store.trans.filtered_iter`
+    But you might find it useful to remove them from view. One choice is to use `py2store.trans.filt_iter`
     to get a filtered view of the zips contents. In most cases, this should do the job:
     ```
     # applied to store instance or class:
-    store = filtered_iter(lambda x: not x.startswith('__MACOSX') and '.DS_Store' not in x)(store)
+    store = filt_iter(filt=lambda x: not x.startswith('__MACOSX') and '.DS_Store' not in x)(store)
     ```
 
     Another option is just to remove these from the zip file once and for all. In unix-like systems:
@@ -204,6 +216,15 @@ class ZipFilesReader(FileCollection, KvReader):
         return ZipReader(k, **self.zip_reader_kwargs)
 
 
+class ZipFilesReaderAndBytesWriter(ZipFilesReader):
+    """Like ZipFilesReader, but the ability to write bytes (assumed to be valid bytes of the zip format) to a key
+    """
+
+    def __setitem__(self, k, v):
+        with open(k, 'wb') as fp:
+            fp.write(v)
+
+
 # TODO: Add easy connection to ExplicitKeymapReader and other path trans and cache useful for the folder of zips context
 class FlatZipFilesReader(ZipFilesReader):
     """Read the union of the contents of multiple zip files.
@@ -301,17 +322,17 @@ class _EmptyZipReader(KvReader):
         # return OpenedNotExistingFile()
 
 
-from zipfile import (
-    ZIP_DEFLATED,
-)  # TODO: Do all systems have this? If not, need to choose dflt carefully
 from zipfile import BadZipFile
 
-DFLT_COMPRESSION = ZIP_DEFLATED
+# TODO: Do all systems have this? If not, need to choose dflt carefully (choose dynamically?)
+DFLT_COMPRESSION = COMPRESSION.ZIP_DEFLATED
 
 
 # TODO: Revise ZipReader and ZipFilesReader architecture and make ZipStore be a subclass of Reader if poss
+# TODO: What if I just want to zip a (single) file. What does py2store offer for that?
+# TODO: How about set_obj (in misc.py)? Make it recognize the .zip extension and subextension (e.g. .txt.zip) serialize
 class ZipStore(KvPersister):
-    """
+    """Zip read and writing.
     When you want to read zips, there's the `FilesOfZip`, `ZipReader`, or `ZipFilesReader` we know and love.
 
     Sometimes though, you want to write to zips too. For this, we have `ZipStore`.
@@ -336,7 +357,7 @@ class ZipStore(KvPersister):
     _writestr_kw = dict(compress_type=None, compresslevel=None)
     zip_writer = None
 
-    @wraps(ZipReader.__init__)
+    # @wraps(ZipReader.__init__)
     def __init__(
             self,
             zip_filepath,

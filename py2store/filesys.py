@@ -57,6 +57,8 @@ def validate_key_and_raise_key_error_on_exception(func):
 
 
 class FileSysCollection(Collection):
+    # rootdir = None  # mentioning here so that the attribute is seen as an attribute before instantiation.
+
     def __init__(
             self, rootdir, subpath="", pattern_for_field=None, max_levels=None
     ):
@@ -136,7 +138,7 @@ class FileCollection(FileSysCollection):
         return self.is_valid_key(k) and os.path.isfile(k)
 
 
-class FileInfoReader(FileCollection):
+class FileInfoReader(FileCollection, KvReader):
     def __getitem__(self, k):
         self.validate_key(k)
         return os_stat(k)
@@ -185,6 +187,12 @@ class FileBytesReader(FileCollection, KvReader):
             return fp.read()
 
 
+class LocalFileDeleteMixin:
+    @validate_key_and_raise_key_error_on_exception
+    def __delitem__(self, k):
+        os.remove(k)
+
+
 class FileBytesPersister(FileBytesReader, KvPersister):
     _write_open_kwargs = dict(
         mode="wb",
@@ -207,7 +215,10 @@ class FileBytesPersister(FileBytesReader, KvPersister):
 
 
 RelPathFileBytesReader = mk_relative_path_store(
-    FileBytesReader, name="RelPathFileBytesReader", prefix_attr="rootdir"
+    FileBytesReader,
+    prefix_attr="rootdir",
+    __name__="RelPathFileBytesReader",
+    __module__=__name__
 )
 
 
@@ -220,5 +231,7 @@ class FileStringPersister(FileBytesPersister):
 
 
 RelPathFileStringReader = mk_relative_path_store(
-    FileStringReader, name="RelPathFileStringReader", prefix_attr="rootdir"
+    FileStringReader,
+    prefix_attr="rootdir",
+    __name__="RelPathFileStringReader",
 )

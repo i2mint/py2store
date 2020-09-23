@@ -48,6 +48,7 @@ from py2store.trans import (
     mk_read_only,
     kv_wrap,
     cached_keys,
+    filt_iter,
     filtered_iter,
     add_path_get,
     insert_aliases,
@@ -66,6 +67,10 @@ from py2store.caching import (
     ensure_clear_to_kv_store,
     flush_on_exit,
     mk_write_cached_store,
+)
+
+from py2store.appendable import (
+    appendable
 )
 
 from py2store.stores.local_store import (

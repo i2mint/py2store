@@ -573,6 +573,12 @@ class StrTupleDict(object):
     def str_to_namedtuple(self, s: str):
         return self.dict_to_namedtuple(self.str_to_dict(s))
 
+    def str_to_simple_str(self, s: str):
+        return self.sep.join(self.str_to_tuple(s))
+
+    def simple_str_to_str(self, ss: str):
+        return self.tuple_to_str(ss.split(self.sep))
+
     def super_dict_to_str(self, d: dict):
         """Like dict_to_str, but the input dict can have extra keys that are not used by dict_to_str"""
         return self.mk(**{k: v for k, v in d.items() if k in self.fields})
