@@ -26,6 +26,7 @@ def _all_but_first_arg_are_keyword_only(func):
     return all(kind == Parameter.KEYWORD_ONLY for kind in kinds)
 
 
+# FIXME: doctest line numbers not shown correctly when wrapped by store_decorator!
 def store_decorator(func):
     """Helper to make store decorators.
 
@@ -144,7 +145,7 @@ def store_decorator(func):
     See how the signature of the wrapper has some extra inputs that were injected (__module__, __qualname__, etc.):
 
     >>> print(str(signature(remove_deletion)))
-    (store=None, *, msg='Deletions not allowed.', __module__=None, __qualname__=None, __name__=None, __doc__=None)
+    (store=None, *, msg='Deletions not allowed.', __module__=None, __name__=None, __qualname__=None, __doc__=None, __annotations__=None, __defaults__=None, __kwdefaults__=None)
 
     Using it as a class decorator factory (the most common way):
 
@@ -893,6 +894,190 @@ def cached_keys(
 
 
 cache_iter = cached_keys  # TODO: Alias, partial it and make it more like the original, for back compatibility.
+
+
+@store_decorator
+def catch_and_cache_error_keys(
+        store=None,
+        *,
+        errors_caught=Exception,
+        error_callback=None,
+        use_cached_keys_after_completed_iter=True,
+):
+    """Store that will cache keys as they're accessed, separating those that raised errors and those that didn't.
+    Getting a key will still through an error, but the access attempts will be collected in an ._error_keys attribute.
+    Successfful attemps will be stored in _keys_cache.
+    Retrieval iteration (items() or values()) will on the other hand, skip the error (while still caching it).
+    If the iteration completes (and use_cached_keys_after_completed_iter), the use_cached_keys flag is turned on,
+    which will result in the store now getting it's keys from the _keys_cache.
+
+    >>> @catch_and_cache_error_keys(
+    ...     error_callback=lambda store, key, err: print(f"Error with {key} key: {err}"))
+    ... class Blacklist(dict):
+    ...     _black_list = {'black', 'list'}
+    ...
+    ...     def __getitem__(self, k):
+    ...         if k not in self._black_list:
+    ...             return super().__getitem__(k)
+    ...         else:
+    ...             raise KeyError(f"Nope, that's from the black list!")
+    >>>
+    >>> s = Blacklist(black=7,  friday=20, frenzy=13)
+    >>> list(s)
+    ['black', 'friday', 'frenzy']
+    >>> list(s.items())
+    Error with black key: "Nope, that's from the black list!"
+    [('friday', 20), ('frenzy', 13)]
+    >>> sorted(s)  # sorting to get consistent output
+    ['frenzy', 'friday']
+
+
+    See that? First we had three keys, then we iterated and got only 2 items (fortunately,
+    we specified an ``error_callback`` so we ccould see that the iteration actually dropped a key).
+    That's strange. And even stranger is the fact that when we list our keys again, we get only two.
+
+    You don't like it? Neither do I. But
+    - It's not a completely outrageous behavior -- if you're talking to live data, it
+        often happens that you get more, or less, from one second to another.
+    - This store isn't meant to be long living, but rather meant to solve the problem of skiping
+        items that are problematic (for example, malformatted files), with a trace of
+        what was skipped and what's valid (in case we need to iterate again and don't want to
+        bear the hit of requesting values for keys we already know are problematic.
+
+    Here's a little peep of what is happening under the hood.
+    Meet ``_keys_cache`` and ``_error_keys`` sets (yes, unordered -- so know it) that are meant
+    to acccumulate valid and problematic keys respectively.
+
+    >>> s = Blacklist(black=7,  friday=20, frenzy=13)
+    >>> list(s)
+    ['black', 'friday', 'frenzy']
+    >>> s._keys_cache, s._error_keys
+    (set(), set())
+    >>> s['friday']
+    20
+    >>> s._keys_cache, s._error_keys
+    ({'friday'}, set())
+    >>> s['black']
+    Traceback (most recent call last):
+      ...
+    KeyError: "Nope, that's from the black list!"
+    >>> s._keys_cache, s._error_keys
+    ({'friday'}, {'black'})
+
+    But see that we still have the full list:
+
+    >>> list(s)
+    ['black', 'friday', 'frenzy']
+
+    Meet ``use_cached_keys``: He's the culprit. It's a flag that indicates whether we should be
+    using the cached keys or not. Obviously, it'll start off being ``False``:
+
+    >>> s.use_cached_keys
+    False
+
+    Now we could set it to ``True`` manually to change the mode.
+    But know that this switch happens automatically (UNLESS you specify otherwise by saying:
+    ``use_cached_keys_after_completed_iter=False``) when ever you got through a
+    VALUE-PRODUCING iteration (i.e. entirely consuming `items()` or `values()`).
+
+    >>> sorted(s.values())  # sorting to get consistent output
+    Error with black key: "Nope, that's from the black list!"
+    [13, 20]
+
+    """
+
+    assert isinstance(store, type), f"store_cls must be a type, was a {type(store)}: {store}"
+
+    # assert isinstance(store, Mapping), f"store_cls must be a Mapping. Was not. mro is {store.mro()}: {store}"
+
+    # class cached_cls(store):
+    #     _keys_cache = None
+    #     _error_keys = None
+
+    # The following class is not the class that will be returned, but the class from which we'll take the methods
+    #   that will be copied in the class that will be returned.
+    # @_define_keys_values_and_items_according_to_iter
+    class CachedKeyErrorsStore(store):
+
+        @wraps(store.__init__)
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self._error_keys = set()
+            self._keys_cache = set()
+            self.use_cached_keys = False
+            self.use_cached_keys_after_completed_iter = use_cached_keys_after_completed_iter
+            self.errors_caught = errors_caught
+            self.error_callback = error_callback
+
+        def __getitem__(self, k):
+            if self.use_cached_keys:
+                return super().__getitem__(k)
+            else:
+                try:
+                    v = super().__getitem__(k)
+                    self._keys_cache.add(k)
+                    return v
+                except self.errors_caught:
+                    self._error_keys.add(k)
+                    raise
+
+        def __iter__(self):
+            # if getattr(self, '_keys_cache', None) is None:
+            #     self._keys_cache = iter_to_container(super(cached_cls, self).__iter__())
+            if self.use_cached_keys:
+                yield from self._keys_cache
+            else:
+                yield from super().__iter__()
+
+        def __len__(self):
+            if self.use_cached_keys:
+                return len(self._keys_cache)
+            else:
+                return super().__len__()
+
+        def items(self):
+            if self.use_cached_keys:
+                for k in self._keys_cache:
+                    yield k, self[k]
+            else:
+                for k in self:
+                    try:
+                        yield k, self[k]
+                    except self.errors_caught as err:
+                        if self.error_callback is not None:
+                            self.error_callback(store, k, err)
+            if self.use_cached_keys_after_completed_iter:
+                self.use_cached_keys = True
+
+        def values(self):
+            if self.use_cached_keys:
+                yield from (self[k] for k in self._keys_cache)
+            else:
+                yield from (v for k, v in self.items())
+
+        def __contains__(self, k):
+            if self.use_cached_keys:
+                return k in self._keys_cache
+            else:
+                return super().__contains__(k)
+
+    return CachedKeyErrorsStore
+
+
+def iterate_values_and_accumulate_non_error_keys(
+        store,
+        cache_keys_here: list,
+        errors_caught=Exception,
+        error_callback=None
+):
+    for k in store:
+        try:
+            v = store[k]
+            cache_keys_here.append(k)
+            yield v
+        except errors_caught as err:
+            if error_callback is not None:
+                error_callback(store, k, err)
 
 
 ########################################################################################################################
