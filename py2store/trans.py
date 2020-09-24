@@ -145,7 +145,7 @@ def store_decorator(func):
     See how the signature of the wrapper has some extra inputs that were injected (__module__, __qualname__, etc.):
 
     >>> print(str(signature(remove_deletion)))
-    (store=None, *, msg='Deletions not allowed.', __module__=None, __qualname__=None, __name__=None, __doc__=None)
+    (store=None, *, msg='Deletions not allowed.', __module__=None, __name__=None, __qualname__=None, __doc__=None, __annotations__=None, __defaults__=None, __kwdefaults__=None)
 
     Using it as a class decorator factory (the most common way):
 
