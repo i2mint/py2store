@@ -212,8 +212,7 @@ def mk_relative_path_store(
         from warnings import warn
         warn(f"The use of name argumment is deprecated. Use __name__ instead", DeprecationWarning)
 
-    name = ("RelPath" + store_cls.__name__)
-    cls = type(name, (PrefixRelativizationMixin, Store), {})
+    cls = type(store_cls.__name__, (PrefixRelativizationMixin, Store), {})
 
     @wraps(store_cls.__init__)
     def __init__(self, *args, **kwargs):
@@ -259,6 +258,8 @@ def mk_relative_path_store(
     # if __module__ is not None:
     #     cls.__module__ = __module__
 
+    # print(callable(cls))
+
     return cls
 
 
@@ -289,7 +290,7 @@ class PathKeyTypes(Enum):
 
 _method_names_for_path_type = {
     PathKeyTypes.str: {'_id_of_key': StrTupleDict.simple_str_to_str,
-                        '_key_of_id': StrTupleDict.str_to_simple_str},
+                       '_key_of_id': StrTupleDict.str_to_simple_str},
     PathKeyTypes.dict: {'_id_of_key': StrTupleDict.dict_to_str,
                         '_key_of_id': StrTupleDict.str_to_dict},
     PathKeyTypes.tuple: {'_id_of_key': StrTupleDict.tuple_to_str,
@@ -297,6 +298,7 @@ _method_names_for_path_type = {
     PathKeyTypes.namedtuple: {'_id_of_key': StrTupleDict.namedtuple_to_str,
                               '_key_of_id': StrTupleDict.str_to_namedtuple},
 }
+
 
 #
 # def str_to_simple_str(self, s: str):

@@ -203,17 +203,20 @@ class ZipFilesReader(FileCollection, KvReader):
             subpath=".+\.zip",
             pattern_for_field=None,
             max_levels=0,
-            prefix="",
-            open_kws=None,
-            file_info_filt=ZipReader.FILES_ONLY,
+            zip_reader=ZipReader,
+            **zip_reader_kwargs
     ):
         super().__init__(rootdir, subpath, pattern_for_field, max_levels)
-        self.zip_reader_kwargs = dict(
-            prefix=prefix, open_kws=open_kws, file_info_filt=file_info_filt
-        )
+        self.zip_reader = zip_reader
+        self.zip_reader_kwargs = zip_reader_kwargs
+        if self.zip_reader is ZipReader:
+            self.zip_reader_kwargs = dict(
+                dict(prefix="", open_kws=None, file_info_filt=ZipReader.FILES_ONLY),
+                **self.zip_reader_kwargs
+            )
 
     def __getitem__(self, k):
-        return ZipReader(k, **self.zip_reader_kwargs)
+        return self.zip_reader(k, **self.zip_reader_kwargs)
 
 
 class ZipFilesReaderAndBytesWriter(ZipFilesReader):
@@ -274,6 +277,32 @@ class FilesOfZip(ZipReader):
             file_info_filt=ZipReader.FILES_ONLY,
         )
 
+
+# TODO: This file object item is more fundemental than file contents. Should it be at the base?
+class FileStreamsOfZip(FilesOfZip):
+    """Like FilesOfZip, but object returns are file streams instead.
+    So you use it like this:
+
+    ```
+    z = FileStreamsOfZip(rootdir)
+    with z[relpath] as fp:
+        ...  # do stuff with fp, like fp.readlines() or such...
+    ```
+    """
+    def __getitem__(self, k):
+        return self.zip_file.open(k, **self.open_kws)
+
+
+from py2store.key_mappers.paths import mk_relative_path_store
+from py2store.util import partialclass
+
+ZipFileStreamsReader = mk_relative_path_store(
+    partialclass(ZipFilesReader, zip_reader=FileStreamsOfZip),
+    prefix_attr='rootdir'
+)
+ZipFileStreamsReader.__name__ = 'ZipFileStreamsReader'
+ZipFileStreamsReader.__qualname__ = 'ZipFileStreamsReader'
+ZipFileStreamsReader.__doc__ = """Like ZipFilesReader, but objects returned are file streams instead."""
 
 from py2store.errors import OverWritesNotAllowedError
 
