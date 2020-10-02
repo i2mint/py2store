@@ -593,9 +593,123 @@ class KeyValidationABC(metaclass=ABCMeta):
             return _check_methods(C, "is_valid_key", "check_key_is_valid")
         return NotImplemented
 
-########################################################################################################################
-# Mixins to insert specific collection methods in stores
-
 
 ########################################################################################################################
-# TODO: Delete when over with refactor
+# Streams
+# from io import IOBase
+#
+
+def always_true(self, x):
+    return True
+
+
+# TODO: What's the abstract class for Streams. IOBase doesn't seem to work?
+# TODO: Two filters. Might just be able to use one, using sentinels
+
+class Stream:
+    """A layer-able version of the stream interface
+
+        __iter__    calls: _obj_of_data(map)
+        readlines   calls: _obj_of_data(though iter)
+        readline    calls: _obj_of_data
+
+
+    >>> from io import StringIO
+    >>>
+    >>> src = StringIO(
+    ... '''a, b, c
+    ... 1,2, 3
+    ... 4, 5,6
+    ... '''
+    ... )
+    >>>
+    >>> from py2store.base import Stream
+    >>>
+    >>> class MyStream(Stream):
+    ...     def _obj_of_data(self, line):
+    ...         return [x.strip() for x in line.strip().split(',')]
+    ...
+    >>> stream = MyStream(src)
+    >>>
+    >>> assert list(stream) == [['a', 'b', 'c'], ['1', '2', '3'], ['4', '5', '6']]
+    >>> assert stream.readlines() == []  # readlines should do the same as list(stream)
+    >>> stream.seek(0)  # oh!... but we consumed the stream already, so let's go back to the beginning
+    0
+    >>> assert stream.readlines() == [['a', 'b', 'c'], ['1', '2', '3'], ['4', '5', '6']]  # same as list(stream)
+    >>> stream.seek(0)  # reverse again
+    0
+    >>> assert stream.readline() == ['a', 'b', 'c']
+    >>> assert stream.readline() == ['1', '2', '3']
+
+    Let's add a filter! There's two kinds you can use.
+    One that is applied to the line before the data is transformed by _obj_of_data,
+    and the other that is applied after (to the obj).
+
+
+    >>> from py2store.base import Stream
+    >>> from io import StringIO
+    >>>
+    >>> src = StringIO(
+    ...     '''a, b, c
+    ... 1,2, 3
+    ... 4, 5,6
+    ... ''')
+    >>> class MyFilteredStream(Stream):
+    ...     def _obj_of_data(self, line):
+    ...         return [x.strip() for x in line.strip().split(',')]
+    ...
+    ...     def _read_post_filt(self, obj):
+    ...         return str.isnumeric(obj[0])
+    >>>
+    >>> s = MyFilteredStream(src)
+    >>>
+    >>> assert list(s) == [['1', '2', '3'], ['4', '5', '6']]
+    >>> s.seek(0)
+    0
+    >>> assert s.readlines() == [['1', '2', '3'], ['4', '5', '6']]  # same as list(stream)
+    >>> s.seek(0)
+    0
+    >>> assert s.readline() == ['1', '2', '3']
+    """
+
+    def __init__(self, stream):
+        self.stream = stream
+
+    # _data_of_obj = static_identity_method  # for write methods
+    _obj_of_data = static_identity_method
+    _read_pre_filt = always_true
+    _read_post_filt = always_true
+
+    _wrapped_methods = {'__iter__'}
+
+    def __getattr__(self, attr):
+        """Delegate method to wrapped store if not part of wrapper store methods"""
+        # print(f'----- {attr}')
+
+        if attr in self._wrapped_methods:
+            # print("outter")
+            return getattr(self, attr)
+        else:
+            # print("inner")
+            return getattr(self.stream, attr)
+
+    def __iter__(self):
+        # self.stream.seek(0)
+        yield from filter(self._read_post_filt,
+                          map(self._obj_of_data,
+                              filter(self._read_pre_filt, self.stream)))
+
+    def readlines(self):
+        # TODO: Should we user self.stream.readlines() instead? Is readlines expected to be aligned with __iter__?
+        return list(self)
+
+    def readline(self):
+        # TODO: Should we user self.stream.readline() instead? Is readline expected to be aligned with __iter__?
+        return next(iter(self))
+
+
+
+
+    # def read(self):
+    #     yield from (self._obj_of_data(k) for k in self.stream)
+########################################################################################################################
