@@ -110,6 +110,9 @@ from py2store.slib.s_zipfile import (
     FlatZipFilesReader,
 )
 
+from py2store.key_mappers.naming import StrTupleDict
+from py2store.key_mappers.paths import mk_relative_path_store
+
 ###### Optionals... ##############################################################################
 
 with ModuleNotFoundIgnore():
