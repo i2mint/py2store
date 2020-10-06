@@ -217,47 +217,104 @@ def first_non_existing_parent_dir(dirpath):
 ########################################################################################################################
 # Local File Persistence : Classes
 
+from functools import wraps
+from typing import Union, Callable
 
+
+def w_helpful_folder_not_found_error(*,
+                                     raise_error=KeyError,
+                                     extra_msg: Union[str, Callable] = "",
+                                     caught_errors=FileNotFoundError):
+    if isinstance(extra_msg, str):
+        extra_msg_str = extra_msg
+
+        def extra_msg(*args, **kwargs):
+            return extra_msg_str
+    assert callable(extra_msg), "extra_msg must be a callable or a string"
+
+    def _helpful_folder_not_found_error(method):
+        @wraps(method)
+        def wrapped_method(*args, **kwargs):
+            try:
+                return method(*args, **kwargs)
+            except caught_errors as e:
+                msg = "{}: {}\n".format(type(e).__name__, e) + extra_msg(*args, **kwargs)
+                raise raise_error(msg)
+
+        return wrapped_method
+
+    return _helpful_folder_not_found_error
+
+
+def _store_does_not_create_dirs_msg(self, k, *args, **kwargs):
+    return ("The store you're using doesn't create directories for you. "
+            "You have to make the directories needed yourself manually, "
+            "or use a store that does that for you (example QuickStore). "
+            "This is the first directory that didn't exist:\n"
+            f"{first_non_existing_parent_dir(k)}"
+            )
+
+
+class LocalFileStreamGetter:
+    """A class to get stream objects of local open files.
+    The class can only get keys, and only to read, write (destructive or append).
+
+    >>> from tempfile import mkdtemp
+    >>> import os
+    >>> rootdir = mkdtemp()
+    >>>
+    >>> appendable_stream = LocalFileStreamGetter(mode='a+')
+    >>> reader = PathFormatPersister(rootdir)
+    >>> filepath = os.path.join(rootdir, 'tmp.txt')
+    >>>
+    >>> with appendable_stream[filepath] as fp:
+    ...     fp.write('hello')
+    5
+    >>> print(reader[filepath])
+    hello
+    >>> with appendable_stream[filepath] as fp:
+    ...     fp.write(' world')
+    6
+    >>>
+    >>> print(reader[filepath])
+    hello world
+    """
+    def __init__(self, **open_kwargs):
+        self.open_kwargs = open_kwargs
+
+    @w_helpful_folder_not_found_error()
+    def __getitem__(self, k):
+        return open(k, **self.open_kwargs)
+
+
+# TODO: Use LocalFileStream
 class LocalFileRWD:
     """
     A class providing get, set and delete functionality using local files as the storage backend.
     """
 
     def __init__(self, mode="", **open_kwargs):
-        if mode not in {"", "b", "t"}:
-            raise ValueError("mode should be '', 'b', or 't'")
+        assert mode in {"", "b", "t"}, "mode should be '', 'b', or 't'"
 
         read_mode = open_kwargs.pop("read_mode", "r" + mode)
         write_mode = open_kwargs.pop("write_mode", "w" + mode)
         self._open_kwargs_for_read = dict(open_kwargs, mode=read_mode)
         self._open_kwargs_for_write = dict(open_kwargs, mode=write_mode)
 
+    @w_helpful_folder_not_found_error()
     def __getitem__(self, k):
-        try:
-            with open(k, **self._open_kwargs_for_read) as fp:
-                data = fp.read()
-            return data
-        except FileNotFoundError as e:
-            raise KeyError("{}: {}".format(type(e).__name__, e))
+        with open(k, **self._open_kwargs_for_read) as fp:
+            data = fp.read()
+        return data
 
+    @w_helpful_folder_not_found_error(raise_error=FolderNotFoundError, extra_msg=_store_does_not_create_dirs_msg)
     def __setitem__(self, k, v):
-        try:
-            with open(k, **self._open_kwargs_for_write) as fp:
-                fp.write(v)
-        except FileNotFoundError:
-            raise FolderNotFoundError(
-                f"The store you're using doesn't create directories for you. "
-                f"You have to make the directories needed yourself manually, "
-                f"or use a store that does that for you (example QuickStore). "
-                f"This is the first directory that didn't exist:\n"
-                f"{first_non_existing_parent_dir(k)}"
-            )
+        with open(k, **self._open_kwargs_for_write) as fp:
+            fp.write(v)
 
+    @w_helpful_folder_not_found_error()
     def __delitem__(self, k):
-        try:
-            return os.remove(k)
-        except FileNotFoundError as e:
-            raise KeyError("{}: {}".format(type(e).__name__, e))
+        return os.remove(k)
 
 
 class FilepathFormatKeys(
