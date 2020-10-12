@@ -44,6 +44,14 @@ class ZipReader(KvReader):
     """A KvReader to read the contents of a zip file.
     Provides a KV perspective of https://docs.python.org/3/library/zipfile.html
 
+    ``ZipReader`` has two value categories: Directories and Files.
+    Both categories are distinguishable by the keys, through the "ends with slash" convention.
+
+    When a file, the value return is bytes, as usual.
+
+    When a directory, the value returned is a ``ZipReader`` itself, with all params the same, except for the ``prefix``
+     which serves `to specify the subfolder (that is, ``prefix`` acts as a filter).
+
     Note: If you get data zipped by a mac, you might get some junk along with it.
     Namely `__MACOSX` folders `.DS_Store` files. I won't rant about it, since others have.
     But you might find it useful to remove them from view. One choice is to use `py2store.trans.filt_iter`
