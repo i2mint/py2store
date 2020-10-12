@@ -50,7 +50,7 @@ class ReadAudioFileMixin:
         return sf.read(BytesIO(data), **self.read_kwargs)
 
 
-class PcmSerializationMixin:
+class PcmSerializationTrans:
     def __init__(
             self,
             sr,
@@ -76,7 +76,7 @@ class PcmSerializationMixin:
 
 
 @add_wrapper_method
-class WfSrSerializationMixin:
+class WfSrSerializationTrans:
     _read_format = DFLT_FORMAT
     _rw_kwargs = dict(dtype=DFLT_DTYPE, subtype=None, endian=None)
 
@@ -98,7 +98,7 @@ class WfSrSerializationMixin:
 
 
 @add_wrapper_method
-class WfSerializationMixin(WfSrSerializationMixin):
+class WfSerializationTrans(WfSrSerializationTrans):
     def __init__(
             self,
             assert_sr=None,
@@ -123,7 +123,7 @@ class WfSerializationMixin(WfSrSerializationMixin):
 
 
 @add_wrapper_method
-class WavSerializationMixin:
+class WavSerializationTrans:
     _rw_kwargs = dict(format="WAV", subtype=None, endian=None)
     _read_kwargs = dict(dtype=DFLT_DTYPE)
 
@@ -160,6 +160,11 @@ class WavSerializationMixin:
         return b.read()
 
 
+PcmSerializationMixin = PcmSerializationTrans  # alias for back-compatibility
+WfSrSerializationMixin = WfSrSerializationTrans  # alias for back-compatibility
+WavSerializationMixin = WavSerializationTrans  # alias for back-compatibility
+WfSerializationMixin = WfSerializationTrans  # alias for back-compatibility
+
 from py2store.base import Store
 
 
@@ -176,7 +181,7 @@ class WavLocalFileStore(Store):
     ):
         persister = LocalBinaryStore(path_format, max_levels)
         super().__init__(persister)
-        t = WavSerializationMixin(
+        t = WavSerializationTrans(
             assert_sr=assert_sr,
             dtype=dtype,
             format=format,
@@ -186,7 +191,7 @@ class WavLocalFileStore(Store):
         self._obj_of_data = t._obj_of_data
 
 
-class WavLocalFileStore2(WavSerializationMixin, LocalBinaryStore):
+class WavLocalFileStore2(WavSerializationTrans, LocalBinaryStore):
     def __init__(
             self,
             path_format,
@@ -198,7 +203,7 @@ class WavLocalFileStore2(WavSerializationMixin, LocalBinaryStore):
             endian=None,
     ):
         LocalBinaryStore.__init__(self, path_format, max_levels)
-        WavSerializationMixin.__init__(
+        WavSerializationTrans.__init__(
             self,
             assert_sr=assert_sr,
             dtype=dtype,
