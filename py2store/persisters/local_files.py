@@ -403,44 +403,6 @@ is_dir_key = os.path.isdir
 is_fiile_key = os.path.isfile
 
 
-class DirReader(KvReader):
-    """ KV Reader whose keys (AND VALUES) are directory full paths of the subdirectories of rootdir.
-    """
-
-    def __init__(self, rootdir):
-        self.rootdir = ensure_slash_suffix(rootdir)
-        # TODO: Look into alternatives for the raison d'etre of _new_node and _class_name
-        # (They are there, because using self.__class__ directly goes to super)
-        self._new_node = self.__class__
-        self._class_name = self.__class__.__name__
-
-    def _extended_prefix(self, new_prefix):
-        return extend_prefix(self.rootdir, new_prefix)
-
-    def __contains__(self, k):
-        return k.startswith(self.rootdir) and is_dir_key(k)
-
-    def __iter__(self):
-        return filter(
-            is_dir_key,  # (3) filter in directories only
-            map(
-                self._extended_prefix,  # (2) extend prefix with sub-path name
-                os.listdir(self.rootdir),  # (1) list file names under _prefix
-            ),
-        )
-
-    def __getitem__(self, k):
-        if is_dir_key(k):
-            return self._new_node(k)
-        else:
-            raise NoSuchKeyError(
-                f"No such key (perhaps it's not a valid path, or was deleted?): {k}"
-            )
-
-    def __repr__(self):
-        return f"{self._class_name}('{self.rootdir}')"
-
-
 class FileReader(KvReader):
     """ KV Reader whose keys are paths and values are:
     - Another FileReader if a path points to a directory
@@ -486,3 +448,31 @@ class FileReader(KvReader):
 
     def __repr__(self):
         return f"{self._class_name}('{self.rootdir}')"
+
+
+class DirReader(FileReader):
+    """ KV Reader whose keys (AND VALUES) are directory full paths of the subdirectories of rootdir.
+    """
+
+    def _extended_prefix(self, new_prefix):
+        return ensure_slash_suffix(super()._extended_prefix(new_prefix))
+
+    def __contains__(self, k):
+        return k.startswith(self.rootdir) and is_dir_key(k)
+
+    def __iter__(self):
+        return filter(
+            is_dir_key,  # (3) filter in directories only
+            map(
+                self._extended_prefix,  # (2) extend prefix with sub-path name
+                os.listdir(self.rootdir),  # (1) list file names under _prefix
+            ),
+        )
+
+    def __getitem__(self, k):
+        if is_dir_key(k):
+            return self._new_node(k)
+        else:
+            raise NoSuchKeyError(
+                f"No such key (perhaps it's not a valid path, or was deleted?): {k}"
+            )
