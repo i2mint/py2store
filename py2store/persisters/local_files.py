@@ -479,7 +479,7 @@ class FileReader(KvReader):
         else:
             return self.__missing__(k)
 
-    def __missing__(self, key):
+    def __missing__(self, k):
         raise NoSuchKeyError(
             f"No such key (perhaps it's not a valid path, or was deleted?): {k}"
         )
