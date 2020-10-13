@@ -279,6 +279,7 @@ class LocalFileStreamGetter:
     >>> print(reader[filepath])
     hello world
     """
+
     def __init__(self, **open_kwargs):
         self.open_kwargs = open_kwargs
 
@@ -336,7 +337,9 @@ class DirpathFormatKeys(
     PrefixedDirpathsRecursive,
     IterBasedSizedMixin,
 ):
-    def __init__(self, path_format: str, max_levels: int = inf):
+    def __init__(self,
+                 path_format: str,
+                 max_levels: int = inf):
         super().__init__(path_format)
         self._max_levels = max_levels
 
@@ -419,12 +422,12 @@ class DirReader(KvReader):
 
     def __iter__(self):
         return filter(
-            is_dir_key,  # (3) filter out any non-directories
+            is_dir_key,  # (3) filter in directories only
             map(
                 self._extended_prefix,  # (2) extend prefix with sub-path name
-                os.listdir(self.rootdir),
+                os.listdir(self.rootdir),  # (1) list file names under _prefix
             ),
-        )  # (1) list file names under _prefix
+        )
 
     def __getitem__(self, k):
         if is_dir_key(k):
@@ -438,9 +441,10 @@ class DirReader(KvReader):
         return f"{self._class_name}('{self.rootdir}')"
 
 
-# TODO: Doesn't seem to be finished, but a near copy of DirReader
 class FileReader(KvReader):
-    """ KV Reader whose keys (AND VALUES) are file full paths of rootdir.
+    """ KV Reader whose keys are paths and values are:
+    - Another FileReader if a path points to a directory
+    - The bytes of (AND VALUES) are file full paths of rootdir.
     """
 
     def __init__(self, rootdir):
@@ -451,27 +455,34 @@ class FileReader(KvReader):
         self._class_name = self.__class__.__name__
 
     def _extended_prefix(self, new_prefix):
-        return extend_prefix(self.rootdir, new_prefix)
+        return os.path.join(self.rootdir, new_prefix)
 
     def __contains__(self, k):
-        return k.startswith(self.rootdir) and os.path.isdir(k)
+        return k.startswith(self.rootdir) and os.path.exists(k)
 
     def __iter__(self):
-        return filter(
-            os.path.isdir,  # (3) filter out any non-directories
-            map(
+        for path in map(
                 self._extended_prefix,  # (2) extend prefix with sub-path name
-                os.listdir(self.rootdir),
-            ),
-        )  # (1) list file names under _prefix
+                os.listdir(self.rootdir)  # (1) list file names under _prefix
+        ):
+            if os.path.isdir(path):
+                yield ensure_slash_suffix(path)
+            else:
+                yield path
 
     def __getitem__(self, k):
         if os.path.isdir(k):
             return self._new_node(k)
+        elif os.path.isfile(k):
+            with open(k, 'rb') as fp:
+                return fp.read()
         else:
-            raise NoSuchKeyError(
-                f"No such key (perhaps it's not a valid path, or was deleted?): {k}"
-            )
+            return self.__missing__(k)
+
+    def __missing__(self, key):
+        raise NoSuchKeyError(
+            f"No such key (perhaps it's not a valid path, or was deleted?): {k}"
+        )
 
     def __repr__(self):
         return f"{self._class_name}('{self.rootdir}')"
