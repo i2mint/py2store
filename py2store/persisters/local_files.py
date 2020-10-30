@@ -415,6 +415,7 @@ class FileReader(KvReader):
 
     def __init__(self, rootdir):
         self.rootdir = ensure_slash_suffix(rootdir)
+        self._rootdir_length = len(self.rootdir)
         # TODO: Look into alternatives for the raison d'etre of _new_node and _class_name
         # (They are there, because using self.__class__ directly goes to super)
         self._new_node = self.__class__
@@ -426,9 +427,9 @@ class FileReader(KvReader):
     # TODO: Possible optimization: Think if using cached keys makes more sense.
     def __contains__(self, k):
         return (
-                k.startswith(self.rootdir)
-                and os.path.exists(k)
-                and (k.endswith(file_sep) or file_sep not in k)  # is a directory or a first-level file
+                k.startswith(self.rootdir)  # prefix is rootdir
+                and os.path.exists(k)  # exists (as file or dir)
+                and (k.endswith(file_sep) or file_sep not in k[self._rootdir_length:])  # is a dir or a first-level file
         )
 
     def __iter__(self):
