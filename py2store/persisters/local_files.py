@@ -410,7 +410,7 @@ def endswith_slash(path):
 class FileReader(KvReader):
     """ KV Reader whose keys are paths and values are:
     - Another FileReader if a path points to a directory
-    - The bytes of (AND VALUES) are file full paths of rootdir.
+    - The bytes of the file if the path points to a file.
     """
 
     def __init__(self, rootdir):
@@ -423,8 +423,13 @@ class FileReader(KvReader):
     def _extended_prefix(self, new_prefix):
         return os.path.join(self.rootdir, new_prefix)
 
+    # TODO: Possible optimization: Think if using cached keys makes more sense.
     def __contains__(self, k):
-        return k.startswith(self.rootdir) and os.path.exists(k)
+        return (
+                k.startswith(self.rootdir)
+                and os.path.exists(k)
+                and (k.endswith(file_sep) or file_sep not in k)  # is a directory or a first-level file
+        )
 
     def __iter__(self):
         for path in map(
@@ -437,13 +442,13 @@ class FileReader(KvReader):
                 yield path
 
     def __getitem__(self, k):
-        if is_dir_path(k):
-            return self._new_node(k)
-        elif is_file_path(k):
-            with open(k, 'rb') as fp:
-                return fp.read()
-        else:
-            return self.__missing__(k)
+        if k in self:
+            if is_dir_path(k):
+                return self._new_node(k)
+            elif is_file_path(k):
+                with open(k, 'rb') as fp:
+                    return fp.read()
+        return self.__missing__(k)  # if you got this far, the key is missing (or malformed)
 
     def __missing__(self, k):
         raise NoSuchKeyError(
@@ -462,20 +467,7 @@ class DirReader(FileReader):
         return ensure_slash_suffix(super()._extended_prefix(new_prefix))
 
     def __contains__(self, k):
-        return k.startswith(self.rootdir) and is_dir_path(k)
+        return endswith_slash(k) and self.__contains__(k)
 
     def __iter__(self):
         return filter(endswith_slash, super().__iter__())
-        # return filter(
-        #     is_dir_path,  # (3) filter in directories only
-        #     map(
-        #         self._extended_prefix,  # (2) extend prefix with sub-path name
-        #         os.listdir(self.rootdir),  # (1) list file names under _prefix
-        #     ),
-        # )
-
-    def __getitem__(self, k):
-        if is_dir_path(k):
-            return self._new_node(k)
-        else:
-            return self.__missing__(k)

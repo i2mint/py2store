@@ -41,6 +41,8 @@ from py2store.base import (
     Store,
 )
 
+from py2store.persisters.local_files import FileReader
+
 from py2store.stores.local_store import (
     LocalStore,
     LocalBinaryStore,
