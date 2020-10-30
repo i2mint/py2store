@@ -1,4 +1,3 @@
-import pytest
 from py2store.trans import wrap_kvs
 
 
@@ -217,7 +216,3 @@ def test_wrap_kvs():
 
     d["foo.pkl"] = obj  # 'save' obj as pickle
     assert d["foo.pkl"] == obj
-
-
-if __name__ == "__main__":
-    pytest.main()
