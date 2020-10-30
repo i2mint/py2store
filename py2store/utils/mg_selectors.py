@@ -7,7 +7,7 @@ from py2store.util import ModuleNotFoundErrorNiceMessage
 with ModuleNotFoundErrorNiceMessage():
     import pandas as pd  # only used for pd.isnull (other option?)
 
-from py2store.selectors.mongoquery import Query
+from utils.mongoquery import Query
 
 
 def _print_docs(docs):
