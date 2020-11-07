@@ -28,6 +28,10 @@ from collections.abc import Collection as CollectionABC
 from collections.abc import Mapping, MutableMapping
 from typing import Any, Iterable, Tuple
 
+from py2store.util import wraps
+
+# from functools import wraps
+
 Key = Any
 Val = Any
 Id = Any
@@ -222,6 +226,19 @@ class NoSuchItem:
 no_such_item = NoSuchItem()
 
 
+def cls_wrap(cls, obj):
+    if isinstance(obj, type):
+        class Wrap(cls):
+            @wraps(obj.__init__)
+            def __init__(self, *args, **kwargs):
+                wrapped = obj(*args, **kwargs)
+                super().__init__(wrapped)
+
+        return Wrap
+    else:
+        return cls(obj)
+
+
 class Store(KvPersister):
     """
     By store we mean key-value store. This could be files in a filesystem, objects in s3, or a database. Where and
@@ -322,7 +339,7 @@ class Store(KvPersister):
     # __slots__ = ('_id_of_key', '_key_of_id', '_data_of_obj', '_obj_of_data')
 
     def __init__(self, store=dict):
-        self._wrapped_methods = set(dir(Store))
+        # self._wrapped_methods = set(dir(Store))
 
         if isinstance(store, type):
             store = store()
@@ -335,15 +352,18 @@ class Store(KvPersister):
 
     _max_repr_size = None
 
+    wrap = classmethod(cls_wrap)
+
     # TODO: Test performance of alternative delegation methods (or no delegation at all).
     #   A (very) quick test over a few methods shows that the addition of this "delegate the rest"
     #   slows things down by 10% to 20%.
     def __getattr__(self, attr):
         """Delegate method to wrapped store if not part of wrapper store methods"""
-        if attr in self._wrapped_methods:
-            return getattr(self, attr)
-        else:
-            return getattr(self.store, attr)
+        return getattr(self.store, attr)
+        # if attr in self._wrapped_methods:
+        #     return getattr(self, attr)
+        # else:
+        #     return getattr(self.store, attr)
 
     def __hash__(self):
         return self.store.__hash__()
@@ -596,11 +616,23 @@ class KeyValidationABC(metaclass=ABCMeta):
 
 ########################################################################################################################
 # Streams
-# from io import IOBase
+from io import IOBase
+
+
 #
 
-def always_true(self, x):
-    return True
+class stream_util:
+    def always_true(*args, **kwargs):
+        return True
+
+    def do_nothing(*args, **kwargs):
+        pass
+
+    def rewind(self, instance):
+        instance.seek(0)
+
+    def skip_lines(self, instance, n_lines_to_skip=0):
+        instance.seek(0)
 
 
 # TODO: What's the abstract class for Streams. IOBase doesn't seem to work?
@@ -654,11 +686,8 @@ class Stream:
     ... 1,2, 3
     ... 4, 5,6
     ... ''')
-    >>> class MyFilteredStream(Stream):
-    ...     def _obj_of_data(self, line):
-    ...         return [x.strip() for x in line.strip().split(',')]
-    ...
-    ...     def _read_post_filt(self, obj):
+    >>> class MyFilteredStream(MyStream):
+    ...     def _post_filt(self, obj):
     ...         return str.isnumeric(obj[0])
     >>>
     >>> s = MyFilteredStream(src)
@@ -670,45 +699,60 @@ class Stream:
     >>> s.seek(0)
     0
     >>> assert s.readline() == ['1', '2', '3']
+
+    Recipes:
+    - _pre_iter: involving itertools.islice to skip header lines
+    - _pre_iter: involving enumerate to get line indices in stream iterator
+    - _pre_iter = functools.partial(map, line_pre_proc_func) to preprocess all lines with line_pre_proc_func
+    - _pre_iter: include filter before obj
     """
 
     def __init__(self, stream):
         self.stream = stream
 
-    # _data_of_obj = static_identity_method  # for write methods
-    _obj_of_data = static_identity_method
-    _read_pre_filt = always_true
-    _read_post_filt = always_true
+    wrap = classmethod(cls_wrap)
 
-    _wrapped_methods = {'__iter__'}
+    # _data_of_obj = static_identity_method  # for write methods
+    _pre_iter = static_identity_method
+    _obj_of_data = static_identity_method
+    _post_filt = stream_util.always_true
+
+    def __iter__(self):
+        for line in self._pre_iter(self.stream):
+            obj = self._obj_of_data(line)
+            if self._post_filt(obj):
+                yield obj
+
+        # TODO: See pros and cons of above vs below:
+        # yield from filter(self._post_filt,
+        #                   map(self._obj_of_data,
+        #                       self._pre_iter(self.stream)))
+
+    # _wrapped_methods = {'__iter__'}
 
     def __getattr__(self, attr):
         """Delegate method to wrapped store if not part of wrapper store methods"""
-        # print(f'----- {attr}')
+        return getattr(self.stream, attr)
+        # if attr in self._wrapped_methods:
+        #     return getattr(self, attr)
+        # else:
+        #     return getattr(self.stream, attr)
 
-        if attr in self._wrapped_methods:
-            # print("outter")
-            return getattr(self, attr)
-        else:
-            # print("inner")
-            return getattr(self.stream, attr)
+    def __enter__(self):
+        self.stream.__enter__()
+        return self
+        # return self._pre_proc(self.stream) # moved to iter to
 
-    def __iter__(self):
-        # self.stream.seek(0)
-        yield from filter(self._read_post_filt,
-                          map(self._obj_of_data,
-                              filter(self._read_pre_filt, self.stream)))
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        return self.stream.__exit__(exc_type, exc_val, exc_tb)  # TODO: Should we have a _post_proc? Uses?
 
-    def readlines(self):
-        # TODO: Should we user self.stream.readlines() instead? Is readlines expected to be aligned with __iter__?
-        return list(self)
-
-    def readline(self):
-        # TODO: Should we user self.stream.readline() instead? Is readline expected to be aligned with __iter__?
-        return next(iter(self))
-
-
-
+    # def readlines(self):
+    #     # TODO: Should we use self.stream.readlines() instead? Is readlines expected to be aligned with __iter__?
+    #     return list(self)
+    #
+    # def readline(self):
+    #     # TODO: Should we use self.stream.readline() instead? Is readline expected to be aligned with __iter__?
+    #     return next(iter(self))
 
     # def read(self):
     #     yield from (self._obj_of_data(k) for k in self.stream)

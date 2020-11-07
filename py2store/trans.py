@@ -282,22 +282,37 @@ def get_class_name(cls, dflt_name=None):
     return name
 
 
-def store_wrap(obj, name=None):
+def store_wrap(obj):
     if isinstance(obj, type):
-        name = name or f"{get_class_name(obj, 'StoreWrap')}Store"
-
+        @wraps(obj)
         class StoreWrap(Store):
             @wraps(obj.__init__)
             def __init__(self, *args, **kwargs):
                 persister = obj(*args, **kwargs)
                 super().__init__(persister)
 
-        StoreWrap.__qualname__ = name
-        # if hasattr(obj, '_cls_trans'):
-        #     StoreWrap._cls_trans = obj._cls_trans
         return StoreWrap
     else:
         return Store(obj)
+
+
+# # Older version, kept around for awhile, for review:
+# def store_wrap(obj, name=None):
+#     if isinstance(obj, type):
+#         name = name or f"{get_class_name(obj, 'StoreWrap')}Store"
+#
+#         class StoreWrap(Store):
+#             @wraps(obj.__init__)
+#             def __init__(self, *args, **kwargs):
+#                 persister = obj(*args, **kwargs)
+#                 super().__init__(persister)
+#
+#         StoreWrap.__qualname__ = name
+#         # if hasattr(obj, '_cls_trans'):
+#         #     StoreWrap._cls_trans = obj._cls_trans
+#         return StoreWrap
+#     else:
+#         return Store(obj)
 
 
 def _is_bound(method):
