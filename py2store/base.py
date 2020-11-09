@@ -370,7 +370,14 @@ class Store(KvPersister):
 
     # Read ####################################################################
     def __getitem__(self, k: Key) -> Val:
-        return self._obj_of_data(self.store[self._id_of_key(k)])
+        try:
+            return self._obj_of_data(self.store[self._id_of_key(k)])
+        except Exception:  # TODO: Exception too general? Make caught errors an attribute of class?
+            return self.__missing__(k)
+
+    def __missing__(self, k):
+        raise
+
         # return self._obj_of_data(self.store.__getitem__(self._id_of_key(k)))
 
     def get(self, k: Key, default=None) -> Val:
