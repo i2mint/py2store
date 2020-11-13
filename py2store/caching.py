@@ -236,15 +236,7 @@ def mk_sourced_store(
                 v = self._src[k]  # ... get it from _src,
                 self[k] = v  # ... store it in self
                 return v  # ... and return it.
-            # def __getitem__(self, k):
-            #     if k not in self:
-            #         # if you don't have it...
-            #         v = self._src[k]  # ... get it from _src,
-            #         self[k] = v  # ... store it in self
-            #         return v  # ... and return it.
-            #     else:
-            #         # if you have it, get it and return it
-            #         return super().__getitem__(k)
+
     else:
         class SourcedStore(store):
             _src = source
@@ -254,13 +246,6 @@ def mk_sourced_store(
                 v = self._src[k]  # ... get it from _src,
                 self[k] = v  # ... store it in self
                 return self[k]  # retrieve it again and return
-
-            # def __getitem__(self, k):
-            #     if k not in self:
-            #         # if you don't have it...
-            #         v = self._src[k]  # ... get it from _src,
-            #         self[k] = v  # ... store it in self
-            #     return super().__getitem__(k)
 
     return SourcedStore
 
