@@ -357,10 +357,6 @@ class Store(KvPersister):
     def __getattr__(self, attr):
         """Delegate method to wrapped store if not part of wrapper store methods"""
         return getattr(self.store, attr)
-        # if attr in self._wrapped_methods:
-        #     return getattr(self, attr)
-        # else:
-        #     return getattr(self.store, attr)
 
     def __hash__(self):
         return self.store.__hash__()
