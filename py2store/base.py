@@ -354,9 +354,6 @@ class Store(KvPersister):
 
     wrap = classmethod(cls_wrap)
 
-    # TODO: Test performance of alternative delegation methods (or no delegation at all).
-    #   A (very) quick test over a few methods shows that the addition of this "delegate the rest"
-    #   slows things down by 10% to 20%.
     def __getattr__(self, attr):
         """Delegate method to wrapped store if not part of wrapper store methods"""
         return getattr(self.store, attr)
