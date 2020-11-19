@@ -352,6 +352,8 @@ class Store(KvPersister):
 
     _max_repr_size = None
 
+    _errors_that_trigger_missing = (KeyError,)
+
     wrap = classmethod(cls_wrap)
 
     def __getattr__(self, attr):
@@ -362,20 +364,23 @@ class Store(KvPersister):
         return self.store.__hash__()
 
     # Read ####################################################################
+
     def __getitem__(self, k: Key) -> Val:
+        # essentially: self._obj_of_data(self.store[self._id_of_key(k)])
+        _id = self._id_of_key(k)
         try:
-            return self._obj_of_data(self.store[self._id_of_key(k)])
-        except Exception:  # TODO: Exception too general? Make caught errors an attribute of class?
+            data = self.store[_id]
+        except self._errors_that_trigger_missing:
             return self.__missing__(k)
+        return self._obj_of_data(data)
 
     def __missing__(self, k):
-        raise
-
-        # return self._obj_of_data(self.store.__getitem__(self._id_of_key(k)))
+        raise KeyError(k)
 
     def get(self, k: Key, default=None) -> Val:
         if hasattr(self.store, "get"):  # if store has a get method, use it
-            data = self.store.get(self._id_of_key(k), no_such_item)
+            _id = self._id_of_key(k)
+            data = self.store.get(_id, no_such_item)
             if data is not no_such_item:
                 return self._obj_of_data(data)
             else:
