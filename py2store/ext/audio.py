@@ -168,30 +168,7 @@ WfSerializationMixin = WfSerializationTrans  # alias for back-compatibility
 from py2store.base import Store
 
 
-class WavLocalFileStore(Store):
-    def __init__(
-            self,
-            path_format,
-            assert_sr=None,
-            max_levels=None,
-            dtype=DFLT_DTYPE,
-            format="WAV",
-            subtype=None,
-            endian=None,
-    ):
-        persister = LocalBinaryStore(path_format, max_levels)
-        super().__init__(persister)
-        t = WavSerializationTrans(
-            assert_sr=assert_sr,
-            dtype=dtype,
-            format=format,
-            subtype=subtype,
-            endian=endian,
-        )
-        self._obj_of_data = t._obj_of_data
-
-
-class WavLocalFileStore2(WavSerializationTrans, LocalBinaryStore):
+class WavLocalFileStore(WavSerializationTrans, LocalBinaryStore):
     def __init__(
             self,
             path_format,
@@ -211,6 +188,32 @@ class WavLocalFileStore2(WavSerializationTrans, LocalBinaryStore):
             subtype=subtype,
             endian=endian,
         )
+
+
+WavLocalFileStore2 = WavLocalFileStore  # back-compatibility alias
+
+# Old WavLocalFileStore
+# class WavLocalFileStore(Store):
+#     def __init__(
+#             self,
+#             path_format,
+#             assert_sr=None,
+#             max_levels=None,
+#             dtype=DFLT_DTYPE,
+#             format="WAV",
+#             subtype=None,
+#             endian=None,
+#     ):
+#         persister = LocalBinaryStore(path_format, max_levels)
+#         super().__init__(persister)
+#         t = WavSerializationTrans(
+#             assert_sr=assert_sr,
+#             dtype=dtype,
+#             format=format,
+#             subtype=subtype,
+#             endian=endian,
+#         )
+#         self._obj_of_data = t._obj_of_data
 
 
 # class WfSrLocalFileStore(LocalBinaryStore):
