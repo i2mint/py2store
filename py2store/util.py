@@ -2,33 +2,29 @@ import os
 import shutil
 import re
 from collections import namedtuple, defaultdict
-# from inspect import signature
 from warnings import warn
 from typing import Any, Hashable, Callable, Iterable, Optional
-from functools import partial
-# from functools import update_wrapper as _update_wraper
+# from functools import update_wrapper as _update_wrapper
 # from functools import wraps as _wraps
+from functools import partialmethod
 import functools
 
 # monkey patching WRAPPER_ASSIGNMENTS to get "proper" wrapping (adding defaults and kwdefaults
-# TODO: Verify this actually works.
-functools.WRAPPER_ASSIGNMENTS = (
+
+wrapper_assignments = (
     '__module__', '__name__', '__qualname__', '__doc__',
     '__annotations__', '__defaults__', '__kwdefaults__')
 
-wrapper_assignments = functools.WRAPPER_ASSIGNMENTS
 update_wrapper = functools.update_wrapper
 update_wrapper.__defaults__ = (functools.WRAPPER_ASSIGNMENTS, functools.WRAPPER_UPDATES)
 wraps = functools.wraps
 wraps.__defaults__ = (functools.WRAPPER_ASSIGNMENTS, functools.WRAPPER_UPDATES)
 
+
 # @_wraps(_wraps)
 # def wraps(wrapped, *args, **kwargs):
 #     _wrapped = _wraps(wrapped, *args, **kwargs)
 #     for attr
-
-from functools import partialmethod
-from inspect import signature
 
 
 def partialclass(cls, *args, **kwargs):

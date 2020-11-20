@@ -30,7 +30,6 @@ from py2store.util import (
     igroupby
 )
 
-# Imports to be able to easily get started...
 from py2store.base import (
     Collection,
     KvReader,
