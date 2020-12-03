@@ -224,7 +224,10 @@ class ZipFilesReader(FileCollection, KvReader):
             )
 
     def __getitem__(self, k):
-        return self.zip_reader(k, **self.zip_reader_kwargs)
+        try:
+            return self.zip_reader(k, **self.zip_reader_kwargs)
+        except FileNotFoundError as e:
+            raise KeyError("FileNotFoundError: " + e)
 
 
 class ZipFilesReaderAndBytesWriter(ZipFilesReader):
@@ -297,6 +300,7 @@ class FileStreamsOfZip(FilesOfZip):
         ...  # do stuff with fp, like fp.readlines() or such...
     ```
     """
+
     def __getitem__(self, k):
         return self.zip_file.open(k, **self.open_kws)
 
