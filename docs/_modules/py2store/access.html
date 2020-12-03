@@ -1,0 +1,557 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>py2store.access &#8212; py2store 0.0.7 documentation</title>
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css" />
+    <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for py2store.access</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Utils to load stores from store specifications.</span>
+<span class="sd">Includes the logic to allow configurations (and defaults) to be parametrized by external environmental</span>
+<span class="sd">variables and files.</span>
+
+<span class="sd">Every data-sourced problem has it&#39;s problem-relevant stores. Once you get your stores right, along with the</span>
+<span class="sd">right access credentials, indexing, serialization, caching, filtering etc. you&#39;d like to be able to name, save</span>
+<span class="sd">and/or share this specification, and easily get access to it later on.</span>
+
+<span class="sd">Here are tools to help you out.</span>
+
+<span class="sd">There are two main key-value stores: One for configurations the user wants to reuse, and the other for the user&#39;s</span>
+<span class="sd">desired defaults. Both have the same structure:</span>
+<span class="sd">    * first level key: Name of the resource (should be a valid python variable name)</span>
+<span class="sd">    * The reminder is more or less free form (until the day we lay out some schemas for this)</span>
+
+<span class="sd">The system will look for the specification of user_configs and user_defaults in a json file.</span>
+<span class="sd">The filepath to this json file can specified in environment variables</span>
+<span class="sd">    PY2STORE_CONFIGS_JSON_FILEPATH and PY2STORE_DEFAULTS_JSON_FILEPATH</span>
+<span class="sd">respectively.</span>
+<span class="sd">By default, they are:</span>
+<span class="sd">    ~/.py2store_configs.json and ~/.py2store_defaults.json</span>
+<span class="sd">respectively.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">importlib</span>
+<span class="kn">from</span> <span class="nn">warnings</span> <span class="kn">import</span> <span class="n">warn</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">reduce</span>
+<span class="kn">from</span> <span class="nn">py2store.util</span> <span class="kn">import</span> <span class="n">str_to_var_str</span>
+<span class="kn">from</span> <span class="nn">py2store.sources</span> <span class="kn">import</span> <span class="n">DictAttr</span>
+
+<span class="n">FAK</span> <span class="o">=</span> <span class="s2">&quot;$fak&quot;</span>
+
+
+<span class="c1"># TODO: Make a config_utils.py module to centralize config tools (configs for access is just one -- serializers another)</span>
+<span class="c1"># TODO: Integrate (external because not standard lib) other safer tools for secrets, such as:</span>
+<span class="c1">#  https://github.com/SimpleLegal/pocket_protector</span>
+
+
+<div class="viewcode-block" id="getenv"><a class="viewcode-back" href="../../test.html#py2store.access.getenv">[docs]</a><span class="k">def</span> <span class="nf">getenv</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Like os.getenv, but removes a suffix \\r character if present (problem with some env var systems)&quot;&quot;&quot;</span>
+    <span class="n">v</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">default</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">v</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\r</span><span class="s2">&quot;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">v</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">v</span></div>
+
+
+<span class="k">def</span> <span class="nf">assert_callable</span><span class="p">(</span><span class="n">f</span><span class="p">:</span> <span class="n">callable</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">callable</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">callable</span><span class="p">(</span><span class="n">f</span><span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Is not callable: </span><span class="si">{</span><span class="n">f</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="k">return</span> <span class="n">f</span>
+
+
+<div class="viewcode-block" id="dotpath_to_obj"><a class="viewcode-back" href="../../test.html#py2store.access.dotpath_to_obj">[docs]</a><span class="k">def</span> <span class="nf">dotpath_to_obj</span><span class="p">(</span><span class="n">dotpath</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Loads and returns the object referenced by the string DOTPATH_TO_MODULE.OBJ_NAME&quot;&quot;&quot;</span>
+    <span class="o">*</span><span class="n">module_path</span><span class="p">,</span> <span class="n">obj_name</span> <span class="o">=</span> <span class="n">dotpath</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">module_path</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span>
+            <span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">module_path</span><span class="p">)),</span> <span class="n">obj_name</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="n">obj_name</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="dotpath_to_func"><a class="viewcode-back" href="../../test.html#py2store.access.dotpath_to_func">[docs]</a><span class="k">def</span> <span class="nf">dotpath_to_func</span><span class="p">(</span><span class="n">f</span><span class="p">:</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">callable</span><span class="p">))</span> <span class="o">-&gt;</span> <span class="n">callable</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Loads and returns the function referenced by f,</span>
+<span class="sd">    which could be a callable or a DOTPATH_TO_MODULE.FUNC_NAME dotpath string to one.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">if</span> <span class="s2">&quot;.&quot;</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
+            <span class="o">*</span><span class="n">module_path</span><span class="p">,</span> <span class="n">func_name</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span>
+                <span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">module_path</span><span class="p">)),</span> <span class="n">func_name</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="s2">&quot;py2store&quot;</span><span class="p">),</span> <span class="n">f</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">assert_callable</span><span class="p">(</span><span class="n">f</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="compose"><a class="viewcode-back" href="../../test.html#py2store.access.compose">[docs]</a><span class="k">def</span> <span class="nf">compose</span><span class="p">(</span><span class="o">*</span><span class="n">functions</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Make a function that is the composition of the input functions&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">reduce</span><span class="p">(</span><span class="k">lambda</span> <span class="n">f</span><span class="p">,</span> <span class="n">g</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">f</span><span class="p">(</span><span class="n">g</span><span class="p">(</span><span class="n">x</span><span class="p">)),</span> <span class="n">functions</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="dflt_func_loader"><a class="viewcode-back" href="../../test.html#py2store.access.dflt_func_loader">[docs]</a><span class="k">def</span> <span class="nf">dflt_func_loader</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">callable</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Loads and returns the function referenced by f,</span>
+<span class="sd">    which could be a callable or a DOTPATH_TO_MODULE.FUNC_NAME dotpath string to one, or a pipeline of these</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">or</span> <span class="n">callable</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">dotpath_to_func</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">compose</span><span class="p">(</span><span class="o">*</span><span class="nb">map</span><span class="p">(</span><span class="n">dflt_func_loader</span><span class="p">,</span> <span class="n">f</span><span class="p">))</span></div>
+
+
+<span class="k">def</span> <span class="nf">_fakit</span><span class="p">(</span><span class="n">f</span><span class="p">:</span> <span class="n">callable</span><span class="p">,</span> <span class="n">a</span><span class="p">:</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">),</span> <span class="n">k</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">f</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="n">a</span> <span class="ow">or</span> <span class="p">()),</span> <span class="o">**</span><span class="p">(</span><span class="n">k</span> <span class="ow">or</span> <span class="p">{}))</span>
+
+
+<span class="k">def</span> <span class="nf">fakit_from_dict</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">func_loader</span><span class="o">=</span><span class="n">assert_callable</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">_fakit</span><span class="p">(</span><span class="n">func_loader</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s2">&quot;f&quot;</span><span class="p">]),</span> <span class="n">a</span><span class="o">=</span><span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="p">()),</span> <span class="n">k</span><span class="o">=</span><span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;k&quot;</span><span class="p">,</span> <span class="p">{}))</span>
+
+
+<span class="k">def</span> <span class="nf">fakit_from_tuple</span><span class="p">(</span>
+        <span class="n">t</span><span class="p">:</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">),</span> <span class="n">func_loader</span><span class="p">:</span> <span class="n">callable</span> <span class="o">=</span> <span class="n">dflt_func_loader</span>
+<span class="p">):</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">func_loader</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="p">()</span>
+    <span class="n">k</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="ow">in</span> <span class="p">{</span>
+        <span class="mi">1</span><span class="p">,</span>
+        <span class="mi">2</span><span class="p">,</span>
+        <span class="mi">3</span><span class="p">,</span>
+    <span class="p">},</span> <span class="s2">&quot;A tuple fak must be of length 1, 2, or 3. No more, no less.&quot;</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">k</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span>
+                <span class="n">t</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>
+            <span class="p">),</span> <span class="s2">&quot;argument specs should be dict, tuple, or list&quot;</span>
+            <span class="n">a</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="k">assert</span> <span class="ow">not</span> <span class="n">k</span><span class="p">,</span> <span class="s2">&quot;can only have one kwargs&quot;</span>
+                <span class="n">k</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span>
+                    <span class="n">t</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>
+                <span class="p">),</span> <span class="s2">&quot;argument specs should be dict, tuple, or list&quot;</span>
+                <span class="k">assert</span> <span class="ow">not</span> <span class="n">a</span><span class="p">,</span> <span class="s2">&quot;can only have one args&quot;</span>
+                <span class="n">a</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">_fakit</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="fakit"><a class="viewcode-back" href="../../test.html#py2store.access.fakit">[docs]</a><span class="k">def</span> <span class="nf">fakit</span><span class="p">(</span><span class="n">fak</span><span class="p">,</span> <span class="n">func_loader</span><span class="o">=</span><span class="n">dflt_func_loader</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Execute a fak with given f, a, k and function loader.</span>
+
+<span class="sd">    Essentially returns func_loader(f)(*a, **k)</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        fak: A (f, a, k) specification. Could be a tuple or a dict (with &#39;f&#39;, &#39;a&#39;, &#39;k&#39; keys). All but f are optional.</span>
+<span class="sd">        func_loader: A function returning a function. This is where you specify any validation of func specification f,</span>
+<span class="sd">            and/or how to get a callable from it.</span>
+
+<span class="sd">    Returns: A python object.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fak</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">fakit_from_dict</span><span class="p">(</span><span class="n">fak</span><span class="p">,</span> <span class="n">func_loader</span><span class="o">=</span><span class="n">func_loader</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span>
+            <span class="n">fak</span><span class="p">,</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>
+        <span class="p">),</span> <span class="s2">&quot;fak should be dict, tuple, or list&quot;</span>
+        <span class="k">return</span> <span class="n">fakit_from_tuple</span><span class="p">(</span><span class="n">fak</span><span class="p">,</span> <span class="n">func_loader</span><span class="o">=</span><span class="n">func_loader</span><span class="p">)</span></div>
+
+
+<span class="n">fakit</span><span class="o">.</span><span class="n">from_dict</span> <span class="o">=</span> <span class="n">fakit_from_dict</span>
+<span class="n">fakit</span><span class="o">.</span><span class="n">from_tuple</span> <span class="o">=</span> <span class="n">fakit_from_tuple</span>
+
+<span class="n">user_configs_dict</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="n">user_defaults_dict</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="n">user_configs</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="n">user_defaults</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="n">mystores</span> <span class="o">=</span> <span class="kc">None</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">json</span>
+
+    <span class="n">user_configs_dirpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span>
+        <span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;PY2STORE_CONFIGS_DIR&quot;</span><span class="p">,</span> <span class="s2">&quot;~/.py2store_configs&quot;</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">my_configs_dirname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span>
+        <span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;MY_PY2STORE_DIR_NAME&quot;</span><span class="p">,</span> <span class="s2">&quot;my&quot;</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">myconfigs_dirpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">user_configs_dirpath</span><span class="p">,</span> <span class="n">my_configs_dirname</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">user_configs_dirpath</span><span class="p">):</span>
+
+        <span class="k">def</span> <span class="nf">directory_json_items</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="nb">filter</span><span class="p">(</span>
+                    <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.json&quot;</span><span class="p">),</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">user_configs_dirpath</span><span class="p">)</span>
+            <span class="p">):</span>
+                <span class="n">filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">user_configs_dirpath</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+                <span class="n">name</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">d</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">filepath</span><span class="p">))</span>
+                    <span class="k">yield</span> <span class="n">str_to_var_str</span><span class="p">(</span><span class="n">name</span><span class="p">),</span> <span class="n">d</span>
+                <span class="k">except</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span><span class="p">:</span>
+                    <span class="n">warn</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;This json file couldn&#39;t be json-decoded: </span><span class="si">{</span><span class="n">filepath</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                    <span class="n">warn</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Unknown error when trying to json.load this file: </span><span class="si">{</span><span class="n">filepath</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+
+
+        <span class="n">user_configs</span> <span class="o">=</span> <span class="n">DictAttr</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">directory_json_items</span><span class="p">()})</span>
+
+        <span class="kn">from</span> <span class="nn">py2store.base</span> <span class="kn">import</span> <span class="n">KvStore</span>
+        <span class="kn">from</span> <span class="nn">py2store.stores.local_store</span> <span class="kn">import</span> <span class="p">(</span>
+            <span class="n">LocalJsonStore</span><span class="p">,</span>
+            <span class="n">LocalBinaryStore</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="kn">from</span> <span class="nn">py2store.trans</span> <span class="kn">import</span> <span class="n">wrap_kvs</span>
+        <span class="kn">from</span> <span class="nn">py2store.misc</span> <span class="kn">import</span> <span class="n">MiscStoreMixin</span>
+        <span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">wraps</span>
+
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">myconfigs_dirpath</span><span class="p">):</span>
+            <span class="kn">from</span> <span class="nn">py2store.mixins</span> <span class="kn">import</span> <span class="n">OverWritesNotAllowedMixin</span>
+
+
+<div class="viewcode-block" id="MyConfigs"><a class="viewcode-back" href="../../test.html#py2store.access.MyConfigs">[docs]</a>            <span class="nd">@OverWritesNotAllowedMixin</span><span class="o">.</span><span class="n">wrap</span>
+            <span class="k">class</span> <span class="nc">MyConfigs</span><span class="p">(</span><span class="n">MiscStoreMixin</span><span class="p">,</span> <span class="n">LocalBinaryStore</span><span class="p">):</span>
+                <span class="nd">@wraps</span><span class="p">(</span><span class="n">LocalBinaryStore</span><span class="p">)</span>
+                <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+                    <span class="n">LocalBinaryStore</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_init_args_kwargs</span> <span class="o">=</span> <span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">dirpath</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">dirpath</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">kwargs</span><span class="p">))]</span>
+
+                <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+                    <span class="sd">&quot;&quot;&quot;Sometimes you add a file, and you want to make sure your myconfigs sees it.</span>
+<span class="sd">                    refresh() does that for you. It reinitializes the reader.&quot;&quot;&quot;</span>
+                    <span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_init_args_kwargs</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+                <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+                    <span class="n">v</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="kn">from</span> <span class="nn">warnings</span> <span class="kn">import</span> <span class="n">warn</span>
+
+                        <span class="n">warn</span><span class="p">(</span>
+                            <span class="sa">f</span><span class="s2">&quot;&quot;&quot;You don&#39;t have the config file I&#39;m expecting, so you&#39;ll have to enter it manually.</span>
+<span class="s2">                        I&#39;m expecting this filepath:</span><span class="se">\n\t</span><span class="s2"> </span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dirpath</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span><span class="si">}</span><span class="s2"></span>
+<span class="s2">                        &quot;&quot;&quot;</span>
+                        <span class="p">)</span>
+                    <span class="k">return</span> <span class="n">v</span>
+
+                <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+                    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The &#39;</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">&#39; key wasn&#39;t found. &quot;</span>
+                                       <span class="sa">f</span><span class="s2">&quot;What this probably is, is that you need &quot;</span>
+                                       <span class="sa">f</span><span class="s2">&quot;a file named &#39;</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">&#39; in your </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">dirpath</span><span class="si">}</span><span class="s2"> folder. Do that and try again.&quot;</span><span class="p">)</span>
+
+                <span class="k">def</span> <span class="nf">get_config_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+                    <span class="n">v</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="n">v</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">v</span><span class="p">:</span>
+                            <span class="k">return</span> <span class="n">v</span><span class="p">[</span><span class="n">path</span><span class="p">]</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;I don&#39;t see any </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2"> in </span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+                <span class="nd">@property</span>
+                <span class="k">def</span> <span class="nf">rootdir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prefix</span>
+
+                <span class="k">def</span> <span class="fm">__delitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+                        <span class="s2">&quot;Deletion was disabled. &quot;</span>
+                        <span class="s2">&quot;MyConfigs wants to keep your configs safe, so if you want to delete this config, &quot;</span>
+                        <span class="s2">&quot;do it another way (like manually).&quot;</span>
+                    <span class="p">)</span></div>
+
+            <span class="n">myconfigs</span> <span class="o">=</span> <span class="n">MyConfigs</span><span class="p">(</span><span class="n">myconfigs_dirpath</span><span class="p">)</span>
+            <span class="n">myconfigs</span><span class="o">.</span><span class="n">dirpath</span> <span class="o">=</span> <span class="n">myconfigs_dirpath</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">warn</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;&quot;&quot;The py2store-myconfigs directory wasn&#39;t found: </span><span class="si">{</span><span class="n">myconfigs_dirpath</span><span class="si">}</span><span class="s2"></span>
+<span class="s2">            If you want to have all the cool functionality of `myconfigs`, you should make this directory, </span>
+<span class="s2">            and put stuff in it. Here&#39;s to make it easy for you to do it. Go to a terminal and run this:</span>
+<span class="s2">                mkdir </span><span class="si">{</span><span class="n">myconfigs_dirpath</span><span class="si">}</span><span class="s2"></span>
+<span class="s2">            &quot;&quot;&quot;</span>
+            <span class="p">)</span>
+
+<div class="viewcode-block" id="MyStores"><a class="viewcode-back" href="../../test.html#py2store.access.MyStores">[docs]</a>        <span class="k">class</span> <span class="nc">MyStores</span><span class="p">(</span><span class="n">KvStore</span><span class="p">):</span>
+            <span class="n">func_loader</span> <span class="o">=</span> <span class="nb">staticmethod</span><span class="p">(</span><span class="n">dflt_func_loader</span><span class="p">)</span>
+
+            <span class="k">def</span> <span class="nf">_obj_of_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">FAK</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">fakit</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">FAK</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">func_loader</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;Case not handled by MyStores&quot;</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="s2">: keys: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="s2">: type: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="nd">@property</span>
+            <span class="k">def</span> <span class="nf">configs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">store</span></div>
+
+
+        <span class="k">def</span> <span class="nf">without_json_ext</span><span class="p">(</span><span class="n">_id</span><span class="p">):</span>
+            <span class="k">assert</span> <span class="n">_id</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.json&quot;</span><span class="p">),</span> <span class="s2">&quot;Should end with .json&quot;</span>
+            <span class="k">return</span> <span class="n">_id</span><span class="p">[:</span> <span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="s2">&quot;.json&quot;</span><span class="p">)]</span>
+
+
+        <span class="k">def</span> <span class="nf">add_json_ext</span><span class="p">(</span><span class="n">k</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">k</span> <span class="o">+</span> <span class="s2">&quot;.json&quot;</span>
+
+
+        <span class="n">ExtLessJsonStore</span> <span class="o">=</span> <span class="n">wrap_kvs</span><span class="p">(</span>
+            <span class="n">LocalJsonStore</span><span class="p">,</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;ExtLessJsonStore&quot;</span><span class="p">,</span>
+            <span class="n">key_of_id</span><span class="o">=</span><span class="n">without_json_ext</span><span class="p">,</span>
+            <span class="n">id_of_key</span><span class="o">=</span><span class="n">add_json_ext</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">stores_json_path_format</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="n">user_configs_dirpath</span><span class="p">,</span> <span class="s2">&quot;stores&quot;</span><span class="p">,</span> <span class="s2">&quot;json&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">.json&quot;</span>
+        <span class="p">)</span>
+        <span class="n">mystores</span> <span class="o">=</span> <span class="n">MyStores</span><span class="p">(</span><span class="n">ExtLessJsonStore</span><span class="p">(</span><span class="n">stores_json_path_format</span><span class="p">))</span>
+        <span class="kn">from</span> <span class="nn">py2store.trans</span> <span class="kn">import</span> <span class="n">add_ipython_key_completions</span>
+
+        <span class="n">mystores</span> <span class="o">=</span> <span class="n">add_ipython_key_completions</span><span class="p">(</span><span class="n">mystores</span><span class="p">)</span>
+        <span class="n">mystores</span><span class="o">.</span><span class="n">dirpath</span> <span class="o">=</span> <span class="n">user_configs_dirpath</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">warn</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;The configs directory wasn&#39;t found (please make it): </span><span class="si">{</span><span class="n">user_configs_dirpath</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+        <span class="n">user_configs_filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span>
+            <span class="n">getenv</span><span class="p">(</span>
+                <span class="s2">&quot;PY2STORE_CONFIGS_JSON_FILEPATH&quot;</span><span class="p">,</span> <span class="s2">&quot;~/.py2store_configs.json&quot;</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">user_configs_filepath</span><span class="p">):</span>
+            <span class="n">user_configs_dict</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">user_configs_filepath</span><span class="p">))</span>
+            <span class="n">user_configs</span> <span class="o">=</span> <span class="n">DictAttr</span><span class="p">(</span>
+                <span class="o">**</span><span class="p">{</span><span class="n">str_to_var_str</span><span class="p">(</span><span class="n">k</span><span class="p">):</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">user_configs_dict</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+            <span class="p">)</span>
+
+    <span class="n">user_defaults_filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span>
+        <span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;PY2STORE_DEFAULTS_JSON_FILEPATH&quot;</span><span class="p">,</span> <span class="s2">&quot;~/.py2store_defaults.json&quot;</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">user_defaults_filepath</span><span class="p">):</span>
+        <span class="n">user_defaults_dict</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">user_defaults_filepath</span><span class="p">))</span>
+        <span class="n">user_defaults</span> <span class="o">=</span> <span class="n">DictAttr</span><span class="p">(</span>
+            <span class="o">**</span><span class="p">{</span><span class="n">str_to_var_str</span><span class="p">(</span><span class="n">k</span><span class="p">):</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">user_defaults_dict</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+        <span class="p">)</span>
+
+<span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="n">warn</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;There was an exception when trying to get configs and defaults: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="p">)</span>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">py2store</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html">py2store.filesys</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.misc">py2store.misc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.mixins">py2store.mixins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.test.util">py2store.test.util</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-test-quick">py2store.test.quick</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.test">py2store.test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-test-simple">py2store.test.simple</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-test-scrap">py2store.test.scrap</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.util">py2store.util</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-ext-docx">py2store.ext.docx</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.ext.gitlab">py2store.ext.gitlab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-ext-hdf">py2store.ext.hdf</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.ext">py2store.ext</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-ext-matlab">py2store.ext.matlab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.ext.kaggle">py2store.ext.kaggle</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-ext-module-imports">py2store.ext.module_imports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.ext.audio">py2store.ext.audio</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-ext-github">py2store.ext.github</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.ext.dataframes">py2store.ext.dataframes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.access">py2store.access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.__init__">py2store.__init__</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.stores.s3_store">py2store.stores.s3_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.stores.delegation_stores">py2store.stores.delegation_stores</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.stores.sql_w_sqlalchemy">py2store.stores.sql_w_sqlalchemy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-stores-arangodb-store">py2store.stores.arangodb_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-stores-dropbox-store">py2store.stores.dropbox_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.stores.local_store">py2store.stores.local_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.stores">py2store.stores</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-stores-couchdb-store">py2store.stores.couchdb_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.stores.mongo_store">py2store.stores.mongo_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.core">py2store.core</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.uri_utils">py2store.utils.uri_utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.explicit">py2store.utils.explicit</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.timeseries_caching">py2store.utils.timeseries_caching</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-utils-attr-dict-py-attr-dict">py2store.utils.attr_dict.py.attr_dict</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-utils-attr-dict-py">py2store.utils.attr_dict.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.cumul_aggreg_write">py2store.utils.cumul_aggreg_write</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils">py2store.utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.cache_descriptors">py2store.utils.cache_descriptors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.appendable">py2store.utils.appendable</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.affine_conversion">py2store.utils.affine_conversion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.signatures">py2store.utils.signatures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.sliceable">py2store.utils.sliceable</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.mappify">py2store.utils.mappify</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.glom">py2store.utils.glom</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-persisters-sql-w-odbc">py2store.persisters.sql_w_odbc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.dynamodb_w_boto3">py2store.persisters.dynamodb_w_boto3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-persisters-couchdb-w-couchdb">py2store.persisters.couchdb_w_couchdb</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.ftp_persister">py2store.persisters.ftp_persister</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.dropbox_w_urllib">py2store.persisters.dropbox_w_urllib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters._google_drive_in_progress">py2store.persisters._google_drive_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-persisters-dropbox-w-dropbox">py2store.persisters.dropbox_w_dropbox</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-persisters-redis-w-redis">py2store.persisters.redis_w_redis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.sql_w_sqlalchemy">py2store.persisters.sql_w_sqlalchemy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.new_s3">py2store.persisters.new_s3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters">py2store.persisters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.dropbox_w_requests">py2store.persisters.dropbox_w_requests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.w_aiofile">py2store.persisters.w_aiofile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.local_files">py2store.persisters.local_files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-persisters-arangodb-w-pyarango">py2store.persisters.arangodb_w_pyarango</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters._cassandra_in_progress">py2store.persisters._cassandra_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters._couchdb_in_progress">py2store.persisters._couchdb_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.s3_w_boto3">py2store.persisters.s3_w_boto3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-persisters-postgres-w-psycopg2-in-progress">py2store.persisters._postgres_w_psycopg2_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-persisters-ssh-persister">py2store.persisters.ssh_persister</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.mongo_w_pymongo">py2store.persisters.mongo_w_pymongo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-persisters-googledrive-w-pydrive">py2store.persisters.googledrive_w_pydrive</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.sources">py2store.sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.dig">py2store.dig</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.serializers.pickled">py2store.serializers.pickled</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.serializers.jsonization">py2store.serializers.jsonization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.serializers">py2store.serializers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.serializers.sequential">py2store.serializers.sequential</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.serializers.regular_panel_data">py2store.serializers.regular_panel_data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.serializers.audio">py2store.serializers.audio</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.caching">py2store.caching</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.scrap">py2store.scrap</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.scrap.new_gen_local">py2store.scrap.new_gen_local</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.examples.write_caches">py2store.examples.write_caches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.examples">py2store.examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.examples.python_code_stats">py2store.examples.python_code_stats</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.examples.kv_walking">py2store.examples.kv_walking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.my">py2store.my</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.my.grabbers">py2store.my.grabbers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.trans">py2store.trans</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.key_mappers.str_utils">py2store.key_mappers.str_utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.key_mappers.tuples">py2store.key_mappers.tuples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.key_mappers.paths">py2store.key_mappers.paths</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.key_mappers.naming">py2store.key_mappers.naming</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.key_mappers">py2store.key_mappers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.errors">py2store.errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.slib.s_configparser">py2store.slib.s_configparser</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.slib">py2store.slib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.slib.s_zipfile">py2store.slib.s_zipfile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.base">py2store.base</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-selectors-mg-selectors">py2store.selectors.mg_selectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-selectors-mongoquery">py2store.selectors.mongoquery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-selectors">py2store.selectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.parse_format">py2store.parse_format</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  <li><a href="../py2store.html">py2store</a><ul>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

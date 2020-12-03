@@ -11,7 +11,7 @@ from py2store.persisters.local_files import (
     DirReader,
     ensure_slash_suffix,
 )
-from py2store.filesys import DirCollection
+# from py2store.filesys import DirCollection
 from py2store.mixins import SimpleJsonMixin
 
 

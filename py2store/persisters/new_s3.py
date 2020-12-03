@@ -250,7 +250,14 @@ class S3BucketBaseReader(KvReader):
             raise GetItemForKeyError(f"Problem retrieving value for key: {k}")
 
     def dir_obj_for_key(self, k) -> KvReader:
-        return self.__class__(
+        # print(f"{id(self)}")
+        # if hasattr(self.__class__, '_cls_trans'):
+        #     cls = type(self.__class__.__name__, (), {})
+        #     self.__class__._cls_trans(cls)
+        # else:
+        #     cls = self.__class__
+        cls = self.__class__
+        return cls(
             client=self._source,
             bucket=self.bucket,
             prefix=k,
@@ -262,13 +269,13 @@ class S3BucketBaseReader(KvReader):
         if self.prefix.endswith("*"):
             # msg = f"Ending with a * is a special and untested case. If you know what you're doing, go ahead though!"
             self.prefix = self.prefix[:-1]  # remove the *
-            if not self.prefix.endswith("/"):  # add the / if it's not there
+            if self.prefix != '' and not self.prefix.endswith("/"):  # add the / if it's not there
                 self.prefix += "/"
             _filt = dict(Prefix=self.prefix)  # without the Delimiter='/'
             if self.with_directories:
                 self.with_directories = False
         else:
-            if not self.prefix.endswith("/"):
+            if self.prefix != '' and not self.prefix.endswith("/"):
                 self.prefix += "/"
             _filt = dict(Prefix=self.prefix, Delimiter="/")
         self.client = ensure_client(self.client)
@@ -358,6 +365,27 @@ class S3BucketBasePersister(S3BucketBaseReader, KvPersister):
         #   Would like to avoid having to do an additional request to do `if k in s: ...`
 
 
+# Note: The classes below don't use the usual wrappers because these don't
+#  handle the recursivity of S3BucketBaseReader
+# TODO: Make wrappers that can follow recursive calls
+#  (self.__class__ should be wrapped) if the self = cls(...) and cls is wrapped!)
+class S3BucketReader(S3BucketBaseReader):
+    def __getitem__(self, k: str) -> Union[dict, KvReader]:
+        return super().__getitem__(self.prefix + k)
+
+    def __iter__(self) -> Iterable[str]:
+        n = len(self.prefix)
+        yield from (k[n:] for k in super().__iter__())
+
+
+class S3BucketPersister(S3BucketBasePersister):
+    def __setitem__(self, k, v):
+        super().__setitem__(self.prefix + k, v)
+
+    def __delitem__(self, k):
+        super().__delitem__(self.prefix + k)
+
+
 @dataclass
 class S3Collection(Collection):
     client: BaseClient
@@ -413,19 +441,24 @@ def _get_body_when_file(k, v):
         return v
 
 
-S3AbsPathBodyStore = wrap_kvs(
-    S3BucketBasePersister,
-    name="S3AbsPathBodyStore",
-    postget=_get_body_when_file,
-)
-
-
 def _read_body_when_file(k, v):
     if isfile_key(k):
         return v.read()
     else:
         return v
 
+
+def _bytes_when_file(k, v):
+    v = _get_body_when_file(k, v)
+    v = _read_body_when_file(k, v)
+    return v
+
+
+S3AbsPathBodyStore = wrap_kvs(
+    S3BucketBasePersister,
+    name="S3AbsPathBodyStore",
+    postget=_get_body_when_file,
+)
 
 S3AbsPathBinaryStore = wrap_kvs(
     S3AbsPathBodyStore,
@@ -443,8 +476,20 @@ S3AbsPathBinaryStore = wrap_kvs(
 #             return body_or_dirobj
 
 
-S3BinaryStore = mk_relative_path_store(
-    S3AbsPathBinaryStore, "S3BinaryStore", prefix_attr="prefix"
+# S3BinaryStore = mk_relative_path_store(
+#     S3AbsPathBinaryStore, __name__="S3BinaryStore", prefix_attr="prefix"
+# )
+
+S3BinaryReader = wrap_kvs(
+    S3BucketReader,
+    name="S3BinaryReader",
+    postget=_bytes_when_file,
+)
+
+S3BinaryStore = wrap_kvs(
+    S3BucketPersister,
+    name="S3BinaryStore",
+    postget=_bytes_when_file,
 )
 
 

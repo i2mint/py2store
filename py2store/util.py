@@ -2,21 +2,19 @@ import os
 import shutil
 import re
 from collections import namedtuple, defaultdict
-# from inspect import signature
 from warnings import warn
 from typing import Any, Hashable, Callable, Iterable, Optional
-from functools import partial
-# from functools import update_wrapper as _update_wraper
+# from functools import update_wrapper as _update_wrapper
 # from functools import wraps as _wraps
+from functools import partialmethod
 import functools
 
 # monkey patching WRAPPER_ASSIGNMENTS to get "proper" wrapping (adding defaults and kwdefaults
-# TODO: Verify this actually works.
-functools.WRAPPER_ASSIGNMENTS = (
+
+wrapper_assignments = (
     '__module__', '__name__', '__qualname__', '__doc__',
     '__annotations__', '__defaults__', '__kwdefaults__')
 
-wrapper_assignments = functools.WRAPPER_ASSIGNMENTS
 update_wrapper = functools.update_wrapper
 update_wrapper.__defaults__ = (functools.WRAPPER_ASSIGNMENTS, functools.WRAPPER_UPDATES)
 wraps = functools.wraps
@@ -27,6 +25,80 @@ wraps.__defaults__ = (functools.WRAPPER_ASSIGNMENTS, functools.WRAPPER_UPDATES)
 # def wraps(wrapped, *args, **kwargs):
 #     _wrapped = _wraps(wrapped, *args, **kwargs)
 #     for attr
+
+
+def partialclass(cls, *args, **kwargs):
+    """What partial(cls, *args, **kwargs) does, but returning a class instead of an object.
+
+    :param cls: Class to get the partial of
+    :param kwargs: The kwargs to fix
+
+    The raison d'être of partialclass is that it returns a type, so let's have a look at that with
+    a useless class.
+
+    >>> class A:
+    ...     pass
+    >>> assert isinstance(A, type) == isinstance(partialclass(A), type) == True
+
+    >>> class A:
+    ...     def __init__(self, a=0, b=1):
+    ...         self.a, self.b = a, b
+    ...     def mysum(self):
+    ...         return self.a + self.b
+    ...     def __repr__(self):
+    ...         return f"{self.__class__.__name__}(a={self.a}, b={self.b})"
+    >>>
+    >>> assert isinstance(A, type) == isinstance(partialclass(A), type) == True
+    >>>
+    >>> assert str(signature(A)) == '(a=0, b=1)'
+    >>>
+    >>> a = A()
+    >>> assert a.mysum() == 1
+    >>> assert str(a) == 'A(a=0, b=1)'
+    >>>
+    >>> assert A(a=10).mysum() == 11
+    >>> assert str(A()) == 'A(a=0, b=1)'
+    >>>
+    >>>
+    >>> AA = partialclass(A, b=2)
+    >>> assert str(signature(AA)) == '(a=0, *, b=2)'
+    >>> aa = AA()
+    >>> assert aa.mysum() == 2
+    >>> assert str(aa) == 'A(a=0, b=2)'
+    >>> assert AA(a=1, b=3).mysum() == 4
+    >>> assert str(AA(3)) == 'A(a=3, b=2)'
+    >>>
+    >>> AA = partialclass(A, a=7)
+    >>> assert str(signature(AA)) == '(*, a=7, b=1)'
+    >>> assert AA().mysum() == 8
+    >>> assert str(AA(a=3)) == 'A(a=3, b=1)'
+
+    Note in the last partial that since ``a`` was fixed, you need to specify the keyword ``AA(a=3)``.
+    ``AA(3)`` won't work:
+
+    >>> AA(3)
+    Traceback (most recent call last):
+      ...
+    TypeError: __init__() got multiple values for argument 'a'
+
+    On the other hand, you can use *args to specify the fixtures:
+
+    >>> AA = partialclass(A, 22)
+    >>> assert str(AA()) == 'A(a=22, b=1)'
+    >>> assert str(signature(AA)) == '(b=1)'
+    >>> assert str(AA(3)) == 'A(a=22, b=3)'
+
+    ```
+    """
+    assert isinstance(cls, type), f"cls should be a type, was a {type(cls)}: {cls}"
+
+    class PartialClass(cls):
+        __init__ = partialmethod(cls.__init__, *args, **kwargs)
+
+    copy_attrs(PartialClass, cls, attrs=('__name__', '__qualname__', '__module__', '__doc__'))
+
+    return PartialClass
+
 
 def copy_attrs(target, source, attrs, raise_error_if_an_attr_is_missing=True):
     """Copy attributes from one object to another.

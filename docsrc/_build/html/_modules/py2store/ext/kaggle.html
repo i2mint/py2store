@@ -1,0 +1,418 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>py2store.ext.kaggle &#8212; py2store 0.0.7 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css" />
+    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for py2store.ext.kaggle</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">kaggle.api</span> <span class="kn">import</span> <span class="n">KaggleApi</span>
+<span class="kn">from</span> <span class="nn">py2store</span> <span class="kn">import</span> <span class="n">KvReader</span><span class="p">,</span> <span class="n">FilesOfZip</span>
+<span class="kn">from</span> <span class="nn">py2store.util</span> <span class="kn">import</span> <span class="n">lazyprop</span>
+
+<span class="n">DFLT_MAX_ITEMS</span> <span class="o">=</span> <span class="mi">200</span>
+<span class="n">DFLT_MAX_PAGES</span> <span class="o">=</span> <span class="mi">10</span>
+
+
+<span class="k">class</span> <span class="nc">DataInfoPaggedItems</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pages</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ref_to_idx</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">page_contents</span><span class="p">):</span>
+        <span class="c1"># TODO: Atomize this code so it can&#39;t be broken by async</span>
+        <span class="n">page</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_pages</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">page_contents</span><span class="p">):</span>
+            <span class="n">ref</span> <span class="o">=</span> <span class="n">v</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ref&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">ref</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ref_to_idx</span><span class="p">[</span><span class="n">ref</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">page</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pages</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">page_contents</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ref</span><span class="p">):</span>
+        <span class="n">page</span><span class="p">,</span> <span class="n">i</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ref_to_idx</span><span class="p">[</span><span class="n">ref</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">pages</span><span class="p">[</span><span class="n">page</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ref_to_idx</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get_page_contents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">page</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">pages</span><span class="p">[</span><span class="n">page</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">n_pages</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pages</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="KaggleDatasetInfoReader"><a class="viewcode-back" href="../../../test.html#py2store.ext.kaggle.KaggleDatasetInfoReader">[docs]</a><span class="k">class</span> <span class="nc">KaggleDatasetInfoReader</span><span class="p">(</span><span class="n">KvReader</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A KvReader to access Kaggle resources.</span>
+
+<span class="sd">    Prerequisites:</span>
+<span class="sd">        pip install kaggle</span>
+<span class="sd">        Having a kaggle api token where the kaggle library will be looking for it</span>
+<span class="sd">            (see https://github.com/Kaggle/kaggle-api#api-credentials)</span>
+
+<span class="sd">    You seed a Reader by specifying any combination of things like search terms, groups, filetypes etc.</span>
+<span class="sd">    See `kaggle.api` for more information.</span>
+<span class="sd">    Additional (and specific to py2store reader) arguments are</span>
+<span class="sd">        start_page (default 0, but useful for paging),</span>
+<span class="sd">        max_n_pages (to not hit the API too hard if your query is large), and</span>
+<span class="sd">        warn_if_there_are_more_items if you want to be warned if there&#39;s more items than what you see</span>
+
+<span class="sd">    &gt;&gt;&gt; ka = KaggleDatasetInfoReader(search=&#39;coronavirus covid&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; ka = KaggleDatasetInfoReader(user=&#39;sudalairajkumar&#39;, start_page=1, max_n_pages=2)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="o">*</span><span class="p">,</span>
+            <span class="n">group</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">sort_by</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">filetype</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">license</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">tagids</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">search</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">user</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">start_page</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+            <span class="n">max_n_pages</span><span class="o">=</span><span class="n">DFLT_MAX_PAGES</span><span class="p">,</span>
+            <span class="n">warn_if_there_are_more_items</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param async_req bool</span>
+<span class="sd">        :param str group: Display datasets by a particular group</span>
+<span class="sd">        :param str sort_by: Sort the results</span>
+<span class="sd">        :param str filetype: Display datasets of a specific file type</span>
+<span class="sd">        :param str license: Display datasets with a specific license</span>
+<span class="sd">        :param str tagids: A comma separated list of tags to filter by</span>
+<span class="sd">        :param str search: Search terms</span>
+<span class="sd">        :param str user: Display datasets by a specific user or organization</span>
+<span class="sd">        :param int start_page: Page to start at (default is 0)</span>
+<span class="sd">        :param int max_n_pages: Maximum number of pages the container should hold (to avoid API overuse)</span>
+<span class="sd">        :param bool warn_if_there_are_more_items: To be warned if there&#39;s more items than what you see</span>
+<span class="sd">        :param int max_size: Max Dataset Size (bytes)</span>
+<span class="sd">        :param int min_size: Max Dataset Size (bytes)</span>
+<span class="sd">        :param kwargs:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">explicit_fields</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;group&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;sort_by&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;filetype&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;license&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;tagids&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;search&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;user&quot;</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="n">locs</span> <span class="o">=</span> <span class="nb">locals</span><span class="p">()</span>
+        <span class="n">kwargs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+            <span class="o">**</span><span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">locs</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">explicit_fields</span> <span class="k">if</span> <span class="n">locs</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">}</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataset_filt</span> <span class="o">=</span> <span class="n">kwargs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_source</span> <span class="o">=</span> <span class="n">KaggleApi</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="o">.</span><span class="n">authenticate</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">start_page</span> <span class="o">=</span> <span class="n">start_page</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_n_pages</span> <span class="o">=</span> <span class="n">max_n_pages</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">warn_if_there_are_more_items</span> <span class="o">=</span> <span class="n">warn_if_there_are_more_items</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_page</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_pages_reached</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">_info_items_gen</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">page_num</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">start_page</span>
+        <span class="k">while</span> <span class="p">(</span><span class="n">page_num</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">start_page</span><span class="p">)</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_n_pages</span><span class="p">:</span>
+            <span class="n">new_page_contents</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="o">.</span><span class="n">datasets_list</span><span class="p">(</span>
+                <span class="n">page</span><span class="o">=</span><span class="n">page_num</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">dataset_filt</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">new_page_contents</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">yield from</span> <span class="n">new_page_contents</span>
+                <span class="n">page_num</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">max_pages_reached</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">break</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_page</span> <span class="o">=</span> <span class="n">page_num</span>
+
+    <span class="nd">@lazyprop</span>
+    <span class="k">def</span> <span class="nf">info_of_ref</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">item</span><span class="p">[</span><span class="s2">&quot;ref&quot;</span><span class="p">]:</span> <span class="n">item</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cached_info_items</span><span class="p">}</span>
+
+    <span class="nd">@lazyprop</span>
+    <span class="k">def</span> <span class="nf">cached_info_items</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_info_items_gen</span><span class="p">())</span>
+
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">info_of_ref</span>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get information (a dict) about a dataset, given its ref (a &#39;user_slug/dataset_slug&#39; string).</span>
+<span class="sd">        Note: Allows to access all valid references. Not just those within the current container.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">info_of_ref</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">info_of_ref</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_warn_reached_max</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">n</span>
+
+    <span class="k">def</span> <span class="nf">_warn_reached_max</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_pages_reached</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">warn_if_there_are_more_items</span><span class="p">:</span>
+            <span class="kn">from</span> <span class="nn">warnings</span> <span class="kn">import</span> <span class="n">warn</span>
+
+            <span class="n">warn</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;The container has </span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2"> items, but the max number of pages&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">max_n_pages</span><span class="si">}</span><span class="s2">) was reached, so there may be more on kaggle than what you see! &quot;</span>
+                <span class="s2">&quot;If you want more, set max_items to something higher (but beware of overusing your API rights)&quot;</span>
+            <span class="p">)</span></div>
+
+
+<span class="c1"># TODO: Make it less wasteful to get from a KaggleDatasetInfoReader to KaggleDatasetReader.</span>
+<span class="c1">#   For example, by having a from_info_reader classmethod constructor, or putting both together.</span>
+<div class="viewcode-block" id="KaggleBinaryDatasetReader"><a class="viewcode-back" href="../../../test.html#py2store.ext.kaggle.KaggleBinaryDatasetReader">[docs]</a><span class="k">class</span> <span class="nc">KaggleBinaryDatasetReader</span><span class="p">(</span><span class="n">KaggleDatasetInfoReader</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Download a dataset, given its ref (a &#39;user_slug/dataset_slug&#39; string).</span>
+<span class="sd">        Will return the binary of the dataset, which should be saved to a file to be persisted.</span>
+<span class="sd">        Note: Allows to access all valid references. Not just those within the current container.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">owner_slug</span><span class="p">,</span> <span class="n">dataset_slug</span> <span class="o">=</span> <span class="n">k</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="o">.</span><span class="n">process_response</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="o">.</span><span class="n">datasets_download_with_http_info</span><span class="p">(</span>
+                <span class="n">owner_slug</span><span class="o">=</span><span class="n">owner_slug</span><span class="p">,</span>
+                <span class="n">dataset_slug</span><span class="o">=</span><span class="n">dataset_slug</span><span class="p">,</span>
+                <span class="n">_preload_content</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">read</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="KaggleDatasetReader"><a class="viewcode-back" href="../../../test.html#py2store.ext.kaggle.KaggleDatasetReader">[docs]</a><span class="k">class</span> <span class="nc">KaggleDatasetReader</span><span class="p">(</span><span class="n">KaggleBinaryDatasetReader</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Download a dataset, given its ref (a &#39;user_slug/dataset_slug&#39; string).</span>
+<span class="sd">        Will return the binary of the dataset, which should be saved to a file to be persisted.</span>
+<span class="sd">        Note: Allows to access all valid references. Not just those within the current container.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">FilesOfZip</span><span class="p">(</span><span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">k</span><span class="p">))</span></div>
+
+<span class="c1">#</span>
+<span class="c1"># dataset = &#39;sudalairajkumar/novel-corona-virus-2019-dataset&#39;</span>
+<span class="c1">#</span>
+<span class="c1"># owner_slug, dataset_slug = dataset.split(&#39;/&#39;)</span>
+<span class="c1"># # path=None,</span>
+<span class="c1"># # force=False,</span>
+<span class="c1"># # quiet=True,</span>
+<span class="c1"># # unzip=False):</span>
+<span class="c1"># &quot;&quot;&quot; download all files for a dataset</span>
+<span class="c1">#</span>
+<span class="c1">#     Parameters</span>
+<span class="c1">#     ==========</span>
+<span class="c1">#     dataset: the string identified of the dataset</span>
+<span class="c1">#              should be in format [owner]/[dataset-name]</span>
+<span class="c1">#     path: the path to download the dataset to</span>
+<span class="c1">#     force: force the download if the file already exists (default False)</span>
+<span class="c1">#     quiet: suppress verbose output (default is True)</span>
+<span class="c1">#     unzip: if True, unzip files upon download (default is False)</span>
+<span class="c1"># &quot;&quot;&quot;</span>
+<span class="c1">#</span>
+<span class="c1"># # if path is None:</span>
+<span class="c1"># #     effective_path = self.get_default_download_dir(</span>
+<span class="c1"># #         &#39;datasets&#39;, owner_slug, dataset_slug)</span>
+<span class="c1"># # else:</span>
+<span class="c1"># #     effective_path = path</span>
+<span class="c1">#</span>
+<span class="c1"># response = self.process_response(</span>
+<span class="c1">#     self.datasets_download_with_http_info(owner_slug=owner_slug,</span>
+<span class="c1">#                                           dataset_slug=dataset_slug,</span>
+<span class="c1">#                                           _preload_content=False))</span>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">py2store</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html">py2store.filesys</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.misc">py2store.misc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.mixins">py2store.mixins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.test.util">py2store.test.util</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.test.quick">py2store.test.quick</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.test">py2store.test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.test.simple">py2store.test.simple</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-test-scrap">py2store.test.scrap</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.util">py2store.util</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext.docx">py2store.ext.docx</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext.gitlab">py2store.ext.gitlab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext.hdf">py2store.ext.hdf</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext">py2store.ext</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext.matlab">py2store.ext.matlab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext.kaggle">py2store.ext.kaggle</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext.module_imports">py2store.ext.module_imports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext.audio">py2store.ext.audio</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext.github">py2store.ext.github</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext.dataframes">py2store.ext.dataframes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.access">py2store.access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.__init__">py2store.__init__</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores.s3_store">py2store.stores.s3_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores.delegation_stores">py2store.stores.delegation_stores</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores.sql_w_sqlalchemy">py2store.stores.sql_w_sqlalchemy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-stores-arangodb-store">py2store.stores.arangodb_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores.dropbox_store">py2store.stores.dropbox_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores.local_store">py2store.stores.local_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores">py2store.stores</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-stores-couchdb-store">py2store.stores.couchdb_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores.mongo_store">py2store.stores.mongo_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.core">py2store.core</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.uri_utils">py2store.utils.uri_utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.explicit">py2store.utils.explicit</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.timeseries_caching">py2store.utils.timeseries_caching</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-utils-attr-dict-py-attr-dict">py2store.utils.attr_dict.py.attr_dict</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-utils-attr-dict-py">py2store.utils.attr_dict.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.cumul_aggreg_write">py2store.utils.cumul_aggreg_write</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils">py2store.utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.cache_descriptors">py2store.utils.cache_descriptors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.appendable">py2store.utils.appendable</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.affine_conversion">py2store.utils.affine_conversion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.signatures">py2store.utils.signatures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.sliceable">py2store.utils.sliceable</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.mappify">py2store.utils.mappify</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.glom">py2store.utils.glom</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-sql-w-odbc">py2store.persisters.sql_w_odbc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.dynamodb_w_boto3">py2store.persisters.dynamodb_w_boto3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-couchdb-w-couchdb">py2store.persisters.couchdb_w_couchdb</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.ftp_persister">py2store.persisters.ftp_persister</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.dropbox_w_urllib">py2store.persisters.dropbox_w_urllib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters._google_drive_in_progress">py2store.persisters._google_drive_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.dropbox_w_dropbox">py2store.persisters.dropbox_w_dropbox</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.redis_w_redis">py2store.persisters.redis_w_redis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.sql_w_sqlalchemy">py2store.persisters.sql_w_sqlalchemy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.new_s3">py2store.persisters.new_s3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters">py2store.persisters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.dropbox_w_requests">py2store.persisters.dropbox_w_requests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.w_aiofile">py2store.persisters.w_aiofile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.local_files">py2store.persisters.local_files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-arangodb-w-pyarango">py2store.persisters.arangodb_w_pyarango</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters._cassandra_in_progress">py2store.persisters._cassandra_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters._couchdb_in_progress">py2store.persisters._couchdb_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.s3_w_boto3">py2store.persisters.s3_w_boto3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-postgres-w-psycopg2-in-progress">py2store.persisters._postgres_w_psycopg2_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.ssh_persister">py2store.persisters.ssh_persister</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.mongo_w_pymongo">py2store.persisters.mongo_w_pymongo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-googledrive-w-pydrive">py2store.persisters.googledrive_w_pydrive</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.sources">py2store.sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.dig">py2store.dig</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers.pickled">py2store.serializers.pickled</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers.jsonization">py2store.serializers.jsonization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers">py2store.serializers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers.sequential">py2store.serializers.sequential</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers.regular_panel_data">py2store.serializers.regular_panel_data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers.audio">py2store.serializers.audio</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.caching">py2store.caching</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.scrap">py2store.scrap</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.scrap.new_gen_local">py2store.scrap.new_gen_local</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.examples.write_caches">py2store.examples.write_caches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.examples">py2store.examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.examples.python_code_stats">py2store.examples.python_code_stats</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.examples.kv_walking">py2store.examples.kv_walking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.my">py2store.my</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.my.grabbers">py2store.my.grabbers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.trans">py2store.trans</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.key_mappers.str_utils">py2store.key_mappers.str_utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.key_mappers.tuples">py2store.key_mappers.tuples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.key_mappers.paths">py2store.key_mappers.paths</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.key_mappers.naming">py2store.key_mappers.naming</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.key_mappers">py2store.key_mappers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.errors">py2store.errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.slib.s_configparser">py2store.slib.s_configparser</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.slib">py2store.slib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.slib.s_zipfile">py2store.slib.s_zipfile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.base">py2store.base</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.selectors.mg_selectors">py2store.selectors.mg_selectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.selectors.mongoquery">py2store.selectors.mongoquery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.selectors">py2store.selectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.parse_format">py2store.parse_format</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

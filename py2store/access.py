@@ -241,6 +241,14 @@ try:
                         )
                     return v
 
+                def __getitem__(self, k):
+                    try:
+                        return super().__getitem__(k)
+                    except KeyError:
+                        raise KeyError(f"The '{k}' key wasn't found. "
+                                       f"What this probably is, is that you need "
+                                       f"a file named '{k}' in your {self.dirpath} folder. Do that and try again.")
+
                 def get_config_value(self, k, path=None):
                     v = self.get(k)
                     if path is None:

@@ -170,7 +170,56 @@ def mk_sourced_store(
         The latter introduces a performance hit (we write and then read again from the cache),
         but ensures consistency (and is useful if the writing or the reading to/from store
         transforms the data in some way.
-    :return:
+    :return: A decorated store
+
+    Here are two stores pretending to be local and remote data stores respectively.
+
+    >>> from py2store.caching import mk_sourced_store
+    >>>
+    >>> class Local(dict):
+    ...     def __getitem__(self, k):
+    ...         print(f"looking for {k} in Local")
+    ...         return super().__getitem__(k)
+    >>>
+    >>> class Remote(dict):
+    ...     def __getitem__(self, k):
+    ...         print(f"looking for {k} in Remote")
+    ...         return super().__getitem__(k)
+
+
+    Let's make a remote store with two elements in it, and a local store class that asks the remote store for stuff
+    if it can't find it locally.
+
+    >>> remote = Remote({'foo': 'bar', 'hello': 'world'})
+    >>> SourcedLocal = mk_sourced_store(Local, source=remote)
+    >>> s = SourcedLocal({'some': 'local stuff'})
+    >>> list(s)  # the local store has one key
+    ['some']
+
+    # but if we ask for a key that is in the remote store, it provides it
+    >>> assert s['foo'] == 'bar'
+    looking for foo in Local
+    looking for foo in Remote
+
+    >>> list(s)
+    ['some', 'foo']
+
+    See that next time we ask for the 'foo' key, the local store provides it:
+
+    >>> assert s['foo'] == 'bar'
+    looking for foo in Local
+
+    >>> assert s['hello'] == 'world'
+    looking for hello in Local
+    looking for hello in Remote
+    >>> list(s)
+    ['some', 'foo', 'hello']
+
+    We can still add stuff (locally)...
+
+    >>> s['something'] = 'else'
+    >>> list(s)
+    ['some', 'foo', 'hello', 'something']
     """
     assert source is not None, "You need to specify a source"
 
@@ -182,25 +231,21 @@ def mk_sourced_store(
         class SourcedStore(store):
             _src = source
 
-            def __getitem__(self, k):
-                if k not in self:
-                    # if you don't have it...
-                    v = self._src[k]  # ... get it from _src,
-                    self[k] = v  # ... store it in self
-                    return v  # ... and return it.
-                else:
-                    # if you have it, get it and return it
-                    return super().__getitem__(k)
+            def __missing__(self, k):
+                # if you didn't have it "locally", ask src for it
+                v = self._src[k]  # ... get it from _src,
+                self[k] = v  # ... store it in self
+                return v  # ... and return it.
+
     else:
         class SourcedStore(store):
             _src = source
 
-            def __getitem__(self, k):
-                if k not in self:
-                    # if you don't have it...
-                    v = self._src[k]  # ... get it from _src,
-                    self[k] = v  # ... store it in self
-                return super().__getitem__(k)
+            def __missing__(self, k):
+                # if you didn't have it "locally", ask src for it
+                v = self._src[k]  # ... get it from _src,
+                self[k] = v  # ... store it in self
+                return self[k]  # retrieve it again and return
 
     return SourcedStore
 

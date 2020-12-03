@@ -3,10 +3,33 @@ from py2store.util import ModuleNotFoundIgnore
 
 file_sep = os.path.sep
 
-from py2store.util import lazyprop, groupby, regroupby, igroupby
-from py2store.trans import add_ipython_key_completions
 
-# Imports to be able to easily get started...
+def kvhead(store, n=1):
+    """Get the first item of a kv store, or a list of the first n items"""
+    if n == 1:
+        for k in store:
+            return k, store[k]
+    else:
+        return [(k, store[k]) for i, k in enumerate(store) if i < n]
+
+
+def ihead(store, n=1):
+    """Get the first item of an iterable, or a list of the first n items"""
+    if n == 1:
+        for item in iter(store):
+            return item
+    else:
+        return [item for i, item in enumerate(store) if i < n]
+
+
+from py2store.util import (
+    lazyprop,
+    partialclass,
+    groupby,
+    regroupby,
+    igroupby
+)
+
 from py2store.base import (
     Collection,
     KvReader,
@@ -14,7 +37,10 @@ from py2store.base import (
     Reader,
     Persister,
     kv_walk,
+    Store,
 )
+
+from py2store.persisters.local_files import FileReader
 
 from py2store.stores.local_store import (
     LocalStore,
@@ -22,6 +48,7 @@ from py2store.stores.local_store import (
     LocalTextStore,
     LocalPickleStore,
     LocalJsonStore,
+    PickleStore,  # consider deprecating and use LocalPickleStore instead?
 )
 from py2store.stores.local_store import (
     QuickStore,
@@ -30,7 +57,10 @@ from py2store.stores.local_store import (
     QuickJsonStore,
     QuickPickleStore,
 )
-from py2store.stores.local_store import DirReader, DirStore
+from py2store.stores.local_store import (
+    DirReader,
+    DirStore,
+)
 
 from py2store.misc import (
     MiscGetter,
@@ -40,7 +70,7 @@ from py2store.misc import (
     get_obj,
     set_obj,
 )
-from py2store.base import Store
+
 from py2store.trans import (
     wrap_kvs,
     disable_delitem,
@@ -52,8 +82,9 @@ from py2store.trans import (
     filtered_iter,
     add_path_get,
     insert_aliases,
+    add_ipython_key_completions,
+    cache_iter,  # being deprecated
 )
-from py2store.trans import cache_iter  # being deprecated
 from py2store.access import (
     user_configs_dict,
     user_configs,
@@ -73,15 +104,17 @@ from py2store.appendable import (
     appendable
 )
 
-from py2store.stores.local_store import (
-    PickleStore,
-)  # consider deprecating and use LocalPickleStore instead?
 from py2store.slib.s_zipfile import (
     ZipReader,
     ZipFilesReader,
     FilesOfZip,
     FlatZipFilesReader,
 )
+
+from py2store.key_mappers.naming import StrTupleDict
+from py2store.key_mappers.paths import mk_relative_path_store
+
+###### Optionals... ##############################################################################
 
 with ModuleNotFoundIgnore():
     from py2store.access import myconfigs
@@ -100,21 +133,3 @@ with ModuleNotFoundIgnore():
         MongoTupleKeyStore,
         MongoAnyKeyStore,
     )
-
-
-def kvhead(store, n=1):
-    """Get the first item of a kv store, or a list of the first n items"""
-    if n == 1:
-        for k in store:
-            return k, store[k]
-    else:
-        return [(k, store[k]) for i, k in enumerate(store) if i < n]
-
-
-def ihead(store, n=1):
-    """Get the first item of an iterable, or a list of the first n items"""
-    if n == 1:
-        for item in iter(store):
-            return item
-    else:
-        return [item for i, item in enumerate(store) if i < n]

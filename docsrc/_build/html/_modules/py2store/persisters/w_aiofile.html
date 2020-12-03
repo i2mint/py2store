@@ -1,0 +1,394 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>py2store.persisters.w_aiofile &#8212; py2store 0.0.7 documentation</title>
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css" />
+    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for py2store.persisters.w_aiofile</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">asyncio</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">from</span> <span class="nn">py2store.base</span> <span class="kn">import</span> <span class="n">KvReader</span><span class="p">,</span> <span class="n">KvPersister</span>
+<span class="kn">from</span> <span class="nn">py2store.key_mappers.paths</span> <span class="kn">import</span> <span class="n">mk_relative_path_store</span>
+<span class="kn">from</span> <span class="nn">py2store.filesys</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">FileCollection</span><span class="p">,</span>
+    <span class="n">validate_key_and_raise_key_error_on_exception</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">py2store.util</span> <span class="kn">import</span> <span class="n">ModuleNotFoundWarning</span>
+
+<span class="k">with</span> <span class="n">ModuleNotFoundWarning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Missing third-party package: aiofile&quot;</span><span class="p">):</span>
+    <span class="kn">from</span> <span class="nn">aiofile</span> <span class="kn">import</span> <span class="n">AIOFile</span>
+
+<span class="n">_dflt_not_valid_error_msg</span> <span class="o">=</span> <span class="s2">&quot;Key not valid (usually because does not exist or access not permitted): </span><span class="si">{}</span><span class="s2">&quot;</span>
+<span class="n">_dflt_not_found_error_msg</span> <span class="o">=</span> <span class="s2">&quot;Key not found: </span><span class="si">{}</span><span class="s2">&quot;</span>
+
+
+<div class="viewcode-block" id="AioFileBytesReader"><a class="viewcode-back" href="../../../test.html#py2store.persisters.w_aiofile.AioFileBytesReader">[docs]</a><span class="k">class</span> <span class="nc">AioFileBytesReader</span><span class="p">(</span><span class="n">FileCollection</span><span class="p">,</span> <span class="n">KvReader</span><span class="p">):</span>
+    <span class="n">_read_open_kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s2">&quot;rb&quot;</span><span class="p">)</span>
+
+    <span class="fm">__getitem__</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="c1"># @validate_key_and_raise_key_error_on_exception  # TODO: does this also wrap the async?</span>
+<div class="viewcode-block" id="AioFileBytesReader.aget"><a class="viewcode-back" href="../../../test.html#py2store.persisters.w_aiofile.AioFileBytesReader.aget">[docs]</a>    <span class="k">async</span> <span class="k">def</span> <span class="nf">aget</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>  <span class="c1"># noqa</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gets the bytes contents of the file k.</span>
+<span class="sd">        &gt;&gt;&gt; import os</span>
+<span class="sd">        &gt;&gt;&gt; filepath = __file__</span>
+<span class="sd">        &gt;&gt;&gt; dirpath = os.path.dirname(__file__)  # path of the directory where I (the module file) am</span>
+<span class="sd">        &gt;&gt;&gt; s = AioFileBytesReader(dirpath, max_levels=0)</span>
+<span class="sd">        &gt;&gt;&gt;</span>
+<span class="sd">        &gt;&gt;&gt; ####### Get the first 9 characters (as bytes) of this module #####################</span>
+<span class="sd">        &gt;&gt;&gt; t = await s.aget(filepath)</span>
+<span class="sd">        &gt;&gt;&gt; t[:14]</span>
+<span class="sd">        b&#39;import asyncio&#39;</span>
+<span class="sd">        &gt;&gt;&gt;</span>
+<span class="sd">        &gt;&gt;&gt; ####### Test key validation #####################</span>
+<span class="sd">        &gt;&gt;&gt; await s.aget(&#39;not_a_valid_key&#39;)  # this key is not valid since not under the dirpath folder</span>
+<span class="sd">        Traceback (most recent call last):</span>
+<span class="sd">            ...</span>
+<span class="sd">        filesys.KeyValidationError: &#39;Key not valid (usually because does not exist or access not permitted): not_a_valid_key&#39;</span>
+<span class="sd">        &gt;&gt;&gt;</span>
+<span class="sd">        &gt;&gt;&gt; ####### Test further exceptions (that should be wrapped in KeyError) #####################</span>
+<span class="sd">        &gt;&gt;&gt; # this key is valid, since under dirpath, but the file itself doesn&#39;t exist (hopefully for this test)</span>
+<span class="sd">        &gt;&gt;&gt; non_existing_file = os.path.join(dirpath, &#39;non_existing_file&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; try:</span>
+<span class="sd">        ...     await s.aget(non_existing_file)</span>
+<span class="sd">        ... except KeyError:</span>
+<span class="sd">        ...     print(&quot;KeyError (not FileNotFoundError) was raised.&quot;)</span>
+<span class="sd">        KeyError (not FileNotFoundError) was raised.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">async</span> <span class="k">with</span> <span class="n">AIOFile</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">_read_open_kwargs</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+            <span class="n">v</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="k">await</span> <span class="n">fp</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+            <span class="p">)</span>  <span class="c1"># Question: Is it faster if we just did `return await fp.read(), instead of assign?</span>
+        <span class="k">return</span> <span class="n">v</span></div></div>
+        <span class="c1"># with open(k, **self._read_open_kwargs) as fp:</span>
+        <span class="c1">#     return fp.read()</span>
+
+
+<div class="viewcode-block" id="AioFileBytesPersister"><a class="viewcode-back" href="../../../test.html#py2store.persisters.w_aiofile.AioFileBytesPersister">[docs]</a><span class="k">class</span> <span class="nc">AioFileBytesPersister</span><span class="p">(</span><span class="n">AioFileBytesReader</span><span class="p">,</span> <span class="n">KvPersister</span><span class="p">):</span>
+    <span class="n">_write_open_kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s2">&quot;wb&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="AioFileBytesPersister.asetitem"><a class="viewcode-back" href="../../../test.html#py2store.persisters.w_aiofile.AioFileBytesPersister.asetitem">[docs]</a>    <span class="nd">@validate_key_and_raise_key_error_on_exception</span>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">asetitem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        &gt;&gt;&gt; from py2store.persisters.w_aiofile import AioFileBytesPersister</span>
+<span class="sd">        &gt;&gt;&gt; from py2store.filesys import mk_tmp_py2store_dir</span>
+<span class="sd">        &gt;&gt;&gt; import os</span>
+<span class="sd">        &gt;&gt;&gt;</span>
+<span class="sd">        &gt;&gt;&gt; rootdir = mk_tmp_py2store_dir(&#39;test&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; rpath = lambda *p: os.path.join(rootdir, *p)</span>
+<span class="sd">        &gt;&gt;&gt; s = AioFileBytesPersister(rootdir)</span>
+<span class="sd">        &gt;&gt;&gt; k = rpath(&#39;foo&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; if k in s:</span>
+<span class="sd">        ...     del s[k]  # delete key if present</span>
+<span class="sd">        ...</span>
+<span class="sd">        &gt;&gt;&gt; n = len(s)  # number of items in store</span>
+<span class="sd">        &gt;&gt;&gt; await s.asetitem(k, b&#39;bar&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; assert len(s) == n + 1  # there&#39;s one more item in store</span>
+<span class="sd">        &gt;&gt;&gt; assert k in s</span>
+<span class="sd">        &gt;&gt;&gt; assert (await s[k]) == b&#39;bar&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">async</span> <span class="k">with</span> <span class="n">AIOFile</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">_write_open_kwargs</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+            <span class="k">await</span> <span class="n">fp</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+            <span class="k">await</span> <span class="n">fp</span><span class="o">.</span><span class="n">fsync</span><span class="p">()</span></div>
+
+    <span class="k">def</span> <span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">create_task</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">asetitem</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">))</span>
+
+    <span class="nd">@validate_key_and_raise_key_error_on_exception</span>
+    <span class="k">def</span> <span class="fm">__delitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">k</span><span class="p">)</span></div>
+
+    <span class="c1"># @validate_key_and_raise_key_error_on_exception</span>
+    <span class="c1"># def __setitem__(self, k, v):</span>
+    <span class="c1">#     with open(k, **self._write_open_kwargs) as fp:</span>
+    <span class="c1">#         return fp.write(v)</span>
+
+
+<span class="n">RelPathAioFileBytesReader</span> <span class="o">=</span> <span class="n">mk_relative_path_store</span><span class="p">(</span>
+    <span class="n">AioFileBytesReader</span><span class="p">,</span>
+    <span class="n">prefix_attr</span><span class="o">=</span><span class="s2">&quot;rootdir&quot;</span><span class="p">,</span>
+    <span class="vm">__name__</span><span class="o">=</span><span class="s2">&quot;RelPathAioFileBytesReader&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<div class="viewcode-block" id="AioFileStringReader"><a class="viewcode-back" href="../../../test.html#py2store.persisters.w_aiofile.AioFileStringReader">[docs]</a><span class="k">class</span> <span class="nc">AioFileStringReader</span><span class="p">(</span><span class="n">AioFileBytesReader</span><span class="p">):</span>
+    <span class="n">_read_open_kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">AioFileBytesReader</span><span class="o">.</span><span class="n">_read_open_kwargs</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;rt&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AioFileStringPersister"><a class="viewcode-back" href="../../../test.html#py2store.persisters.w_aiofile.AioFileStringPersister">[docs]</a><span class="k">class</span> <span class="nc">AioFileStringPersister</span><span class="p">(</span><span class="n">AioFileBytesPersister</span><span class="p">):</span>
+    <span class="n">_write_open_kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+        <span class="n">AioFileBytesPersister</span><span class="o">.</span><span class="n">_write_open_kwargs</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;wt&quot;</span>
+    <span class="p">)</span></div>
+
+
+<span class="n">RelPathFileStringReader</span> <span class="o">=</span> <span class="n">mk_relative_path_store</span><span class="p">(</span>
+    <span class="n">AioFileStringReader</span><span class="p">,</span>
+    <span class="n">prefix_attr</span><span class="o">=</span><span class="s2">&quot;rootdir&quot;</span><span class="p">,</span>
+    <span class="vm">__name__</span><span class="o">=</span><span class="s2">&quot;RelPathFileStringReader&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1">########## The simple store we made during meeting ################################################################</span>
+
+<span class="c1"># import os</span>
+<span class="c1"># from collections.abc import MutableMapping</span>
+<span class="c1"># from aiofile import AIOFile, Reader, Writer</span>
+<span class="c1">#</span>
+<span class="c1">#</span>
+<span class="c1"># class SimpleFilePersister(MutableMapping):</span>
+<span class="c1">#     &quot;&quot;&quot;Read/write (text or binary) data to files under a given rootdir.</span>
+<span class="c1">#     Keys must be absolute file paths.</span>
+<span class="c1">#     Paths that don&#39;t start with rootdir will be raise a KeyValidationError</span>
+<span class="c1">#     &quot;&quot;&quot;</span>
+<span class="c1">#</span>
+<span class="c1">#     def __init__(self, rootdir, mode=&#39;t&#39;):</span>
+<span class="c1">#         if not rootdir.endswith(os.path.sep):</span>
+<span class="c1">#             rootdir = rootdir + os.path.sep</span>
+<span class="c1">#         self.rootdir = rootdir</span>
+<span class="c1">#         assert mode in {&#39;t&#39;, &#39;b&#39;, &#39;&#39;}, f&quot;mode ({mode}) not valid: Must be &#39;t&#39; or &#39;b&#39;&quot;</span>
+<span class="c1">#         self.mode = mode</span>
+<span class="c1">#</span>
+<span class="c1">#     # TODO: __getitem__ can&#39;t be async?!?</span>
+<span class="c1">#     # async def __getitem__(self, k):</span>
+<span class="c1">#     #     async with AIOFile(k, &#39;r&#39; + self.mode) as fp:</span>
+<span class="c1">#     #         v = await fp.read()</span>
+<span class="c1">#     #     return v</span>
+<span class="c1">#</span>
+<span class="c1">#     def __getitem__(self, k):</span>
+<span class="c1">#         async with AIOFile(k, &#39;r&#39; + self.mode) as fp:</span>
+<span class="c1">#             v = await fp.read()  # Question: Is it faster if we just did `return await fp.read()</span>
+<span class="c1">#         return v</span>
+<span class="c1">#</span>
+<span class="c1">#     async def asetitem(self, k, v):</span>
+<span class="c1">#         async with AIOFile(k, &#39;w&#39; + self.mode) as fp:</span>
+<span class="c1">#             await fp.write(v)</span>
+<span class="c1">#             await fp.fsync()</span>
+<span class="c1">#</span>
+<span class="c1">#     def __setitem__(self, k, v):</span>
+<span class="c1">#         #         loop = asyncio.new_event_loop()</span>
+<span class="c1">#         #         asyncio.set_event_loop(loop)</span>
+<span class="c1">#         return asyncio.create_task(self.asetitem(k, v))</span>
+<span class="c1">#</span>
+<span class="c1">#     def __delitem__(self, k):</span>
+<span class="c1">#         os.remove(k)</span>
+<span class="c1">#</span>
+<span class="c1">#     def __contains__(self, k):</span>
+<span class="c1">#         &quot;&quot;&quot; Implementation of &quot;k in self&quot; check.</span>
+<span class="c1">#         Note: MutableMapping gives you this for free, using a try/except on __getitem__,</span>
+<span class="c1">#         but the following uses faster os functionality.&quot;&quot;&quot;</span>
+<span class="c1">#         return os.path.isfile(k)</span>
+<span class="c1">#</span>
+<span class="c1">#     def __iter__(self):</span>
+<span class="c1">#         yield from filter(os.path.isfile,</span>
+<span class="c1">#                           map(lambda x: os.path.join(self.rootdir, x),</span>
+<span class="c1">#                               os.listdir(self.rootdir)))</span>
+<span class="c1">#</span>
+<span class="c1">#     def __len__(self):</span>
+<span class="c1">#         &quot;&quot;&quot;Note: There&#39;s system-specific faster ways to do this.&quot;&quot;&quot;</span>
+<span class="c1">#         count = 0</span>
+<span class="c1">#         for _ in self.__iter__():</span>
+<span class="c1">#             count += 1</span>
+<span class="c1">#         return count</span>
+<span class="c1">#</span>
+<span class="c1">#     def clear(self):</span>
+<span class="c1">#         &quot;&quot;&quot;MutableMapping creates a &#39;delete all&#39; functionality by default. Better disable it!&quot;&quot;&quot;</span>
+<span class="c1">#         raise NotImplementedError(&quot;If you really want to do that, loop on all keys and remove them one by one.&quot;)</span>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">py2store</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html">py2store.filesys</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.misc">py2store.misc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.mixins">py2store.mixins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.test.util">py2store.test.util</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-test-quick">py2store.test.quick</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.test">py2store.test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-test-simple">py2store.test.simple</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-test-scrap">py2store.test.scrap</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.util">py2store.util</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-ext-docx">py2store.ext.docx</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext.gitlab">py2store.ext.gitlab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-ext-hdf">py2store.ext.hdf</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext">py2store.ext</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-ext-matlab">py2store.ext.matlab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext.kaggle">py2store.ext.kaggle</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-ext-module-imports">py2store.ext.module_imports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext.audio">py2store.ext.audio</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-ext-github">py2store.ext.github</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext.dataframes">py2store.ext.dataframes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.access">py2store.access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.__init__">py2store.__init__</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores.s3_store">py2store.stores.s3_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores.delegation_stores">py2store.stores.delegation_stores</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores.sql_w_sqlalchemy">py2store.stores.sql_w_sqlalchemy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-stores-arangodb-store">py2store.stores.arangodb_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-stores-dropbox-store">py2store.stores.dropbox_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores.local_store">py2store.stores.local_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores">py2store.stores</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-stores-couchdb-store">py2store.stores.couchdb_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores.mongo_store">py2store.stores.mongo_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.core">py2store.core</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.uri_utils">py2store.utils.uri_utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.explicit">py2store.utils.explicit</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.timeseries_caching">py2store.utils.timeseries_caching</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-utils-attr-dict-py-attr-dict">py2store.utils.attr_dict.py.attr_dict</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-utils-attr-dict-py">py2store.utils.attr_dict.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.cumul_aggreg_write">py2store.utils.cumul_aggreg_write</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils">py2store.utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.cache_descriptors">py2store.utils.cache_descriptors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.appendable">py2store.utils.appendable</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.affine_conversion">py2store.utils.affine_conversion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.signatures">py2store.utils.signatures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.sliceable">py2store.utils.sliceable</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.mappify">py2store.utils.mappify</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.glom">py2store.utils.glom</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-sql-w-odbc">py2store.persisters.sql_w_odbc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.dynamodb_w_boto3">py2store.persisters.dynamodb_w_boto3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-couchdb-w-couchdb">py2store.persisters.couchdb_w_couchdb</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.ftp_persister">py2store.persisters.ftp_persister</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.dropbox_w_urllib">py2store.persisters.dropbox_w_urllib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters._google_drive_in_progress">py2store.persisters._google_drive_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-dropbox-w-dropbox">py2store.persisters.dropbox_w_dropbox</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-redis-w-redis">py2store.persisters.redis_w_redis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.sql_w_sqlalchemy">py2store.persisters.sql_w_sqlalchemy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.new_s3">py2store.persisters.new_s3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters">py2store.persisters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.dropbox_w_requests">py2store.persisters.dropbox_w_requests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.w_aiofile">py2store.persisters.w_aiofile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.local_files">py2store.persisters.local_files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-arangodb-w-pyarango">py2store.persisters.arangodb_w_pyarango</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters._cassandra_in_progress">py2store.persisters._cassandra_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters._couchdb_in_progress">py2store.persisters._couchdb_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.s3_w_boto3">py2store.persisters.s3_w_boto3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-postgres-w-psycopg2-in-progress">py2store.persisters._postgres_w_psycopg2_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-ssh-persister">py2store.persisters.ssh_persister</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.mongo_w_pymongo">py2store.persisters.mongo_w_pymongo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-googledrive-w-pydrive">py2store.persisters.googledrive_w_pydrive</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.sources">py2store.sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.dig">py2store.dig</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers.pickled">py2store.serializers.pickled</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers.jsonization">py2store.serializers.jsonization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers">py2store.serializers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers.sequential">py2store.serializers.sequential</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers.regular_panel_data">py2store.serializers.regular_panel_data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers.audio">py2store.serializers.audio</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.caching">py2store.caching</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.scrap">py2store.scrap</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.scrap.new_gen_local">py2store.scrap.new_gen_local</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.examples.write_caches">py2store.examples.write_caches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.examples">py2store.examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.examples.python_code_stats">py2store.examples.python_code_stats</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.examples.kv_walking">py2store.examples.kv_walking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.my">py2store.my</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.my.grabbers">py2store.my.grabbers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.trans">py2store.trans</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.key_mappers.str_utils">py2store.key_mappers.str_utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.key_mappers.tuples">py2store.key_mappers.tuples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.key_mappers.paths">py2store.key_mappers.paths</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.key_mappers.naming">py2store.key_mappers.naming</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.key_mappers">py2store.key_mappers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.errors">py2store.errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.slib.s_configparser">py2store.slib.s_configparser</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.slib">py2store.slib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.slib.s_zipfile">py2store.slib.s_zipfile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.base">py2store.base</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-selectors-mg-selectors">py2store.selectors.mg_selectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-selectors-mongoquery">py2store.selectors.mongoquery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-selectors">py2store.selectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.parse_format">py2store.parse_format</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  <li><a href="../../py2store.html">py2store</a><ul>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

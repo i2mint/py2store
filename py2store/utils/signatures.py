@@ -630,6 +630,30 @@ class Sig(Signature, Mapping):
         """
         return self.wrap(func)
 
+    @classmethod
+    def sig_or_none(cls, obj):
+        """Returns a Sig instance, or None if there was a ValueError trying to construct it.
+        One use case is to be able to tell if an object has a signature or not.
+
+        >>> has_signature = lambda obj: bool(Sig.sig_or_none(obj))
+        >>> has_signature(print)
+        False
+        >>> has_signature(Sig)
+        True
+
+        This means we can more easily get signatures in bulk without having to write try/catches:
+
+        >>> len(list(filter(None, map(Sig.sig_or_none, (Sig, print, map, filter, Sig.wrap)))))
+        2
+        """
+        try:
+            return (callable(obj) or None) and cls(obj)
+        except ValueError:
+            return None
+
+    def __bool__(self):
+        return True
+
     def _dunder_defaults_and_kwdefaults(self):
         """Get the __defaults__, __kwdefaults__ (i.e. what would be the dunders baring these names in a python callable)
 
@@ -1311,6 +1335,9 @@ class Sig(Signature, Mapping):
                                                 allow_partial=_allow_partial, apply_defaults=_apply_defaults)
 
 
+########################################################################################################################
+# Recipes
+
 def mk_sig_from_args(*args_without_default, **args_with_defaults):
     """Make a Signature instance by specifying args_without_default and args_with_defaults.
     >>> mk_sig_from_args('a', 'b', c=1, d='bar')
@@ -1320,6 +1347,23 @@ def mk_sig_from_args(*args_without_default, **args_with_defaults):
     return Sig.from_objs(*args_without_default, **args_with_defaults).to_simple_signature()
 
 
+def call_forgivingly(func, *args, **kwargs):
+    """Call function on giben args and kwargs, but only taking what the function needs
+    (not choking if they're extras variables)"""
+    args, kwargs = Sig(func).source_args_and_kwargs(*args, **kwargs)
+    return func(*args, **kwargs)
+
+
+def has_signature(obj):
+    return bool(Sig.sig_or_none(obj))
+
+
+def number_of_required_arguments(obj):
+    sig = Sig(obj)
+    return len(sig) - len(sig.defaults)
+
+
+########################################################################################################################
 # TODO: Encorporate in Sig
 def insert_annotations(s: Signature, *, return_annotation=empty, **annotations):
     """Insert annotations in a signature.

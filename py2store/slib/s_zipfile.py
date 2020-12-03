@@ -44,6 +44,14 @@ class ZipReader(KvReader):
     """A KvReader to read the contents of a zip file.
     Provides a KV perspective of https://docs.python.org/3/library/zipfile.html
 
+    ``ZipReader`` has two value categories: Directories and Files.
+    Both categories are distinguishable by the keys, through the "ends with slash" convention.
+
+    When a file, the value return is bytes, as usual.
+
+    When a directory, the value returned is a ``ZipReader`` itself, with all params the same, except for the ``prefix``
+     which serves `to specify the subfolder (that is, ``prefix`` acts as a filter).
+
     Note: If you get data zipped by a mac, you might get some junk along with it.
     Namely `__MACOSX` folders `.DS_Store` files. I won't rant about it, since others have.
     But you might find it useful to remove them from view. One choice is to use `py2store.trans.filt_iter`
@@ -203,17 +211,23 @@ class ZipFilesReader(FileCollection, KvReader):
             subpath=".+\.zip",
             pattern_for_field=None,
             max_levels=0,
-            prefix="",
-            open_kws=None,
-            file_info_filt=ZipReader.FILES_ONLY,
+            zip_reader=ZipReader,
+            **zip_reader_kwargs
     ):
         super().__init__(rootdir, subpath, pattern_for_field, max_levels)
-        self.zip_reader_kwargs = dict(
-            prefix=prefix, open_kws=open_kws, file_info_filt=file_info_filt
-        )
+        self.zip_reader = zip_reader
+        self.zip_reader_kwargs = zip_reader_kwargs
+        if self.zip_reader is ZipReader:
+            self.zip_reader_kwargs = dict(
+                dict(prefix="", open_kws=None, file_info_filt=ZipReader.FILES_ONLY),
+                **self.zip_reader_kwargs
+            )
 
     def __getitem__(self, k):
-        return ZipReader(k, **self.zip_reader_kwargs)
+        try:
+            return self.zip_reader(k, **self.zip_reader_kwargs)
+        except FileNotFoundError as e:
+            raise KeyError("FileNotFoundError: " + e)
 
 
 class ZipFilesReaderAndBytesWriter(ZipFilesReader):
@@ -274,6 +288,33 @@ class FilesOfZip(ZipReader):
             file_info_filt=ZipReader.FILES_ONLY,
         )
 
+
+# TODO: This file object item is more fundemental than file contents. Should it be at the base?
+class FileStreamsOfZip(FilesOfZip):
+    """Like FilesOfZip, but object returns are file streams instead.
+    So you use it like this:
+
+    ```
+    z = FileStreamsOfZip(rootdir)
+    with z[relpath] as fp:
+        ...  # do stuff with fp, like fp.readlines() or such...
+    ```
+    """
+
+    def __getitem__(self, k):
+        return self.zip_file.open(k, **self.open_kws)
+
+
+from py2store.key_mappers.paths import mk_relative_path_store
+from py2store.util import partialclass
+
+ZipFileStreamsReader = mk_relative_path_store(
+    partialclass(ZipFilesReader, zip_reader=FileStreamsOfZip),
+    prefix_attr='rootdir'
+)
+ZipFileStreamsReader.__name__ = 'ZipFileStreamsReader'
+ZipFileStreamsReader.__qualname__ = 'ZipFileStreamsReader'
+ZipFileStreamsReader.__doc__ = """Like ZipFilesReader, but objects returned are file streams instead."""
 
 from py2store.errors import OverWritesNotAllowedError
 

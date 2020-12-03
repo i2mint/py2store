@@ -1,0 +1,664 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>py2store.util &#8212; py2store 0.0.7 documentation</title>
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css" />
+    <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="module-py2store.util">
+<span id="py2store-util"></span><h1>py2store.util<a class="headerlink" href="#module-py2store.util" title="Permalink to this headline">¶</a></h1>
+<dl class="py function">
+<dt id="py2store.util.add_attrs">
+<code class="sig-prename descclassname">py2store.util.</code><code class="sig-name descname">add_attrs</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">remember_added_attrs</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">if_attr_exists</span><span class="o">=</span><span class="default_value">'raise'</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">attrs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/py2store/util.html#add_attrs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.util.add_attrs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Make a function that will add attributes to an obj.
+Originally meant to be used as a decorator of a function, to inject
+&gt;&gt;&gt; from py2store.util import add_attrs
+&gt;&gt;&gt; &#64;add_attrs(bar=’bituate’, hello=’world’)
+… def foo():
+…     pass
+&gt;&gt;&gt; [x for x in dir(foo) if not x.startswith(‘_’)]
+[‘bar’, ‘hello’]
+&gt;&gt;&gt; foo.bar
+‘bituate’
+&gt;&gt;&gt; foo.hello
+‘world’
+&gt;&gt;&gt; foo._added_attrs  # Another attr was added to hold the list of attributes added (in case we need to remove them
+[‘bar’, ‘hello’]</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="py2store.util.copy_attrs">
+<code class="sig-prename descclassname">py2store.util.</code><code class="sig-name descname">copy_attrs</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">target</span></em>, <em class="sig-param"><span class="n">source</span></em>, <em class="sig-param"><span class="n">attrs</span></em>, <em class="sig-param"><span class="n">raise_error_if_an_attr_is_missing</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/py2store/util.html#copy_attrs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.util.copy_attrs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Copy attributes from one object to another.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">A</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="n">x</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">B</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="n">x</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="gp">... </span>    <span class="n">yy</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="gp">... </span>    <span class="n">zzz</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dict_of</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">o</span><span class="p">:</span> <span class="p">{</span><span class="n">a</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="nb">dir</span><span class="p">(</span><span class="n">A</span><span class="p">)</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">a</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dict_of</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
+<span class="go">{&#39;x&#39;: 0}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">copy_attrs</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">,</span> <span class="s1">&#39;yy&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dict_of</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
+<span class="go">{&#39;x&#39;: 0, &#39;yy&#39;: 2}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">copy_attrs</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;zzz&#39;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dict_of</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
+<span class="go">{&#39;x&#39;: 1, &#39;yy&#39;: 2, &#39;zzz&#39;: 3}</span>
+</pre></div>
+</div>
+<p>But if you try to copy something that <cite>B</cite> (the source) doesn’t have, copy_attrs will complain:
+&gt;&gt;&gt; copy_attrs(A, B, ‘this_is_not_an_attr’)
+Traceback (most recent call last):</p>
+<blockquote>
+<div><p>…</p>
+</div></blockquote>
+<p>AttributeError: type object ‘B’ has no attribute ‘this_is_not_an_attr’</p>
+<p>If you tell it not to complain, it’ll just ignore attributes that are not in source.
+&gt;&gt;&gt; copy_attrs(A, B, [‘nothing’, ‘here’, ‘exists’], raise_error_if_an_attr_is_missing=False)
+&gt;&gt;&gt; dict_of(A)
+{‘x’: 1, ‘yy’: 2, ‘zzz’: 3}</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="py2store.util.fill_with_dflts">
+<code class="sig-prename descclassname">py2store.util.</code><code class="sig-name descname">fill_with_dflts</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">d</span></em>, <em class="sig-param"><span class="n">dflt_dict</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/py2store/util.html#fill_with_dflts"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.util.fill_with_dflts" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fed up with multiline handling of dict arguments?
+Fed up of repeating the if d is None: d = {} lines ad nauseam (because defaults can’t be dicts as a default
+because dicts are mutable blah blah, and the python kings don’t seem to think a mutable dict is useful enough)?
+Well, my favorite solution would be a built-in handling of the problem of complex/smart defaults,
+that is visible in the code and in the docs. But for now, here’s one of the tricks I use.</p>
+<p>Main use is to handle defaults of function arguments. Say you have a function <cite>func(d=None)</cite> and you want
+<cite>d</cite> to be a dict that has at least the keys <cite>foo</cite> and <cite>bar</cite> with default values 7 and 42 respectively.
+Then, in the beginning of your function code you’ll say:</p>
+<blockquote>
+<div><p>d = fill_with_dflts(d, {‘a’: 7, ‘b’: 42})</p>
+</div></blockquote>
+<p>See examples to know how to use it.</p>
+<p>ATTENTION: A shallow copy of the dict is made. Know how that affects you (or not).
+ATTENTION: This is not recursive: It won’t be filling any nested fields with defaults.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>d</strong> – The dict you want to “fill”</p></li>
+<li><p><strong>dflt_dict</strong> – What to fill it with (a {k: v, …} dict where if k is missing in d, you’ll get a new field k, with
+value v.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>val entries (if the key was missing in d).</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>a dict with the new key</p>
+</dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">fill_with_dflts</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+<span class="go">{}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fill_with_dflts</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="mi">7</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="mi">42</span><span class="p">})</span>
+<span class="go">{&#39;a&#39;: 7, &#39;b&#39;: 42}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fill_with_dflts</span><span class="p">({},</span> <span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="mi">7</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="mi">42</span><span class="p">})</span>
+<span class="go">{&#39;a&#39;: 7, &#39;b&#39;: 42}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fill_with_dflts</span><span class="p">({</span><span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="mi">1000</span><span class="p">},</span> <span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="mi">7</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="mi">42</span><span class="p">})</span>
+<span class="go">{&#39;a&#39;: 7, &#39;b&#39;: 1000}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt id="py2store.util.format_invocation">
+<code class="sig-prename descclassname">py2store.util.</code><code class="sig-name descname">format_invocation</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">args</span><span class="o">=</span><span class="default_value">()</span></em>, <em class="sig-param"><span class="n">kwargs</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/py2store/util.html#format_invocation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.util.format_invocation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a name, positional arguments, and keyword arguments, format
+a basic Python-style function call.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">format_invocation</span><span class="p">(</span><span class="s1">&#39;func&#39;</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">kwargs</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;c&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">}))</span>
+<span class="go">func(1, 2, c=3)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">format_invocation</span><span class="p">(</span><span class="s1">&#39;a_func&#39;</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,)))</span>
+<span class="go">a_func(1)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">format_invocation</span><span class="p">(</span><span class="s1">&#39;kw_func&#39;</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="p">[(</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">)]))</span>
+<span class="go">kw_func(a=1, b=2)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt id="py2store.util.groupby">
+<code class="sig-prename descclassname">py2store.util.</code><code class="sig-name descname">groupby</code><span class="sig-paren">(</span><em class="sig-param">items: Iterable[Any], key: Callable[[Any], Hashable], val: Optional[Callable[[Any], Any]] = None, group_factory=&lt;class 'list'&gt;</em><span class="sig-paren">)</span> &#x2192; dict<a class="reference internal" href="../../_modules/py2store/util.html#groupby"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.util.groupby" title="Permalink to this definition">¶</a></dt>
+<dd><p>Groups items according to group keys updated from those items through the given (<a href="#id17"><span class="problematic" id="id18">item_to_</span></a>)key function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>items</strong> – iterable of items</p></li>
+<li><p><strong>key</strong> – The function that computes a key from an item. Needs to return a hashable.</p></li>
+<li><p><strong>val</strong> – An optional function that computes a val from an item. If not given, the item itself will be taken.</p></li>
+<li><p><strong>group_factory</strong> – The function to make new (empty) group objects and accumulate group items.
+group_items = group_collector() will be called to make a new empty group collection
+group_items.append(x) will be called to add x to that collection
+The default is <cite>list</cite></p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: A dict of {group_key: items_in_that_group, …}</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">groupby</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">11</span><span class="p">),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">%</span> <span class="mi">3</span><span class="p">)</span>
+<span class="go">{0: [0, 3, 6, 9], 1: [1, 4, 7, 10], 2: [2, 5, 8]}</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tokens</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;the&#39;</span><span class="p">,</span> <span class="s1">&#39;fox&#39;</span><span class="p">,</span> <span class="s1">&#39;is&#39;</span><span class="p">,</span> <span class="s1">&#39;in&#39;</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;box&#39;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">groupby</span><span class="p">(</span><span class="n">tokens</span><span class="p">,</span> <span class="nb">len</span><span class="p">)</span>
+<span class="go">{3: [&#39;the&#39;, &#39;fox&#39;, &#39;box&#39;], 2: [&#39;is&#39;, &#39;in&#39;], 1: [&#39;a&#39;]}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">key_map</span> <span class="o">=</span> <span class="p">{</span><span class="mi">1</span><span class="p">:</span> <span class="s1">&#39;one&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span> <span class="s1">&#39;two&#39;</span><span class="p">}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">groupby</span><span class="p">(</span><span class="n">tokens</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">key_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="s1">&#39;more&#39;</span><span class="p">))</span>
+<span class="go">{&#39;more&#39;: [&#39;the&#39;, &#39;fox&#39;, &#39;box&#39;], &#39;two&#39;: [&#39;is&#39;, &#39;in&#39;], &#39;one&#39;: [&#39;a&#39;]}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">stopwords</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;the&#39;</span><span class="p">,</span> <span class="s1">&#39;in&#39;</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;on&#39;</span><span class="p">}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">groupby</span><span class="p">(</span><span class="n">tokens</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">w</span><span class="p">:</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">stopwords</span><span class="p">)</span>
+<span class="go">{True: [&#39;the&#39;, &#39;in&#39;, &#39;a&#39;], False: [&#39;fox&#39;, &#39;is&#39;, &#39;box&#39;]}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">groupby</span><span class="p">(</span><span class="n">tokens</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">w</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;words&#39;</span><span class="p">,</span> <span class="s1">&#39;stopwords&#39;</span><span class="p">][</span><span class="nb">int</span><span class="p">(</span><span class="n">w</span> <span class="ow">in</span> <span class="n">stopwords</span><span class="p">)])</span>
+<span class="go">{&#39;stopwords&#39;: [&#39;the&#39;, &#39;in&#39;, &#39;a&#39;], &#39;words&#39;: [&#39;fox&#39;, &#39;is&#39;, &#39;box&#39;]}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt id="py2store.util.igroupby">
+<code class="sig-prename descclassname">py2store.util.</code><code class="sig-name descname">igroupby</code><span class="sig-paren">(</span><em class="sig-param">items: Iterable[Any], key: Callable[[Any], Hashable], val: Optional[Callable[[Any], Any]] = None, group_factory: Callable[[], Iterable[Any]] = &lt;class 'list'&gt;, group_release_cond: Callable[[Any, Any], bool] = &lt;function &lt;lambda&gt;&gt;, release_remainding=True, append_to_group_items: Callable[[Iterable[Any], Any], Any] = &lt;method 'append' of 'list' objects&gt;</em><span class="sig-paren">)</span> &#x2192; dict<a class="reference internal" href="../../_modules/py2store/util.html#igroupby"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.util.igroupby" title="Permalink to this definition">¶</a></dt>
+<dd><p>The generator version of py2store groupby.
+Groups items according to group keys updated from those items through the given (<a href="#id19"><span class="problematic" id="id20">item_to_</span></a>)key function,
+yielding the groups according to a logic defined by <code class="docutils literal notranslate"><span class="pre">group_release_cond</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>items</strong> – iterable of items</p></li>
+<li><p><strong>key</strong> – The function that computes a key from an item. Needs to return a hashable.</p></li>
+<li><p><strong>val</strong> – An optional function that computes a val from an item. If not given, the item itself will be taken.</p></li>
+<li><p><strong>group_factory</strong> – The function to make new (empty) group objects and accumulate group items.
+group_items = group_collector() will be called to make a new empty group collection
+group_items.append(x) will be called to add x to that collection
+The default is <cite>list</cite></p></li>
+<li><p><strong>group_release_cond</strong> – A boolean function that will be applied, at every iteration,
+to the accumulated items of the group that was just updated,
+and determines (if True) if the (group_key, group_items) should be yielded.
+The default is False, which results in
+<code class="docutils literal notranslate"><span class="pre">lambda</span> <span class="pre">group_key,</span> <span class="pre">group_items:</span> <span class="pre">False</span></code> being used.</p></li>
+<li><p><strong>release_remainding</strong> – Once the input items have been consumed, there may still be some
+items in the grouping “cache”. <code class="docutils literal notranslate"><span class="pre">release_remainding</span></code> is a boolean that indicates whether
+the contents of this cache should be released or not.</p></li>
+</ul>
+</dd>
+</dl>
+<p>Yields: <code class="docutils literal notranslate"><span class="pre">(group_key,</span> <span class="pre">items_in_that_group)</span></code> pairs</p>
+<p>The following will group numbers according to their parity (0 for even, 1 for odd),
+releasing a list of numbers collected when that list reaches length 3:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">g</span> <span class="o">=</span> <span class="n">igroupby</span><span class="p">(</span><span class="n">items</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="mi">11</span><span class="p">),</span>
+<span class="gp">... </span>            <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">%</span> <span class="mi">2</span><span class="p">,</span>
+<span class="gp">... </span>            <span class="n">group_release_cond</span><span class="o">=</span><span class="k">lambda</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">g</span><span class="p">)</span>
+<span class="go">[(0, [0, 2, 4]), (1, [1, 3, 5]), (0, [6, 8, 10]), (1, [7, 9])]</span>
+</pre></div>
+</div>
+<p>If we specify <code class="docutils literal notranslate"><span class="pre">release_remainding=False</span></code> though, we won’t get
+&gt;&gt;&gt; g = igroupby(items=range(11),
+…             key=lambda x: x % 2,
+…             group_release_cond=lambda k, v: len(v) == 3,
+…             release_remainding=False)
+&gt;&gt;&gt; list(g)
+[(0, [0, 2, 4]), (1, [1, 3, 5]), (0, [6, 8, 10])]</p>
+<p># &gt;&gt;&gt; grps = partial(igroupby, group_release_cond=False, release_remainding=True)</p>
+<p>Below we show that, with the default <code class="docutils literal notranslate"><span class="pre">group_release_cond</span> <span class="pre">=</span> <span class="pre">lambda</span> <span class="pre">k,</span> <span class="pre">v:</span> <span class="pre">False</span></code>
+and release_remainding=True`` we have <code class="docutils literal notranslate"><span class="pre">dict(igroupby(...))</span> <span class="pre">==</span> <span class="pre">groupby(...)</span></code></p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">py2store</span> <span class="kn">import</span> <span class="n">groupby</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">kws</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">items</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="mi">11</span><span class="p">),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">%</span> <span class="mi">3</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">igroupby</span><span class="p">(</span><span class="o">**</span><span class="n">kws</span><span class="p">))</span> <span class="o">==</span> <span class="n">groupby</span><span class="p">(</span><span class="o">**</span><span class="n">kws</span><span class="p">)</span>
+<span class="gp">... </span>        <span class="o">==</span> <span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">9</span><span class="p">],</span> <span class="mi">1</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">10</span><span class="p">],</span> <span class="mi">2</span><span class="p">:</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">8</span><span class="p">]})</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tokens</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;the&#39;</span><span class="p">,</span> <span class="s1">&#39;fox&#39;</span><span class="p">,</span> <span class="s1">&#39;is&#39;</span><span class="p">,</span> <span class="s1">&#39;in&#39;</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;box&#39;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">kws</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">items</span><span class="o">=</span><span class="n">tokens</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="nb">len</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">igroupby</span><span class="p">(</span><span class="o">**</span><span class="n">kws</span><span class="p">))</span> <span class="o">==</span> <span class="n">groupby</span><span class="p">(</span><span class="o">**</span><span class="n">kws</span><span class="p">)</span>
+<span class="gp">... </span>        <span class="o">==</span> <span class="p">{</span><span class="mi">3</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;the&#39;</span><span class="p">,</span> <span class="s1">&#39;fox&#39;</span><span class="p">,</span> <span class="s1">&#39;box&#39;</span><span class="p">],</span> <span class="mi">2</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;is&#39;</span><span class="p">,</span> <span class="s1">&#39;in&#39;</span><span class="p">],</span> <span class="mi">1</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">]})</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">key_map</span> <span class="o">=</span> <span class="p">{</span><span class="mi">1</span><span class="p">:</span> <span class="s1">&#39;one&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span> <span class="s1">&#39;two&#39;</span><span class="p">}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">kws</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">key_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="s1">&#39;more&#39;</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">igroupby</span><span class="p">(</span><span class="o">**</span><span class="n">kws</span><span class="p">))</span> <span class="o">==</span> <span class="n">groupby</span><span class="p">(</span><span class="o">**</span><span class="n">kws</span><span class="p">)</span>
+<span class="gp">... </span>        <span class="o">==</span> <span class="p">{</span><span class="s1">&#39;more&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;the&#39;</span><span class="p">,</span> <span class="s1">&#39;fox&#39;</span><span class="p">,</span> <span class="s1">&#39;box&#39;</span><span class="p">],</span> <span class="s1">&#39;two&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;is&#39;</span><span class="p">,</span> <span class="s1">&#39;in&#39;</span><span class="p">],</span> <span class="s1">&#39;one&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">]})</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">stopwords</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;the&#39;</span><span class="p">,</span> <span class="s1">&#39;in&#39;</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;on&#39;</span><span class="p">}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">kws</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">w</span><span class="p">:</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">stopwords</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">igroupby</span><span class="p">(</span><span class="o">**</span><span class="n">kws</span><span class="p">))</span> <span class="o">==</span> <span class="n">groupby</span><span class="p">(</span><span class="o">**</span><span class="n">kws</span><span class="p">)</span>
+<span class="gp">... </span>        <span class="o">==</span> <span class="p">{</span><span class="kc">True</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;the&#39;</span><span class="p">,</span> <span class="s1">&#39;in&#39;</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">],</span> <span class="kc">False</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;fox&#39;</span><span class="p">,</span> <span class="s1">&#39;is&#39;</span><span class="p">,</span> <span class="s1">&#39;box&#39;</span><span class="p">]})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">kws</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">w</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;words&#39;</span><span class="p">,</span> <span class="s1">&#39;stopwords&#39;</span><span class="p">][</span><span class="nb">int</span><span class="p">(</span><span class="n">w</span> <span class="ow">in</span> <span class="n">stopwords</span><span class="p">)])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">igroupby</span><span class="p">(</span><span class="o">**</span><span class="n">kws</span><span class="p">))</span> <span class="o">==</span> <span class="n">groupby</span><span class="p">(</span><span class="o">**</span><span class="n">kws</span><span class="p">)</span>
+<span class="gp">... </span>        <span class="o">==</span> <span class="p">{</span><span class="s1">&#39;stopwords&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;the&#39;</span><span class="p">,</span> <span class="s1">&#39;in&#39;</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">],</span> <span class="s1">&#39;words&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;fox&#39;</span><span class="p">,</span> <span class="s1">&#39;is&#39;</span><span class="p">,</span> <span class="s1">&#39;box&#39;</span><span class="p">]})</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py class">
+<dt id="py2store.util.imdict">
+<em class="property">class </em><code class="sig-prename descclassname">py2store.util.</code><code class="sig-name descname">imdict</code><a class="reference internal" href="../../_modules/py2store/util.html#imdict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.util.imdict" title="Permalink to this definition">¶</a></dt>
+<dd><p>A frozen hashable dict</p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="py2store.util.lazyprop">
+<em class="property">class </em><code class="sig-prename descclassname">py2store.util.</code><code class="sig-name descname">lazyprop</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">func</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/py2store/util.html#lazyprop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.util.lazyprop" title="Permalink to this definition">¶</a></dt>
+<dd><p>A descriptor implementation of lazyprop (cached property).
+Made based on David Beazley’s “Python Cookbook” book and enhanced with boltons.cacheutils ideas.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">Test</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="p">):</span>
+<span class="gp">... </span>        <span class="bp">self</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="n">a</span>
+<span class="gp">... </span>    <span class="nd">@lazyprop</span>
+<span class="gp">... </span>    <span class="k">def</span> <span class="nf">len</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="gp">... </span>        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;generating &quot;len&quot;&#39;</span><span class="p">)</span>
+<span class="gp">... </span>        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span> <span class="o">=</span> <span class="n">Test</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span><span class="o">.</span><span class="vm">__dict__</span>
+<span class="go">{&#39;a&#39;: [0, 1, 2, 3, 4]}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span><span class="o">.</span><span class="n">len</span>
+<span class="go">generating &quot;len&quot;</span>
+<span class="go">5</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span><span class="o">.</span><span class="vm">__dict__</span>
+<span class="go">{&#39;a&#39;: [0, 1, 2, 3, 4], &#39;len&#39;: 5}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span><span class="o">.</span><span class="n">len</span>
+<span class="go">5</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># But careful when using lazyprop that no one will change the value of a without deleting the property first</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>  <span class="c1"># if we change a...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span><span class="o">.</span><span class="n">len</span>  <span class="c1"># ... we still get the old cached value of len</span>
+<span class="go">5</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">del</span> <span class="n">t</span><span class="o">.</span><span class="n">len</span>  <span class="c1"># if we delete the len prop</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span><span class="o">.</span><span class="n">len</span>  <span class="c1"># ... then len being recomputed again</span>
+<span class="go">generating &quot;len&quot;</span>
+<span class="go">3</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py class">
+<dt id="py2store.util.lazyprop_w_sentinel">
+<em class="property">class </em><code class="sig-prename descclassname">py2store.util.</code><code class="sig-name descname">lazyprop_w_sentinel</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">func</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/py2store/util.html#lazyprop_w_sentinel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.util.lazyprop_w_sentinel" title="Permalink to this definition">¶</a></dt>
+<dd><p>A descriptor implementation of lazyprop (cached property).
+Inserts a <cite>self.func.__name__ + ‘__cache_active’</cite> attribute</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">Test</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="p">):</span>
+<span class="gp">... </span>        <span class="bp">self</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="n">a</span>
+<span class="gp">... </span>    <span class="nd">@lazyprop_w_sentinel</span>
+<span class="gp">... </span>    <span class="k">def</span> <span class="nf">len</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="gp">... </span>        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;generating &quot;len&quot;&#39;</span><span class="p">)</span>
+<span class="gp">... </span>        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span> <span class="o">=</span> <span class="n">Test</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">lazyprop_w_sentinel</span><span class="o">.</span><span class="n">cache_is_active</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="s1">&#39;len&#39;</span><span class="p">)</span>
+<span class="go">False</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span><span class="o">.</span><span class="vm">__dict__</span>  <span class="c1"># let&#39;s look under the hood</span>
+<span class="go">{&#39;a&#39;: [0, 1, 2, 3, 4]}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span><span class="o">.</span><span class="n">len</span>
+<span class="go">generating &quot;len&quot;</span>
+<span class="go">5</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">lazyprop_w_sentinel</span><span class="o">.</span><span class="n">cache_is_active</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="s1">&#39;len&#39;</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span><span class="o">.</span><span class="n">len</span>  <span class="c1"># notice there&#39;s no &#39;generating &quot;len&quot;&#39; print this time!</span>
+<span class="go">5</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span><span class="o">.</span><span class="vm">__dict__</span>  <span class="c1"># let&#39;s look under the hood</span>
+<span class="go">{&#39;a&#39;: [0, 1, 2, 3, 4], &#39;len&#39;: 5, &#39;sentinel_of__len&#39;: True}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># But careful when using lazyprop that no one will change the value of a without deleting the property first</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>  <span class="c1"># if we change a...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span><span class="o">.</span><span class="n">len</span>  <span class="c1"># ... we still get the old cached value of len</span>
+<span class="go">5</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">del</span> <span class="n">t</span><span class="o">.</span><span class="n">len</span>  <span class="c1"># if we delete the len prop</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span><span class="o">.</span><span class="n">len</span>  <span class="c1"># ... then len being recomputed again</span>
+<span class="go">generating &quot;len&quot;</span>
+<span class="go">3</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt id="py2store.util.max_common_prefix">
+<code class="sig-prename descclassname">py2store.util.</code><code class="sig-name descname">max_common_prefix</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">a</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/py2store/util.html#max_common_prefix"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.util.max_common_prefix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a list of strings (or other sliceable sequences), returns the longest common prefix
+:param a: list-like of strings
+:return: the smallest common prefix of all strings in a</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="py2store.util.norm_kv_filt">
+<code class="sig-prename descclassname">py2store.util.</code><code class="sig-name descname">norm_kv_filt</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">kv_filt</span><span class="p">:</span> <span class="n">Callable<span class="p">[</span><span class="p">[</span>Any<span class="p">]</span><span class="p">, </span>bool<span class="p">]</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/py2store/util.html#norm_kv_filt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.util.norm_kv_filt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prepare a boolean function to be used with <cite>filter</cite> when fed an iterable of (k, v) pairs.</p>
+<p>So you have a mapping. Say a dict <cite>d</cite>. Now you want to go through d.items(),
+filtering based on the keys, or the values, or both.</p>
+<p>It’s not hard to do, really. If you’re using a dict you might use a dict comprehension,
+or in the general case you might do a <cite>filter(lambda kv: my_filt(kv[0], kv[1]), d.items())</cite>
+if you have a <cite>my_filt</cite> that works wiith k and v, etc.</p>
+<p>But thought simple, it can become a bit muddled.
+<cite>norm_kv_filt</cite> simplifies this by allowing you to bring your own filtering boolean function,
+whether it’s a key-based, value-based, or key-value-based one, and it will make a
+ready-to-use with <cite>filter</cite> function for you.</p>
+<p>Only thing: Your function needs to call a key <cite>k</cite> and a value <cite>v</cite>.
+But hey, it’s alright, if you have a function that calls things differently, just do
+something like
+<a href="#id1"><span class="problematic" id="id2">``</span></a><a href="#id3"><span class="problematic" id="id4">`</span></a></p>
+<blockquote>
+<div><p>new_filt_func = lambda k, v: your_filt_func(…, key=k, …, value=v, …)</p>
+</div></blockquote>
+<p><a href="#id5"><span class="problematic" id="id6">``</span></a>`
+and all will be fine.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>kv_filt</strong> – callable (starting with signature (k), (v), or (k, v)), and returning  a boolean</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A normalized callable.</p>
+</dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">d</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s1">&#39;d&#39;</span><span class="p">:</span> <span class="mi">4</span><span class="p">}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="nb">filter</span><span class="p">(</span><span class="n">norm_kv_filt</span><span class="p">(</span><span class="k">lambda</span> <span class="n">k</span><span class="p">:</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">{</span><span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="s1">&#39;d&#39;</span><span class="p">}),</span> <span class="n">d</span><span class="o">.</span><span class="n">items</span><span class="p">()))</span>
+<span class="go">[(&#39;b&#39;, 2), (&#39;d&#39;, 4)]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="nb">filter</span><span class="p">(</span><span class="n">norm_kv_filt</span><span class="p">(</span><span class="k">lambda</span> <span class="n">v</span><span class="p">:</span> <span class="n">v</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">),</span> <span class="n">d</span><span class="o">.</span><span class="n">items</span><span class="p">()))</span>
+<span class="go">[(&#39;c&#39;, 3), (&#39;d&#39;, 4)]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="nb">filter</span><span class="p">(</span><span class="n">norm_kv_filt</span><span class="p">(</span><span class="k">lambda</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="p">(</span><span class="n">v</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">k</span> <span class="o">!=</span> <span class="s1">&#39;c&#39;</span><span class="p">)),</span> <span class="n">d</span><span class="o">.</span><span class="n">items</span><span class="p">()))</span>
+<span class="go">[(&#39;b&#39;, 2), (&#39;d&#39;, 4)]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt id="py2store.util.partialclass">
+<code class="sig-prename descclassname">py2store.util.</code><code class="sig-name descname">partialclass</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">cls</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/py2store/util.html#partialclass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.util.partialclass" title="Permalink to this definition">¶</a></dt>
+<dd><p>What partial(cls, <a href="#id7"><span class="problematic" id="id8">*</span></a>args, <a href="#id9"><span class="problematic" id="id10">**</span></a>kwargs) does, but returning a class instead of an object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cls</strong> – Class to get the partial of</p></li>
+<li><p><strong>kwargs</strong> – The kwargs to fix</p></li>
+</ul>
+</dd>
+</dl>
+<p>The raison d’être of partialclass is that it returns a type, so let’s have a look at that with
+a useless class.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">A</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="k">pass</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="nb">type</span><span class="p">)</span> <span class="o">==</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">partialclass</span><span class="p">(</span><span class="n">A</span><span class="p">),</span> <span class="nb">type</span><span class="p">)</span> <span class="o">==</span> <span class="kc">True</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">A</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="gp">... </span>        <span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">b</span> <span class="o">=</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span>
+<span class="gp">... </span>    <span class="k">def</span> <span class="nf">mysum</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="gp">... </span>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">a</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">b</span>
+<span class="gp">... </span>    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="gp">... </span>        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(a=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="si">}</span><span class="s2">, b=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">b</span><span class="si">}</span><span class="s2">)&quot;</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="nb">type</span><span class="p">)</span> <span class="o">==</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">partialclass</span><span class="p">(</span><span class="n">A</span><span class="p">),</span> <span class="nb">type</span><span class="p">)</span> <span class="o">==</span> <span class="kc">True</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="nb">str</span><span class="p">(</span><span class="n">signature</span><span class="p">(</span><span class="n">A</span><span class="p">))</span> <span class="o">==</span> <span class="s1">&#39;(a=0, b=1)&#39;</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="n">A</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">a</span><span class="o">.</span><span class="n">mysum</span><span class="p">()</span> <span class="o">==</span> <span class="mi">1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="nb">str</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;A(a=0, b=1)&#39;</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">A</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span><span class="o">.</span><span class="n">mysum</span><span class="p">()</span> <span class="o">==</span> <span class="mi">11</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="nb">str</span><span class="p">(</span><span class="n">A</span><span class="p">())</span> <span class="o">==</span> <span class="s1">&#39;A(a=0, b=1)&#39;</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">AA</span> <span class="o">=</span> <span class="n">partialclass</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="nb">str</span><span class="p">(</span><span class="n">signature</span><span class="p">(</span><span class="n">AA</span><span class="p">))</span> <span class="o">==</span> <span class="s1">&#39;(a=0, *, b=2)&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">aa</span> <span class="o">=</span> <span class="n">AA</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">aa</span><span class="o">.</span><span class="n">mysum</span><span class="p">()</span> <span class="o">==</span> <span class="mi">2</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="nb">str</span><span class="p">(</span><span class="n">aa</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;A(a=0, b=2)&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">AA</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">mysum</span><span class="p">()</span> <span class="o">==</span> <span class="mi">4</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="nb">str</span><span class="p">(</span><span class="n">AA</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span> <span class="o">==</span> <span class="s1">&#39;A(a=3, b=2)&#39;</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">AA</span> <span class="o">=</span> <span class="n">partialclass</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="mi">7</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="nb">str</span><span class="p">(</span><span class="n">signature</span><span class="p">(</span><span class="n">AA</span><span class="p">))</span> <span class="o">==</span> <span class="s1">&#39;(*, a=7, b=1)&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">AA</span><span class="p">()</span><span class="o">.</span><span class="n">mysum</span><span class="p">()</span> <span class="o">==</span> <span class="mi">8</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="nb">str</span><span class="p">(</span><span class="n">AA</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="mi">3</span><span class="p">))</span> <span class="o">==</span> <span class="s1">&#39;A(a=3, b=1)&#39;</span>
+</pre></div>
+</div>
+<p>Note in the last partial that since <code class="docutils literal notranslate"><span class="pre">a</span></code> was fixed, you need to specify the keyword <code class="docutils literal notranslate"><span class="pre">AA(a=3)</span></code>.
+<code class="docutils literal notranslate"><span class="pre">AA(3)</span></code> won’t work:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">AA</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+  <span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">__init__() got multiple values for argument &#39;a&#39;</span>
+</pre></div>
+</div>
+<p>On the other hand, you can use <a href="#id11"><span class="problematic" id="id12">*</span></a>args to specify the fixtures:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">AA</span> <span class="o">=</span> <span class="n">partialclass</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="mi">22</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="nb">str</span><span class="p">(</span><span class="n">AA</span><span class="p">())</span> <span class="o">==</span> <span class="s1">&#39;A(a=22, b=1)&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="nb">str</span><span class="p">(</span><span class="n">signature</span><span class="p">(</span><span class="n">AA</span><span class="p">))</span> <span class="o">==</span> <span class="s1">&#39;(b=1)&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="nb">str</span><span class="p">(</span><span class="n">AA</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span> <span class="o">==</span> <span class="s1">&#39;A(a=22, b=3)&#39;</span>
+</pre></div>
+</div>
+<p><a href="#id13"><span class="problematic" id="id14">``</span></a><a href="#id15"><span class="problematic" id="id16">`</span></a></p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="py2store.util.regroupby">
+<code class="sig-prename descclassname">py2store.util.</code><code class="sig-name descname">regroupby</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">items</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">key_funcs</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">named_key_funcs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/py2store/util.html#regroupby"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.util.regroupby" title="Permalink to this definition">¶</a></dt>
+<dd><p>REcursive groupby. Applies the groupby function recursively, using a sequence of key functions.</p>
+<dl class="simple">
+<dt>Note: The named_key_funcs argument names don’t have any external effect.</dt><dd><p>They just give a name to the key function, for code reading clarity purposes.</p>
+</dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># group by how big the number is, then by it&#39;s mod 3 value</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># note that named_key_funcs argument names doesn&#39;t have any external effect (but give a name to the function)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">regroupby</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">],</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="s1">&#39;big&#39;</span> <span class="k">if</span> <span class="n">x</span> <span class="o">&gt;</span> <span class="mi">5</span> <span class="k">else</span> <span class="s1">&#39;small&#39;</span><span class="p">,</span> <span class="n">mod3</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">%</span> <span class="mi">3</span><span class="p">)</span>
+<span class="go">{&#39;small&#39;: {1: [1, 4], 2: [2, 5], 0: [3]}, &#39;big&#39;: {0: [6], 1: [7]}}</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tokens</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;the&#39;</span><span class="p">,</span> <span class="s1">&#39;fox&#39;</span><span class="p">,</span> <span class="s1">&#39;is&#39;</span><span class="p">,</span> <span class="s1">&#39;in&#39;</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;box&#39;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">stopwords</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;the&#39;</span><span class="p">,</span> <span class="s1">&#39;in&#39;</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;on&#39;</span><span class="p">}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">word_category</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="s1">&#39;stopwords&#39;</span> <span class="k">if</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">stopwords</span> <span class="k">else</span> <span class="s1">&#39;words&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">regroupby</span><span class="p">(</span><span class="n">tokens</span><span class="p">,</span> <span class="n">word_category</span><span class="p">,</span> <span class="nb">len</span><span class="p">)</span>
+<span class="go">{&#39;stopwords&#39;: {3: [&#39;the&#39;], 2: [&#39;in&#39;], 1: [&#39;a&#39;]}, &#39;words&#39;: {3: [&#39;fox&#39;, &#39;box&#39;], 2: [&#39;is&#39;]}}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">regroupby</span><span class="p">(</span><span class="n">tokens</span><span class="p">,</span> <span class="nb">len</span><span class="p">,</span> <span class="n">word_category</span><span class="p">)</span>
+<span class="go">{3: {&#39;stopwords&#39;: [&#39;the&#39;], &#39;words&#39;: [&#39;fox&#39;, &#39;box&#39;]}, 2: {&#39;words&#39;: [&#39;is&#39;], &#39;stopwords&#39;: [&#39;in&#39;]}, 1: {&#39;stopwords&#39;: [&#39;a&#39;]}}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt id="py2store.util.str_to_var_str">
+<code class="sig-prename descclassname">py2store.util.</code><code class="sig-name descname">str_to_var_str</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">s</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; str<a class="reference internal" href="../../_modules/py2store/util.html#str_to_var_str"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.util.str_to_var_str" title="Permalink to this definition">¶</a></dt>
+<dd><p>Make a valid python variable string from the input string.
+Left untouched if already valid.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">str_to_var_str</span><span class="p">(</span><span class="s1">&#39;this_is_a_valid_var_name&#39;</span><span class="p">)</span>
+<span class="go">&#39;this_is_a_valid_var_name&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">str_to_var_str</span><span class="p">(</span><span class="s1">&#39;not valid  #)*(&amp;434&#39;</span><span class="p">)</span>
+<span class="go">&#39;not_valid_______434&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">str_to_var_str</span><span class="p">(</span><span class="s1">&#39;99_ballons&#39;</span><span class="p">)</span>
+<span class="go">&#39;_99_ballons&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">py2store</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html">py2store.filesys</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.misc">py2store.misc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.mixins">py2store.mixins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.test.util">py2store.test.util</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-test-quick">py2store.test.quick</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.test">py2store.test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-test-simple">py2store.test.simple</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-test-scrap">py2store.test.scrap</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.util">py2store.util</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-ext-docx">py2store.ext.docx</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.ext.gitlab">py2store.ext.gitlab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-ext-hdf">py2store.ext.hdf</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.ext">py2store.ext</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-ext-matlab">py2store.ext.matlab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.ext.kaggle">py2store.ext.kaggle</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-ext-module-imports">py2store.ext.module_imports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.ext.audio">py2store.ext.audio</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-ext-github">py2store.ext.github</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.ext.dataframes">py2store.ext.dataframes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.access">py2store.access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.__init__">py2store.__init__</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.stores.s3_store">py2store.stores.s3_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.stores.delegation_stores">py2store.stores.delegation_stores</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.stores.sql_w_sqlalchemy">py2store.stores.sql_w_sqlalchemy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-stores-arangodb-store">py2store.stores.arangodb_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-stores-dropbox-store">py2store.stores.dropbox_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.stores.local_store">py2store.stores.local_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.stores">py2store.stores</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-stores-couchdb-store">py2store.stores.couchdb_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.stores.mongo_store">py2store.stores.mongo_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.core">py2store.core</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.uri_utils">py2store.utils.uri_utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.explicit">py2store.utils.explicit</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.timeseries_caching">py2store.utils.timeseries_caching</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-utils-attr-dict-py-attr-dict">py2store.utils.attr_dict.py.attr_dict</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-utils-attr-dict-py">py2store.utils.attr_dict.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.cumul_aggreg_write">py2store.utils.cumul_aggreg_write</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils">py2store.utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.cache_descriptors">py2store.utils.cache_descriptors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.appendable">py2store.utils.appendable</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.affine_conversion">py2store.utils.affine_conversion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.signatures">py2store.utils.signatures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.sliceable">py2store.utils.sliceable</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.mappify">py2store.utils.mappify</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.glom">py2store.utils.glom</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-persisters-sql-w-odbc">py2store.persisters.sql_w_odbc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.dynamodb_w_boto3">py2store.persisters.dynamodb_w_boto3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-persisters-couchdb-w-couchdb">py2store.persisters.couchdb_w_couchdb</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.ftp_persister">py2store.persisters.ftp_persister</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.dropbox_w_urllib">py2store.persisters.dropbox_w_urllib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters._google_drive_in_progress">py2store.persisters._google_drive_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-persisters-dropbox-w-dropbox">py2store.persisters.dropbox_w_dropbox</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-persisters-redis-w-redis">py2store.persisters.redis_w_redis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.sql_w_sqlalchemy">py2store.persisters.sql_w_sqlalchemy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.new_s3">py2store.persisters.new_s3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters">py2store.persisters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.dropbox_w_requests">py2store.persisters.dropbox_w_requests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.w_aiofile">py2store.persisters.w_aiofile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.local_files">py2store.persisters.local_files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-persisters-arangodb-w-pyarango">py2store.persisters.arangodb_w_pyarango</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters._cassandra_in_progress">py2store.persisters._cassandra_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters._couchdb_in_progress">py2store.persisters._couchdb_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.s3_w_boto3">py2store.persisters.s3_w_boto3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-persisters-postgres-w-psycopg2-in-progress">py2store.persisters._postgres_w_psycopg2_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-persisters-ssh-persister">py2store.persisters.ssh_persister</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.mongo_w_pymongo">py2store.persisters.mongo_w_pymongo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-persisters-googledrive-w-pydrive">py2store.persisters.googledrive_w_pydrive</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.sources">py2store.sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.dig">py2store.dig</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.serializers.pickled">py2store.serializers.pickled</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.serializers.jsonization">py2store.serializers.jsonization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.serializers">py2store.serializers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.serializers.sequential">py2store.serializers.sequential</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.serializers.regular_panel_data">py2store.serializers.regular_panel_data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.serializers.audio">py2store.serializers.audio</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.caching">py2store.caching</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.scrap">py2store.scrap</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.scrap.new_gen_local">py2store.scrap.new_gen_local</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.examples.write_caches">py2store.examples.write_caches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.examples">py2store.examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.examples.python_code_stats">py2store.examples.python_code_stats</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.examples.kv_walking">py2store.examples.kv_walking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.my">py2store.my</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.my.grabbers">py2store.my.grabbers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.trans">py2store.trans</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.key_mappers.str_utils">py2store.key_mappers.str_utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.key_mappers.tuples">py2store.key_mappers.tuples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.key_mappers.paths">py2store.key_mappers.paths</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.key_mappers.naming">py2store.key_mappers.naming</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.key_mappers">py2store.key_mappers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.errors">py2store.errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.slib.s_configparser">py2store.slib.s_configparser</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.slib">py2store.slib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.slib.s_zipfile">py2store.slib.s_zipfile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.base">py2store.base</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-selectors-mg-selectors">py2store.selectors.mg_selectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-selectors-mongoquery">py2store.selectors.mongoquery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-selectors">py2store.selectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.parse_format">py2store.parse_format</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../../_sources/module_docs/py2store/util.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

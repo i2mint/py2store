@@ -1,0 +1,362 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>py2store.caching &#8212; py2store 0.0.1 documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css" />
+    <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for py2store.caching</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">functools</span> <span class="k">import</span> <span class="n">wraps</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="k">import</span> <span class="n">Iterable</span>
+
+
+<span class="c1">########################################################################################################################</span>
+<span class="c1"># Read caching</span>
+
+<span class="c1"># The following is a &quot;Cache-Aside&quot; read-cache with NO builtin cache update or refresh mechanism.</span>
+<span class="k">def</span> <span class="nf">mk_memoizer</span><span class="p">(</span><span class="n">cache_store</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">memoize</span><span class="p">(</span><span class="n">method</span><span class="p">):</span>
+        <span class="nd">@wraps</span><span class="p">(</span><span class="n">method</span><span class="p">)</span>
+        <span class="k">def</span> <span class="nf">memoizer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">cache_store</span><span class="p">:</span>
+                <span class="n">val</span> <span class="o">=</span> <span class="n">method</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
+                <span class="n">cache_store</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>  <span class="c1"># cache it</span>
+                <span class="k">return</span> <span class="n">val</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">cache_store</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">memoizer</span>
+
+    <span class="k">return</span> <span class="n">memoize</span>
+
+
+<div class="viewcode-block" id="mk_cached_store"><a class="viewcode-back" href="../../other.html#py2store.caching.mk_cached_store">[docs]</a><span class="k">def</span> <span class="nf">mk_cached_store</span><span class="p">(</span><span class="n">store_cls_you_want_to_cache</span><span class="p">,</span> <span class="n">caching_store</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">new_store_name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        store_cls_you_want_to_cache: The class of the store you want to cache</span>
+<span class="sd">        caching_store: The store you want to use to cacheAnything with a __setitem__(k, v) and a __getitem__(k).</span>
+<span class="sd">            By default, it will use a dict</span>
+
+<span class="sd">    Returns: A subclass of the input store_cls_you_want_to_cache, but with caching (to caching_store)</span>
+
+<span class="sd">    &gt;&gt;&gt; from py2store.caching import mk_cached_store</span>
+<span class="sd">    &gt;&gt;&gt; import time</span>
+<span class="sd">    &gt;&gt;&gt; class SlowDict(dict):</span>
+<span class="sd">    ...     sleep_s = 0.2</span>
+<span class="sd">    ...     def __getitem__(self, k):</span>
+<span class="sd">    ...         time.sleep(self.sleep_s)</span>
+<span class="sd">    ...         return super().__getitem__(k)</span>
+<span class="sd">    ...</span>
+<span class="sd">    ...</span>
+<span class="sd">    &gt;&gt;&gt; d = SlowDict({&#39;a&#39;: 1, &#39;b&#39;: 2, &#39;c&#39;: 3})</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; d[&#39;a&#39;]  # Wow! Takes a long time to get &#39;a&#39;</span>
+<span class="sd">    1</span>
+<span class="sd">    &gt;&gt;&gt; cache = dict()</span>
+<span class="sd">    &gt;&gt;&gt; CachedSlowDict = mk_cached_store(store_cls_you_want_to_cache=SlowDict, caching_store=cache)</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; s = CachedSlowDict({&#39;a&#39;: 1, &#39;b&#39;: 2, &#39;c&#39;: 3})</span>
+<span class="sd">    &gt;&gt;&gt; print(f&quot;store: {list(s)}\\ncache: {list(cache)}&quot;)</span>
+<span class="sd">    store: [&#39;a&#39;, &#39;b&#39;, &#39;c&#39;]</span>
+<span class="sd">    cache: []</span>
+<span class="sd">    &gt;&gt;&gt; # This will take a LONG time because it&#39;s the first time we ask for &#39;a&#39;</span>
+<span class="sd">    &gt;&gt;&gt; v = s[&#39;a&#39;]</span>
+<span class="sd">    &gt;&gt;&gt; print(f&quot;store: {list(s)}\\ncache: {list(cache)}&quot;)</span>
+<span class="sd">    store: [&#39;a&#39;, &#39;b&#39;, &#39;c&#39;]</span>
+<span class="sd">    cache: [&#39;a&#39;]</span>
+<span class="sd">    &gt;&gt;&gt; # This will take very little time because we have &#39;a&#39; in the cache</span>
+<span class="sd">    &gt;&gt;&gt; v = s[&#39;a&#39;]</span>
+<span class="sd">    &gt;&gt;&gt; print(f&quot;store: {list(s)}\\ncache: {list(cache)}&quot;)</span>
+<span class="sd">    store: [&#39;a&#39;, &#39;b&#39;, &#39;c&#39;]</span>
+<span class="sd">    cache: [&#39;a&#39;]</span>
+<span class="sd">    &gt;&gt;&gt; # But we don&#39;t have &#39;b&#39;</span>
+<span class="sd">    &gt;&gt;&gt; v = s[&#39;b&#39;]</span>
+<span class="sd">    &gt;&gt;&gt; print(f&quot;store: {list(s)}\\ncache: {list(cache)}&quot;)</span>
+<span class="sd">    store: [&#39;a&#39;, &#39;b&#39;, &#39;c&#39;]</span>
+<span class="sd">    cache: [&#39;a&#39;, &#39;b&#39;]</span>
+<span class="sd">    &gt;&gt;&gt; # But now we have &#39;b&#39;</span>
+<span class="sd">    &gt;&gt;&gt; v = s[&#39;b&#39;]</span>
+<span class="sd">    &gt;&gt;&gt; print(f&quot;store: {list(s)}\\ncache: {list(cache)}&quot;)</span>
+<span class="sd">    store: [&#39;a&#39;, &#39;b&#39;, &#39;c&#39;]</span>
+<span class="sd">    cache: [&#39;a&#39;, &#39;b&#39;]</span>
+<span class="sd">    &gt;&gt;&gt; s[&#39;d&#39;] = 4  # and we can do things normally (like put stuff in the store)</span>
+<span class="sd">    &gt;&gt;&gt; print(f&quot;store: {list(s)}\\ncache: {list(cache)}&quot;)</span>
+<span class="sd">    store: [&#39;a&#39;, &#39;b&#39;, &#39;c&#39;, &#39;d&#39;]</span>
+<span class="sd">    cache: [&#39;a&#39;, &#39;b&#39;]</span>
+<span class="sd">    &gt;&gt;&gt; s[&#39;d&#39;]  # if we ask for it again though, it will take time (the first time)</span>
+<span class="sd">    4</span>
+<span class="sd">    &gt;&gt;&gt; print(f&quot;store: {list(s)}\\ncache: {list(cache)}&quot;)</span>
+<span class="sd">    store: [&#39;a&#39;, &#39;b&#39;, &#39;c&#39;, &#39;d&#39;]</span>
+<span class="sd">    cache: [&#39;a&#39;, &#39;b&#39;, &#39;d&#39;]</span>
+<span class="sd">    &gt;&gt;&gt; # Of course, we could write &#39;d&#39; in the cache as well, to get it quicker,</span>
+<span class="sd">    &gt;&gt;&gt; # but that&#39;s another story: The story of write caches!</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; # And by the way, your &quot;cache wrapped&quot; store hold a pointer to the cache it&#39;s using,</span>
+<span class="sd">    &gt;&gt;&gt; # so you can take a peep there if needed:</span>
+<span class="sd">    &gt;&gt;&gt; s._caching_store</span>
+<span class="sd">    {&#39;a&#39;: 1, &#39;b&#39;: 2, &#39;d&#39;: 4}</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">caching_store</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">caching_store</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># use a dict (memory caching) by default</span>
+
+    <span class="k">class</span> <span class="nc">CachedStore</span><span class="p">(</span><span class="n">store_cls_you_want_to_cache</span><span class="p">):</span>
+        <span class="n">_caching_store</span> <span class="o">=</span> <span class="n">caching_store</span>
+
+        <span class="nd">@mk_memoizer</span><span class="p">(</span><span class="n">caching_store</span><span class="p">)</span>
+        <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">new_store_name</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">CachedStore</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">=</span> <span class="n">new_store_name</span>
+
+    <span class="k">return</span> <span class="n">CachedStore</span></div>
+
+
+<span class="k">def</span> <span class="nf">ensure_clear_to_kv_store</span><span class="p">(</span><span class="n">store</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="s1">&#39;clear&#39;</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">_clear</span><span class="p">(</span><span class="n">kv_store</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">kv_store</span><span class="p">:</span>
+                <span class="k">del</span> <span class="n">kv_store</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+
+        <span class="n">store</span><span class="o">.</span><span class="n">clear</span> <span class="o">=</span> <span class="n">_clear</span>
+    <span class="k">return</span> <span class="n">store</span>
+
+
+<span class="k">def</span> <span class="nf">flush_on_exit</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+    <span class="n">new_cls</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="p">(</span><span class="bp">cls</span><span class="p">,),</span> <span class="p">{})</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">new_cls</span><span class="p">,</span> <span class="s1">&#39;__enter__&#39;</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span>
+
+        <span class="n">new_cls</span><span class="o">.</span><span class="fm">__enter__</span> <span class="o">=</span> <span class="fm">__enter__</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">new_cls</span><span class="p">,</span> <span class="s1">&#39;__exit__&#39;</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">flush_cache</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>  <span class="c1"># TODO: Untested case where the class already has an __exit__, which we want to call after flush</span>
+        <span class="nd">@wraps</span><span class="p">(</span><span class="n">new_cls</span><span class="o">.</span><span class="fm">__exit__</span><span class="p">)</span>
+        <span class="k">def</span> <span class="nf">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">flush_cache</span><span class="p">()</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__exit__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">new_cls</span><span class="o">.</span><span class="fm">__exit__</span> <span class="o">=</span> <span class="fm">__exit__</span>
+
+    <span class="k">return</span> <span class="n">new_cls</span>
+
+
+<div class="viewcode-block" id="mk_write_cached_store"><a class="viewcode-back" href="../../other.html#py2store.caching.mk_write_cached_store">[docs]</a><span class="k">def</span> <span class="nf">mk_write_cached_store</span><span class="p">(</span><span class="n">store_cls_you_want_to_cache</span><span class="p">,</span>
+                          <span class="n">w_cache</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                          <span class="n">flush_cache_condition</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        store_cls_you_want_to_cache:</span>
+<span class="sd">        w_cache:</span>
+<span class="sd">        flush_cache_condition:</span>
+
+<span class="sd">    Returns:</span>
+
+<span class="sd">    &gt;&gt;&gt; from py2store.caching import mk_write_cached_store, ensure_clear_to_kv_store</span>
+<span class="sd">    &gt;&gt;&gt; from py2store import Store</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; def print_state(store):</span>
+<span class="sd">    ...     print(f&quot;store: {store} ----- store._w_cache: {store._w_cache}&quot;)</span>
+<span class="sd">    ...</span>
+<span class="sd">    &gt;&gt;&gt; class MyStore(dict): ...</span>
+<span class="sd">    &gt;&gt;&gt; MyCachedStore = mk_write_cached_store(MyStore, w_cache={})  # wrap MyStore with a (dict) write cache</span>
+<span class="sd">    &gt;&gt;&gt; s = MyCachedStore()  # make a MyCachedStore instance</span>
+<span class="sd">    &gt;&gt;&gt; print_state(s)  # print the contents (both store and cache), see that it&#39;s empty</span>
+<span class="sd">    store: {} ----- store._w_cache: {}</span>
+<span class="sd">    &gt;&gt;&gt; s[&#39;hello&#39;] = &#39;world&#39;  # write &#39;world&#39; in &#39;hello&#39;</span>
+<span class="sd">    &gt;&gt;&gt; print_state(s)  # see that it hasn&#39;t been written</span>
+<span class="sd">    store: {} ----- store._w_cache: {&#39;hello&#39;: &#39;world&#39;}</span>
+<span class="sd">    &gt;&gt;&gt; s[&#39;ding&#39;] = &#39;dong&#39;</span>
+<span class="sd">    &gt;&gt;&gt; print_state(s)</span>
+<span class="sd">    store: {} ----- store._w_cache: {&#39;hello&#39;: &#39;world&#39;, &#39;ding&#39;: &#39;dong&#39;}</span>
+<span class="sd">    &gt;&gt;&gt; s.flush_cache()  # manually flush the cache</span>
+<span class="sd">    &gt;&gt;&gt; print_state(s)  # note that store._w_cache is empty, but store has the data now</span>
+<span class="sd">    store: {&#39;hello&#39;: &#39;world&#39;, &#39;ding&#39;: &#39;dong&#39;} ----- store._w_cache: {}</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; # But you usually want to use the store as a context manager</span>
+<span class="sd">    &gt;&gt;&gt; MyCachedStore = mk_write_cached_store(</span>
+<span class="sd">    ...     MyStore, w_cache={},</span>
+<span class="sd">    ...     flush_cache_condition=None)</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; the_persistent_dict = dict()</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; s = MyCachedStore(the_persistent_dict)</span>
+<span class="sd">    &gt;&gt;&gt; with s:</span>
+<span class="sd">    ...     print(&quot;===&gt; Before writing data:&quot;)</span>
+<span class="sd">    ...     print_state(s)</span>
+<span class="sd">    ...     s[&#39;hello&#39;] = &#39;world&#39;</span>
+<span class="sd">    ...     print(&quot;===&gt; Before exiting the with block:&quot;)</span>
+<span class="sd">    ...     print_state(s)</span>
+<span class="sd">    ...</span>
+<span class="sd">    ===&gt; Before writing data:</span>
+<span class="sd">    store: {} ----- store._w_cache: {}</span>
+<span class="sd">    ===&gt; Before exiting the with block:</span>
+<span class="sd">    store: {} ----- store._w_cache: {&#39;hello&#39;: &#39;world&#39;}</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; print(&quot;===&gt; After exiting the with block:&quot;); print_state(s)  # Note that the cache store flushed!</span>
+<span class="sd">    ===&gt; After exiting the with block:</span>
+<span class="sd">    store: {&#39;hello&#39;: &#39;world&#39;} ----- store._w_cache: {}</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; # Example of auto-flushing when there&#39;s at least two elements</span>
+<span class="sd">    &gt;&gt;&gt; class MyStore(dict): ...</span>
+<span class="sd">    ...</span>
+<span class="sd">    &gt;&gt;&gt; MyCachedStore = mk_write_cached_store(</span>
+<span class="sd">    ...     MyStore, w_cache={},</span>
+<span class="sd">    ...     flush_cache_condition=lambda w_cache: len(w_cache) &gt;= 3)</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; s = MyCachedStore()</span>
+<span class="sd">    &gt;&gt;&gt; with s:</span>
+<span class="sd">    ...     for i in range(7):</span>
+<span class="sd">    ...         s[i] = i * 10</span>
+<span class="sd">    ...         print_state(s)</span>
+<span class="sd">    ...</span>
+<span class="sd">    store: {} ----- store._w_cache: {0: 0}</span>
+<span class="sd">    store: {} ----- store._w_cache: {0: 0, 1: 10}</span>
+<span class="sd">    store: {0: 0, 1: 10, 2: 20} ----- store._w_cache: {}</span>
+<span class="sd">    store: {0: 0, 1: 10, 2: 20} ----- store._w_cache: {3: 30}</span>
+<span class="sd">    store: {0: 0, 1: 10, 2: 20} ----- store._w_cache: {3: 30, 4: 40}</span>
+<span class="sd">    store: {0: 0, 1: 10, 2: 20, 3: 30, 4: 40, 5: 50} ----- store._w_cache: {}</span>
+<span class="sd">    store: {0: 0, 1: 10, 2: 20, 3: 30, 4: 40, 5: 50} ----- store._w_cache: {6: 60}</span>
+<span class="sd">    &gt;&gt;&gt; # There was still something left in the cache before exiting the with block. But now...</span>
+<span class="sd">    &gt;&gt;&gt; print_state(s)</span>
+<span class="sd">    store: {0: 0, 1: 10, 2: 20, 3: 30, 4: 40, 5: 50, 6: 60} ----- store._w_cache: {}</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">w_cache</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">w_cache</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># use a dict (memory caching) by default</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">w_cache</span><span class="p">,</span> <span class="s1">&#39;clear&#39;</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;A w_cache must have a clear method (that clears the cache&#39;s contents). &quot;</span>
+                        <span class="s2">&quot;If you know what you&#39;re doing and want to add one to your input kv store, &quot;</span>
+                        <span class="s2">&quot;you can do so by calling ensure_clear_to_kv_store(store) -- this will add a &quot;</span>
+                        <span class="s2">&quot;clear method inplace AND return the resulting store as well.&quot;</span>
+                        <span class="s2">&quot;We didn&#39;t add this automatically because the first thing mk_write_cached_store &quot;</span>
+                        <span class="s2">&quot;will do is call clear, to remove all the contents of the store.&quot;</span>
+                        <span class="s2">&quot;You don&#39;t want to do this unwittingly and delete a bunch of precious data!!!&quot;</span><span class="p">)</span>
+
+    <span class="n">w_cache</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+
+    <span class="nd">@flush_on_exit</span>
+    <span class="k">class</span> <span class="nc">WriteCachedStore</span><span class="p">(</span><span class="n">store_cls_you_want_to_cache</span><span class="p">):</span>
+        <span class="n">_w_cache</span> <span class="o">=</span> <span class="n">w_cache</span>
+        <span class="n">_flush_cache_condition</span> <span class="o">=</span> <span class="nb">staticmethod</span><span class="p">(</span><span class="n">flush_cache_condition</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flush_cache_condition</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">def</span> <span class="nf">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_w_cache</span><span class="o">.</span><span class="fm">__setitem__</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">callable</span><span class="p">(</span><span class="n">flush_cache_condition</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;flush_cache_condition must be None or a callable &quot;</span><span class="p">,</span>
+                                                     <span class="s2">&quot;taking the (write) cache store as an input and returning&quot;</span>
+                                                     <span class="s2">&quot;True if and only if the cache should be flushed.&quot;</span><span class="p">)</span>
+
+            <span class="k">def</span> <span class="nf">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+                <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_w_cache</span><span class="o">.</span><span class="fm">__setitem__</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flush_cache_condition</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_w_cache</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">flush_cache</span><span class="p">()</span>
+                <span class="k">return</span> <span class="n">r</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">store_cls_you_want_to_cache</span><span class="p">,</span> <span class="s1">&#39;flush&#39;</span><span class="p">):</span>
+            <span class="k">def</span> <span class="nf">flush</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">items</span><span class="p">:</span> <span class="n">Iterable</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">()):</span>
+                <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">items</span><span class="p">:</span>
+                    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__setitem__</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">flush_cache</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">flush</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_w_cache</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_w_cache</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">WriteCachedStore</span></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">py2store</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, Thor.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.4.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

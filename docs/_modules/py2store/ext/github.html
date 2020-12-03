@@ -1,0 +1,534 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>py2store.ext.github &#8212; py2store 0.0.7 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css" />
+    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for py2store.ext.github</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">py2store</span> <span class="kn">import</span> <span class="n">KvReader</span>
+<span class="kn">from</span> <span class="nn">github</span> <span class="kn">import</span> <span class="n">GithubException</span>
+
+<span class="c1"># from py2store.util import lazyprop</span>
+<span class="c1"># from py2store.trans import cache_iter</span>
+<span class="c1"># from py2store.key_mappers.paths import PathGetMixin</span>
+<span class="kn">from</span> <span class="nn">github</span> <span class="kn">import</span> <span class="n">Github</span><span class="p">,</span> <span class="n">ContentFile</span>
+
+<span class="kn">from</span> <span class="nn">py2store.util</span> <span class="kn">import</span> <span class="n">format_invocation</span>
+
+
+<span class="c1">#</span>
+<span class="c1"># from py2store.utils.signatures import update_signature_with_signatures_from_funcs</span>
+<span class="c1">#</span>
+<span class="c1"># # Just meant to be used for it&#39;s signature:</span>
+<span class="c1"># def _account_name(account_name): ...</span>
+
+<span class="c1"># @cache_iter(keys_cache=sorted)</span>
+<span class="c1"># @cache_iter</span>
+
+
+<span class="k">def</span> <span class="nf">decoded_contents</span><span class="p">(</span><span class="n">content_file</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">content_file</span><span class="o">.</span><span class="n">decoded_content</span>
+    <span class="c1"># from base64 import b64decode</span>
+    <span class="c1"># return b64decode(content_file.content).decode()</span>
+
+
+<span class="c1"># TODO: use signature arithmetic</span>
+<span class="c1"># @kv_decorator</span>
+<div class="viewcode-block" id="GitHubReader"><a class="viewcode-back" href="../../../test.html#py2store.ext.github.GitHubReader">[docs]</a><span class="k">class</span> <span class="nc">GitHubReader</span><span class="p">(</span><span class="n">KvReader</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    a Store that can access a GitHub account</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">account_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="n">content_file_extractor</span><span class="o">=</span><span class="n">decoded_contents</span><span class="p">,</span>
+            <span class="n">login_or_token</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">password</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">jwt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">base_url</span><span class="o">=</span><span class="s2">&quot;https://api.github.com&quot;</span><span class="p">,</span>
+            <span class="n">timeout</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span>
+            <span class="n">client_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">client_secret</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">user_agent</span><span class="o">=</span><span class="s2">&quot;PyGithub/Python&quot;</span><span class="p">,</span>
+            <span class="n">per_page</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
+            <span class="n">verify</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">retry</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span>
+            <span class="n">account_name</span><span class="p">,</span> <span class="nb">str</span>
+        <span class="p">),</span> <span class="s2">&quot;account_name must be given (and a str)&quot;</span>
+
+        <span class="n">_github</span> <span class="o">=</span> <span class="n">Github</span><span class="p">(</span>
+            <span class="n">login_or_token</span><span class="o">=</span><span class="n">login_or_token</span><span class="p">,</span>
+            <span class="n">password</span><span class="o">=</span><span class="n">password</span><span class="p">,</span>
+            <span class="n">jwt</span><span class="o">=</span><span class="n">jwt</span><span class="p">,</span>
+            <span class="n">base_url</span><span class="o">=</span><span class="n">base_url</span><span class="p">,</span>
+            <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">,</span>
+            <span class="n">client_id</span><span class="o">=</span><span class="n">client_id</span><span class="p">,</span>
+            <span class="n">client_secret</span><span class="o">=</span><span class="n">client_secret</span><span class="p">,</span>
+            <span class="n">user_agent</span><span class="o">=</span><span class="n">user_agent</span><span class="p">,</span>
+            <span class="n">per_page</span><span class="o">=</span><span class="n">per_page</span><span class="p">,</span>
+            <span class="n">verify</span><span class="o">=</span><span class="n">verify</span><span class="p">,</span>
+            <span class="n">retry</span><span class="o">=</span><span class="n">retry</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_github</span> <span class="o">=</span> <span class="n">_github</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_source_obj</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">_github</span><span class="o">.</span><span class="n">get_user</span><span class="p">(</span><span class="n">account_name</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">account_name</span>
+            <span class="k">else</span> <span class="n">_github</span><span class="o">.</span><span class="n">get_user</span><span class="p">()</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">content_file_extractor</span> <span class="o">=</span> <span class="n">content_file_extractor</span>
+
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source_obj</span><span class="o">.</span><span class="n">get_repos</span><span class="p">():</span>
+            <span class="n">org</span><span class="p">,</span> <span class="n">name</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">full_name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">org</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source_obj</span><span class="o">.</span><span class="n">login</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="n">name</span>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Retrieves a given repository</span>
+<span class="sd">        :param k: str</span>
+<span class="sd">        :rtype: :class:`github.Repository.Repository`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">repository</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source_obj</span><span class="o">.</span><span class="n">get_repo</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">GithubException</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Key doesn&#39;t exist: </span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Branches</span><span class="p">(</span><span class="n">repository</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">content_file_extractor</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">format_invocation</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_source_obj</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">content_file_extractor</span><span class="p">),</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Branches"><a class="viewcode-back" href="../../../test.html#py2store.ext.github.Branches">[docs]</a><span class="k">class</span> <span class="nc">Branches</span><span class="p">(</span><span class="n">KvReader</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">repository_obj</span><span class="p">,</span> <span class="n">content_file_extractor</span><span class="o">=</span><span class="n">decoded_contents</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_source_obj</span> <span class="o">=</span> <span class="n">repository_obj</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">content_file_extractor</span> <span class="o">=</span> <span class="n">content_file_extractor</span>
+        <span class="c1"># self._con = repository_obj  # same as this.</span>
+
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">yield from</span> <span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source_obj</span><span class="o">.</span><span class="n">get_branches</span><span class="p">())</span>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+        <span class="c1"># return self._source_obj.get_branch(k) # should not give only the branch</span>
+        <span class="c1"># return self._source_obj.get_contents(&quot;&quot;, ref = k)</span>
+        <span class="k">return</span> <span class="n">BranchDir</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_source_obj</span><span class="p">,</span>
+            <span class="n">branch_name</span><span class="o">=</span><span class="n">k</span><span class="p">,</span>
+            <span class="n">path</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+            <span class="n">content_file_extractor</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">content_file_extractor</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">format_invocation</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_source_obj</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">content_file_extractor</span><span class="p">),</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BranchDir"><a class="viewcode-back" href="../../../test.html#py2store.ext.github.BranchDir">[docs]</a><span class="k">class</span> <span class="nc">BranchDir</span><span class="p">(</span><span class="n">KvReader</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">repository_obj</span><span class="p">,</span>
+            <span class="n">branch_name</span><span class="p">,</span>
+            <span class="n">path</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+            <span class="n">content_file_extractor</span><span class="o">=</span><span class="n">decoded_contents</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_source_obj</span> <span class="o">=</span> <span class="n">repository_obj</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">branch_name</span> <span class="o">=</span> <span class="n">branch_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">content_file_extractor</span> <span class="o">=</span> <span class="n">content_file_extractor</span>
+
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">yield from</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">+</span> <span class="s2">&quot;/&quot;</span> <span class="o">+</span> <span class="n">x</span><span class="o">.</span><span class="n">name</span>
+            <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source_obj</span><span class="o">.</span><span class="n">get_contents</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">ref</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">branch_name</span>
+        <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="c1"># yield from (x.name for x in self._source_obj.get_contents(self.subpath, ref=self.branch_name))</span>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source_obj</span><span class="o">.</span><span class="n">get_contents</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+        <span class="c1"># TODO: There is an inefficiency here in the isinstance(t, list) case</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span>
+                <span class="n">t</span><span class="p">,</span> <span class="nb">list</span>
+        <span class="p">):</span>  <span class="c1"># TODO: ... you already have the content_files in t, so don&#39;t need to call API again.</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_source_obj</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">branch_name</span><span class="p">,</span>
+                <span class="n">k</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">content_file_extractor</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">content_file_extractor</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">format_invocation</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
+            <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_source_obj</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">branch_name</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">content_file_extractor</span><span class="p">,</span>
+            <span class="p">),</span>
+        <span class="p">)</span></div>
+        <span class="c1"># return f&quot;{self.__class__.__name__}({self._source_obj}, {self.branch_name})&quot;</span>
+
+
+<span class="c1"># Not used, but for principle:</span>
+
+
+<span class="k">def</span> <span class="nf">_content_file_isfile</span><span class="p">(</span><span class="n">content_file</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">content_file</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;file&quot;</span>
+
+
+<span class="k">def</span> <span class="nf">_content_file_isdir</span><span class="p">(</span><span class="n">content_file</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">content_file</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;dir&quot;</span>
+
+<span class="c1"># from py2store import kv_wrap</span>
+<span class="c1">#</span>
+<span class="c1"># BranchContent = kv_wrap.outcoming_vals(lambda x: x.contents if isinstance(x, ))</span>
+
+
+<span class="c1"># class GitDir:</span>
+<span class="c1">#     def __init__(self, content_files):</span>
+<span class="c1">#         self.content_files = content_files</span>
+
+<span class="c1"># @update_signature_with_signatures_from_funcs(Github.__init__, _account_name)</span>
+<span class="c1"># def __init__(self, account_name, *args, **kwargs):</span>
+<span class="c1">#     if len(args) &gt; 0:</span>
+<span class="c1">#         account_name = args[0]</span>
+<span class="c1">#     else:</span>
+<span class="c1">#         account_name = kwargs.pop(&#39;account_name&#39;, None)</span>
+<span class="c1">#     assert isinstance(account_name, str), &quot;account_name must be given (and a str)&quot;</span>
+<span class="c1">#</span>
+<span class="c1">#     _source_obj = Github(*args, **kwargs)</span>
+<span class="c1">#     self._access_args = (args, kwargs)</span>
+<span class="c1">#     self._source_obj = _source_obj.get_user(account_name) if account_name else _source_obj.get_user()</span>
+
+<span class="c1"># from py2store import KvReader</span>
+<span class="c1"># from py2store import Store, Persister</span>
+<span class="c1"># from github import GithubException</span>
+<span class="c1"># from py2store.util import lazyprop</span>
+<span class="c1"># from py2store.trans import cache_iter</span>
+<span class="c1"># from py2store.key_mappers.paths import PathGetMixin</span>
+<span class="c1">#</span>
+<span class="c1">#</span>
+<span class="c1"># # @cache_iter(keys_cache=sorted)</span>
+<span class="c1"># # @cache_iter</span>
+<span class="c1">#</span>
+<span class="c1"># def check_credentials(account_name, access_token):</span>
+<span class="c1">#     if access_token is None:</span>
+<span class="c1">#         raise Exception(&#39;An access_token must be provided&#39;)</span>
+<span class="c1">#     return account_name</span>
+<span class="c1">#</span>
+<span class="c1">#</span>
+<span class="c1"># # @kv_decorator</span>
+<span class="c1"># class GitHubReader(KvReader):</span>
+<span class="c1">#     &quot;&quot;&quot;</span>
+<span class="c1">#     a Store that can access a GitHub account</span>
+<span class="c1">#     &quot;&quot;&quot;</span>
+<span class="c1">#</span>
+<span class="c1">#     def __init__(self, account_name=None, access_token=None, access_kwargs=None):</span>
+<span class="c1">#         account_name = check_credentials(account_name, access_token)</span>
+<span class="c1">#         _source_obj = Github(login_or_token=access_token)</span>
+<span class="c1">#         self._access_kwargs = access_kwargs</span>
+<span class="c1">#         self._source_obj = _source_obj.get_user(account_name) if account_name else _source_obj.get_user()</span>
+<span class="c1">#</span>
+<span class="c1">#     def __iter__(self):</span>
+<span class="c1">#         for x in self._source_obj.get_repos():</span>
+<span class="c1">#             org, name = x.full_name.split(&#39;/&#39;)</span>
+<span class="c1">#             if org == self._source_obj.login:</span>
+<span class="c1">#                 yield name</span>
+<span class="c1">#</span>
+<span class="c1">#     def __getitem__(self, k):</span>
+<span class="c1">#         &quot;&quot;&quot;Retrieves a given repository</span>
+<span class="c1">#         :param k: str</span>
+<span class="c1">#         :rtype: :class:`github.Repository.Repository`</span>
+<span class="c1">#         &quot;&quot;&quot;</span>
+<span class="c1">#         try:</span>
+<span class="c1">#             repository = self._source_obj.get_repo(k)</span>
+<span class="c1">#         except GithubException as e:</span>
+<span class="c1">#             raise KeyError(f&quot;Key doesn&#39;t exist: {k}&quot;)</span>
+<span class="c1">#         return Branches(repository)</span>
+<span class="c1">#</span>
+<span class="c1">#</span>
+<span class="c1"># class Branches(KvReader):</span>
+<span class="c1">#     def __init__(self, repository_obj):</span>
+<span class="c1">#         self._source_obj = repository_obj</span>
+<span class="c1">#         # self._con = repository_obj  # same as this.</span>
+<span class="c1">#</span>
+<span class="c1">#     def __iter__(self):</span>
+<span class="c1">#         yield from (x.name for x in self._source_obj.get_branches())</span>
+<span class="c1">#</span>
+<span class="c1">#     def __getitem__(self, k):</span>
+<span class="c1">#         # return self._source_obj.get_branch(k) # should not give only the branch</span>
+<span class="c1">#         # return self._source_obj.get_contents(&quot;&quot;, ref = k)</span>
+<span class="c1">#         return BranchContent(self._source_obj, k)</span>
+<span class="c1">#</span>
+<span class="c1">#</span>
+<span class="c1"># class BranchContent(KvReader):</span>
+<span class="c1">#     def __init__(self, repository_obj, branch_name):</span>
+<span class="c1">#         self._source_obj = repository_obj</span>
+<span class="c1">#         self.branch_name = branch_name</span>
+<span class="c1">#</span>
+<span class="c1">#     def __iter__(self):</span>
+<span class="c1">#         yield from (x.name for x in self._source_obj.get_contents(&quot;&quot;, ref=self.branch_name))</span>
+<span class="c1">#</span>
+<span class="c1">#     def __getitem__(self, k):</span>
+<span class="c1">#         return self._source_obj.get_contents(k)</span>
+
+
+<span class="c1"># from py2store import KvReader</span>
+<span class="c1"># from py2store import Store, Persister</span>
+<span class="c1"># from github import GithubException</span>
+<span class="c1"># from py2store.util import lazyprop</span>
+<span class="c1"># from py2store.trans import cache_iter</span>
+<span class="c1"># from github import Github</span>
+<span class="c1">#</span>
+<span class="c1">#</span>
+<span class="c1"># # @cache_iter(keys_cache=sorted)</span>
+<span class="c1"># # @cache_iter</span>
+<span class="c1"># class GitHubReader(KvReader):</span>
+<span class="c1">#     &quot;&quot;&quot;</span>
+<span class="c1">#     a Store that can access a GitHub account</span>
+<span class="c1">#     &quot;&quot;&quot;</span>
+<span class="c1">#</span>
+<span class="c1">#     def __init__(self, access_token, access_kwargs=None):</span>
+<span class="c1">#         _source_obj = Github(login_or_token=access_token)</span>
+<span class="c1">#         self._access_kwargs = access_kwargs</span>
+<span class="c1">#         self._source_obj = _source_obj.get_user()</span>
+<span class="c1">#</span>
+<span class="c1">#     def __iter__(self):</span>
+<span class="c1">#         for x in self._source_obj.get_repos():</span>
+<span class="c1">#             org, name = x.full_name.split(&#39;/&#39;)</span>
+<span class="c1">#             if org == self._source_obj.login:</span>
+<span class="c1">#                 yield name</span>
+<span class="c1">#</span>
+<span class="c1">#     #         yield from (x.full_name.split(&#39;/&#39;)[-1] for x in self._source_obj.get_repos())</span>
+<span class="c1">#</span>
+<span class="c1">#     def __getitem__(self, k):</span>
+<span class="c1">#         &quot;&quot;&quot;Retrieves a given repository</span>
+<span class="c1">#         :param k: str</span>
+<span class="c1">#         :rtype: :class:`github.Repository.Repository`</span>
+<span class="c1">#         &quot;&quot;&quot;</span>
+<span class="c1">#         try:</span>
+<span class="c1">#             repository = self._source_obj.get_repo(k)</span>
+<span class="c1">#         except GithubException as e:</span>
+<span class="c1">#             raise KeyError(f&quot;Key doesn&#39;t exist: {k}&quot;)</span>
+<span class="c1">#</span>
+<span class="c1">#         return Branches(repository)</span>
+<span class="c1">#</span>
+<span class="c1">#</span>
+<span class="c1"># class Branches(KvReader):</span>
+<span class="c1">#     def __init__(self, repository_obj):</span>
+<span class="c1">#         self._source_obj = repository_obj</span>
+<span class="c1">#         # self._con = repository_obj  # same as this.</span>
+<span class="c1">#</span>
+<span class="c1">#     def __iter__(self):</span>
+<span class="c1">#         yield from (x.name for x in self._source_obj.get_branches())</span>
+<span class="c1">#</span>
+<span class="c1">#     def __getitem__(self, k):</span>
+<span class="c1">#         return self._source_obj.get_branch(k)</span>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">py2store</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html">py2store.filesys</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.misc">py2store.misc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.mixins">py2store.mixins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.test.util">py2store.test.util</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.test.quick">py2store.test.quick</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.test">py2store.test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.test.simple">py2store.test.simple</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-test-scrap">py2store.test.scrap</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.util">py2store.util</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext.docx">py2store.ext.docx</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext.gitlab">py2store.ext.gitlab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext.hdf">py2store.ext.hdf</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext">py2store.ext</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext.matlab">py2store.ext.matlab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext.kaggle">py2store.ext.kaggle</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext.module_imports">py2store.ext.module_imports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext.audio">py2store.ext.audio</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext.github">py2store.ext.github</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext.dataframes">py2store.ext.dataframes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.access">py2store.access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.__init__">py2store.__init__</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores.s3_store">py2store.stores.s3_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores.delegation_stores">py2store.stores.delegation_stores</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores.sql_w_sqlalchemy">py2store.stores.sql_w_sqlalchemy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-stores-arangodb-store">py2store.stores.arangodb_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores.dropbox_store">py2store.stores.dropbox_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores.local_store">py2store.stores.local_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores">py2store.stores</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-stores-couchdb-store">py2store.stores.couchdb_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores.mongo_store">py2store.stores.mongo_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.core">py2store.core</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.uri_utils">py2store.utils.uri_utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.explicit">py2store.utils.explicit</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.timeseries_caching">py2store.utils.timeseries_caching</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-utils-attr-dict-py-attr-dict">py2store.utils.attr_dict.py.attr_dict</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-utils-attr-dict-py">py2store.utils.attr_dict.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.cumul_aggreg_write">py2store.utils.cumul_aggreg_write</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils">py2store.utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.cache_descriptors">py2store.utils.cache_descriptors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.appendable">py2store.utils.appendable</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.affine_conversion">py2store.utils.affine_conversion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.signatures">py2store.utils.signatures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.sliceable">py2store.utils.sliceable</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.mappify">py2store.utils.mappify</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.glom">py2store.utils.glom</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-sql-w-odbc">py2store.persisters.sql_w_odbc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.dynamodb_w_boto3">py2store.persisters.dynamodb_w_boto3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-couchdb-w-couchdb">py2store.persisters.couchdb_w_couchdb</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.ftp_persister">py2store.persisters.ftp_persister</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.dropbox_w_urllib">py2store.persisters.dropbox_w_urllib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters._google_drive_in_progress">py2store.persisters._google_drive_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.dropbox_w_dropbox">py2store.persisters.dropbox_w_dropbox</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.redis_w_redis">py2store.persisters.redis_w_redis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.sql_w_sqlalchemy">py2store.persisters.sql_w_sqlalchemy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.new_s3">py2store.persisters.new_s3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters">py2store.persisters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.dropbox_w_requests">py2store.persisters.dropbox_w_requests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.w_aiofile">py2store.persisters.w_aiofile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.local_files">py2store.persisters.local_files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-arangodb-w-pyarango">py2store.persisters.arangodb_w_pyarango</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters._cassandra_in_progress">py2store.persisters._cassandra_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters._couchdb_in_progress">py2store.persisters._couchdb_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.s3_w_boto3">py2store.persisters.s3_w_boto3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-postgres-w-psycopg2-in-progress">py2store.persisters._postgres_w_psycopg2_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.ssh_persister">py2store.persisters.ssh_persister</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.mongo_w_pymongo">py2store.persisters.mongo_w_pymongo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-googledrive-w-pydrive">py2store.persisters.googledrive_w_pydrive</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.sources">py2store.sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.dig">py2store.dig</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers.pickled">py2store.serializers.pickled</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers.jsonization">py2store.serializers.jsonization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers">py2store.serializers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers.sequential">py2store.serializers.sequential</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers.regular_panel_data">py2store.serializers.regular_panel_data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers.audio">py2store.serializers.audio</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.caching">py2store.caching</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.scrap">py2store.scrap</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.scrap.new_gen_local">py2store.scrap.new_gen_local</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.examples.write_caches">py2store.examples.write_caches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.examples">py2store.examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.examples.python_code_stats">py2store.examples.python_code_stats</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.examples.kv_walking">py2store.examples.kv_walking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.my">py2store.my</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.my.grabbers">py2store.my.grabbers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.trans">py2store.trans</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.key_mappers.str_utils">py2store.key_mappers.str_utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.key_mappers.tuples">py2store.key_mappers.tuples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.key_mappers.paths">py2store.key_mappers.paths</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.key_mappers.naming">py2store.key_mappers.naming</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.key_mappers">py2store.key_mappers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.errors">py2store.errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.slib.s_configparser">py2store.slib.s_configparser</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.slib">py2store.slib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.slib.s_zipfile">py2store.slib.s_zipfile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.base">py2store.base</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.selectors.mg_selectors">py2store.selectors.mg_selectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.selectors.mongoquery">py2store.selectors.mongoquery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.selectors">py2store.selectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.parse_format">py2store.parse_format</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

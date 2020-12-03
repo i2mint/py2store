@@ -217,47 +217,105 @@ def first_non_existing_parent_dir(dirpath):
 ########################################################################################################################
 # Local File Persistence : Classes
 
+from functools import wraps
+from typing import Union, Callable
 
+
+def w_helpful_folder_not_found_error(*,
+                                     raise_error=KeyError,
+                                     extra_msg: Union[str, Callable] = "",
+                                     caught_errors=FileNotFoundError):
+    if isinstance(extra_msg, str):
+        extra_msg_str = extra_msg
+
+        def extra_msg(*args, **kwargs):
+            return extra_msg_str
+    assert callable(extra_msg), "extra_msg must be a callable or a string"
+
+    def _helpful_folder_not_found_error(method):
+        @wraps(method)
+        def wrapped_method(*args, **kwargs):
+            try:
+                return method(*args, **kwargs)
+            except caught_errors as e:
+                msg = "{}: {}\n".format(type(e).__name__, e) + extra_msg(*args, **kwargs)
+                raise raise_error(msg)
+
+        return wrapped_method
+
+    return _helpful_folder_not_found_error
+
+
+def _store_does_not_create_dirs_msg(self, k, *args, **kwargs):
+    return ("The store you're using doesn't create directories for you. "
+            "You have to make the directories needed yourself manually, "
+            "or use a store that does that for you (example QuickStore). "
+            "This is the first directory that didn't exist:\n"
+            f"{first_non_existing_parent_dir(k)}"
+            )
+
+
+class LocalFileStreamGetter:
+    """A class to get stream objects of local open files.
+    The class can only get keys, and only to read, write (destructive or append).
+
+    >>> from tempfile import mkdtemp
+    >>> import os
+    >>> rootdir = mkdtemp()
+    >>>
+    >>> appendable_stream = LocalFileStreamGetter(mode='a+')
+    >>> reader = PathFormatPersister(rootdir)
+    >>> filepath = os.path.join(rootdir, 'tmp.txt')
+    >>>
+    >>> with appendable_stream[filepath] as fp:
+    ...     fp.write('hello')
+    5
+    >>> print(reader[filepath])
+    hello
+    >>> with appendable_stream[filepath] as fp:
+    ...     fp.write(' world')
+    6
+    >>>
+    >>> print(reader[filepath])
+    hello world
+    """
+
+    def __init__(self, **open_kwargs):
+        self.open_kwargs = open_kwargs
+
+    @w_helpful_folder_not_found_error()
+    def __getitem__(self, k):
+        return open(k, **self.open_kwargs)
+
+
+# TODO: Use LocalFileStream
 class LocalFileRWD:
     """
     A class providing get, set and delete functionality using local files as the storage backend.
     """
 
     def __init__(self, mode="", **open_kwargs):
-        if mode not in {"", "b", "t"}:
-            raise ValueError("mode should be '', 'b', or 't'")
+        assert mode in {"", "b", "t"}, "mode should be '', 'b', or 't'"
 
         read_mode = open_kwargs.pop("read_mode", "r" + mode)
         write_mode = open_kwargs.pop("write_mode", "w" + mode)
         self._open_kwargs_for_read = dict(open_kwargs, mode=read_mode)
         self._open_kwargs_for_write = dict(open_kwargs, mode=write_mode)
 
+    @w_helpful_folder_not_found_error()
     def __getitem__(self, k):
-        try:
-            with open(k, **self._open_kwargs_for_read) as fp:
-                data = fp.read()
-            return data
-        except FileNotFoundError as e:
-            raise KeyError("{}: {}".format(type(e).__name__, e))
+        with open(k, **self._open_kwargs_for_read) as fp:
+            data = fp.read()
+        return data
 
+    @w_helpful_folder_not_found_error(raise_error=FolderNotFoundError, extra_msg=_store_does_not_create_dirs_msg)
     def __setitem__(self, k, v):
-        try:
-            with open(k, **self._open_kwargs_for_write) as fp:
-                fp.write(v)
-        except FileNotFoundError:
-            raise FolderNotFoundError(
-                f"The store you're using doesn't create directories for you. "
-                f"You have to make the directories needed yourself manually, "
-                f"or use a store that does that for you (example QuickStore). "
-                f"This is the first directory that didn't exist:\n"
-                f"{first_non_existing_parent_dir(k)}"
-            )
+        with open(k, **self._open_kwargs_for_write) as fp:
+            fp.write(v)
 
+    @w_helpful_folder_not_found_error()
     def __delitem__(self, k):
-        try:
-            return os.remove(k)
-        except FileNotFoundError as e:
-            raise KeyError("{}: {}".format(type(e).__name__, e))
+        return os.remove(k)
 
 
 class FilepathFormatKeys(
@@ -279,7 +337,9 @@ class DirpathFormatKeys(
     PrefixedDirpathsRecursive,
     IterBasedSizedMixin,
 ):
-    def __init__(self, path_format: str, max_levels: int = inf):
+    def __init__(self,
+                 path_format: str,
+                 max_levels: int = inf):
         super().__init__(path_format)
         self._max_levels = max_levels
 
@@ -335,86 +395,80 @@ class PrefixedDirpathsRecursive(PrefixedFilepaths):
         return iter_dirpaths_in_folder_recursively(self._prefix)
 
 
+is_dir_path = os.path.isdir
+is_file_path = os.path.isfile
+
+
 def extend_prefix(prefix, new_prefix):
     return ensure_slash_suffix(os.path.join(prefix, new_prefix))
 
 
-is_dir_key = os.path.isdir
-is_fiile_key = os.path.isfile
+def endswith_slash(path):
+    return path.endswith(file_sep)
 
 
-class DirReader(KvReader):
+class FileReader(KvReader):
+    """ KV Reader whose keys are paths and values are:
+    - Another FileReader if a path points to a directory
+    - The bytes of the file if the path points to a file.
+    """
+
+    def __init__(self, rootdir):
+        self.rootdir = ensure_slash_suffix(rootdir)
+        self._rootdir_length = len(self.rootdir)
+        # TODO: Look into alternatives for the raison d'etre of _new_node and _class_name
+        # (They are there, because using self.__class__ directly goes to super)
+        self._new_node = self.__class__
+        self._class_name = self.__class__.__name__
+
+    def _extended_prefix(self, new_prefix):
+        return os.path.join(self.rootdir, new_prefix)
+
+    # TODO: Possible optimization: Think if using cached keys makes more sense.
+    def __contains__(self, k):
+        return (
+                k.startswith(self.rootdir)  # prefix is rootdir
+                and os.path.exists(k)  # exists (as file or dir)
+                and (k.endswith(file_sep) or file_sep not in k[self._rootdir_length:])  # is a dir or a first-level file
+        )
+
+    def __iter__(self):
+        for path in map(
+                self._extended_prefix,  # (2) extend prefix with sub-path name
+                os.listdir(self.rootdir)  # (1) list file names under _prefix
+        ):
+            if is_dir_path(path):
+                yield ensure_slash_suffix(path)
+            else:
+                yield path
+
+    def __getitem__(self, k):
+        if k in self:
+            if is_dir_path(k):
+                return self._new_node(k)
+            elif is_file_path(k):
+                with open(k, 'rb') as fp:
+                    return fp.read()
+        return self.__missing__(k)  # if you got this far, the key is missing (or malformed)
+
+    def __missing__(self, k):
+        raise NoSuchKeyError(
+            f"No such key (perhaps it's not a valid path, or was deleted?): {k}"
+        )
+
+    def __repr__(self):
+        return f"{self._class_name}('{self.rootdir}')"
+
+
+class DirReader(FileReader):
     """ KV Reader whose keys (AND VALUES) are directory full paths of the subdirectories of rootdir.
     """
 
-    def __init__(self, rootdir):
-        self.rootdir = ensure_slash_suffix(rootdir)
-        # TODO: Look into alternatives for the raison d'etre of _new_node and _class_name
-        # (They are there, because using self.__class__ directly goes to super)
-        self._new_node = self.__class__
-        self._class_name = self.__class__.__name__
-
     def _extended_prefix(self, new_prefix):
-        return extend_prefix(self.rootdir, new_prefix)
+        return ensure_slash_suffix(super()._extended_prefix(new_prefix))
 
     def __contains__(self, k):
-        return k.startswith(self.rootdir) and is_dir_key(k)
+        return endswith_slash(k) and self.__contains__(k)
 
     def __iter__(self):
-        return filter(
-            is_dir_key,  # (3) filter out any non-directories
-            map(
-                self._extended_prefix,  # (2) extend prefix with sub-path name
-                os.listdir(self.rootdir),
-            ),
-        )  # (1) list file names under _prefix
-
-    def __getitem__(self, k):
-        if is_dir_key(k):
-            return self._new_node(k)
-        else:
-            raise NoSuchKeyError(
-                f"No such key (perhaps it's not a valid path, or was deleted?): {k}"
-            )
-
-    def __repr__(self):
-        return f"{self._class_name}('{self.rootdir}')"
-
-
-# TODO: Doesn't seem to be finished, but a near copy of DirReader
-class FileReader(KvReader):
-    """ KV Reader whose keys (AND VALUES) are file full paths of rootdir.
-    """
-
-    def __init__(self, rootdir):
-        self.rootdir = ensure_slash_suffix(rootdir)
-        # TODO: Look into alternatives for the raison d'etre of _new_node and _class_name
-        # (They are there, because using self.__class__ directly goes to super)
-        self._new_node = self.__class__
-        self._class_name = self.__class__.__name__
-
-    def _extended_prefix(self, new_prefix):
-        return extend_prefix(self.rootdir, new_prefix)
-
-    def __contains__(self, k):
-        return k.startswith(self.rootdir) and os.path.isdir(k)
-
-    def __iter__(self):
-        return filter(
-            os.path.isdir,  # (3) filter out any non-directories
-            map(
-                self._extended_prefix,  # (2) extend prefix with sub-path name
-                os.listdir(self.rootdir),
-            ),
-        )  # (1) list file names under _prefix
-
-    def __getitem__(self, k):
-        if os.path.isdir(k):
-            return self._new_node(k)
-        else:
-            raise NoSuchKeyError(
-                f"No such key (perhaps it's not a valid path, or was deleted?): {k}"
-            )
-
-    def __repr__(self):
-        return f"{self._class_name}('{self.rootdir}')"
+        return filter(endswith_slash, super().__iter__())

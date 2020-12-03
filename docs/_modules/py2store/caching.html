@@ -1,0 +1,821 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>py2store.caching &#8212; py2store 0.0.7 documentation</title>
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css" />
+    <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for py2store.caching</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">wraps</span><span class="p">,</span> <span class="n">partial</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Hashable</span><span class="p">,</span> <span class="n">Any</span>
+
+<span class="kn">from</span> <span class="nn">py2store.trans</span> <span class="kn">import</span> <span class="n">store_decorator</span>
+
+
+<span class="c1">########################################################################################################################</span>
+<span class="c1"># Read caching</span>
+
+<span class="c1"># The following is a &quot;Cache-Aside&quot; read-cache with NO builtin cache update or refresh mechanism.</span>
+<span class="k">def</span> <span class="nf">mk_memoizer</span><span class="p">(</span><span class="n">cache</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">memoize</span><span class="p">(</span><span class="n">method</span><span class="p">):</span>
+        <span class="nd">@wraps</span><span class="p">(</span><span class="n">method</span><span class="p">)</span>
+        <span class="k">def</span> <span class="nf">memoizer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">cache</span><span class="p">:</span>
+                <span class="n">val</span> <span class="o">=</span> <span class="n">method</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
+                <span class="n">cache</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>  <span class="c1"># cache it</span>
+                <span class="k">return</span> <span class="n">val</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">cache</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">memoizer</span>
+
+    <span class="k">return</span> <span class="n">memoize</span>
+
+
+<span class="k">def</span> <span class="nf">_mk_cache_instance</span><span class="p">(</span><span class="n">cache</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">assert_attrs</span><span class="o">=</span><span class="p">()):</span>
+    <span class="sd">&quot;&quot;&quot;Make a cache store (if it&#39;s not already) from a type or a callable, or just return dict.</span>
+<span class="sd">    Also assert the presence of given attributes</span>
+
+<span class="sd">    &gt;&gt;&gt; _mk_cache_instance(dict(a=1, b=2))</span>
+<span class="sd">    {&#39;a&#39;: 1, &#39;b&#39;: 2}</span>
+<span class="sd">    &gt;&gt;&gt; _mk_cache_instance(None)</span>
+<span class="sd">    {}</span>
+<span class="sd">    &gt;&gt;&gt; _mk_cache_instance(dict)</span>
+<span class="sd">    {}</span>
+<span class="sd">    &gt;&gt;&gt; _mk_cache_instance(list, (&#39;__getitem__&#39;, &#39;__setitem__&#39;))</span>
+<span class="sd">    []</span>
+<span class="sd">    &gt;&gt;&gt; _mk_cache_instance(tuple, (&#39;__getitem__&#39;, &#39;__setitem__&#39;))</span>
+<span class="sd">    Traceback (most recent call last):</span>
+<span class="sd">        ...</span>
+<span class="sd">    AssertionError: cache should have the __setitem__ method, but does not: ()</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">assert_attrs</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">assert_attrs</span> <span class="o">=</span> <span class="p">(</span><span class="n">assert_attrs</span><span class="p">,)</span>
+    <span class="k">if</span> <span class="n">cache</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">cache</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># use a dict (memory caching) by default</span>
+    <span class="k">elif</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">cache</span><span class="p">,</span> <span class="nb">type</span><span class="p">)</span>  <span class="c1"># if caching_store is a type...</span>
+          <span class="ow">or</span> <span class="p">(</span><span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">cache</span><span class="p">,</span> <span class="s1">&#39;__getitem__&#39;</span><span class="p">)</span>  <span class="c1"># ... or is a callable without a __getitem__</span>
+              <span class="ow">and</span> <span class="n">callable</span><span class="p">(</span><span class="n">cache</span><span class="p">))):</span>
+        <span class="n">cache</span> <span class="o">=</span> <span class="n">cache</span><span class="p">()</span>  <span class="c1"># ... assume it&#39;s a no-argument callable that makes the instance</span>
+    <span class="k">for</span> <span class="n">method</span> <span class="ow">in</span> <span class="n">assert_attrs</span> <span class="ow">or</span> <span class="p">():</span>
+        <span class="k">assert</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">cache</span><span class="p">,</span> <span class="n">method</span><span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;cache should have the </span><span class="si">{</span><span class="n">method</span><span class="si">}</span><span class="s2"> method, but does not: </span><span class="si">{</span><span class="n">cache</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="k">return</span> <span class="n">cache</span>
+
+
+<span class="c1"># TODO: Make it so that the resulting store gets arguments to construct it&#39;s own cache</span>
+<span class="c1">#   right now, only cache instances or no-argument cache types can be used.</span>
+<span class="c1">#</span>
+
+<div class="viewcode-block" id="mk_cached_store"><a class="viewcode-back" href="../../test.html#py2store.caching.mk_cached_store">[docs]</a><span class="nd">@store_decorator</span>
+<span class="k">def</span> <span class="nf">mk_cached_store</span><span class="p">(</span>
+        <span class="n">store</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">cache</span><span class="o">=</span><span class="nb">dict</span>
+<span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        store: The class of the store you want to cache</span>
+<span class="sd">        cache: The store you want to use to cache. Anything with a __setitem__(k, v) and a __getitem__(k).</span>
+<span class="sd">            By default, it will use a dict</span>
+
+<span class="sd">    Returns: A subclass of the input store, but with caching (to the cache store)</span>
+
+<span class="sd">    &gt;&gt;&gt; from py2store.caching import mk_cached_store</span>
+<span class="sd">    &gt;&gt;&gt; import time</span>
+<span class="sd">    &gt;&gt;&gt; class SlowDict(dict):</span>
+<span class="sd">    ...     sleep_s = 0.2</span>
+<span class="sd">    ...     def __getitem__(self, k):</span>
+<span class="sd">    ...         time.sleep(self.sleep_s)</span>
+<span class="sd">    ...         return super().__getitem__(k)</span>
+<span class="sd">    ...</span>
+<span class="sd">    ...</span>
+<span class="sd">    &gt;&gt;&gt; d = SlowDict({&#39;a&#39;: 1, &#39;b&#39;: 2, &#39;c&#39;: 3})</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; d[&#39;a&#39;]  # Wow! Takes a long time to get &#39;a&#39;</span>
+<span class="sd">    1</span>
+<span class="sd">    &gt;&gt;&gt; cache = dict()</span>
+<span class="sd">    &gt;&gt;&gt; CachedSlowDict = mk_cached_store(store=SlowDict, cache=cache)</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; s = CachedSlowDict({&#39;a&#39;: 1, &#39;b&#39;: 2, &#39;c&#39;: 3})</span>
+<span class="sd">    &gt;&gt;&gt; print(f&quot;store: {list(s)}\\ncache: {list(cache)}&quot;)</span>
+<span class="sd">    store: [&#39;a&#39;, &#39;b&#39;, &#39;c&#39;]</span>
+<span class="sd">    cache: []</span>
+<span class="sd">    &gt;&gt;&gt; # This will take a LONG time because it&#39;s the first time we ask for &#39;a&#39;</span>
+<span class="sd">    &gt;&gt;&gt; v = s[&#39;a&#39;]</span>
+<span class="sd">    &gt;&gt;&gt; print(f&quot;store: {list(s)}\\ncache: {list(cache)}&quot;)</span>
+<span class="sd">    store: [&#39;a&#39;, &#39;b&#39;, &#39;c&#39;]</span>
+<span class="sd">    cache: [&#39;a&#39;]</span>
+<span class="sd">    &gt;&gt;&gt; # This will take very little time because we have &#39;a&#39; in the cache</span>
+<span class="sd">    &gt;&gt;&gt; v = s[&#39;a&#39;]</span>
+<span class="sd">    &gt;&gt;&gt; print(f&quot;store: {list(s)}\\ncache: {list(cache)}&quot;)</span>
+<span class="sd">    store: [&#39;a&#39;, &#39;b&#39;, &#39;c&#39;]</span>
+<span class="sd">    cache: [&#39;a&#39;]</span>
+<span class="sd">    &gt;&gt;&gt; # But we don&#39;t have &#39;b&#39;</span>
+<span class="sd">    &gt;&gt;&gt; v = s[&#39;b&#39;]</span>
+<span class="sd">    &gt;&gt;&gt; print(f&quot;store: {list(s)}\\ncache: {list(cache)}&quot;)</span>
+<span class="sd">    store: [&#39;a&#39;, &#39;b&#39;, &#39;c&#39;]</span>
+<span class="sd">    cache: [&#39;a&#39;, &#39;b&#39;]</span>
+<span class="sd">    &gt;&gt;&gt; # But now we have &#39;b&#39;</span>
+<span class="sd">    &gt;&gt;&gt; v = s[&#39;b&#39;]</span>
+<span class="sd">    &gt;&gt;&gt; print(f&quot;store: {list(s)}\\ncache: {list(cache)}&quot;)</span>
+<span class="sd">    store: [&#39;a&#39;, &#39;b&#39;, &#39;c&#39;]</span>
+<span class="sd">    cache: [&#39;a&#39;, &#39;b&#39;]</span>
+<span class="sd">    &gt;&gt;&gt; s[&#39;d&#39;] = 4  # and we can do things normally (like put stuff in the store)</span>
+<span class="sd">    &gt;&gt;&gt; print(f&quot;store: {list(s)}\\ncache: {list(cache)}&quot;)</span>
+<span class="sd">    store: [&#39;a&#39;, &#39;b&#39;, &#39;c&#39;, &#39;d&#39;]</span>
+<span class="sd">    cache: [&#39;a&#39;, &#39;b&#39;]</span>
+<span class="sd">    &gt;&gt;&gt; s[&#39;d&#39;]  # if we ask for it again though, it will take time (the first time)</span>
+<span class="sd">    4</span>
+<span class="sd">    &gt;&gt;&gt; print(f&quot;store: {list(s)}\\ncache: {list(cache)}&quot;)</span>
+<span class="sd">    store: [&#39;a&#39;, &#39;b&#39;, &#39;c&#39;, &#39;d&#39;]</span>
+<span class="sd">    cache: [&#39;a&#39;, &#39;b&#39;, &#39;d&#39;]</span>
+<span class="sd">    &gt;&gt;&gt; # Of course, we could write &#39;d&#39; in the cache as well, to get it quicker,</span>
+<span class="sd">    &gt;&gt;&gt; # but that&#39;s another story: The story of write caches!</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; # And by the way, your &quot;cache wrapped&quot; store hold a pointer to the cache it&#39;s using,</span>
+<span class="sd">    &gt;&gt;&gt; # so you can take a peep there if needed:</span>
+<span class="sd">    &gt;&gt;&gt; s._cache</span>
+<span class="sd">    {&#39;a&#39;: 1, &#39;b&#39;: 2, &#39;d&#39;: 4}</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">cache</span> <span class="o">=</span> <span class="n">_mk_cache_instance</span><span class="p">(</span><span class="n">cache</span><span class="p">,</span> <span class="n">assert_attrs</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;__getitem__&#39;</span><span class="p">,</span> <span class="s1">&#39;__setitem__&#39;</span><span class="p">))</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="nb">type</span><span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;store should be a type, was a </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">store</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">store</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="k">class</span> <span class="nc">CachedStore</span><span class="p">(</span><span class="n">store</span><span class="p">):</span>
+        <span class="n">_cache</span> <span class="o">=</span> <span class="n">cache</span>
+
+        <span class="nd">@mk_memoizer</span><span class="p">(</span><span class="n">cache</span><span class="p">)</span>
+        <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">CachedStore</span></div>
+
+
+<div class="viewcode-block" id="mk_sourced_store"><a class="viewcode-back" href="../../test.html#py2store.caching.mk_sourced_store">[docs]</a><span class="nd">@store_decorator</span>
+<span class="k">def</span> <span class="nf">mk_sourced_store</span><span class="p">(</span>
+        <span class="n">store</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">source</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">return_source_data</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        store: The class of the store you want to cache</span>
+<span class="sd">        cache: The store you want to use to cache. Anything with a __setitem__(k, v) and a __getitem__(k).</span>
+<span class="sd">            By default, it will use a dict</span>
+<span class="sd">        return_source_data:</span>
+<span class="sd">    Returns: A subclass of the input store, but with caching (to the cache store)</span>
+
+
+<span class="sd">    :param store: The class of the store you&#39;re talking to. This store acts as the cache</span>
+<span class="sd">    :param source: The store that is used to populate the store (cache) when a key is missing there.</span>
+<span class="sd">    :param return_source_data:</span>
+<span class="sd">        If True, will return ``source[k]`` as is. This should be used only if ``store[k]`` would return the same.</span>
+<span class="sd">        If False, will first write to cache (``store[k] = source[k]``) then return ``store[k]``.</span>
+<span class="sd">        The latter introduces a performance hit (we write and then read again from the cache),</span>
+<span class="sd">        but ensures consistency (and is useful if the writing or the reading to/from store</span>
+<span class="sd">        transforms the data in some way.</span>
+<span class="sd">    :return: A decorated store</span>
+
+<span class="sd">    Here are two stores pretending to be local and remote data stores respectively.</span>
+
+<span class="sd">    &gt;&gt;&gt; from py2store.caching import mk_sourced_store</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; class Local(dict):</span>
+<span class="sd">    ...     def __getitem__(self, k):</span>
+<span class="sd">    ...         print(f&quot;looking for {k} in Local&quot;)</span>
+<span class="sd">    ...         return super().__getitem__(k)</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; class Remote(dict):</span>
+<span class="sd">    ...     def __getitem__(self, k):</span>
+<span class="sd">    ...         print(f&quot;looking for {k} in Remote&quot;)</span>
+<span class="sd">    ...         return super().__getitem__(k)</span>
+
+
+<span class="sd">    Let&#39;s make a remote store with two elements in it, and a local store class that asks the remote store for stuff</span>
+<span class="sd">    if it can&#39;t find it locally.</span>
+
+<span class="sd">    &gt;&gt;&gt; remote = Remote({&#39;foo&#39;: &#39;bar&#39;, &#39;hello&#39;: &#39;world&#39;})</span>
+<span class="sd">    &gt;&gt;&gt; SourcedLocal = mk_sourced_store(Local, source=remote)</span>
+<span class="sd">    &gt;&gt;&gt; s = SourcedLocal({&#39;some&#39;: &#39;local stuff&#39;})</span>
+<span class="sd">    &gt;&gt;&gt; list(s)  # the local store has one key</span>
+<span class="sd">    [&#39;some&#39;]</span>
+
+<span class="sd">    # but if we ask for a key that is in the remote store, it provides it</span>
+<span class="sd">    &gt;&gt;&gt; assert s[&#39;foo&#39;] == &#39;bar&#39;</span>
+<span class="sd">    looking for foo in Local</span>
+<span class="sd">    looking for foo in Remote</span>
+
+<span class="sd">    &gt;&gt;&gt; list(s)</span>
+<span class="sd">    [&#39;some&#39;, &#39;foo&#39;]</span>
+
+<span class="sd">    See that next time we ask for the &#39;foo&#39; key, the local store provides it:</span>
+
+<span class="sd">    &gt;&gt;&gt; assert s[&#39;foo&#39;] == &#39;bar&#39;</span>
+<span class="sd">    looking for foo in Local</span>
+
+<span class="sd">    &gt;&gt;&gt; assert s[&#39;hello&#39;] == &#39;world&#39;</span>
+<span class="sd">    looking for hello in Local</span>
+<span class="sd">    looking for hello in Remote</span>
+<span class="sd">    &gt;&gt;&gt; list(s)</span>
+<span class="sd">    [&#39;some&#39;, &#39;foo&#39;, &#39;hello&#39;]</span>
+
+<span class="sd">    We can still add stuff (locally)...</span>
+
+<span class="sd">    &gt;&gt;&gt; s[&#39;something&#39;] = &#39;else&#39;</span>
+<span class="sd">    &gt;&gt;&gt; list(s)</span>
+<span class="sd">    [&#39;some&#39;, &#39;foo&#39;, &#39;hello&#39;, &#39;something&#39;]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="n">source</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;You need to specify a source&quot;</span>
+
+    <span class="n">source</span> <span class="o">=</span> <span class="n">_mk_cache_instance</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">assert_attrs</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;__getitem__&#39;</span><span class="p">,))</span>
+
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="nb">type</span><span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;store should be a type, was a </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">store</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">store</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="k">if</span> <span class="n">return_source_data</span><span class="p">:</span>
+        <span class="k">class</span> <span class="nc">SourcedStore</span><span class="p">(</span><span class="n">store</span><span class="p">):</span>
+            <span class="n">_src</span> <span class="o">=</span> <span class="n">source</span>
+
+            <span class="k">def</span> <span class="fm">__missing__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+                <span class="c1"># if you didn&#39;t have it &quot;locally&quot;, ask src for it</span>
+                <span class="n">v</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_src</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>  <span class="c1"># ... get it from _src,</span>
+                <span class="bp">self</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>  <span class="c1"># ... store it in self</span>
+                <span class="k">return</span> <span class="n">v</span>  <span class="c1"># ... and return it.</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">class</span> <span class="nc">SourcedStore</span><span class="p">(</span><span class="n">store</span><span class="p">):</span>
+            <span class="n">_src</span> <span class="o">=</span> <span class="n">source</span>
+
+            <span class="k">def</span> <span class="fm">__missing__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+                <span class="c1"># if you didn&#39;t have it &quot;locally&quot;, ask src for it</span>
+                <span class="n">v</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_src</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>  <span class="c1"># ... get it from _src,</span>
+                <span class="bp">self</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>  <span class="c1"># ... store it in self</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>  <span class="c1"># retrieve it again and return</span>
+
+    <span class="k">return</span> <span class="n">SourcedStore</span></div>
+
+
+<span class="c1"># cache = _mk_cache_instance(cache, assert_attrs=(&#39;__getitem__&#39;,))</span>
+<span class="c1"># assert isinstance(store, type), f&quot;store should be a type, was a {type(store)}: {store}&quot;</span>
+<span class="c1">#</span>
+<span class="c1"># class CachedStore(store):</span>
+<span class="c1">#     _cache = cache</span>
+<span class="c1">#</span>
+<span class="c1">#     @mk_memoizer(cache)</span>
+<span class="c1">#     def __getitem__(self, k):</span>
+<span class="c1">#         return super().__getitem__(k)</span>
+<span class="c1">#</span>
+<span class="c1"># return CachedStore</span>
+
+
+<span class="c1"># TODO: Didn&#39;t finish this. Finish, doctest, and remove underscore</span>
+<span class="k">def</span> <span class="nf">_pre_condition_containment</span><span class="p">(</span><span class="n">store</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">bool_key_func</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Adds a custom boolean key function `bool_key_func` before the store_cls.__contains__ check is performed.</span>
+
+<span class="sd">    It is meant to be used to create smart read caches.</span>
+
+<span class="sd">    This can be used, for example, to perform TTL caching by having `bool_key_func` check on how long</span>
+<span class="sd">    ago a cache item has been created, and returning False if the item is past it&#39;s expiry time.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">class</span> <span class="nc">PreContaimentStore</span><span class="p">(</span><span class="n">store</span><span class="p">):</span>
+        <span class="k">def</span> <span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">bool_key_func</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__contains__</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">PreContaimentStore</span>
+
+
+<span class="k">def</span> <span class="nf">_slow_but_somewhat_general_hash</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Attempts to create a hash of the inputs, recursively resolving the most common hurdles (dicts, sets, lists)</span>
+<span class="sd">    Returns: A hash value for the input</span>
+
+<span class="sd">    &gt;&gt;&gt; _slow_but_somewhat_general_hash(1, [1, 2], a_set={1,2}, a_dict={&#39;a&#39;: 1, &#39;b&#39;: [1,2]})</span>
+<span class="sd">    ((1, (1, 2)), ((&#39;a_set&#39;, (1, 2)), (&#39;a_dict&#39;, ((&#39;a&#39;, 1), (&#39;b&#39;, (1, 2))))))</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">single_val</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">single_val</span><span class="p">,</span> <span class="s2">&quot;items&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span>
+                <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">_slow_but_somewhat_general_hash</span><span class="p">(</span><span class="n">v</span><span class="p">))</span>
+                <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">single_val</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">single_val</span><span class="p">,</span> <span class="p">(</span><span class="nb">set</span><span class="p">,</span> <span class="nb">list</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">single_val</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">single_val</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="nb">tuple</span><span class="p">(</span><span class="n">_slow_but_somewhat_general_hash</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">args</span><span class="p">),</span>
+            <span class="nb">tuple</span><span class="p">(</span>
+                <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">_slow_but_somewhat_general_hash</span><span class="p">(</span><span class="n">v</span><span class="p">))</span>
+                <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+            <span class="p">),</span>
+        <span class="p">)</span>
+
+
+<span class="c1"># TODO: Could add an empty_cache function attribute.</span>
+<span class="c1">#  Wrap the store cache to track new keys, and delete those (and only those!!) when emptying the store.</span>
+<div class="viewcode-block" id="store_cached"><a class="viewcode-back" href="../../test.html#py2store.caching.store_cached">[docs]</a><span class="k">def</span> <span class="nf">store_cached</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">key_func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Function output memorizer but using a specific (usually persisting) store as it&#39;s memory and a key_func to</span>
+<span class="sd">    compute the key under which to store the output.</span>
+
+<span class="sd">    The key can be</span>
+<span class="sd">    - a single value under which the output should be stored, regardless of the input.</span>
+<span class="sd">    - a key function that is called on the inputs to create a hash under which the function&#39;s output should be stored.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        store: The key-value store to use for caching. Must support __getitem__ and __setitem__.</span>
+<span class="sd">        key_func: The key function that is called on the input of the function to create the key value.</span>
+
+<span class="sd">    Note: Union[Callable, Any] is equivalent to just Any, but reveals the two cases of a key more clearly.</span>
+<span class="sd">    Note: No, Union[Callable, Hashable] is not better. For one, general store keys are not restricted to hashable keys.</span>
+<span class="sd">    Note: No, they shouldn&#39;t.</span>
+
+<span class="sd">    See Also: store_cached_with_single_key (for a version where the cache store key doesn&#39;t depend on function&#39;s args)</span>
+
+<span class="sd">    &gt;&gt;&gt; # Note: Our doc test will use dict as the store, but to make the functionality useful beyond existing</span>
+<span class="sd">    &gt;&gt;&gt; # RAM-memorizer, you should use actual &quot;persisting&quot; stores that store in local files, or DBs, etc.</span>
+<span class="sd">    &gt;&gt;&gt; store = dict()</span>
+<span class="sd">    &gt;&gt;&gt; @store_cached(store, lambda *args: args)</span>
+<span class="sd">    ... def my_data(x, y):</span>
+<span class="sd">    ...     print(&quot;Pretend this is a long computation&quot;)</span>
+<span class="sd">    ...     return x + y</span>
+<span class="sd">    &gt;&gt;&gt; t = my_data(1, 2)  # note the print below (because the function is called</span>
+<span class="sd">    Pretend this is a long computation</span>
+<span class="sd">    &gt;&gt;&gt; tt = my_data(1, 2)  # note there&#39;s no print (because the function is NOT called)</span>
+<span class="sd">    &gt;&gt;&gt; assert t == tt</span>
+<span class="sd">    &gt;&gt;&gt; tt</span>
+<span class="sd">    3</span>
+<span class="sd">    &gt;&gt;&gt; my_data(3, 4)  # but different inputs will trigger the actual function again</span>
+<span class="sd">    Pretend this is a long computation</span>
+<span class="sd">    7</span>
+<span class="sd">    &gt;&gt;&gt; my_data._cache</span>
+<span class="sd">    {(1, 2): 3, (3, 4): 7}</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="n">callable</span><span class="p">(</span><span class="n">key_func</span><span class="p">),</span> <span class="p">(</span>
+        <span class="s2">&quot;key_func should be a callable: &quot;</span>
+        <span class="s2">&quot;It&#39;s called on the wrapped function&#39;s input to make a key for the caching store.&quot;</span>
+    <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">func_wrapper</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+        <span class="nd">@wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+        <span class="k">def</span> <span class="nf">wrapped_func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="n">key_func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">store</span><span class="p">:</span>  <span class="c1"># if the store has that key...</span>
+                <span class="k">return</span> <span class="n">store</span><span class="p">[</span>
+                    <span class="n">key</span>
+                <span class="p">]</span>  <span class="c1"># ... just return the data cached under this key</span>
+            <span class="k">else</span><span class="p">:</span>  <span class="c1"># if the store doesn&#39;t have it...</span>
+                <span class="n">output</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span>
+                    <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+                <span class="p">)</span>  <span class="c1"># ... call the function and get the output</span>
+                <span class="n">store</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">output</span>  <span class="c1"># store the output under the key</span>
+                <span class="k">return</span> <span class="n">output</span>
+
+        <span class="n">wrapped_func</span><span class="o">.</span><span class="n">_cache</span> <span class="o">=</span> <span class="n">store</span>
+        <span class="k">return</span> <span class="n">wrapped_func</span>
+
+    <span class="k">return</span> <span class="n">func_wrapper</span></div>
+
+
+<div class="viewcode-block" id="store_cached_with_single_key"><a class="viewcode-back" href="../../test.html#py2store.caching.store_cached_with_single_key">[docs]</a><span class="k">def</span> <span class="nf">store_cached_with_single_key</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Function output memorizer but using a specific store and key as it&#39;s memory.</span>
+
+<span class="sd">    Use in situations where you have a argument-less function or bound method that computes some data whose dependencies</span>
+<span class="sd">    are static enough that there&#39;s enough advantage to make the data refresh explicit (by deleting the cache entry)</span>
+<span class="sd">    instead of making it implicit (recomputing/refetching the data every time).</span>
+
+<span class="sd">    The key should be a single value under which the output should be stored, regardless of the input.</span>
+
+<span class="sd">    Note: The wrapped function comes with a empty_cache attribute, which when called, empties the cache (i.e. removes</span>
+<span class="sd">    the key from the store)</span>
+
+<span class="sd">    Note: The wrapped function has a hidden `_cache` attribute pointing to the store in case you need to peep into it.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        store: The cache. The key-value store to use for caching. Must support __getitem__ and __setitem__.</span>
+<span class="sd">        key: The store key under which to store the output of the function.</span>
+
+<span class="sd">    Note: Union[Callable, Any] is equivalent to just Any, but reveals the two cases of a key more clearly.</span>
+<span class="sd">    Note: No, Union[Callable, Hashable] is not better. For one, general store keys are not restricted to hashable keys.</span>
+<span class="sd">    Note: No, they shouldn&#39;t.</span>
+
+<span class="sd">    See Also: store_cached (for a version whose keys are computed from the wrapped function&#39;s input.</span>
+
+<span class="sd">    &gt;&gt;&gt; # Note: Our doc test will use dict as the store, but to make the functionality useful beyond existing</span>
+<span class="sd">    &gt;&gt;&gt; # RAM-memorizer, you should use actual &quot;persisting&quot; stores that store in local files, or DBs, etc.</span>
+<span class="sd">    &gt;&gt;&gt; store = dict()</span>
+<span class="sd">    &gt;&gt;&gt; @store_cached_with_single_key(store, &#39;whatevs&#39;)</span>
+<span class="sd">    ... def my_data():</span>
+<span class="sd">    ...     print(&quot;Pretend this is a long computation&quot;)</span>
+<span class="sd">    ...     return [1, 2, 3]</span>
+<span class="sd">    &gt;&gt;&gt; t = my_data()  # note the print below (because the function is called</span>
+<span class="sd">    Pretend this is a long computation</span>
+<span class="sd">    &gt;&gt;&gt; tt = my_data()  # note there&#39;s no print (because the function is NOT called)</span>
+<span class="sd">    &gt;&gt;&gt; assert t == tt</span>
+<span class="sd">    &gt;&gt;&gt; tt</span>
+<span class="sd">    [1, 2, 3]</span>
+<span class="sd">    &gt;&gt;&gt; my_data._cache  # peep in the cache</span>
+<span class="sd">    {&#39;whatevs&#39;: [1, 2, 3]}</span>
+<span class="sd">    &gt;&gt;&gt; # let&#39;s empty the cache</span>
+<span class="sd">    &gt;&gt;&gt; my_data.empty_cache_entry()</span>
+<span class="sd">    &gt;&gt;&gt; assert &#39;whatevs&#39; not in my_data._cache  # see that the cache entry is gone.</span>
+<span class="sd">    &gt;&gt;&gt; t = my_data()  # so when you call the function again, it prints again!d</span>
+<span class="sd">    Pretend this is a long computation</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">func_wrapper</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+        <span class="c1"># TODO: Enforce that the func is argument-less or a bound method here?</span>
+
+        <span class="c1"># TODO: WhyTF doesn&#39;t this work: (unresolved reference)</span>
+        <span class="c1"># if key is None:</span>
+        <span class="c1">#     key = &#39;.&#39;.join([func.__module__, func.__qualname___])</span>
+
+        <span class="nd">@wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+        <span class="k">def</span> <span class="nf">wrapped_func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">store</span><span class="p">:</span>  <span class="c1"># if the store has that key...</span>
+                <span class="k">return</span> <span class="n">store</span><span class="p">[</span>
+                    <span class="n">key</span>
+                <span class="p">]</span>  <span class="c1"># ... just return the data cached under this key</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">output</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+                <span class="n">store</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">output</span>
+                <span class="k">return</span> <span class="n">output</span>
+
+        <span class="n">wrapped_func</span><span class="o">.</span><span class="n">_cache</span> <span class="o">=</span> <span class="n">store</span>
+        <span class="n">wrapped_func</span><span class="o">.</span><span class="n">empty_cache_entry</span> <span class="o">=</span> <span class="k">lambda</span><span class="p">:</span> <span class="n">wrapped_func</span><span class="o">.</span><span class="n">_cache</span><span class="o">.</span><span class="fm">__delitem__</span><span class="p">(</span>
+            <span class="n">key</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">wrapped_func</span>
+
+    <span class="k">return</span> <span class="n">func_wrapper</span></div>
+
+
+<span class="k">def</span> <span class="nf">ensure_clear_to_kv_store</span><span class="p">(</span><span class="n">store</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="s2">&quot;clear&quot;</span><span class="p">):</span>
+
+        <span class="k">def</span> <span class="nf">_clear</span><span class="p">(</span><span class="n">kv_store</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">kv_store</span><span class="p">:</span>
+                <span class="k">del</span> <span class="n">kv_store</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+
+        <span class="n">store</span><span class="o">.</span><span class="n">clear</span> <span class="o">=</span> <span class="n">_clear</span>
+    <span class="k">return</span> <span class="n">store</span>
+
+
+<span class="k">def</span> <span class="nf">flush_on_exit</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+    <span class="n">new_cls</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="p">(</span><span class="bp">cls</span><span class="p">,),</span> <span class="p">{})</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">new_cls</span><span class="p">,</span> <span class="s2">&quot;__enter__&quot;</span><span class="p">):</span>
+        <span class="k">def</span> <span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span>
+
+        <span class="n">new_cls</span><span class="o">.</span><span class="fm">__enter__</span> <span class="o">=</span> <span class="fm">__enter__</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">new_cls</span><span class="p">,</span> <span class="s2">&quot;__exit__&quot;</span><span class="p">):</span>
+
+        <span class="k">def</span> <span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">flush_cache</span><span class="p">()</span>
+
+    <span class="k">else</span><span class="p">:</span>  <span class="c1"># TODO: Untested case where the class already has an __exit__, which we want to call after flush</span>
+
+        <span class="nd">@wraps</span><span class="p">(</span><span class="n">new_cls</span><span class="o">.</span><span class="fm">__exit__</span><span class="p">)</span>
+        <span class="k">def</span> <span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">flush_cache</span><span class="p">()</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__exit__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="n">new_cls</span><span class="o">.</span><span class="fm">__exit__</span> <span class="o">=</span> <span class="fm">__exit__</span>
+
+    <span class="k">return</span> <span class="n">new_cls</span>
+
+
+<div class="viewcode-block" id="mk_write_cached_store"><a class="viewcode-back" href="../../test.html#py2store.caching.mk_write_cached_store">[docs]</a><span class="k">def</span> <span class="nf">mk_write_cached_store</span><span class="p">(</span>
+        <span class="n">store</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">w_cache</span><span class="o">=</span><span class="nb">dict</span><span class="p">,</span>
+        <span class="n">flush_cache_condition</span><span class="o">=</span><span class="kc">None</span>
+<span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Wrap a write cache around a store.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        w_cache: The store to (write) cache to</span>
+<span class="sd">        flush_cache_condition: The condition to apply to the cache</span>
+<span class="sd">            to decide whether it&#39;s contents should be flushed or not</span>
+
+<span class="sd">    A ``w_cache`` must have a clear method (that clears the cache&#39;s contents).</span>
+<span class="sd">    If you know what you&#39;re doing and want to add one to your input kv store,</span>
+<span class="sd">    you can do so by calling ``ensure_clear_to_kv_store(store)``</span>
+<span class="sd">    -- this will add a ``clear`` method inplace AND return the resulting store as well.</span>
+
+<span class="sd">    We didn&#39;t add this automatically because the first thing ``mk_write_cached_store`` will do is call clear,</span>
+<span class="sd">    to remove all the contents of the store.</span>
+<span class="sd">    You don&#39;t want to do this unwittingly and delete a bunch of precious data!!</span>
+
+<span class="sd">    &gt;&gt;&gt; from py2store.caching import mk_write_cached_store, ensure_clear_to_kv_store</span>
+<span class="sd">    &gt;&gt;&gt; from py2store import Store</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; def print_state(store):</span>
+<span class="sd">    ...     print(f&quot;store: {store} ----- store._w_cache: {store._w_cache}&quot;)</span>
+<span class="sd">    ...</span>
+<span class="sd">    &gt;&gt;&gt; class MyStore(dict): ...</span>
+<span class="sd">    &gt;&gt;&gt; MyCachedStore = mk_write_cached_store(MyStore, w_cache={})  # wrap MyStore with a (dict) write cache</span>
+<span class="sd">    &gt;&gt;&gt; s = MyCachedStore()  # make a MyCachedStore instance</span>
+<span class="sd">    &gt;&gt;&gt; print_state(s)  # print the contents (both store and cache), see that it&#39;s empty</span>
+<span class="sd">    store: {} ----- store._w_cache: {}</span>
+<span class="sd">    &gt;&gt;&gt; s[&#39;hello&#39;] = &#39;world&#39;  # write &#39;world&#39; in &#39;hello&#39;</span>
+<span class="sd">    &gt;&gt;&gt; print_state(s)  # see that it hasn&#39;t been written</span>
+<span class="sd">    store: {} ----- store._w_cache: {&#39;hello&#39;: &#39;world&#39;}</span>
+<span class="sd">    &gt;&gt;&gt; s[&#39;ding&#39;] = &#39;dong&#39;</span>
+<span class="sd">    &gt;&gt;&gt; print_state(s)</span>
+<span class="sd">    store: {} ----- store._w_cache: {&#39;hello&#39;: &#39;world&#39;, &#39;ding&#39;: &#39;dong&#39;}</span>
+<span class="sd">    &gt;&gt;&gt; s.flush_cache()  # manually flush the cache</span>
+<span class="sd">    &gt;&gt;&gt; print_state(s)  # note that store._w_cache is empty, but store has the data now</span>
+<span class="sd">    store: {&#39;hello&#39;: &#39;world&#39;, &#39;ding&#39;: &#39;dong&#39;} ----- store._w_cache: {}</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; # But you usually want to use the store as a context manager</span>
+<span class="sd">    &gt;&gt;&gt; MyCachedStore = mk_write_cached_store(</span>
+<span class="sd">    ...     MyStore, w_cache={},</span>
+<span class="sd">    ...     flush_cache_condition=None)</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; the_persistent_dict = dict()</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; s = MyCachedStore(the_persistent_dict)</span>
+<span class="sd">    &gt;&gt;&gt; with s:</span>
+<span class="sd">    ...     print(&quot;===&gt; Before writing data:&quot;)</span>
+<span class="sd">    ...     print_state(s)</span>
+<span class="sd">    ...     s[&#39;hello&#39;] = &#39;world&#39;</span>
+<span class="sd">    ...     print(&quot;===&gt; Before exiting the with block:&quot;)</span>
+<span class="sd">    ...     print_state(s)</span>
+<span class="sd">    ...</span>
+<span class="sd">    ===&gt; Before writing data:</span>
+<span class="sd">    store: {} ----- store._w_cache: {}</span>
+<span class="sd">    ===&gt; Before exiting the with block:</span>
+<span class="sd">    store: {} ----- store._w_cache: {&#39;hello&#39;: &#39;world&#39;}</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; print(&quot;===&gt; After exiting the with block:&quot;); print_state(s)  # Note that the cache store flushed!</span>
+<span class="sd">    ===&gt; After exiting the with block:</span>
+<span class="sd">    store: {&#39;hello&#39;: &#39;world&#39;} ----- store._w_cache: {}</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; # Example of auto-flushing when there&#39;s at least two elements</span>
+<span class="sd">    &gt;&gt;&gt; class MyStore(dict): ...</span>
+<span class="sd">    ...</span>
+<span class="sd">    &gt;&gt;&gt; MyCachedStore = mk_write_cached_store(</span>
+<span class="sd">    ...     MyStore, w_cache={},</span>
+<span class="sd">    ...     flush_cache_condition=lambda w_cache: len(w_cache) &gt;= 3)</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; s = MyCachedStore()</span>
+<span class="sd">    &gt;&gt;&gt; with s:</span>
+<span class="sd">    ...     for i in range(7):</span>
+<span class="sd">    ...         s[i] = i * 10</span>
+<span class="sd">    ...         print_state(s)</span>
+<span class="sd">    ...</span>
+<span class="sd">    store: {} ----- store._w_cache: {0: 0}</span>
+<span class="sd">    store: {} ----- store._w_cache: {0: 0, 1: 10}</span>
+<span class="sd">    store: {0: 0, 1: 10, 2: 20} ----- store._w_cache: {}</span>
+<span class="sd">    store: {0: 0, 1: 10, 2: 20} ----- store._w_cache: {3: 30}</span>
+<span class="sd">    store: {0: 0, 1: 10, 2: 20} ----- store._w_cache: {3: 30, 4: 40}</span>
+<span class="sd">    store: {0: 0, 1: 10, 2: 20, 3: 30, 4: 40, 5: 50} ----- store._w_cache: {}</span>
+<span class="sd">    store: {0: 0, 1: 10, 2: 20, 3: 30, 4: 40, 5: 50} ----- store._w_cache: {6: 60}</span>
+<span class="sd">    &gt;&gt;&gt; # There was still something left in the cache before exiting the with block. But now...</span>
+<span class="sd">    &gt;&gt;&gt; print_state(s)</span>
+<span class="sd">    store: {0: 0, 1: 10, 2: 20, 3: 30, 4: 40, 5: 50, 6: 60} ----- store._w_cache: {}</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">w_cache</span> <span class="o">=</span> <span class="n">_mk_cache_instance</span><span class="p">(</span><span class="n">w_cache</span><span class="p">,</span> <span class="p">(</span><span class="s1">&#39;clear&#39;</span><span class="p">,</span> <span class="s1">&#39;__setitem__&#39;</span><span class="p">,</span> <span class="s1">&#39;items&#39;</span><span class="p">))</span>
+
+    <span class="n">w_cache</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>  <span class="c1"># assure the cache is empty, by emptying it.</span>
+
+    <span class="nd">@flush_on_exit</span>
+    <span class="k">class</span> <span class="nc">WriteCachedStore</span><span class="p">(</span><span class="n">store</span><span class="p">):</span>
+        <span class="n">_w_cache</span> <span class="o">=</span> <span class="n">w_cache</span>
+        <span class="n">_flush_cache_condition</span> <span class="o">=</span> <span class="nb">staticmethod</span><span class="p">(</span><span class="n">flush_cache_condition</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flush_cache_condition</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+
+            <span class="k">def</span> <span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_w_cache</span><span class="o">.</span><span class="fm">__setitem__</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">callable</span><span class="p">(</span><span class="n">flush_cache_condition</span><span class="p">),</span> <span class="p">(</span>
+                <span class="s2">&quot;flush_cache_condition must be None or a callable &quot;</span><span class="p">,</span>
+                <span class="s2">&quot;taking the (write) cache store as an input and returning&quot;</span>
+                <span class="s2">&quot;True if and only if the cache should be flushed.&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="k">def</span> <span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+                <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_w_cache</span><span class="o">.</span><span class="fm">__setitem__</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flush_cache_condition</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_w_cache</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">flush_cache</span><span class="p">()</span>
+                <span class="k">return</span> <span class="n">r</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="s2">&quot;flush&quot;</span><span class="p">):</span>
+
+            <span class="k">def</span> <span class="nf">flush</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">items</span><span class="p">:</span> <span class="n">Iterable</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">()):</span>
+                <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">items</span><span class="p">:</span>
+                    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__setitem__</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">flush_cache</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">flush</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_w_cache</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_w_cache</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">WriteCachedStore</span></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">py2store</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html">py2store.filesys</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.misc">py2store.misc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.mixins">py2store.mixins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.test.util">py2store.test.util</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-test-quick">py2store.test.quick</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.test">py2store.test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-test-simple">py2store.test.simple</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-test-scrap">py2store.test.scrap</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.util">py2store.util</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-ext-docx">py2store.ext.docx</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.ext.gitlab">py2store.ext.gitlab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-ext-hdf">py2store.ext.hdf</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.ext">py2store.ext</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-ext-matlab">py2store.ext.matlab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.ext.kaggle">py2store.ext.kaggle</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-ext-module-imports">py2store.ext.module_imports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.ext.audio">py2store.ext.audio</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-ext-github">py2store.ext.github</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.ext.dataframes">py2store.ext.dataframes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.access">py2store.access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.__init__">py2store.__init__</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.stores.s3_store">py2store.stores.s3_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.stores.delegation_stores">py2store.stores.delegation_stores</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.stores.sql_w_sqlalchemy">py2store.stores.sql_w_sqlalchemy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-stores-arangodb-store">py2store.stores.arangodb_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-stores-dropbox-store">py2store.stores.dropbox_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.stores.local_store">py2store.stores.local_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.stores">py2store.stores</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-stores-couchdb-store">py2store.stores.couchdb_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.stores.mongo_store">py2store.stores.mongo_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.core">py2store.core</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.uri_utils">py2store.utils.uri_utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.explicit">py2store.utils.explicit</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.timeseries_caching">py2store.utils.timeseries_caching</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-utils-attr-dict-py-attr-dict">py2store.utils.attr_dict.py.attr_dict</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-utils-attr-dict-py">py2store.utils.attr_dict.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.cumul_aggreg_write">py2store.utils.cumul_aggreg_write</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils">py2store.utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.cache_descriptors">py2store.utils.cache_descriptors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.appendable">py2store.utils.appendable</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.affine_conversion">py2store.utils.affine_conversion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.signatures">py2store.utils.signatures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.sliceable">py2store.utils.sliceable</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.mappify">py2store.utils.mappify</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.glom">py2store.utils.glom</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-persisters-sql-w-odbc">py2store.persisters.sql_w_odbc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.dynamodb_w_boto3">py2store.persisters.dynamodb_w_boto3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-persisters-couchdb-w-couchdb">py2store.persisters.couchdb_w_couchdb</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.ftp_persister">py2store.persisters.ftp_persister</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.dropbox_w_urllib">py2store.persisters.dropbox_w_urllib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters._google_drive_in_progress">py2store.persisters._google_drive_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-persisters-dropbox-w-dropbox">py2store.persisters.dropbox_w_dropbox</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-persisters-redis-w-redis">py2store.persisters.redis_w_redis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.sql_w_sqlalchemy">py2store.persisters.sql_w_sqlalchemy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.new_s3">py2store.persisters.new_s3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters">py2store.persisters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.dropbox_w_requests">py2store.persisters.dropbox_w_requests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.w_aiofile">py2store.persisters.w_aiofile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.local_files">py2store.persisters.local_files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-persisters-arangodb-w-pyarango">py2store.persisters.arangodb_w_pyarango</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters._cassandra_in_progress">py2store.persisters._cassandra_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters._couchdb_in_progress">py2store.persisters._couchdb_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.s3_w_boto3">py2store.persisters.s3_w_boto3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-persisters-postgres-w-psycopg2-in-progress">py2store.persisters._postgres_w_psycopg2_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-persisters-ssh-persister">py2store.persisters.ssh_persister</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.mongo_w_pymongo">py2store.persisters.mongo_w_pymongo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-persisters-googledrive-w-pydrive">py2store.persisters.googledrive_w_pydrive</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.sources">py2store.sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.dig">py2store.dig</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.serializers.pickled">py2store.serializers.pickled</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.serializers.jsonization">py2store.serializers.jsonization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.serializers">py2store.serializers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.serializers.sequential">py2store.serializers.sequential</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.serializers.regular_panel_data">py2store.serializers.regular_panel_data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.serializers.audio">py2store.serializers.audio</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.caching">py2store.caching</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.scrap">py2store.scrap</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.scrap.new_gen_local">py2store.scrap.new_gen_local</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.examples.write_caches">py2store.examples.write_caches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.examples">py2store.examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.examples.python_code_stats">py2store.examples.python_code_stats</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.examples.kv_walking">py2store.examples.kv_walking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.my">py2store.my</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.my.grabbers">py2store.my.grabbers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.trans">py2store.trans</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.key_mappers.str_utils">py2store.key_mappers.str_utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.key_mappers.tuples">py2store.key_mappers.tuples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.key_mappers.paths">py2store.key_mappers.paths</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.key_mappers.naming">py2store.key_mappers.naming</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.key_mappers">py2store.key_mappers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.errors">py2store.errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.slib.s_configparser">py2store.slib.s_configparser</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.slib">py2store.slib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.slib.s_zipfile">py2store.slib.s_zipfile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.base">py2store.base</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-selectors-mg-selectors">py2store.selectors.mg_selectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-selectors-mongoquery">py2store.selectors.mongoquery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-selectors">py2store.selectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.parse_format">py2store.parse_format</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  <li><a href="../py2store.html">py2store</a><ul>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,997 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Welcome to Mock Module’s documentation! &#8212; py2store 0.0.7 documentation</title>
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="_static/graphviz.css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="py2store.filesys" href="test.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="welcome-to-mock-module-s-documentation">
+<h1>Welcome to Mock Module’s documentation!<a class="headerlink" href="#welcome-to-mock-module-s-documentation" title="Permalink to this headline">¶</a></h1>
+<div class="toctree-wrapper compound">
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="test.html">py2store.filesys</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.misc">py2store.misc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.mixins">py2store.mixins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.test.util">py2store.test.util</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#py2store-test-quick">py2store.test.quick</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.test">py2store.test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#py2store-test-simple">py2store.test.simple</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#py2store-test-scrap">py2store.test.scrap</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.util">py2store.util</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#py2store-ext-docx">py2store.ext.docx</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.ext.gitlab">py2store.ext.gitlab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#py2store-ext-hdf">py2store.ext.hdf</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.ext">py2store.ext</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#py2store-ext-matlab">py2store.ext.matlab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.ext.kaggle">py2store.ext.kaggle</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#py2store-ext-module-imports">py2store.ext.module_imports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.ext.audio">py2store.ext.audio</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#py2store-ext-github">py2store.ext.github</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.ext.dataframes">py2store.ext.dataframes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.access">py2store.access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.__init__">py2store.__init__</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.stores.s3_store">py2store.stores.s3_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.stores.delegation_stores">py2store.stores.delegation_stores</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.stores.sql_w_sqlalchemy">py2store.stores.sql_w_sqlalchemy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#py2store-stores-arangodb-store">py2store.stores.arangodb_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#py2store-stores-dropbox-store">py2store.stores.dropbox_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.stores.local_store">py2store.stores.local_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.stores">py2store.stores</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#py2store-stores-couchdb-store">py2store.stores.couchdb_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.stores.mongo_store">py2store.stores.mongo_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.core">py2store.core</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.utils.uri_utils">py2store.utils.uri_utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.utils.explicit">py2store.utils.explicit</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.utils.timeseries_caching">py2store.utils.timeseries_caching</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#py2store-utils-attr-dict-py-attr-dict">py2store.utils.attr_dict.py.attr_dict</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#py2store-utils-attr-dict-py">py2store.utils.attr_dict.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.utils.cumul_aggreg_write">py2store.utils.cumul_aggreg_write</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.utils">py2store.utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.utils.cache_descriptors">py2store.utils.cache_descriptors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.utils.appendable">py2store.utils.appendable</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.utils.affine_conversion">py2store.utils.affine_conversion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.utils.signatures">py2store.utils.signatures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.utils.sliceable">py2store.utils.sliceable</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.utils.mappify">py2store.utils.mappify</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.utils.glom">py2store.utils.glom</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#py2store-persisters-sql-w-odbc">py2store.persisters.sql_w_odbc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.persisters.dynamodb_w_boto3">py2store.persisters.dynamodb_w_boto3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#py2store-persisters-couchdb-w-couchdb">py2store.persisters.couchdb_w_couchdb</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.persisters.ftp_persister">py2store.persisters.ftp_persister</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.persisters.dropbox_w_urllib">py2store.persisters.dropbox_w_urllib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.persisters._google_drive_in_progress">py2store.persisters._google_drive_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#py2store-persisters-dropbox-w-dropbox">py2store.persisters.dropbox_w_dropbox</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#py2store-persisters-redis-w-redis">py2store.persisters.redis_w_redis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.persisters.sql_w_sqlalchemy">py2store.persisters.sql_w_sqlalchemy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.persisters.new_s3">py2store.persisters.new_s3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.persisters">py2store.persisters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.persisters.dropbox_w_requests">py2store.persisters.dropbox_w_requests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.persisters.w_aiofile">py2store.persisters.w_aiofile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.persisters.local_files">py2store.persisters.local_files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#py2store-persisters-arangodb-w-pyarango">py2store.persisters.arangodb_w_pyarango</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.persisters._cassandra_in_progress">py2store.persisters._cassandra_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.persisters._couchdb_in_progress">py2store.persisters._couchdb_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.persisters.s3_w_boto3">py2store.persisters.s3_w_boto3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#py2store-persisters-postgres-w-psycopg2-in-progress">py2store.persisters._postgres_w_psycopg2_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#py2store-persisters-ssh-persister">py2store.persisters.ssh_persister</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.persisters.mongo_w_pymongo">py2store.persisters.mongo_w_pymongo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#py2store-persisters-googledrive-w-pydrive">py2store.persisters.googledrive_w_pydrive</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.sources">py2store.sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.dig">py2store.dig</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.serializers.pickled">py2store.serializers.pickled</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.serializers.jsonization">py2store.serializers.jsonization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.serializers">py2store.serializers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.serializers.sequential">py2store.serializers.sequential</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.serializers.regular_panel_data">py2store.serializers.regular_panel_data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.serializers.audio">py2store.serializers.audio</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.caching">py2store.caching</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.scrap">py2store.scrap</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.scrap.new_gen_local">py2store.scrap.new_gen_local</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.examples.write_caches">py2store.examples.write_caches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.examples">py2store.examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.examples.python_code_stats">py2store.examples.python_code_stats</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.examples.kv_walking">py2store.examples.kv_walking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.my">py2store.my</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.my.grabbers">py2store.my.grabbers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.trans">py2store.trans</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.key_mappers.str_utils">py2store.key_mappers.str_utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.key_mappers.tuples">py2store.key_mappers.tuples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.key_mappers.paths">py2store.key_mappers.paths</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.key_mappers.naming">py2store.key_mappers.naming</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.key_mappers">py2store.key_mappers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.errors">py2store.errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.slib.s_configparser">py2store.slib.s_configparser</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.slib">py2store.slib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.slib.s_zipfile">py2store.slib.s_zipfile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.base">py2store.base</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#py2store-selectors-mg-selectors">py2store.selectors.mg_selectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#py2store-selectors-mongoquery">py2store.selectors.mongoquery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#py2store-selectors">py2store.selectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.parse_format">py2store.parse_format</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="test.html#format-syntax">Format Syntax</a></li>
+<li class="toctree-l2"><a class="reference internal" href="test.html#format-specification">Format Specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="test.html#result-and-match-objects">Result and Match Objects</a></li>
+<li class="toctree-l2"><a class="reference internal" href="test.html#custom-type-conversions">Custom Type Conversions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="test.html#potential-gotchas">Potential Gotchas</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
+<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
+<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
+</ul>
+<blockquote>
+<div><ul class="simple">
+<li><p>[py2store](#py2store)</p></li>
+<li><p>[Quickstart](#quickstart)</p></li>
+<li><dl class="simple">
+<dt>[Use cases](#use-cases)</dt><dd><ul>
+<li><p>[Interfacing reads](#interfacing-reads)</p></li>
+<li><p>[Changing where and how things are stored](#changing-where-and-how-things-are-stored)</p></li>
+<li><p>[Adapters: When the learning curve is in the way of learning](#adapters-when-the-learning-curve-is-in-the-way-of-learning)</p></li>
+<li><p>[Thinking about storage later, if ever](#thinking-about-storage-later-if-ever)</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>[More examples](#more-examples)</dt><dd><ul>
+<li><p>[Looks like a dict](#looks-like-a-dict)</p></li>
+<li><p>[Converting keys: Relative paths and absolute paths](#converting-keys-relative-paths-and-absolute-paths)</p></li>
+<li><p>[Serialization/Deserialization](#serializationdeserialization)</p></li>
+<li><p>[A pickle store](#a-pickle-store)</p></li>
+<li><p>[But how do you change the persister?](#but-how-do-you-change-the-persister)</p></li>
+<li><p>[Talk your own CRUD dialect](#talk-your-own-crud-dialect)</p></li>
+<li><p>[Transforming keys](#transforming-keys)</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><p>[How it works](#how-it-works)</p></li>
+<li><dl class="simple">
+<dt>[A few persisters you can use](#a-few-persisters-you-can-use)</dt><dd><ul>
+<li><p>[Local Files](#local-files)</p></li>
+<li><p>[MongoDB](#mongodb)</p></li>
+<li><p>[S3, SQL, Zips, Dropbox](#s3-sql-zips-dropbox)</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>[Philosophical FAQs](#philosophical-faqs)</dt><dd><ul>
+<li><p>[Is a store an ORM? A DAO?](#is-a-store-an-orm-a-dao)</p></li>
+<li><p>[Should storage transform the data?](#should-storage-transform-the-data)</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><p>[Some links](#some-links)</p></li>
+</ul>
+</div></blockquote>
+<p># py2store
+Storage CRUD how and where you want it.</p>
+<p>List, read, write, and delete data in a structured data source/target,
+as if manipulating simple python builtins (dicts, lists), or through the interface <strong>you</strong> want to interact with,
+with configuration or physical particularities out of the way.
+Also, being able to change these particularities without having to change the business-logic code.</p>
+<p>If you’re not a “read from top to bottom” kinda person, here are some tips:
+[Quickstart](#quickstart) will show you a simple example of how it looks and feels.
+[Use cases](#use-cases) will give you an idea of how py2store can be useful to you, if at all,
+and [How it works](#how-it-works) will give you a sense of how it works.
+[More examples](#more-examples) will give you a taste of how you can adapt the three main aspects of
+storage (persistence, serialization, and indexing) to your needs.</p>
+<p># Quickstart</p>
+<p>Install it (e.g. <cite>pip install py2store</cite>).</p>
+<p>Think of type of storage you want to use and just go ahead, like you’re using a dict.
+Here’s an example for local storage (you must you string keys only here).</p>
+<p><code class="docutils literal notranslate"><span class="pre">`</span>
+<span class="pre">&gt;&gt;&gt;</span> <span class="pre">from</span> <span class="pre">py2store</span> <span class="pre">import</span> <span class="pre">QuickStore</span>
+<span class="pre">&gt;&gt;&gt;</span>
+<span class="pre">&gt;&gt;&gt;</span> <span class="pre">store</span> <span class="pre">=</span> <span class="pre">QuickStore()</span>&#160; <span class="pre">#</span> <span class="pre">will</span> <span class="pre">print</span> <span class="pre">what</span> <span class="pre">(tmp)</span> <span class="pre">rootdir</span> <span class="pre">it</span> <span class="pre">is</span> <span class="pre">choosing</span>
+<span class="pre">&gt;&gt;&gt;</span> <span class="pre">#</span> <span class="pre">Write</span> <span class="pre">something</span> <span class="pre">and</span> <span class="pre">then</span> <span class="pre">read</span> <span class="pre">it</span> <span class="pre">out</span> <span class="pre">again</span>
+<span class="pre">&gt;&gt;&gt;</span> <span class="pre">store['foo']</span> <span class="pre">=</span> <span class="pre">'baz'</span>
+<span class="pre">&gt;&gt;&gt;</span> <span class="pre">'foo'</span> <span class="pre">in</span> <span class="pre">store</span>&#160; <span class="pre">#</span> <span class="pre">do</span> <span class="pre">you</span> <span class="pre">have</span> <span class="pre">the</span> <span class="pre">key</span> <span class="pre">'foo'</span> <span class="pre">in</span> <span class="pre">your</span> <span class="pre">store?</span>
+<span class="pre">True</span>
+<span class="pre">&gt;&gt;&gt;</span> <span class="pre">store['foo']</span>&#160; <span class="pre">#</span> <span class="pre">what</span> <span class="pre">is</span> <span class="pre">the</span> <span class="pre">value</span> <span class="pre">for</span> <span class="pre">'foo'?</span>
+<span class="pre">'baz'</span>
+<span class="pre">&gt;&gt;&gt;</span>
+<span class="pre">&gt;&gt;&gt;</span> <span class="pre">#</span> <span class="pre">Okay,</span> <span class="pre">it</span> <span class="pre">behaves</span> <span class="pre">like</span> <span class="pre">a</span> <span class="pre">dict,</span> <span class="pre">but</span> <span class="pre">go</span> <span class="pre">have</span> <span class="pre">a</span> <span class="pre">look</span> <span class="pre">in</span> <span class="pre">your</span> <span class="pre">file</span> <span class="pre">system,</span>
+<span class="pre">&gt;&gt;&gt;</span> <span class="pre">#</span> <span class="pre">and</span> <span class="pre">see</span> <span class="pre">that</span> <span class="pre">there</span> <span class="pre">is</span> <span class="pre">now</span> <span class="pre">a</span> <span class="pre">file</span> <span class="pre">in</span> <span class="pre">the</span> <span class="pre">rootdir,</span> <span class="pre">named</span> <span class="pre">'foo'!</span>
+<span class="pre">&gt;&gt;&gt;</span>
+<span class="pre">&gt;&gt;&gt;</span> <span class="pre">#</span> <span class="pre">Write</span> <span class="pre">something</span> <span class="pre">more</span> <span class="pre">complicated</span>
+<span class="pre">&gt;&gt;&gt;</span> <span class="pre">store['hello/world']</span> <span class="pre">=</span> <span class="pre">[1,</span> <span class="pre">'flew',</span> <span class="pre">{'over':</span> <span class="pre">'a',</span> <span class="pre">&quot;cuckoo's&quot;:</span> <span class="pre">map}]</span>
+<span class="pre">&gt;&gt;&gt;</span> <span class="pre">stored_val</span> <span class="pre">=</span> <span class="pre">store['hello/world']</span>
+<span class="pre">&gt;&gt;&gt;</span> <span class="pre">stored_val</span> <span class="pre">==</span> <span class="pre">[1,</span> <span class="pre">'flew',</span> <span class="pre">{'over':</span> <span class="pre">'a',</span> <span class="pre">&quot;cuckoo's&quot;:</span> <span class="pre">map}]</span>&#160; <span class="pre">#</span> <span class="pre">was</span> <span class="pre">it</span> <span class="pre">retrieved</span> <span class="pre">correctly?</span>
+<span class="pre">True</span>
+<span class="pre">&gt;&gt;&gt;</span>
+<span class="pre">&gt;&gt;&gt;</span> <span class="pre">#</span> <span class="pre">how</span> <span class="pre">many</span> <span class="pre">items</span> <span class="pre">do</span> <span class="pre">you</span> <span class="pre">have</span> <span class="pre">now?</span>
+<span class="pre">&gt;&gt;&gt;</span> <span class="pre">assert</span> <span class="pre">len(store)</span> <span class="pre">&gt;=</span> <span class="pre">2</span>&#160; <span class="pre">#</span> <span class="pre">can't</span> <span class="pre">be</span> <span class="pre">sure</span> <span class="pre">there</span> <span class="pre">were</span> <span class="pre">no</span> <span class="pre">elements</span> <span class="pre">before,</span> <span class="pre">so</span> <span class="pre">can't</span> <span class="pre">assert</span> <span class="pre">==</span> <span class="pre">2</span>
+<span class="pre">&gt;&gt;&gt;</span>
+<span class="pre">&gt;&gt;&gt;</span> <span class="pre">#</span> <span class="pre">delete</span> <span class="pre">the</span> <span class="pre">stuff</span> <span class="pre">you've</span> <span class="pre">written</span>
+<span class="pre">&gt;&gt;&gt;</span> <span class="pre">del</span> <span class="pre">store['foo']</span>
+<span class="pre">&gt;&gt;&gt;</span> <span class="pre">del</span> <span class="pre">store['hello/world']</span>
+<span class="pre">`</span></code></p>
+<p><cite>QuickStore</cite> will by default store things in local files, using pickle as the serializer.
+If a root directory is not specified,
+it will use a tmp directory it will create (the first time you try to store something)
+It will create any directories that need to be created to satisfy any/key/that/contains/slashes.
+Of course, everything is configurable.</p>
+<p># Use cases</p>
+<p>## Interfacing reads</p>
+<p>How many times did someone share some data with you in the form of a zip of some nested folders
+whose structure and naming choices are fascinatingly obscure? And how much time do you then spend to write code
+to interface with that freak of nature? Well, one of the intents of py2store is to make that easier to do.
+You still need to understand the structure of the data store and how to deserialize these datas into python
+objects you can manipulate. But with the proper tool, you shouldn’t have to do much more than that.</p>
+<p>## Changing where and how things are stored</p>
+<p>Ever have to switch where you persist things (say from file system to S3), or change the way key into your data,
+or the way that data is serialized? If you use py2store tools to separate the different storage concerns,
+it’ll be quite easy to change, since change will be localized. And if you’re dealing with code that was already
+written, with concerns all mixed up, py2store should still be able to help since you’ll be able to
+more easily give the new system a facade that makes it look like the old one.</p>
+<p>All of this can also be applied to data bases as well, in-so-far as the CRUD operations you’re using
+are covered by the base methods.</p>
+<p>## Adapters: When the learning curve is in the way of learning</p>
+<p>Shinny new storage mechanisms (DBs etc.) are born constantly, and some folks start using them, and we are eventually lead to use them
+as well if we need to work with those folks’ systems. And though we’d love to learn the wonderful new
+capabilities the new kid on the block has, sometimes we just don’t have time for that.</p>
+<p>Wouldn’t it be nice if someone wrote an adapter to the new system that had an interface we were familiar with?
+Talking to SQL as if it were mongo (or visa versa). Talking to S3 as if it were a file system.
+Now it’s not a long term solution: If we’re really going to be using the new system intensively, we
+should learn it. But when you just got to get stuff done, having a familiar facade to something new
+is a life saver.</p>
+<p>py2store would like to make it easier for you roll out an adapter to be able to talk
+to the new system in the way <strong>you</strong> are familiar with.</p>
+<p>## Thinking about storage later, if ever</p>
+<p>You have a new project or need to write a new app. You’ll need to store stuff and read stuff back.
+Stuff: Different kinds of resources that your app will need to function. Some people enjoy thinking
+of how to optimize that aspect. I don’t. I’ll leave it to the experts to do so when the time comes.
+Often though, the time is later, if ever. Few proof of concepts and MVPs ever make it to prod.</p>
+<p>So instead, I’d like to just get on with the business logic and write my program.
+So what I need is an easy way to get some minimal storage functionality.
+But when the time comes to optimize, I shouldn’t have to change my code, but instead just change the way my
+DAO does things. What I need is py2store.</p>
+<p># More examples</p>
+<p>## Looks like a dict
+Below, we make a default store and demo a few basic operations on it.
+The default store uses a dict as it’s backend persister.
+A dict is neither really a backend, nor a persister. But it helps to try things out with no
+footprint.</p>
+<p><a href="#id1"><span class="problematic" id="id2">``</span></a><a href="#id3"><span class="problematic" id="id4">`</span></a>python
+from py2store.base import Store</p>
+<p>s = Store()
+assert list(s) == []
+s[‘foo’] = ‘bar’  # put ‘bar’ in ‘foo’
+assert ‘foo’ in s  # check that ‘foo’ is in (i.e. a key of) s
+assert s[‘foo’] == ‘bar’  # see that the value that ‘foo’ contains is ‘bar’
+assert list(s) == [‘foo’]  # list all the keys (there’s only one)
+assert list(s.items()) == [(‘foo’, ‘bar’)]  # list all the (key, value) pairs
+assert list(s.values()) == [‘bar’]  # list all the values
+assert len(s) == 1  # Number of items in my store
+s[‘another’] = ‘item’  # store another item
+assert len(s) == 2  # Now I have two!
+assert list(s) == [‘foo’, ‘another’]  # here they are
+<a href="#id5"><span class="problematic" id="id6">``</span></a><a href="#id7"><span class="problematic" id="id8">`</span></a></p>
+<p>There’s nothing fantastic in the above code.
+I’ve just demoed some operations on a dict.
+But it’s exactly this simplicity that py2store aims for.
+You can now replace the <cite>s = Store()</cite> with <cite>s = AnotherStore(…)</cite> where <cite>AnotherStore</cite>
+now uses some other backend that could be remote or local, could be a database, or any
+system that can store <cite>something</cite> (the value) <cite>somewhere</cite> (the key).</p>
+<p>You can choose from an existing store (e.g. local files, for AWS S3, for MongoDB) or
+quite easily make your own (more on that later).</p>
+<p>And yet, it will still look like you’re talking to a dict. This not only means that you can
+talk to various storage systems without having to actually learn how to, but also means
+that the same business logic code you’ve written can be reused with no modification.</p>
+<p>But py2store offers more than just a simple consistent facade to <strong>where</strong> you store things,
+but also provides means to define <strong>how</strong> you do it.</p>
+<p>In the case of key-value storage, the “how” is defined on the basis of the keys (how you reference)
+the objects you’re storing and the values (how you serialize and deserialize those objects).</p>
+<p>## Converting keys: Relative paths and absolute paths
+Take a look at the following example, that adds a layer of key conversion to a store.</p>
+<p><a href="#id9"><span class="problematic" id="id10">``</span></a><a href="#id11"><span class="problematic" id="id12">`</span></a>python
+# defining the store
+from py2store.base import Store</p>
+<dl>
+<dt>class PrefixedKeyStore(Store):</dt><dd><p>prefix = ‘’
+def _id_of_key(self, key):</p>
+<blockquote>
+<div><p>return self.prefix + key  # prepend prefix before passing on to store</p>
+</div></blockquote>
+<dl class="simple">
+<dt>def _key_of_id(self, _id):</dt><dd><dl class="simple">
+<dt>if not _id.startswith(self.prefix):</dt><dd><p>raise ValueError(f”_id {_id} wasn’t prefixed with {self.prefix}”)</p>
+</dd>
+<dt>else:</dt><dd><p>return _id[len(self.prefix):]  # don’t show the user the prefix</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+</dl>
+<p># trying the store out
+s = PrefixedKeyStore()
+s.prefix = ‘/ROOT/’
+assert list(s) == []
+s[‘foo’] = ‘bar’  # put ‘bar’ in ‘foo’
+assert ‘foo’ in s  # check that ‘foo’ is in (i.e. a key of) s
+assert s[‘foo’] == ‘bar’  # see that the value that ‘foo’ contains is ‘bar’
+assert list(s) == [‘foo’]  # list all the keys (there’s only one)
+assert list(s.items()) == [(‘foo’, ‘bar’)]  # list all the (key, value) pairs
+assert list(s.values()) == [‘bar’]  # list all the values
+assert len(s) == 1  # Number of items in my store
+s[‘another’] = ‘item’  # store another item
+assert len(s) == 2  # Now I have two!
+assert list(s) == [‘foo’, ‘another’]  # here they are
+<a href="#id13"><span class="problematic" id="id14">``</span></a><a href="#id15"><span class="problematic" id="id16">`</span></a></p>
+<p>Q: That wasn’t impressive! It’s just the same as the first Store. What’s this prefix all about?</p>
+<p>A: The prefix thing is hidden, and that’s the point. You want to talk the “relative” (i.e “prefix-free”)
+language, but may have the need for this prefix to be prepended to the key before persisting the data
+and that prefix to be removed before being displayed to the user.
+Think of working with files. Do you want to have to specify the root folder every time you store something
+or retrieve something?</p>
+<p>Q: Prove it!</p>
+<p>A: Okay, let’s look under the hood at what the underlying store (a dict) is dealing with:</p>
+<p><code class="docutils literal notranslate"><span class="pre">`python</span>
+<span class="pre">assert</span> <span class="pre">list(s.store.items())</span> <span class="pre">==</span> <span class="pre">[('/ROOT/foo',</span> <span class="pre">'bar'),</span> <span class="pre">('/ROOT/another',</span> <span class="pre">'item')]</span>
+<span class="pre">`</span></code></p>
+<p>You see? The keys that the “backend” is using are actually prefixed with <cite>“/ROOT/”</cite></p>
+<p>## Serialization/Deserialization</p>
+<p>Let’s now demo serialization and deserialization.</p>
+<p>Say we want to deserialize any text we stored by appending <cite>“hello “</cite> to everything stored.</p>
+<p><a href="#id17"><span class="problematic" id="id18">``</span></a><a href="#id19"><span class="problematic" id="id20">`</span></a>python
+# defining the store
+from py2store.base import Store</p>
+<dl class="simple">
+<dt>class MyFunnyStore(Store):</dt><dd><dl class="simple">
+<dt>def _obj_of_data(self, data):</dt><dd><p>return f’hello {data}’</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p># trying the store out
+s = MyFunnyStore()
+assert list(s) == []
+s[‘foo’] = ‘bar’  # put ‘bar’ in ‘foo’
+assert ‘foo’ in s  # check that ‘foo’ is in (i.e. a key of) s
+assert s[‘foo’] == ‘hello bar’  # the value that ‘foo’ contains SEEMS to be ‘hello bar’
+assert list(s) == [‘foo’]  # list all the keys (there’s only one)
+assert list(s.items()) == [(‘foo’, ‘hello bar’)]  # list all the (key, value) pairs
+assert list(s.values()) == [‘hello bar’]  # list all the values
+<a href="#id21"><span class="problematic" id="id22">``</span></a><a href="#id23"><span class="problematic" id="id24">`</span></a></p>
+<p>Note: This is an easy example to demo on-load transformation of data (i.e. deserialization),
+but wouldn’t be considered “deserialization” by all.
+See the [Should storage transform the data?](#should-storage-transform-the-data) discussion below.</p>
+<p>In the following, we want to serialize our text by upper-casing it (and see it as such)
+when we retrieve the text.</p>
+<p><a href="#id25"><span class="problematic" id="id26">``</span></a><a href="#id27"><span class="problematic" id="id28">`</span></a>python
+# defining the store
+from py2store.base import Store</p>
+<dl class="simple">
+<dt>class MyOtherFunnyStore(Store):</dt><dd><dl class="simple">
+<dt>def _data_of_obj(self, obj):</dt><dd><p>return obj.upper()</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p># trying the store out
+s = MyOtherFunnyStore()
+assert list(s) == []
+s[‘foo’] = ‘bar’  # put ‘bar’ in ‘foo’
+assert ‘foo’ in s  # check that ‘foo’ is in (i.e. a key of) s
+assert s[‘foo’] == ‘BAR’  # see that the value that ‘foo’ contains is ‘bar’
+assert list(s) == [‘foo’]  # list all the keys (there’s only one)
+assert list(s.items()) == [(‘foo’, ‘BAR’)]  # list all the (key, value) pairs
+assert list(s.values()) == [‘BAR’]  # list all the values
+<a href="#id29"><span class="problematic" id="id30">``</span></a><a href="#id31"><span class="problematic" id="id32">`</span></a></p>
+<p>In the last to serialization examples, we only implemented one way transformations.
+That’s all fine if you just want to have a writer (so only need a serializer) or a reader (so only
+need a deserializer).
+In most cases though, you will need two way transformations, specifying how the object
+should be serialized to be stored, and how it should be deserialized to get your object back.</p>
+<p>## A pickle store</p>
+<p>Say you wanted the store to pickle as your serializer. Here’s how this could look like.</p>
+<p><a href="#id33"><span class="problematic" id="id34">``</span></a><a href="#id35"><span class="problematic" id="id36">`</span></a>python
+# defining the store
+import pickle
+from py2store.base import Store</p>
+<dl>
+<dt>class PickleStore(Store):</dt><dd><p>protocol = None
+fix_imports = True
+encoding = ‘ASCII’
+def _data_of_obj(self, obj):  # serializer</p>
+<blockquote>
+<div><p>return pickle.dumps(obj, protocol=self.protocol, fix_imports=self.fix_imports)</p>
+</div></blockquote>
+<dl class="simple">
+<dt>def _obj_of_data(self, data):  # deserializer</dt><dd><p>return pickle.loads(data, fix_imports=self.fix_imports, encoding=self.encoding)</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p># trying the store out
+s = PickleStore()
+assert list(s) == []
+s[‘foo’] = ‘bar’  # put ‘bar’ in ‘foo’
+assert s[‘foo’] == ‘bar’  # I can get ‘bar’ back
+# behind the scenes though, it’s really a pickle that is stored:
+assert s.store[‘foo’] == b’x80x03Xx03x00x00x00barqx00.’
+<a href="#id37"><span class="problematic" id="id38">``</span></a><a href="#id39"><span class="problematic" id="id40">`</span></a></p>
+<p>Again, it doesn’t seem that impressive that you can get back a string that you stored in a dict.
+For two reasons: (1) you don’t really need to serialize strings to store them and (2) you don’t need to serialize python
+objects to store them in a dict.
+But if you (1) were trying to store more complex types and (2) were actually persisting them in a file system or database,
+then you’ll need to serialize.
+The point here is that the serialization and persisting concerns are separated from the storage and retrieval concern.
+The code still looks like you’re working with a dict.</p>
+<p>## But how do you change the persister?</p>
+<p>By using a persister that persists where you want.
+You can also write your own. All a persister needs to work with py2store is that it follows the interface
+python’s <cite>collections.MutableMapping</cite> (or a subset thereof). More on how to make your own persister later
+You just need to follow the collections.MutableMapping interface.</p>
+<p>Below a simple example of how to persist in files under a given folder.
+(Warning: If you want a local file store, don’t use this, but one of the easier to use, robust and safe stores in the
+stores folder!)</p>
+<p><a href="#id41"><span class="problematic" id="id42">``</span></a><a href="#id43"><span class="problematic" id="id44">`</span></a>python
+import os
+from collections.abc import MutableMapping</p>
+<dl>
+<dt>class SimpleFilePersister(MutableMapping):</dt><dd><p>“””Read/write (text or binary) data to files under a given rootdir.
+Keys must be absolute file paths.
+Paths that don’t start with rootdir will be raise a KeyValidationError
+“””</p>
+<dl>
+<dt>def __init__(self, rootdir, mode=’t’):</dt><dd><dl class="simple">
+<dt>if not rootdir.endswith(os.path.sep):</dt><dd><p>rootdir = rootdir + os.path.sep</p>
+</dd>
+</dl>
+<p>self.rootdir = rootdir
+assert mode in {‘t’, ‘b’, ‘’}, f”mode ({mode}) not valid: Must be ‘t’ or ‘b’”
+self.mode = mode</p>
+</dd>
+<dt>def __getitem__(self, k):</dt><dd><dl class="simple">
+<dt>with open(k, ‘r’ + self.mode) as fp:</dt><dd><p>data = fp.read()</p>
+</dd>
+</dl>
+<p>return data</p>
+</dd>
+<dt>def __setitem__(self, k, v):</dt><dd><dl class="simple">
+<dt>with open(k, ‘w’ + self.mode) as fp:</dt><dd><p>fp.write(v)</p>
+</dd>
+</dl>
+</dd>
+<dt>def __delitem__(self, k):</dt><dd><p>os.remove(k)</p>
+</dd>
+<dt>def __contains__(self, k):</dt><dd><p>“”” Implementation of “k in self” check.
+Note: MutableMapping gives you this for free, using a try/except on __getitem__,
+but the following uses faster os functionality.”””
+return os.path.isfile(k)</p>
+</dd>
+<dt>def __iter__(self):</dt><dd><dl class="simple">
+<dt>yield from filter(os.path.isfile,</dt><dd><dl class="simple">
+<dt>map(lambda x: os.path.join(self.rootdir, x),</dt><dd><p>os.listdir(self.rootdir)))</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+<dt>def __len__(self):</dt><dd><p>“””Note: There’s system-specific faster ways to do this.”””
+count = 0
+for _ in self.__iter__():</p>
+<blockquote>
+<div><p>count += 1</p>
+</div></blockquote>
+<p>return count</p>
+</dd>
+<dt>def clear(self):</dt><dd><p>“””MutableMapping creates a ‘delete all’ functionality by default. Better disable it!”””
+raise NotImplementedError(“If you really want to do that, loop on all keys and remove them one by one.”)</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p><a href="#id45"><span class="problematic" id="id46">``</span></a><a href="#id47"><span class="problematic" id="id48">`</span></a></p>
+<p>Now try this out:
+<a href="#id49"><span class="problematic" id="id50">``</span></a><a href="#id51"><span class="problematic" id="id52">`</span></a>python
+import os
+# What folder you want to use. Defaulting to the home folder. You can choose another place, but make sure
+rootdir = os.path.expanduser(‘~/’)  # Defaulting to the home folder. You can choose another place</p>
+<p>persister = SimpleFilePersister(rootdir)
+foo_fullpath = os.path.join(rootdir, ‘foo’)
+persister[foo_fullpath] = ‘bar’  # write ‘bar’ to a file named foo_fullpath
+assert persister[foo_fullpath] == ‘bar’  # see that you can read the contents of that file to get your ‘bar’ back
+assert foo_fullpath in persister  # the full filepath indeed exists in (i.e. “is a key of”) the persister
+assert foo_fullpath in list(persister)  # you can list all the contents of the rootdir and file foo_fullpath in it
+<a href="#id53"><span class="problematic" id="id54">``</span></a><a href="#id55"><span class="problematic" id="id56">`</span></a></p>
+<p>## Talk your own CRUD dialect</p>
+<p>Don’t like this dict-like interface? Want to talk <strong>your own</strong> CRUD words?
+We got you covered! Just subclass <cite>SimpleFilePersister</cite> and make the changes you want to make:</p>
+<p><a href="#id57"><span class="problematic" id="id58">``</span></a><a href="#id59"><span class="problematic" id="id60">`</span></a>python
+class MySimpleFilePersister(SimpleFilePersister):</p>
+<blockquote>
+<div><p># If it’s just renaming, it’s easy
+read = SimpleFilePersister.__getitem__
+exists = SimpleFilePersister.__contains__
+n_files = SimpleFilePersister.__len__</p>
+<p># here we want a new method that gives us an actual list of the filepaths in the rootdir
+list_files = lambda self: list(self.__iter__())</p>
+<p># And for write we want val and key to be swapped in our interface,
+def write(self, val, key):  # note that we wanted val to come first here (as with json.dump and pickle.dump interface)</p>
+<blockquote>
+<div><p>return self.__setitem__(key, val)</p>
+</div></blockquote>
+</div></blockquote>
+<p>my_persister = MySimpleFilePersister(rootdir)</p>
+<p>foo_fullpath = os.path.join(rootdir, ‘foo1’)
+my_persister.write(‘bar1’, foo_fullpath)  # write ‘bar1’ to a file named foo_fullpath
+assert my_persister.read(foo_fullpath) == ‘bar1’  # see that you can read the contents of that file to get your ‘bar1’ back
+assert my_persister.exists(foo_fullpath)  # the full filepath indeed exists in (i.e. “is a key of”) the persister
+assert foo_fullpath in my_persister.list_files()  # you can list all the contents of the rootdir and file foo_fullpath in it
+<a href="#id61"><span class="problematic" id="id62">``</span></a><a href="#id63"><span class="problematic" id="id64">`</span></a></p>
+<p>## Transforming keys</p>
+<p>But dealing with full paths can be annoying, and might couple code too tightly with a particular local system.
+We’d like to use relative paths instead.
+Easy: Wrap the persister in the <cite>PrefixedKeyStore</cite> defined earlier.</p>
+<p><a href="#id65"><span class="problematic" id="id66">``</span></a><a href="#id67"><span class="problematic" id="id68">`</span></a>python
+s = PrefixedKeyStore(store=persister)  # wrap your persister with the PrefixedKeyStore defined earlier
+if not rootdir.endswith(os.path.sep):</p>
+<blockquote>
+<div><p>rootdir = rootdir + os.path.sep  # make sure the rootdir ends with slash</p>
+</div></blockquote>
+<p>s.prefix = rootdir  # use rootdir as prefix in keys</p>
+<p>s[‘foo2’] = ‘bar2’  # write ‘bar2’ to a file
+assert s[‘foo2’] == ‘bar2’  # see that you can read the contents of that file to get your ‘bar2’ back
+assert ‘foo2’ in s
+assert ‘foo2’ in list(s)
+<a href="#id69"><span class="problematic" id="id70">``</span></a><a href="#id71"><span class="problematic" id="id72">`</span></a></p>
+<p># How it works</p>
+<p>py2store offers three aspects that you can define or modify to store things where you like and how you like it:
+* <strong>Persistence</strong>: Where things are actually stored (memory, files, DBs, etc.)
+* <strong>Serialization</strong>: Value transformaton.
+How python objects should be transformed before it is persisted,
+and how persisted data should be transformed into python objects.
+* <strong>Indexing</strong>: Key transformation. How you name/id/index your data.
+Full or relative paths. Unique combination of parameters (e.g. (country, city)). Etc.</p>
+<p>All of this allows you to do operations such as “store this (value) in there (persitence) as that (key)”,
+moving the tedious particularities of the “in there” as well how the “this” and “that” are transformed to fit
+in there, all out of the way of the business logic code. The way it should be.</p>
+<p>![alt text](img/py2store_how_it_works.png)</p>
+<p>Note: Where data is actually persisted just depends on what the base CRUD methods
+(<cite>__getitem__</cite>, <cite>__setitem__</cite>, <cite>__delitem__</cite>, <cite>__iter__</cite>, etc.) define them to be.</p>
+<p># A few persisters you can use</p>
+<p>We’ll go through a few basic persisters that are ready to use.
+There are more in each category, and we’ll be adding new categories, but
+this should get you started.</p>
+<p>Here is a useful function to perform a basic test on a store, given a key and value.
+It doesn’t test all store method (see test modules for that), but demos
+the basic functionality that pretty much every store should be able to do.</p>
+<p><a href="#id73"><span class="problematic" id="id74">``</span></a><a href="#id75"><span class="problematic" id="id76">`</span></a>python
+def basic_test(store, k=’foo’, v=’bar’):</p>
+<blockquote>
+<div><p>“”” This test performs
+Warning: Don’t use on a key k that you don’t want to loose!”””
+if k in store:  # deleting all docs in tmp</p>
+<blockquote>
+<div><p>del store[k]</p>
+</div></blockquote>
+<p>assert (k in store) == False  # see that key is not in store (and testing __contains__)
+orig_length = len(store)  # the length of the store before insertion
+store[k] = v  # write v to k (testing __setitem__)
+assert store[k] == v  # see that the value can be retrieved (testing __getitem__, and that __setitem__ worked)
+assert len(store) == orig_length + 1  # see that the number of items in the store increased by 1
+assert (k in store) == True  # see that key is in store now (and testing __contains__ again)
+assert k in list(store)  # testing listing the (key) contents of a store (and seeing if )
+assert store.get(k) == v  # the get method
+_ = next(iter(store.keys()))  # get the first key (test keys method)
+_ = next(iter(store.__iter__()))  # get the first key (through __iter__)
+k in store.keys()  # test that the __contains__ of store.keys() works</p>
+<dl class="simple">
+<dt>try:</dt><dd><p>_ = next(iter(store.values()))  # get the first value (test values method)
+_ = next(iter(store.items()))  # get the first (key, val) pair (test items method)</p>
+</dd>
+<dt>except Exception:</dt><dd><p>print(“values() (therefore items()) didn’t work: Probably testing a persister that had other data in it that your persister doesn’t like”)</p>
+</dd>
+</dl>
+<p>assert (k in store) == True # testing __contains__ again
+del store[k]  # clean up (and test delete)</p>
+</div></blockquote>
+<p><a href="#id77"><span class="problematic" id="id78">``</span></a>`
+## Local Files</p>
+<p>There are many choices of local file stores according to what you’re trying to do.
+One general (but not too general) purpose local file store is
+‘py2store.stores.local_store.RelativePathFormatStoreEnforcingFormat’.
+It can do a lot for you, like add a prefix to your keys (so you can talk in relative instead of absolute paths),
+lists all files in subdirectories as well recursively,
+only show you files that have a given pattern when you list them,
+and not allow you to write to a key that doesn’t fit the pattern.
+Further, it also has what it takes to create parametrized paths or parse out the parameters of a path.</p>
+<p><a href="#id79"><span class="problematic" id="id80">``</span></a><a href="#id81"><span class="problematic" id="id82">`</span></a>python
+from py2store.stores.local_store import RelativePathFormatStoreEnforcingFormat as LocalFileStore
+import os</p>
+<p>rootdir = os.path.expanduser(‘~/pystore_tests/’)  # or replace by the folder you want to use
+os.makedirs(rootdir, exist_ok=True)  # this will make all directories that don’t exist. Don’t use if you don’t want that.</p>
+<p>store = LocalFileStore(path_format=rootdir)
+basic_test(store, k=’foo’, v=’bar’)
+<a href="#id83"><span class="problematic" id="id84">``</span></a><a href="#id85"><span class="problematic" id="id86">`</span></a></p>
+<p>The signature of LocalFileStore is:
+<a href="#id87"><span class="problematic" id="id88">``</span></a><a href="#id89"><span class="problematic" id="id90">`</span></a>python
+LocalFileStore(path_format, mode=’’,</p>
+<blockquote>
+<div><p>buffering=-1, encoding=None, errors=None, newline=None, closefd=True, opener=None)</p>
+</div></blockquote>
+<p><a href="#id91"><span class="problematic" id="id92">``</span></a><a href="#id93"><span class="problematic" id="id94">`</span></a></p>
+<p>Often path_format is just used to specify the rootdir, as above.
+But you can specify the desired format further.
+For example, the following will only yield .wav files,
+and only allow you to write to keys that end with .wav:
+<code class="docutils literal notranslate"><span class="pre">`python</span>
+<span class="pre">store</span> <span class="pre">=</span> <span class="pre">LocalFileStore(path_format='/THE/ROOT/DIR/{}.wav')</span>
+<span class="pre">`</span></code></p>
+<p>The following will additional add the restriction that those .wav files have the format ‘<a href="#id135"><span class="problematic" id="id136">SOMESTRING_</span></a>’
+followed by digits:
+<code class="docutils literal notranslate"><span class="pre">`python</span>
+<span class="pre">store</span> <span class="pre">=</span> <span class="pre">LocalFileStore(path_format='/THE/ROOT/DIR/{:s}_{:d}.wav')</span>
+<span class="pre">`</span></code></p>
+<p>You get the point…</p>
+<p>The other arguments of LocalFileStore or more or less those of python’s <cite>open</cite> function.
+The slight difference is that here the <cite>mode</cite> argument applies both to read and write.
+If <cite>mode=’b’</cite> for example, the file will be opened with <cite>mode=’rb’</cite> when opened to read and
+with <cite>mode=’wb’</cite> when opened to write. For assymetrical read/write modes, the
+user can specify a <cite>read_mode</cite> and <cite>write_mode</cite> (in this case the <cite>mode</cite> argument is ignored).</p>
+<p>## MongoDB</p>
+<p>A MongoDB collection is not as naturally a key-value storage as a file system is.
+MongoDB stores “documents”, which are JSONs of data, having many (possibly nested) fields that are not
+by default enforced by a schema. So in order to talk to mongo as a key-value store, we need to
+specify what fields should be considered as keys, and what fields should be considered as data.</p>
+<p>By default, the <cite>_id</cite> field (the only field ensured by default to contain unique values) is the single key field, and
+all other fields are considered to be data fields.</p>
+<p><code class="docutils literal notranslate"><span class="pre">`python</span>
+<span class="pre">from</span> <span class="pre">py2store.stores.mongo_store</span> <span class="pre">import</span> <span class="pre">MongoStore</span>
+<span class="pre">#</span> <span class="pre">The</span> <span class="pre">following</span> <span class="pre">makes</span> <span class="pre">a</span> <span class="pre">default</span> <span class="pre">MongoStore,</span> <span class="pre">the</span> <span class="pre">default</span> <span class="pre">pymongo.MongoClient</span> <span class="pre">settings,</span>
+<span class="pre">#</span> <span class="pre">and</span> <span class="pre">db_name='py2store',</span> <span class="pre">collection_name='test',</span> <span class="pre">key_fields=('_id',)</span>
+<span class="pre">store</span> <span class="pre">=</span> <span class="pre">MongoStore()</span>
+<span class="pre">basic_test(store,</span> <span class="pre">k={'_id':</span> <span class="pre">'foo'},</span> <span class="pre">v={'val':</span> <span class="pre">'bar',</span> <span class="pre">'other_val':</span> <span class="pre">3})</span>
+<span class="pre">`</span></code></p>
+<p>But it can get annoying to specify the key as a dict every time.
+The key schema is fixed, so you should be able to just specify the tuple of values making the keys.
+And you can, with MongoTupleKeyStore</p>
+<p><code class="docutils literal notranslate"><span class="pre">`python</span>
+<span class="pre">from</span> <span class="pre">py2store.stores.mongo_store</span> <span class="pre">import</span> <span class="pre">MongoTupleKeyStore</span>
+<span class="pre">store</span> <span class="pre">=</span> <span class="pre">MongoTupleKeyStore(key_fields=('_id',</span> <span class="pre">'name'))</span>
+<span class="pre">basic_test(store,</span> <span class="pre">k=(1234,</span> <span class="pre">'bob'),</span> <span class="pre">v={'age':</span> <span class="pre">42,</span> <span class="pre">'gender':</span> <span class="pre">'unspecified'})</span>
+<span class="pre">`</span></code></p>
+<p>## S3, SQL, Zips, Dropbox</p>
+<p>S3 persister/stores work pretty much like LocalStores, but stores in S3. You’ll need to have an account with
+AWS to use this. Find S3 stores in py2store.stores.s3_stores.</p>
+<p>SQL give you read and write access to SQL DBs and tables.</p>
+<p>ZipReader (and other related stores) talks to one or several files, giving you the ability to operate as if the zips were uncompressed.</p>
+<p>Dropbox will give you access to dropbox files through the same dict-like interface.</p>
+<p># Philosophical FAQs</p>
+<p>## Is a store an ORM? A DAO?</p>
+<p>Call it what you want, really.</p>
+<p>It would be tempting to coin py2store as ya(p)orm (yet another (python) object-relational mapping),
+but that would be misleading. The intent of py2store is not to map objects to db entries,
+but rather to offer a consistent interface for basic storage operations.</p>
+<p>In that sense, py2store is more akin to an implementation of the data access object (DAO) pattern.
+Of course, the difference between ORM and DAO can be blurry, so all this should be taken with a grain of salt.</p>
+<p>Advantages and disadvantages such abstractions are easy to search and find, but in most cases the
+pros probably outweigh the cons.</p>
+<p>Most data interaction mechanisms can be satisfied by a subset of the collections.abc interfaces.
+For example, one can use python’s collections.Mapping interface for any key-value storage, making the data access
+object have the look and feel of a dict, instead of using other popular method name choices such for
+such as read/write, load/dump, etc.
+One of the dangers there is that, since the DAO looks and acts like a dict (but is not) a user might underestimate
+the running-costs of some operations.</p>
+<p>## Should storage transform the data?</p>
+<p>When does “storing data” <strong>not</strong> transform data? The answer is that storage almost always transforms data in some way.
+But some of these transformations are taken for granted, because there’s so often “attached”
+(i.e. “co-occur”) with the raw process of storing. In py2store, the data transformation is attached to (but not entangled with) the store object.
+This means you have a specific place where you can check or change that aspect of storage.</p>
+<p>Having a consistent and simple interface to storage is useful. Being able to attach key and value
+transformations to this interface is also very useful. But though you get a lot for cheap, it’s
+not free: Mapping the many (storage systems operations) to the one (consistent interface) means
+that, through habit, you might project some misaligned expectations.
+This is one of the known disadvantages of Data Access Objects (DAOs))</p>
+<p>Have a look at this surreal behavior:</p>
+<p><a href="#id95"><span class="problematic" id="id96">``</span></a><a href="#id97"><span class="problematic" id="id98">`</span></a>python
+# defining the store
+from py2store.base import Store</p>
+<dl class="simple">
+<dt>class MyFunnyStore(Store):</dt><dd><dl class="simple">
+<dt>def _obj_of_data(self, data):</dt><dd><p>return f’hello {data}’</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p># trying the store out
+s = MyFunnyStore()
+s[‘foo’] = ‘bar’  # put ‘bar’ in ‘foo’
+assert s[‘foo’] == ‘hello bar’  # the value that ‘foo’ contains SEEMS to be ‘hello bar’
+# so look how surreal that can be:
+s[‘foo’] = s[‘foo’]  # retrieve what’s under ‘foo’ and store it back into ‘foo’
+assert s[‘foo’] == ‘hello hello bar’  # what the…
+s[‘foo’] = s[‘foo’]  # retrieve what’s under ‘foo’ and store it back into ‘foo’
+assert s[‘foo’] == ‘hello hello hello bar’  # No no no! I do not like green eggs and ham!
+<a href="#id99"><span class="problematic" id="id100">``</span></a><a href="#id101"><span class="problematic" id="id102">`</span></a></p>
+<p>This happens, because though you’ve said <cite>s[‘foo’] = ‘bar’</cite>, the value returned by <cite>s[‘foo’]</cite> is
+actually <cite>‘hello bar’</cite>. Why? Because though you’ve stored <cite>‘bar’</cite>, you’re transforming the data when you
+read it (that’s what <cite>_obj_of_data</cite> does).</p>
+<p>Is that a desirable behavior? Transforming the stored data before handing it to the user?
+Well, this is such a common pattern that it has it’s own acronym and tools named after the acronym: ETL.
+Extract, Transform, Load.
+What is happening here is that we composed extraction and transformation. Is that acceptable?</p>
+<p>Say I have a big store of tagged audio files of various formats but only want to work with
+files containing the ‘gunshot’ tag and lasting no more than 10s, and further get the data as a
+waveform (a sequence of samples).</p>
+<p>You’d probably find this acceptable:</p>
+<p><a href="#id103"><span class="problematic" id="id104">``</span></a><a href="#id105"><span class="problematic" id="id106">`</span></a>python
+audio_file_type=type_of(file)
+with open(file, ‘wb’) as fp:</p>
+<blockquote>
+<div><p>file_bytes = fp.read()</p>
+</div></blockquote>
+<p>wf = convert_to_waveform(file_bytes)
+<a href="#id107"><span class="problematic" id="id108">``</span></a><a href="#id109"><span class="problematic" id="id110">`</span></a></p>
+<p>Or this:
+<a href="#id111"><span class="problematic" id="id112">``</span></a><a href="#id113"><span class="problematic" id="id114">`</span></a>python
+filt = mk_file_filter(tag=’gunshot’, max_size_s=10)
+for file in filter(filt, audio_source):</p>
+<blockquote>
+<div><dl class="simple">
+<dt>with open(file, ‘wb’) as fp:</dt><dd><p>file_bytes = fp.read()</p>
+</dd>
+</dl>
+<p>wf = convert_to_waveform(file_bytes, audio_file_type=type_of(file))
+send_wf_for_analysis(wf)</p>
+</div></blockquote>
+<p><a href="#id115"><span class="problematic" id="id116">``</span></a><a href="#id117"><span class="problematic" id="id118">`</span></a></p>
+<p>You might even find it acceptable to put such code in a functions called <cite>get_waveform_from_file</cite>,
+or <cite>generator_of_waveforms_of_filtered_files</cite>.</p>
+<p>So why is it harder to accept something where you make a store that encompasses your needs.
+You do <cite>s = WfStore(audio_source, filt)</cite> and then</p>
+<p><code class="docutils literal notranslate"><span class="pre">`python</span>
+<span class="pre">wf</span> <span class="pre">=</span> <span class="pre">s[some_file]</span>&#160; <span class="pre">#</span> <span class="pre">get</span> <span class="pre">a</span> <span class="pre">waveform</span>
+<span class="pre">`</span></code></p>
+<p>or</p>
+<p><a href="#id119"><span class="problematic" id="id120">``</span></a><a href="#id121"><span class="problematic" id="id122">`</span></a>python
+for wf in s.values():  # iterate over all waveforms</p>
+<blockquote>
+<div><p>send_wf_for_analysis(wf)</p>
+</div></blockquote>
+<p><a href="#id123"><span class="problematic" id="id124">``</span></a><a href="#id125"><span class="problematic" id="id126">`</span></a></p>
+<p>It’s harder to accept precisely because of the simplicity and consistency (with dict operations).
+We’re used to <cite>s[some_file]</cite> meaning “give me THE value stored in s, in the ‘some_file’ slot”.
+We’re not used to <cite>s[some_file]</cite> meaning
+“go get the data stored in <cite>some_file</cite> and give it to me in a format more convenient for my use”.</p>
+<p>Stores allow you to compose extraction and transformation, or transformation and loading,
+and further specifying filter, caching, indexing, and many other aspects related to storage.
+Those, py2store helps you create the perspective you want, or need.</p>
+<p>That said, one needs to be careful that the simplicity thus created doesn’t induce misuse.
+For example, in the <cite>MyFunnyStore</cite> example above, we may want to use a different store to persist
+and to read, and perhaps reflect their function in their names. For example:</p>
+<p><a href="#id127"><span class="problematic" id="id128">``</span></a><a href="#id129"><span class="problematic" id="id130">`</span></a>python
+# defining the store
+from py2store.base import Store</p>
+<dl class="simple">
+<dt>class ExtractAndTransform(Store):</dt><dd><dl class="simple">
+<dt>def _obj_of_data(self, data):</dt><dd><p>return f’hello {data}’</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p>store = Store()
+extract_and_transform = ExtractAndTransform(store)
+store[‘foo’] = ‘bar’  # put ‘bar’ in ‘foo’
+assert store[‘foo’] == ‘bar’  # the value that store contains for ‘foo’ is ‘bar’
+assert extract_and_transform[‘foo’] == ‘hello bar’  # the value that extract_and_transform gives you is ‘bar’
+<a href="#id131"><span class="problematic" id="id132">``</span></a><a href="#id133"><span class="problematic" id="id134">`</span></a></p>
+<p># Some links</p>
+<p>Presentation at PyBay 2019: <a class="reference external" href="https://www.youtube.com/watch?v=6lx0A6oVM5E">https://www.youtube.com/watch?v=6lx0A6oVM5E</a></p>
+<p>ETL: Extract, Transform, Load: <a class="reference external" href="https://en.wikipedia.org/wiki/Extract,_transform,_load">https://en.wikipedia.org/wiki/Extract,_transform,_load</a>
+ORM: Object-relational mapping: <a class="reference external" href="https://en.wikipedia.org/wiki/Object-relational_mapping">https://en.wikipedia.org/wiki/Object-relational_mapping</a></p>
+<p>DAO: Data access object: <a class="reference external" href="https://en.wikipedia.org/wiki/Data_access_object">https://en.wikipedia.org/wiki/Data_access_object</a></p>
+<p>DRY: <a class="reference external" href="https://en.wikipedia.org/wiki/Don%27t_repeat_yourself">https://en.wikipedia.org/wiki/Don%27t_repeat_yourself</a></p>
+<p>SOC: Separation Of Concerns: <a class="reference external" href="https://en.wikipedia.org/wiki/Separation_of_concerns">https://en.wikipedia.org/wiki/Separation_of_concerns</a></p>
+<p>COC: Convention Over Configuration: <a class="reference external" href="https://en.wikipedia.org/wiki/Convention_over_configuration">https://en.wikipedia.org/wiki/Convention_over_configuration</a></p>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="#">py2store</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="test.html">py2store.filesys</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.misc">py2store.misc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.mixins">py2store.mixins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.test.util">py2store.test.util</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#py2store-test-quick">py2store.test.quick</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.test">py2store.test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#py2store-test-simple">py2store.test.simple</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#py2store-test-scrap">py2store.test.scrap</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.util">py2store.util</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#py2store-ext-docx">py2store.ext.docx</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.ext.gitlab">py2store.ext.gitlab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#py2store-ext-hdf">py2store.ext.hdf</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.ext">py2store.ext</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#py2store-ext-matlab">py2store.ext.matlab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.ext.kaggle">py2store.ext.kaggle</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#py2store-ext-module-imports">py2store.ext.module_imports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.ext.audio">py2store.ext.audio</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#py2store-ext-github">py2store.ext.github</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.ext.dataframes">py2store.ext.dataframes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.access">py2store.access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.__init__">py2store.__init__</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.stores.s3_store">py2store.stores.s3_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.stores.delegation_stores">py2store.stores.delegation_stores</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.stores.sql_w_sqlalchemy">py2store.stores.sql_w_sqlalchemy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#py2store-stores-arangodb-store">py2store.stores.arangodb_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#py2store-stores-dropbox-store">py2store.stores.dropbox_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.stores.local_store">py2store.stores.local_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.stores">py2store.stores</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#py2store-stores-couchdb-store">py2store.stores.couchdb_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.stores.mongo_store">py2store.stores.mongo_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.core">py2store.core</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.utils.uri_utils">py2store.utils.uri_utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.utils.explicit">py2store.utils.explicit</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.utils.timeseries_caching">py2store.utils.timeseries_caching</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#py2store-utils-attr-dict-py-attr-dict">py2store.utils.attr_dict.py.attr_dict</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#py2store-utils-attr-dict-py">py2store.utils.attr_dict.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.utils.cumul_aggreg_write">py2store.utils.cumul_aggreg_write</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.utils">py2store.utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.utils.cache_descriptors">py2store.utils.cache_descriptors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.utils.appendable">py2store.utils.appendable</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.utils.affine_conversion">py2store.utils.affine_conversion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.utils.signatures">py2store.utils.signatures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.utils.sliceable">py2store.utils.sliceable</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.utils.mappify">py2store.utils.mappify</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.utils.glom">py2store.utils.glom</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#py2store-persisters-sql-w-odbc">py2store.persisters.sql_w_odbc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.persisters.dynamodb_w_boto3">py2store.persisters.dynamodb_w_boto3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#py2store-persisters-couchdb-w-couchdb">py2store.persisters.couchdb_w_couchdb</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.persisters.ftp_persister">py2store.persisters.ftp_persister</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.persisters.dropbox_w_urllib">py2store.persisters.dropbox_w_urllib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.persisters._google_drive_in_progress">py2store.persisters._google_drive_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#py2store-persisters-dropbox-w-dropbox">py2store.persisters.dropbox_w_dropbox</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#py2store-persisters-redis-w-redis">py2store.persisters.redis_w_redis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.persisters.sql_w_sqlalchemy">py2store.persisters.sql_w_sqlalchemy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.persisters.new_s3">py2store.persisters.new_s3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.persisters">py2store.persisters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.persisters.dropbox_w_requests">py2store.persisters.dropbox_w_requests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.persisters.w_aiofile">py2store.persisters.w_aiofile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.persisters.local_files">py2store.persisters.local_files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#py2store-persisters-arangodb-w-pyarango">py2store.persisters.arangodb_w_pyarango</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.persisters._cassandra_in_progress">py2store.persisters._cassandra_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.persisters._couchdb_in_progress">py2store.persisters._couchdb_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.persisters.s3_w_boto3">py2store.persisters.s3_w_boto3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#py2store-persisters-postgres-w-psycopg2-in-progress">py2store.persisters._postgres_w_psycopg2_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#py2store-persisters-ssh-persister">py2store.persisters.ssh_persister</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.persisters.mongo_w_pymongo">py2store.persisters.mongo_w_pymongo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#py2store-persisters-googledrive-w-pydrive">py2store.persisters.googledrive_w_pydrive</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.sources">py2store.sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.dig">py2store.dig</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.serializers.pickled">py2store.serializers.pickled</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.serializers.jsonization">py2store.serializers.jsonization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.serializers">py2store.serializers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.serializers.sequential">py2store.serializers.sequential</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.serializers.regular_panel_data">py2store.serializers.regular_panel_data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.serializers.audio">py2store.serializers.audio</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.caching">py2store.caching</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.scrap">py2store.scrap</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.scrap.new_gen_local">py2store.scrap.new_gen_local</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.examples.write_caches">py2store.examples.write_caches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.examples">py2store.examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.examples.python_code_stats">py2store.examples.python_code_stats</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.examples.kv_walking">py2store.examples.kv_walking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.my">py2store.my</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.my.grabbers">py2store.my.grabbers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.trans">py2store.trans</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.key_mappers.str_utils">py2store.key_mappers.str_utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.key_mappers.tuples">py2store.key_mappers.tuples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.key_mappers.paths">py2store.key_mappers.paths</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.key_mappers.naming">py2store.key_mappers.naming</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.key_mappers">py2store.key_mappers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.errors">py2store.errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.slib.s_configparser">py2store.slib.s_configparser</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.slib">py2store.slib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.slib.s_zipfile">py2store.slib.s_zipfile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.base">py2store.base</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#py2store-selectors-mg-selectors">py2store.selectors.mg_selectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#py2store-selectors-mongoquery">py2store.selectors.mongoquery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#py2store-selectors">py2store.selectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html#module-py2store.parse_format">py2store.parse_format</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="#">Documentation overview</a><ul>
+      <li>Next: <a href="test.html" title="next chapter">py2store.filesys</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/index.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

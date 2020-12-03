@@ -1,0 +1,633 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>py2store.key_mappers.naming &#8212; py2store 0.0.7 documentation</title>
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css" />
+    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="module-py2store.key_mappers.naming">
+<span id="py2store-key-mappers-naming"></span><h1>py2store.key_mappers.naming<a class="headerlink" href="#module-py2store.key_mappers.naming" title="Permalink to this headline">¶</a></h1>
+<p>This module is about generating, validating, and operating on (parametrized) fields (i.e. stings, e.g. paths).</p>
+<dl class="py class">
+<dt id="py2store.key_mappers.naming.BigDocTest">
+<em class="property">class </em><code class="sig-prename descclassname">py2store.key_mappers.naming.</code><code class="sig-name descname">BigDocTest</code><a class="reference internal" href="../../../_modules/py2store/key_mappers/naming.html#BigDocTest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.key_mappers.naming.BigDocTest" title="Permalink to this definition">¶</a></dt>
+<dd><div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">e_name</span> <span class="o">=</span> <span class="n">BigDocTest</span><span class="o">.</span><span class="n">mk_e_naming</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">u_name</span> <span class="o">=</span> <span class="n">BigDocTest</span><span class="o">.</span><span class="n">mk_u_naming</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">e_sref</span> <span class="o">=</span> <span class="s1">&#39;s3://bucket-GROUP/example/files/USER/SUBUSER/2017-01-24/1485272231982_1485261448469&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">u_sref</span> <span class="o">=</span> <span class="s2">&quot;s3://uploads/GROUP/upload/files/USER/2017-01-24/SUBUSER/a_file.wav&quot;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">u_name_2</span> <span class="o">=</span> <span class="s2">&quot;s3://uploads/ANOTHER_GROUP/upload/files/ANOTHER_USER/2017-01-24/SUBUSER/a_file.wav&quot;</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1">####### is_valid(self, name): ######</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">e_name</span><span class="o">.</span><span class="n">is_valid</span><span class="p">(</span><span class="n">e_sref</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">e_name</span><span class="o">.</span><span class="n">is_valid</span><span class="p">(</span><span class="n">u_sref</span><span class="p">)</span>
+<span class="go">False</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">u_name</span><span class="o">.</span><span class="n">is_valid</span><span class="p">(</span><span class="n">u_sref</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1">####### is_valid_prefix(self, name): ######</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">e_name</span><span class="o">.</span><span class="n">is_valid_prefix</span><span class="p">(</span><span class="s1">&#39;s3://bucket-&#39;</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">e_name</span><span class="o">.</span><span class="n">is_valid_prefix</span><span class="p">(</span><span class="s1">&#39;s3://bucket-GROUP&#39;</span><span class="p">)</span>
+<span class="go">False</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">e_name</span><span class="o">.</span><span class="n">is_valid_prefix</span><span class="p">(</span><span class="s1">&#39;s3://bucket-GROUP/example/&#39;</span><span class="p">)</span>
+<span class="go">False</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">e_name</span><span class="o">.</span><span class="n">is_valid_prefix</span><span class="p">(</span><span class="s1">&#39;s3://bucket-GROUP/example/files&#39;</span><span class="p">)</span>
+<span class="go">False</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">e_name</span><span class="o">.</span><span class="n">is_valid_prefix</span><span class="p">(</span><span class="s1">&#39;s3://bucket-GROUP/example/files/&#39;</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">e_name</span><span class="o">.</span><span class="n">is_valid_prefix</span><span class="p">(</span><span class="s1">&#39;s3://bucket-GROUP/example/files/USER/SUBUSER/2017-01-24/&#39;</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">e_name</span><span class="o">.</span><span class="n">is_valid_prefix</span><span class="p">(</span><span class="s1">&#39;s3://bucket-GROUP/example/files/USER/SUBUSER/2017-01-24/0_0&#39;</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1">####### info_dict(self, name): ######</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">e_name</span><span class="o">.</span><span class="n">info_dict</span><span class="p">(</span><span class="n">e_sref</span><span class="p">)</span>  <span class="c1"># see that utc_ms args were cast to ints</span>
+<span class="go">{&#39;group&#39;: &#39;GROUP&#39;, &#39;user&#39;: &#39;USER&#39;, &#39;subuser&#39;: &#39;SUBUSER&#39;, &#39;day&#39;: &#39;2017-01-24&#39;, &#39;s_ums&#39;: 1485272231982, &#39;e_ums&#39;: 1485261448469}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">u_name</span><span class="o">.</span><span class="n">info_dict</span><span class="p">(</span><span class="n">u_sref</span><span class="p">)</span>  <span class="c1"># returns None (because self was made for example!</span>
+<span class="go">{&#39;group&#39;: &#39;GROUP&#39;, &#39;user&#39;: &#39;USER&#39;, &#39;day&#39;: &#39;2017-01-24&#39;, &#39;subuser&#39;: &#39;SUBUSER&#39;, &#39;filename&#39;: &#39;a_file.wav&#39;}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># but with a u_name, it will work</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">u_name</span><span class="o">.</span><span class="n">info_dict</span><span class="p">(</span><span class="n">u_sref</span><span class="p">)</span>
+<span class="go">{&#39;group&#39;: &#39;GROUP&#39;, &#39;user&#39;: &#39;USER&#39;, &#39;day&#39;: &#39;2017-01-24&#39;, &#39;subuser&#39;: &#39;SUBUSER&#39;, &#39;filename&#39;: &#39;a_file.wav&#39;}</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1">####### extract(self, item, name): ######</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">e_name</span><span class="o">.</span><span class="n">extract</span><span class="p">(</span><span class="s1">&#39;group&#39;</span><span class="p">,</span> <span class="n">e_sref</span><span class="p">)</span>
+<span class="go">&#39;GROUP&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">e_name</span><span class="o">.</span><span class="n">extract</span><span class="p">(</span><span class="s1">&#39;user&#39;</span><span class="p">,</span> <span class="n">e_sref</span><span class="p">)</span>
+<span class="go">&#39;USER&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">u_name</span><span class="o">.</span><span class="n">extract</span><span class="p">(</span><span class="s1">&#39;group&#39;</span><span class="p">,</span> <span class="n">u_name_2</span><span class="p">)</span>
+<span class="go">&#39;ANOTHER_GROUP&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">u_name</span><span class="o">.</span><span class="n">extract</span><span class="p">(</span><span class="s1">&#39;user&#39;</span><span class="p">,</span> <span class="n">u_name_2</span><span class="p">)</span>
+<span class="go">&#39;ANOTHER_USER&#39;</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1">####### mk_prefix(self, *args, **kwargs): ######</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">e_name</span><span class="o">.</span><span class="n">mk_prefix</span><span class="p">()</span>
+<span class="go">&#39;s3://bucket-&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">e_name</span><span class="o">.</span><span class="n">mk_prefix</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="s1">&#39;GROUP&#39;</span><span class="p">)</span>
+<span class="go">&#39;s3://bucket-GROUP/example/files/&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">e_name</span><span class="o">.</span><span class="n">mk_prefix</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="s1">&#39;GROUP&#39;</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="s1">&#39;USER&#39;</span><span class="p">)</span>
+<span class="go">&#39;s3://bucket-GROUP/example/files/USER/&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">e_name</span><span class="o">.</span><span class="n">mk_prefix</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="s1">&#39;GROUP&#39;</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="s1">&#39;USER&#39;</span><span class="p">,</span> <span class="n">subuser</span><span class="o">=</span><span class="s1">&#39;SUBUSER&#39;</span><span class="p">)</span>
+<span class="go">&#39;s3://bucket-GROUP/example/files/USER/SUBUSER/&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">e_name</span><span class="o">.</span><span class="n">mk_prefix</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="s1">&#39;GROUP&#39;</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="s1">&#39;USER&#39;</span><span class="p">,</span> <span class="n">subuser</span><span class="o">=</span><span class="s1">&#39;SUBUSER&#39;</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="s1">&#39;0000-00-00&#39;</span><span class="p">)</span>
+<span class="go">&#39;s3://bucket-GROUP/example/files/USER/SUBUSER/0000-00-00/&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">e_name</span><span class="o">.</span><span class="n">mk_prefix</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="s1">&#39;GROUP&#39;</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="s1">&#39;USER&#39;</span><span class="p">,</span> <span class="n">subuser</span><span class="o">=</span><span class="s1">&#39;SUBUSER&#39;</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="s1">&#39;0000-00-00&#39;</span><span class="p">,</span>
+<span class="gp">... </span><span class="n">s_ums</span><span class="o">=</span><span class="mi">1485272231982</span><span class="p">)</span>
+<span class="go">&#39;s3://bucket-GROUP/example/files/USER/SUBUSER/0000-00-00/1485272231982_&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">e_name</span><span class="o">.</span><span class="n">mk_prefix</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="s1">&#39;GROUP&#39;</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="s1">&#39;USER&#39;</span><span class="p">,</span> <span class="n">subuser</span><span class="o">=</span><span class="s1">&#39;SUBUSER&#39;</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="s1">&#39;0000-00-00&#39;</span><span class="p">,</span>
+<span class="gp">... </span><span class="n">s_ums</span><span class="o">=</span><span class="mi">1485272231982</span><span class="p">,</span> <span class="n">e_ums</span><span class="o">=</span><span class="mi">1485261448469</span><span class="p">)</span>
+<span class="go">&#39;s3://bucket-GROUP/example/files/USER/SUBUSER/0000-00-00/1485272231982_1485261448469&#39;</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">u_name</span><span class="o">.</span><span class="n">mk_prefix</span><span class="p">()</span>
+<span class="go">&#39;s3://uploads/&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">u_name</span><span class="o">.</span><span class="n">mk_prefix</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="s1">&#39;GROUP&#39;</span><span class="p">)</span>
+<span class="go">&#39;s3://uploads/GROUP/upload/files/&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">u_name</span><span class="o">.</span><span class="n">mk_prefix</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="s1">&#39;GROUP&#39;</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="s1">&#39;USER&#39;</span><span class="p">)</span>
+<span class="go">&#39;s3://uploads/GROUP/upload/files/USER/&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">u_name</span><span class="o">.</span><span class="n">mk_prefix</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="s1">&#39;GROUP&#39;</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="s1">&#39;USER&#39;</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="s1">&#39;DAY&#39;</span><span class="p">)</span>
+<span class="go">&#39;s3://uploads/GROUP/upload/files/USER/DAY/&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">u_name</span><span class="o">.</span><span class="n">mk_prefix</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="s1">&#39;GROUP&#39;</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="s1">&#39;USER&#39;</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="s1">&#39;DAY&#39;</span><span class="p">)</span>
+<span class="go">&#39;s3://uploads/GROUP/upload/files/USER/DAY/&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">u_name</span><span class="o">.</span><span class="n">mk_prefix</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="s1">&#39;GROUP&#39;</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="s1">&#39;USER&#39;</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="s1">&#39;DAY&#39;</span><span class="p">,</span> <span class="n">subuser</span><span class="o">=</span><span class="s1">&#39;SUBUSER&#39;</span><span class="p">)</span>
+<span class="go">&#39;s3://uploads/GROUP/upload/files/USER/DAY/SUBUSER/&#39;</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1">####### mk(self, *args, **kwargs): ######</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">e_name</span><span class="o">.</span><span class="n">mk</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="s1">&#39;GROUP&#39;</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="s1">&#39;USER&#39;</span><span class="p">,</span> <span class="n">subuser</span><span class="o">=</span><span class="s1">&#39;SUBUSER&#39;</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="s1">&#39;0000-00-00&#39;</span><span class="p">,</span>
+<span class="gp">... </span>            <span class="n">s_ums</span><span class="o">=</span><span class="mi">1485272231982</span><span class="p">,</span> <span class="n">e_ums</span><span class="o">=</span><span class="mi">1485261448469</span><span class="p">)</span>
+<span class="go">&#39;s3://bucket-GROUP/example/files/USER/SUBUSER/0000-00-00/1485272231982_1485261448469&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">e_name</span><span class="o">.</span><span class="n">mk</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="s1">&#39;GROUP&#39;</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="s1">&#39;USER&#39;</span><span class="p">,</span> <span class="n">subuser</span><span class="o">=</span><span class="s1">&#39;SUBUSER&#39;</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="s1">&#39;from_s_ums&#39;</span><span class="p">,</span>
+<span class="gp">... </span>            <span class="n">s_ums</span><span class="o">=</span><span class="mi">1485272231982</span><span class="p">,</span> <span class="n">e_ums</span><span class="o">=</span><span class="mi">1485261448469</span><span class="p">)</span>
+<span class="go">&#39;s3://bucket-GROUP/example/files/USER/SUBUSER/2017-01-24/1485272231982_1485261448469&#39;</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1">####### replace_name_elements(self, *args, **kwargs): ######</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;s3://bucket-redrum/example/files/oopsy@domain.com/ozeip/2008-11-04/1225779243969_1225779246969&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">e_name</span><span class="o">.</span><span class="n">replace_name_elements</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="s1">&#39;NEW_USER&#39;</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="s1">&#39;NEW_GROUP&#39;</span><span class="p">)</span>
+<span class="go">&#39;s3://bucket-NEW_GROUP/example/files/NEW_USER/ozeip/2008-11-04/1225779243969_1225779246969&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="py2store.key_mappers.naming.KeyMapNames">
+<code class="sig-prename descclassname">py2store.key_mappers.naming.</code><code class="sig-name descname">KeyMapNames</code><a class="headerlink" href="#py2store.key_mappers.naming.KeyMapNames" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <a class="reference internal" href="../../../test.html#py2store.key_mappers.naming.KeyMaps" title="py2store.key_mappers.naming.KeyMaps"><code class="xref py py-class docutils literal notranslate"><span class="pre">py2store.key_mappers.naming.KeyMaps</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="py2store.key_mappers.naming.KeyMaps">
+<em class="property">class </em><code class="sig-prename descclassname">py2store.key_mappers.naming.</code><code class="sig-name descname">KeyMaps</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">key_of_id</span></em>, <em class="sig-param"><span class="n">id_of_key</span></em><span class="sig-paren">)</span><a class="headerlink" href="#py2store.key_mappers.naming.KeyMaps" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="py attribute">
+<dt id="py2store.key_mappers.naming.KeyMaps.id_of_key">
+<code class="sig-name descname">id_of_key</code><a class="headerlink" href="#py2store.key_mappers.naming.KeyMaps.id_of_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="py2store.key_mappers.naming.KeyMaps.key_of_id">
+<code class="sig-name descname">key_of_id</code><a class="headerlink" href="#py2store.key_mappers.naming.KeyMaps.key_of_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="py2store.key_mappers.naming.LinearNaming">
+<code class="sig-prename descclassname">py2store.key_mappers.naming.</code><code class="sig-name descname">LinearNaming</code><a class="headerlink" href="#py2store.key_mappers.naming.LinearNaming" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <a class="reference internal" href="../../../test.html#py2store.key_mappers.naming.StrTupleDictWithPrefix" title="py2store.key_mappers.naming.StrTupleDictWithPrefix"><code class="xref py py-class docutils literal notranslate"><span class="pre">py2store.key_mappers.naming.StrTupleDictWithPrefix</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="py2store.key_mappers.naming.ParametricKeyStore">
+<em class="property">class </em><code class="sig-prename descclassname">py2store.key_mappers.naming.</code><code class="sig-name descname">ParametricKeyStore</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">store</span></em>, <em class="sig-param"><span class="n">keymap</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/py2store/key_mappers/naming.html#ParametricKeyStore"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.key_mappers.naming.ParametricKeyStore" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt id="py2store.key_mappers.naming.StoreWithDictKeys">
+<em class="property">class </em><code class="sig-prename descclassname">py2store.key_mappers.naming.</code><code class="sig-name descname">StoreWithDictKeys</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">store</span></em>, <em class="sig-param"><span class="n">keymap</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/py2store/key_mappers/naming.html#StoreWithDictKeys"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.key_mappers.naming.StoreWithDictKeys" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt id="py2store.key_mappers.naming.StoreWithNamedTupleKeys">
+<em class="property">class </em><code class="sig-prename descclassname">py2store.key_mappers.naming.</code><code class="sig-name descname">StoreWithNamedTupleKeys</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">store</span></em>, <em class="sig-param"><span class="n">keymap</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/py2store/key_mappers/naming.html#StoreWithNamedTupleKeys"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.key_mappers.naming.StoreWithNamedTupleKeys" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt id="py2store.key_mappers.naming.StoreWithTupleKeys">
+<em class="property">class </em><code class="sig-prename descclassname">py2store.key_mappers.naming.</code><code class="sig-name descname">StoreWithTupleKeys</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">store</span></em>, <em class="sig-param"><span class="n">keymap</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/py2store/key_mappers/naming.html#StoreWithTupleKeys"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.key_mappers.naming.StoreWithTupleKeys" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt id="py2store.key_mappers.naming.StrTupleDictWithPrefix">
+<em class="property">class </em><code class="sig-prename descclassname">py2store.key_mappers.naming.</code><code class="sig-name descname">StrTupleDictWithPrefix</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/py2store/key_mappers/naming.html#StrTupleDictWithPrefix"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.key_mappers.naming.StrTupleDictWithPrefix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converting from and to strings, tuples, and dicts, but with partial “prefix” specs allowed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>template</strong> – The string format template</p></li>
+<li><p><strong>format_dict</strong> – A {field_name: field_value_format_regex, …} dict</p></li>
+<li><p><strong>process_kwargs</strong> – A function taking the field=value pairs and producing a dict of processed
+{field: value,…} dict (where both fields and values could have been processed.
+This is useful when we need to process (format, default, etc.) fields, or their values,
+according to the other fields of values in the collection.
+A specification of {field: function_to_process_this_value,…} wouldn’t allow the full powers
+we are allowing here.</p></li>
+<li><p><strong>process_info_dict</strong> – A sort of converse of format_dict.
+This is a {field_name: field_conversion_func, …} dict that is used to convert info_dict values
+before returning them.</p></li>
+<li><p><strong>name_separator</strong> – Used</p></li>
+</ul>
+</dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ln</span> <span class="o">=</span> <span class="n">StrTupleDictWithPrefix</span><span class="p">(</span><span class="s1">&#39;/home/</span><span class="si">{user}</span><span class="s1">/fav/</span><span class="si">{num}</span><span class="s1">.txt&#39;</span><span class="p">,</span>
+<span class="gp">... </span>                  <span class="n">format_dict</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;user&#39;</span><span class="p">:</span> <span class="s1">&#39;[^/]+&#39;</span><span class="p">,</span> <span class="s1">&#39;num&#39;</span><span class="p">:</span> <span class="s1">&#39;\d+&#39;</span><span class="p">},</span>
+<span class="gp">... </span>                  <span class="n">process_info_dict</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;num&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">},</span>
+<span class="gp">... </span>                  <span class="n">sep</span><span class="o">=</span><span class="s1">&#39;/&#39;</span>
+<span class="gp">... </span>                 <span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ln</span><span class="o">.</span><span class="n">mk</span><span class="p">(</span><span class="s1">&#39;USER&#39;</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="mi">123</span><span class="p">)</span>  <span class="c1"># making a string (with args or kwargs)</span>
+<span class="go">&#39;/home/USER/fav/123.txt&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1">####### prefix methods #######</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ln</span><span class="o">.</span><span class="n">is_valid_prefix</span><span class="p">(</span><span class="s1">&#39;/home/USER/fav/&#39;</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ln</span><span class="o">.</span><span class="n">is_valid_prefix</span><span class="p">(</span><span class="s1">&#39;/home/USER/fav/12&#39;</span><span class="p">)</span>  <span class="c1"># False because too long</span>
+<span class="go">False</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ln</span><span class="o">.</span><span class="n">is_valid_prefix</span><span class="p">(</span><span class="s1">&#39;/home/USER/fav&#39;</span><span class="p">)</span>  <span class="c1"># False because too short</span>
+<span class="go">False</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ln</span><span class="o">.</span><span class="n">is_valid_prefix</span><span class="p">(</span><span class="s1">&#39;/home/&#39;</span><span class="p">)</span>  <span class="c1"># True because just right</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ln</span><span class="o">.</span><span class="n">is_valid_prefix</span><span class="p">(</span><span class="s1">&#39;/home/USER/fav/123.txt&#39;</span><span class="p">)</span>  <span class="c1"># full path, so output same as is_valid() method</span>
+<span class="go">True</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ln</span><span class="o">.</span><span class="n">mk_prefix</span><span class="p">(</span><span class="s1">&#39;ME&#39;</span><span class="p">)</span>
+<span class="go">&#39;/home/ME/fav/&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ln</span><span class="o">.</span><span class="n">mk_prefix</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="s1">&#39;YOU&#39;</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="mi">456</span><span class="p">)</span>  <span class="c1"># full specification, so output same as same as mk() method</span>
+<span class="go">&#39;/home/YOU/fav/456.txt&#39;</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt id="py2store.key_mappers.naming.StrTupleDictWithPrefix.is_valid_prefix">
+<code class="sig-name descname">is_valid_prefix</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">s</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/py2store/key_mappers/naming.html#StrTupleDictWithPrefix.is_valid_prefix"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.key_mappers.naming.StrTupleDictWithPrefix.is_valid_prefix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if name is a valid prefix.
+:param s: a string (that might or might not be a valid prefix)
+:return: True iff name is a valid prefix</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt id="py2store.key_mappers.naming.dict_to_namedtuple">
+<code class="sig-prename descclassname">py2store.key_mappers.naming.</code><code class="sig-name descname">dict_to_namedtuple</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">d</span></em>, <em class="sig-param"><span class="n">namedtuple_obj</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/py2store/key_mappers/naming.html#dict_to_namedtuple"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.key_mappers.naming.dict_to_namedtuple" title="Permalink to this definition">¶</a></dt>
+<dd><div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">namedtuple</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">NT</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s1">&#39;MyTuple&#39;</span><span class="p">,</span> <span class="p">(</span><span class="s1">&#39;foo&#39;</span><span class="p">,</span> <span class="s1">&#39;hello&#39;</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">nt</span> <span class="o">=</span> <span class="n">NT</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">42</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">nt</span>
+<span class="go">MyTuple(foo=1, hello=42)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">d</span> <span class="o">=</span> <span class="n">namedtuple_to_dict</span><span class="p">(</span><span class="n">nt</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">d</span>
+<span class="go">{&#39;foo&#39;: 1, &#39;hello&#39;: 42}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dict_to_namedtuple</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+<span class="go">NamedTupleFromDict(foo=1, hello=42)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dict_to_namedtuple</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">nt</span><span class="p">)</span>
+<span class="go">MyTuple(foo=1, hello=42)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt id="py2store.key_mappers.naming.get_fields_from_template">
+<code class="sig-prename descclassname">py2store.key_mappers.naming.</code><code class="sig-name descname">get_fields_from_template</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">template</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/py2store/key_mappers/naming.html#get_fields_from_template"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.key_mappers.naming.get_fields_from_template" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get list from {item} items of template string
+:param template: a “template” string (a string with {item} items
+– the kind that is used to mark token for str.format)
+:return: a list of the token items of the string, in the order they appear
+&gt;&gt;&gt; get_fields_from_template(‘this{is}an{example}of{a}template’)
+[‘is’, ‘example’, ‘a’]</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="py2store.key_mappers.naming.mk_kwargs_trans">
+<code class="sig-prename descclassname">py2store.key_mappers.naming.</code><code class="sig-name descname">mk_kwargs_trans</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">**</span><span class="n">trans_func_for_key</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/py2store/key_mappers/naming.html#mk_kwargs_trans"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.key_mappers.naming.mk_kwargs_trans" title="Permalink to this definition">¶</a></dt>
+<dd><p>Make a dict transformer from functions that depends solely on keys (of the dict to be transformed)
+Used to easily make process_kwargs and process_info_dict arguments for LinearNaming.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="py2store.key_mappers.naming.mk_pattern_from_template_and_format_dict">
+<code class="sig-prename descclassname">py2store.key_mappers.naming.</code><code class="sig-name descname">mk_pattern_from_template_and_format_dict</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">template</span></em>, <em class="sig-param"><span class="n">format_dict</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/py2store/key_mappers/naming.html#mk_pattern_from_template_and_format_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.key_mappers.naming.mk_pattern_from_template_and_format_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Make a compiled regex to match template</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>template</strong> – A format string</p></li>
+<li><p><strong>format_dict</strong> – A dict whose keys are template fields and values are regex strings to capture them</p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: a compiled regex</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">mk_pattern_from_template_and_format_dict</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{here}</span><span class="s1">/and/</span><span class="si">{there}</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="go">re.compile(&#39;(?P&lt;here&gt;[^/]+)/and/(?P&lt;there&gt;[^/]+)&#39;)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p</span> <span class="o">=</span> <span class="n">mk_pattern_from_template_and_format_dict</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{here}</span><span class="s1">/and/</span><span class="si">{there}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;there&#39;</span><span class="p">:</span> <span class="s1">&#39;\d+&#39;</span><span class="p">})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p</span>
+<span class="go">re.compile(&#39;(?P&lt;here&gt;[^/]+)/and/(?P&lt;there&gt;\\d+)&#39;)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">type</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+<span class="go">&lt;class &#39;re.Pattern&#39;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s1">&#39;HERE/and/1234&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">groupdict</span><span class="p">()</span>
+<span class="go">{&#39;here&#39;: &#39;HERE&#39;, &#39;there&#39;: &#39;1234&#39;}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt id="py2store.key_mappers.naming.mk_store_from_path_format_store_cls">
+<code class="sig-prename descclassname">py2store.key_mappers.naming.</code><code class="sig-name descname">mk_store_from_path_format_store_cls</code><span class="sig-paren">(</span><em class="sig-param">store</em>, <em class="sig-param">subpath=''</em>, <em class="sig-param">store_cls_kwargs=None</em>, <em class="sig-param">key_type=&lt;function namedtuple&gt;</em>, <em class="sig-param">keymap=&lt;class 'py2store.key_mappers.naming.StrTupleDict'&gt;</em>, <em class="sig-param">keymap_kwargs=None</em>, <em class="sig-param">name=None</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/py2store/key_mappers/naming.html#mk_store_from_path_format_store_cls"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.key_mappers.naming.mk_store_from_path_format_store_cls" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wrap a store (instance or class) that uses string keys to make it into a store that uses a specific key format.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>store</strong> – The instance or class to wrap</p></li>
+<li><p><strong>subpath</strong> – The subpath (defining the subset of the data pointed at by the URI</p></li>
+<li><p><strong>store_cls_kwargs</strong> – # if store is a class, the kwargs that you would have given the store_cls to make itself</p></li>
+<li><p><strong>key_type</strong> – The key type you want to interface with:
+dict, tuple, namedtuple, str or ‘dict’, ‘tuple’, ‘namedtuple’, ‘str’</p></li>
+<li><p><strong>keymap</strong> – # the keymap instance or class you want to use to map keys</p></li>
+<li><p><strong>keymap_kwargs</strong> – # if keymap is a cls, the kwargs to give it (besides the subpath)</p></li>
+<li><p><strong>name</strong> – The name to give the class the function will make here</p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: An instance of a wrapped class</p>
+<p>Example:
+<a href="#id1"><span class="problematic" id="id2">``</span></a>`
+# Get a (sessiono,bt) indexed LocalJsonStore
+s = mk_store_from_path_format_store_cls(LocalJsonStore,</p>
+<blockquote>
+<div><p>os.path.join(root_dir, ‘d’),
+subpath=’{session}/d/{bt}’,
+keymap_kwargs=dict(process_info_dict={‘session’: int, ‘bt’: int}))</p>
+</div></blockquote>
+<p><a href="#id3"><span class="problematic" id="id4">``</span></a><a href="#id5"><span class="problematic" id="id6">`</span></a></p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="py2store.key_mappers.naming.mk_tupled_store_from_path_format_store_cls">
+<code class="sig-prename descclassname">py2store.key_mappers.naming.</code><code class="sig-name descname">mk_tupled_store_from_path_format_store_cls</code><span class="sig-paren">(</span><em class="sig-param">store</em>, <em class="sig-param">subpath=''</em>, <em class="sig-param">store_cls_kwargs=None</em>, <em class="sig-param">key_type=&lt;function namedtuple&gt;</em>, <em class="sig-param">keymap=&lt;class 'py2store.key_mappers.naming.StrTupleDict'&gt;</em>, <em class="sig-param">keymap_kwargs=None</em>, <em class="sig-param">name=None</em><span class="sig-paren">)</span><a class="headerlink" href="#py2store.key_mappers.naming.mk_tupled_store_from_path_format_store_cls" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wrap a store (instance or class) that uses string keys to make it into a store that uses a specific key format.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>store</strong> – The instance or class to wrap</p></li>
+<li><p><strong>subpath</strong> – The subpath (defining the subset of the data pointed at by the URI</p></li>
+<li><p><strong>store_cls_kwargs</strong> – # if store is a class, the kwargs that you would have given the store_cls to make itself</p></li>
+<li><p><strong>key_type</strong> – The key type you want to interface with:
+dict, tuple, namedtuple, str or ‘dict’, ‘tuple’, ‘namedtuple’, ‘str’</p></li>
+<li><p><strong>keymap</strong> – # the keymap instance or class you want to use to map keys</p></li>
+<li><p><strong>keymap_kwargs</strong> – # if keymap is a cls, the kwargs to give it (besides the subpath)</p></li>
+<li><p><strong>name</strong> – The name to give the class the function will make here</p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns: An instance of a wrapped class</p>
+<p>Example:
+<a href="#id7"><span class="problematic" id="id8">``</span></a>`
+# Get a (sessiono,bt) indexed LocalJsonStore
+s = mk_store_from_path_format_store_cls(LocalJsonStore,</p>
+<blockquote>
+<div><p>os.path.join(root_dir, ‘d’),
+subpath=’{session}/d/{bt}’,
+keymap_kwargs=dict(process_info_dict={‘session’: int, ‘bt’: int}))</p>
+</div></blockquote>
+<p><a href="#id9"><span class="problematic" id="id10">``</span></a><a href="#id11"><span class="problematic" id="id12">`</span></a></p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="py2store.key_mappers.naming.namedtuple_to_dict">
+<code class="sig-prename descclassname">py2store.key_mappers.naming.</code><code class="sig-name descname">namedtuple_to_dict</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">nt</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/py2store/key_mappers/naming.html#namedtuple_to_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.key_mappers.naming.namedtuple_to_dict" title="Permalink to this definition">¶</a></dt>
+<dd><div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">namedtuple</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">NT</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s1">&#39;MyTuple&#39;</span><span class="p">,</span> <span class="p">(</span><span class="s1">&#39;foo&#39;</span><span class="p">,</span> <span class="s1">&#39;hello&#39;</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">nt</span> <span class="o">=</span> <span class="n">NT</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">42</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">nt</span>
+<span class="go">MyTuple(foo=1, hello=42)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">d</span> <span class="o">=</span> <span class="n">namedtuple_to_dict</span><span class="p">(</span><span class="n">nt</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">d</span>
+<span class="go">{&#39;foo&#39;: 1, &#39;hello&#39;: 42}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt id="py2store.key_mappers.naming.update_fields_of_namedtuple">
+<code class="sig-prename descclassname">py2store.key_mappers.naming.</code><code class="sig-name descname">update_fields_of_namedtuple</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">nt</span><span class="p">:</span> <span class="n">tuple</span></em>, <em class="sig-param"><span class="o">*</span></em>, <em class="sig-param"><span class="n">name_of_output_type</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">remove_fields</span><span class="o">=</span><span class="default_value">()</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/py2store/key_mappers/naming.html#update_fields_of_namedtuple"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.key_mappers.naming.update_fields_of_namedtuple" title="Permalink to this definition">¶</a></dt>
+<dd><p>Replace fields of namedtuple
+&gt;&gt;&gt; from collections import namedtuple
+&gt;&gt;&gt; NT = namedtuple(‘NT’, (‘a’, ‘b’, ‘c’))
+&gt;&gt;&gt; nt = NT(1,2,3)
+&gt;&gt;&gt; nt
+NT(a=1, b=2, c=3)
+&gt;&gt;&gt; update_fields_of_namedtuple(nt, c=3000)  # replacing a single field
+NT(a=1, b=2, c=3000)
+&gt;&gt;&gt; update_fields_of_namedtuple(nt, c=3000, a=1000)  # replacing two fields
+NT(a=1000, b=2, c=3000)
+&gt;&gt;&gt; update_fields_of_namedtuple(nt, a=1000, c=3000)  # see that the original order doesn’t change
+NT(a=1000, b=2, c=3000)
+&gt;&gt;&gt; update_fields_of_namedtuple(nt, b=2000, d=’hello’)  # replacing one field and adding a new one
+UpdatedNT(a=1, b=2000, c=3, d=’hello’)
+&gt;&gt;&gt; # Now let’s try controlling the name of the output type, remove fields, and add new ones
+&gt;&gt;&gt; update_fields_of_namedtuple(nt, name_of_output_type=’NewGuy’, remove_fields=(‘a’, ‘c’), hello=’world’)
+NewGuy(b=2, hello=’world’)</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="py2store.key_mappers.naming.validate_kwargs">
+<code class="sig-prename descclassname">py2store.key_mappers.naming.</code><code class="sig-name descname">validate_kwargs</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">kwargs_to_validate</span></em>, <em class="sig-param"><span class="n">validation_dict</span></em>, <em class="sig-param"><span class="n">validation_funs</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">all_kwargs_should_be_in_validation_dict</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">ignore_misunderstood_validation_instructions</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/py2store/key_mappers/naming.html#validate_kwargs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.key_mappers.naming.validate_kwargs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Utility to validate a dict. It’s main use is to validate function arguments (expressing the validation checks
+in validation_dict) by doing validate_kwargs(locals()), usually in the beginning of the function
+(to avoid having more accumulated variables than we need in locals())
+:param kwargs_to_validate: as the name implies…
+:param validation_dict: A dict specifying what to validate. Keys are usually name of variables (when feeding</p>
+<blockquote>
+<div><p>locals()) and values are dicts, themselves specifying check:check_val pairs where check is a string that
+points to a function (see validation_funs argument) and check_val is an object that the kwargs_to_validate
+value will be checked against.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>validation_funs</strong> – A dict of check:check_function(val, check_val) where check_function is a function returning
+True if val is valid (with respect to check_val).</p></li>
+<li><p><strong>all_kwargs_should_be_in_validation_dict</strong> – If True, will raise an error if kwargs_to_validate contains
+keys that are not in validation_dict.</p></li>
+<li><p><strong>ignore_misunderstood_validation_instructions</strong> – If True, will raise an error if validation_dict contains
+a key that is not in validation_funs (safer, since if you mistype a key in validation_dict, the function will
+tell you so!</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if all the validations passed.</p>
+</dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">validation_dict</span> <span class="o">=</span> <span class="p">{</span>
+<span class="gp">... </span>    <span class="s1">&#39;system&#39;</span><span class="p">:</span> <span class="p">{</span>
+<span class="gp">... </span>        <span class="s1">&#39;be in&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;darwin&#39;</span><span class="p">,</span> <span class="s1">&#39;linux&#39;</span><span class="p">}</span>
+<span class="gp">... </span>    <span class="p">},</span>
+<span class="gp">... </span>    <span class="s1">&#39;fv_version&#39;</span><span class="p">:</span> <span class="p">{</span>
+<span class="gp">... </span>        <span class="s1">&#39;be a&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+<span class="gp">... </span>        <span class="s1">&#39;be at least&#39;</span><span class="p">:</span> <span class="mi">5</span>
+<span class="gp">... </span>    <span class="p">}</span>
+<span class="gp">... </span><span class="p">}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">validate_kwargs</span><span class="p">({</span><span class="s1">&#39;system&#39;</span><span class="p">:</span> <span class="s1">&#39;darwin&#39;</span><span class="p">},</span> <span class="n">validation_dict</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">try</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="n">validate_kwargs</span><span class="p">({</span><span class="s1">&#39;system&#39;</span><span class="p">:</span> <span class="s1">&#39;windows&#39;</span><span class="p">},</span> <span class="n">validation_dict</span><span class="p">)</span>
+<span class="gp">... </span><span class="k">except</span> <span class="ne">AssertionError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="k">assert</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;system must be in&#39;</span><span class="p">)</span>  <span class="c1"># omitting the set because inconsistent order</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">try</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="n">validate_kwargs</span><span class="p">({</span><span class="s1">&#39;fv_version&#39;</span><span class="p">:</span> <span class="mf">9.9</span><span class="p">},</span> <span class="n">validation_dict</span><span class="p">)</span>
+<span class="gp">... </span><span class="k">except</span> <span class="ne">AssertionError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="go">fv_version must be a &lt;class &#39;int&#39;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">try</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="n">validate_kwargs</span><span class="p">({</span><span class="s1">&#39;fv_version&#39;</span><span class="p">:</span> <span class="mi">4</span><span class="p">},</span> <span class="n">validation_dict</span><span class="p">)</span>
+<span class="gp">... </span><span class="k">except</span> <span class="ne">AssertionError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="go">fv_version must be at least 5</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">validate_kwargs</span><span class="p">({</span><span class="s1">&#39;fv_version&#39;</span><span class="p">:</span> <span class="mi">6</span><span class="p">},</span> <span class="n">validation_dict</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">py2store</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html">py2store.filesys</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.misc">py2store.misc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.mixins">py2store.mixins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.test.util">py2store.test.util</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-test-quick">py2store.test.quick</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.test">py2store.test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-test-simple">py2store.test.simple</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-test-scrap">py2store.test.scrap</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.util">py2store.util</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-ext-docx">py2store.ext.docx</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext.gitlab">py2store.ext.gitlab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-ext-hdf">py2store.ext.hdf</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext">py2store.ext</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-ext-matlab">py2store.ext.matlab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext.kaggle">py2store.ext.kaggle</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-ext-module-imports">py2store.ext.module_imports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext.audio">py2store.ext.audio</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-ext-github">py2store.ext.github</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext.dataframes">py2store.ext.dataframes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.access">py2store.access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.__init__">py2store.__init__</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores.s3_store">py2store.stores.s3_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores.delegation_stores">py2store.stores.delegation_stores</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores.sql_w_sqlalchemy">py2store.stores.sql_w_sqlalchemy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-stores-arangodb-store">py2store.stores.arangodb_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-stores-dropbox-store">py2store.stores.dropbox_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores.local_store">py2store.stores.local_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores">py2store.stores</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-stores-couchdb-store">py2store.stores.couchdb_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores.mongo_store">py2store.stores.mongo_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.core">py2store.core</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.uri_utils">py2store.utils.uri_utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.explicit">py2store.utils.explicit</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.timeseries_caching">py2store.utils.timeseries_caching</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-utils-attr-dict-py-attr-dict">py2store.utils.attr_dict.py.attr_dict</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-utils-attr-dict-py">py2store.utils.attr_dict.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.cumul_aggreg_write">py2store.utils.cumul_aggreg_write</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils">py2store.utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.cache_descriptors">py2store.utils.cache_descriptors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.appendable">py2store.utils.appendable</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.affine_conversion">py2store.utils.affine_conversion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.signatures">py2store.utils.signatures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.sliceable">py2store.utils.sliceable</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.mappify">py2store.utils.mappify</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.glom">py2store.utils.glom</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-sql-w-odbc">py2store.persisters.sql_w_odbc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.dynamodb_w_boto3">py2store.persisters.dynamodb_w_boto3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-couchdb-w-couchdb">py2store.persisters.couchdb_w_couchdb</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.ftp_persister">py2store.persisters.ftp_persister</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.dropbox_w_urllib">py2store.persisters.dropbox_w_urllib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters._google_drive_in_progress">py2store.persisters._google_drive_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-dropbox-w-dropbox">py2store.persisters.dropbox_w_dropbox</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-redis-w-redis">py2store.persisters.redis_w_redis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.sql_w_sqlalchemy">py2store.persisters.sql_w_sqlalchemy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.new_s3">py2store.persisters.new_s3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters">py2store.persisters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.dropbox_w_requests">py2store.persisters.dropbox_w_requests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.w_aiofile">py2store.persisters.w_aiofile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.local_files">py2store.persisters.local_files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-arangodb-w-pyarango">py2store.persisters.arangodb_w_pyarango</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters._cassandra_in_progress">py2store.persisters._cassandra_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters._couchdb_in_progress">py2store.persisters._couchdb_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.s3_w_boto3">py2store.persisters.s3_w_boto3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-postgres-w-psycopg2-in-progress">py2store.persisters._postgres_w_psycopg2_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-ssh-persister">py2store.persisters.ssh_persister</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.mongo_w_pymongo">py2store.persisters.mongo_w_pymongo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-googledrive-w-pydrive">py2store.persisters.googledrive_w_pydrive</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.sources">py2store.sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.dig">py2store.dig</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers.pickled">py2store.serializers.pickled</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers.jsonization">py2store.serializers.jsonization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers">py2store.serializers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers.sequential">py2store.serializers.sequential</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers.regular_panel_data">py2store.serializers.regular_panel_data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers.audio">py2store.serializers.audio</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.caching">py2store.caching</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.scrap">py2store.scrap</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.scrap.new_gen_local">py2store.scrap.new_gen_local</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.examples.write_caches">py2store.examples.write_caches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.examples">py2store.examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.examples.python_code_stats">py2store.examples.python_code_stats</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.examples.kv_walking">py2store.examples.kv_walking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.my">py2store.my</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.my.grabbers">py2store.my.grabbers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.trans">py2store.trans</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.key_mappers.str_utils">py2store.key_mappers.str_utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.key_mappers.tuples">py2store.key_mappers.tuples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.key_mappers.paths">py2store.key_mappers.paths</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.key_mappers.naming">py2store.key_mappers.naming</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.key_mappers">py2store.key_mappers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.errors">py2store.errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.slib.s_configparser">py2store.slib.s_configparser</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.slib">py2store.slib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.slib.s_zipfile">py2store.slib.s_zipfile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.base">py2store.base</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-selectors-mg-selectors">py2store.selectors.mg_selectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-selectors-mongoquery">py2store.selectors.mongoquery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-selectors">py2store.selectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.parse_format">py2store.parse_format</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../../../_sources/module_docs/py2store/key_mappers/naming.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
