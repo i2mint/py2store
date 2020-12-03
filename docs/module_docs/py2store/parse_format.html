@@ -1,0 +1,766 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>py2store.parse_format &#8212; py2store 0.0.7 documentation</title>
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css" />
+    <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="module-py2store.parse_format">
+<span id="py2store-parse-format"></span><h1>py2store.parse_format<a class="headerlink" href="#module-py2store.parse_format" title="Permalink to this headline">¶</a></h1>
+<p>Modified from <a class="reference external" href="https://github.com/r1chardj0n3s/parse">https://github.com/r1chardj0n3s/parse</a></p>
+<p>Parse strings using a specification based on the Python format() syntax.</p>
+<blockquote>
+<div><p><code class="docutils literal notranslate"><span class="pre">parse()</span></code> is the opposite of <code class="docutils literal notranslate"><span class="pre">format()</span></code></p>
+</div></blockquote>
+<p>From there it’s a simple thing to parse a string:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">parse</span><span class="p">(</span><span class="s2">&quot;It&#39;s </span><span class="si">{}</span><span class="s2">, I love it!&quot;</span><span class="p">,</span> <span class="s2">&quot;It&#39;s spam, I love it!&quot;</span><span class="p">)</span>
+<span class="go">&lt;Result (&#39;spam&#39;,) {}&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">_</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="go">&#39;spam&#39;</span>
+</pre></div>
+</div>
+<p>Or to search a string for some pattern:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">search</span><span class="p">(</span><span class="s1">&#39;Age: </span><span class="si">{:d}</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;Name: Rufus</span><span class="se">\n</span><span class="s1">Age: 42</span><span class="se">\n</span><span class="s1">Color: red</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="go">&lt;Result (42,) {}&gt;</span>
+</pre></div>
+</div>
+<p>Or find all the occurrences of some pattern in a string:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">fixed</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">findall</span><span class="p">(</span><span class="s2">&quot;&gt;</span><span class="si">{}</span><span class="s2">&lt;&quot;</span><span class="p">,</span> <span class="s2">&quot;&lt;p&gt;the &lt;b&gt;bold&lt;/b&gt; text&lt;/p&gt;&quot;</span><span class="p">))</span>
+<span class="go">&#39;the bold text&#39;</span>
+</pre></div>
+</div>
+<p>If you’re going to use the same pattern to match lots of strings you can
+compile it once:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">p</span> <span class="o">=</span> <span class="nb">compile</span><span class="p">(</span><span class="s2">&quot;It&#39;s </span><span class="si">{}</span><span class="s2">, I love it!&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+<span class="go">&lt;Parser &quot;It&#39;s {}, I love it!&quot;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="s2">&quot;It&#39;s spam, I love it!&quot;</span><span class="p">)</span>
+<span class="go">&lt;Result (&#39;spam&#39;,) {}&gt;</span>
+</pre></div>
+</div>
+<p>(“compile” is not exported for <code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">*</span></code> usage as it would override the
+built-in <code class="docutils literal notranslate"><span class="pre">compile()</span></code> function)</p>
+<p>The default behaviour is to match strings case insensitively. You may match with
+case by specifying <cite>case_sensitive=True</cite>:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">parse</span><span class="p">(</span><span class="s1">&#39;SPAM&#39;</span><span class="p">,</span> <span class="s1">&#39;spam&#39;</span><span class="p">,</span> <span class="n">case_sensitive</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<div class="section" id="format-syntax">
+<h2>Format Syntax<a class="headerlink" href="#format-syntax" title="Permalink to this headline">¶</a></h2>
+<p>A basic version of the <a class="reference external" href="http://docs.python.org/library/string.html#format-string-syntax">Format String Syntax</a> is supported with anonymous
+(fixed-position), named and formatted fields:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{[</span><span class="n">field</span> <span class="n">name</span><span class="p">]:[</span><span class="nb">format</span> <span class="n">spec</span><span class="p">]}</span>
+</pre></div>
+</div>
+<p>Field names must be a valid Python identifiers, including dotted names;
+element indexes imply dictionaries (see below for example).</p>
+<p>Numbered fields are also not supported: the result of parsing will include
+the parsed fields in the order they are parsed.</p>
+<p>The conversion of fields to types other than strings is done based on the
+type in the format specification, which mirrors the <code class="docutils literal notranslate"><span class="pre">format()</span></code> behaviour.
+There are no “!” field conversions like <code class="docutils literal notranslate"><span class="pre">format()</span></code> has.</p>
+<p>Some simple parse() format string examples:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">parse</span><span class="p">(</span><span class="s2">&quot;Bring me a </span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;Bring me a shrubbery&quot;</span><span class="p">)</span>
+<span class="go">&lt;Result (&#39;shrubbery&#39;,) {}&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">r</span> <span class="o">=</span> <span class="n">parse</span><span class="p">(</span><span class="s2">&quot;The </span><span class="si">{}</span><span class="s2"> who say </span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;The knights who say Ni!&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+<span class="go">&lt;Result (&#39;knights&#39;, &#39;Ni!&#39;) {}&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">fixed</span><span class="p">)</span>
+<span class="go">(&#39;knights&#39;, &#39;Ni!&#39;)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">r</span> <span class="o">=</span> <span class="n">parse</span><span class="p">(</span><span class="s2">&quot;Bring out the holy </span><span class="si">{item}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;Bring out the holy hand grenade&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+<span class="go">&lt;Result () {&#39;item&#39;: &#39;hand grenade&#39;}&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">named</span><span class="p">)</span>
+<span class="go">{&#39;item&#39;: &#39;hand grenade&#39;}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s1">&#39;item&#39;</span><span class="p">])</span>
+<span class="go">hand grenade</span>
+</pre></div>
+</div>
+<p>Dotted names and indexes are possible though the application must make
+additional sense of the result:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">r</span> <span class="o">=</span> <span class="n">parse</span><span class="p">(</span><span class="s2">&quot;Mmm, </span><span class="si">{food.type}</span><span class="s2">, I love it!&quot;</span><span class="p">,</span> <span class="s2">&quot;Mmm, spam, I love it!&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+<span class="go">&lt;Result () {&#39;food.type&#39;: &#39;spam&#39;}&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">named</span><span class="p">)</span>
+<span class="go">{&#39;food.type&#39;: &#39;spam&#39;}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s1">&#39;food.type&#39;</span><span class="p">])</span>
+<span class="go">spam</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">r</span> <span class="o">=</span> <span class="n">parse</span><span class="p">(</span><span class="s2">&quot;My quest is </span><span class="si">{quest[name]}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;My quest is to seek the holy grail!&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+<span class="go">&lt;Result () {&#39;quest&#39;: {&#39;name&#39;: &#39;to seek the holy grail!&#39;}}&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s1">&#39;quest&#39;</span><span class="p">])</span>
+<span class="go">{&#39;name&#39;: &#39;to seek the holy grail!&#39;}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s1">&#39;quest&#39;</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">])</span>
+<span class="go">to seek the holy grail!</span>
+</pre></div>
+</div>
+<p>If the text you’re matching has braces in it you can match those by including
+a double-brace <code class="docutils literal notranslate"><span class="pre">{{</span></code> or <code class="docutils literal notranslate"><span class="pre">}}</span></code> in your format string, just like format() does.</p>
+</div>
+<div class="section" id="format-specification">
+<h2>Format Specification<a class="headerlink" href="#format-specification" title="Permalink to this headline">¶</a></h2>
+<p>Most often a straight format-less <code class="docutils literal notranslate"><span class="pre">{}</span></code> will suffice where a more complex
+format specification might have been used.</p>
+<p>Most of <cite>format()</cite>’s <a class="reference external" href="http://docs.python.org/library/string.html#format-specification-mini-language">Format Specification Mini-Language</a> is supported:</p>
+<blockquote>
+<div><p>[[fill]align][0][width][.precision][type]</p>
+</div></blockquote>
+<p>The differences between <cite>parse()</cite> and <cite>format()</cite> are:</p>
+<ul class="simple">
+<li><p>The align operators will cause spaces (or specified fill character) to be
+stripped from the parsed value. The width is not enforced; it just indicates
+there may be whitespace or “0”s to strip.</p></li>
+<li><p>Numeric parsing will automatically handle a “0b”, “0o” or “0x” prefix.
+That is, the “#” format character is handled automatically by d, b, o
+and x formats. For “d” any will be accepted, but for the others the correct
+prefix must be present if at all.</p></li>
+<li><p>Numeric sign is handled automatically.</p></li>
+<li><p>The thousands separator is handled automatically if the “n” type is used.</p></li>
+<li><p>The types supported are a slightly different mix to the format() types.  Some
+format() types come directly over: “d”, “n”, “%”, “f”, “e”, “b”, “o” and “x”.
+In addition some regular expression character group types “D”, “w”, “W”, “s”
+and “S” are also available.</p></li>
+<li><p>The “e” and “g” types are case-insensitive so there is not need for
+the “E” or “G” types.</p></li>
+</ul>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 9%" />
+<col style="width: 77%" />
+<col style="width: 14%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Type</p></th>
+<th class="head"><p>Characters Matched</p></th>
+<th class="head"><p>Output</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>w</p></td>
+<td><p>Letters and underscore</p></td>
+<td><p>str</p></td>
+</tr>
+<tr class="row-odd"><td><p>W</p></td>
+<td><p>Non-letter and underscore</p></td>
+<td><p>str</p></td>
+</tr>
+<tr class="row-even"><td><p>s</p></td>
+<td><p>Whitespace</p></td>
+<td><p>str</p></td>
+</tr>
+<tr class="row-odd"><td><p>S</p></td>
+<td><p>Non-whitespace</p></td>
+<td><p>str</p></td>
+</tr>
+<tr class="row-even"><td><p>d</p></td>
+<td><p>Digits (effectively integer numbers)</p></td>
+<td><p>int</p></td>
+</tr>
+<tr class="row-odd"><td><p>D</p></td>
+<td><p>Non-digit</p></td>
+<td><p>str</p></td>
+</tr>
+<tr class="row-even"><td><p>n</p></td>
+<td><p>Numbers with thousands separators (, or .)</p></td>
+<td><p>int</p></td>
+</tr>
+<tr class="row-odd"><td><p>%</p></td>
+<td><p>Percentage (converted to value/100.0)</p></td>
+<td><p>float</p></td>
+</tr>
+<tr class="row-even"><td><p>f</p></td>
+<td><p>Fixed-point numbers</p></td>
+<td><p>float</p></td>
+</tr>
+<tr class="row-odd"><td><p>F</p></td>
+<td><p>Decimal numbers</p></td>
+<td><p>Decimal</p></td>
+</tr>
+<tr class="row-even"><td><p>e</p></td>
+<td><p>Floating-point numbers with exponent
+e.g. 1.1e-10, NAN (all case insensitive)</p></td>
+<td><p>float</p></td>
+</tr>
+<tr class="row-odd"><td><p>g</p></td>
+<td><p>General number format (either d, f or e)</p></td>
+<td><p>float</p></td>
+</tr>
+<tr class="row-even"><td><p>b</p></td>
+<td><p>Binary numbers</p></td>
+<td><p>int</p></td>
+</tr>
+<tr class="row-odd"><td><p>o</p></td>
+<td><p>Octal numbers</p></td>
+<td><p>int</p></td>
+</tr>
+<tr class="row-even"><td><p>x</p></td>
+<td><p>Hexadecimal numbers (lower and upper case)</p></td>
+<td><p>int</p></td>
+</tr>
+<tr class="row-odd"><td><p>ti</p></td>
+<td><p>ISO 8601 format date/time
+e.g. 1972-01-20T10:21:36Z (“T” and “Z”
+optional)</p></td>
+<td><p>datetime</p></td>
+</tr>
+<tr class="row-even"><td><p>te</p></td>
+<td><p>RFC2822 e-mail format date/time
+e.g. Mon, 20 Jan 1972 10:21:36 +1000</p></td>
+<td><p>datetime</p></td>
+</tr>
+<tr class="row-odd"><td><p>tg</p></td>
+<td><p>Global (day/month) format date/time
+e.g. 20/1/1972 10:21:36 AM +1:00</p></td>
+<td><p>datetime</p></td>
+</tr>
+<tr class="row-even"><td><p>ta</p></td>
+<td><p>US (month/day) format date/time
+e.g. 1/20/1972 10:21:36 PM +10:30</p></td>
+<td><p>datetime</p></td>
+</tr>
+<tr class="row-odd"><td><p>tc</p></td>
+<td><p>ctime() format date/time
+e.g. Sun Sep 16 01:03:52 1973</p></td>
+<td><p>datetime</p></td>
+</tr>
+<tr class="row-even"><td><p>th</p></td>
+<td><p>HTTP log format date/time
+e.g. 21/Nov/2011:00:07:11 +0000</p></td>
+<td><p>datetime</p></td>
+</tr>
+<tr class="row-odd"><td><p>ts</p></td>
+<td><p>Linux system log format date/time
+e.g. Nov  9 03:37:44</p></td>
+<td><p>datetime</p></td>
+</tr>
+<tr class="row-even"><td><p>tt</p></td>
+<td><p>Time
+e.g. 10:21:36 PM -5:30</p></td>
+<td><p>time</p></td>
+</tr>
+</tbody>
+</table>
+<p>Some examples of typed parsing with <code class="docutils literal notranslate"><span class="pre">None</span></code> returned if the typing
+does not match:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">parse</span><span class="p">(</span><span class="s1">&#39;Our </span><span class="si">{:d}</span><span class="s1"> {:w} are...&#39;</span><span class="p">,</span> <span class="s1">&#39;Our 3 weapons are...&#39;</span><span class="p">)</span>
+<span class="go">&lt;Result (3, &#39;weapons&#39;) {}&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">parse</span><span class="p">(</span><span class="s1">&#39;Our </span><span class="si">{:d}</span><span class="s1"> {:w} are...&#39;</span><span class="p">,</span> <span class="s1">&#39;Our three weapons are...&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">parse</span><span class="p">(</span><span class="s1">&#39;Meet at {:tg}&#39;</span><span class="p">,</span> <span class="s1">&#39;Meet at 1/2/2011 11:00 PM&#39;</span><span class="p">)</span>
+<span class="go">&lt;Result (datetime.datetime(2011, 2, 1, 23, 0),) {}&gt;</span>
+</pre></div>
+</div>
+<p>And messing about with alignment:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">parse</span><span class="p">(</span><span class="s1">&#39;with </span><span class="si">{:&gt;}</span><span class="s1"> herring&#39;</span><span class="p">,</span> <span class="s1">&#39;with     a herring&#39;</span><span class="p">)</span>
+<span class="go">&lt;Result (&#39;a&#39;,) {}&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">parse</span><span class="p">(</span><span class="s1">&#39;spam </span><span class="si">{:^}</span><span class="s1"> spam&#39;</span><span class="p">,</span> <span class="s1">&#39;spam    lovely     spam&#39;</span><span class="p">)</span>
+<span class="go">&lt;Result (&#39;lovely&#39;,) {}&gt;</span>
+</pre></div>
+</div>
+<p>Note that the “center” alignment does not test to make sure the value is
+centered - it just strips leading and trailing whitespace.</p>
+<p>Width and precision may be used to restrict the size of matched text
+from the input. Width specifies a minimum size and precision specifies
+a maximum. For example:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">parse</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{:.2}{:.2}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;look&#39;</span><span class="p">)</span>           <span class="c1"># specifying precision</span>
+<span class="go">&lt;Result (&#39;lo&#39;, &#39;ok&#39;) {}&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">parse</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{:4}{:4}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;look at that&#39;</span><span class="p">)</span>     <span class="c1"># specifying width</span>
+<span class="go">&lt;Result (&#39;look&#39;, &#39;at that&#39;) {}&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">parse</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{:4}{:.4}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;look at that&#39;</span><span class="p">)</span>    <span class="c1"># specifying both</span>
+<span class="go">&lt;Result (&#39;look at &#39;, &#39;that&#39;) {}&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">parse</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{:2d}{:2d}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;0440&#39;</span><span class="p">)</span>           <span class="c1"># parsing two contiguous numbers</span>
+<span class="go">&lt;Result (4, 40) {}&gt;</span>
+</pre></div>
+</div>
+<p>Some notes for the date and time types:</p>
+<ul class="simple">
+<li><p>the presence of the time part is optional (including ISO 8601, starting
+at the “T”). A full datetime object will always be returned; the time
+will be set to 00:00:00. You may also specify a time without seconds.</p></li>
+<li><p>when a seconds amount is present in the input fractions will be parsed
+to give microseconds.</p></li>
+<li><p>except in ISO 8601 the day and month digits may be 0-padded.</p></li>
+<li><p>the date separator for the tg and ta formats may be “-” or “/”.</p></li>
+<li><p>named months (abbreviations or full names) may be used in the ta and tg
+formats in place of numeric months.</p></li>
+<li><p>as per RFC 2822 the e-mail format may omit the day (and comma), and the
+seconds but nothing else.</p></li>
+<li><p>hours greater than 12 will be happily accepted.</p></li>
+<li><p>the AM/PM are optional, and if PM is found then 12 hours will be added
+to the datetime object’s hours amount - even if the hour is greater
+than 12 (for consistency.)</p></li>
+<li><p>in ISO 8601 the “Z” (UTC) timezone part may be a numeric offset</p></li>
+<li><p>timezones are specified as “+HH:MM” or “-HH:MM”. The hour may be one or two
+digits (0-padded is OK.) Also, the “:” is optional.</p></li>
+<li><p>the timezone is optional in all except the e-mail format (it defaults to
+UTC.)</p></li>
+<li><p>named timezones are not handled yet.</p></li>
+</ul>
+<p>Note: attempting to match too many datetime fields in a single parse() will
+currently result in a resource allocation issue. A TooManyFields exception
+will be raised in this instance. The current limit is about 15. It is hoped
+that this limit will be removed one day.</p>
+</div>
+<div class="section" id="result-and-match-objects">
+<h2>Result and Match Objects<a class="headerlink" href="#result-and-match-objects" title="Permalink to this headline">¶</a></h2>
+<p>The result of a <code class="docutils literal notranslate"><span class="pre">parse()</span></code> and <code class="docutils literal notranslate"><span class="pre">search()</span></code> operation is either <code class="docutils literal notranslate"><span class="pre">None</span></code> (no match), a
+<code class="docutils literal notranslate"><span class="pre">Result</span></code> instance or a <code class="docutils literal notranslate"><span class="pre">Match</span></code> instance if <code class="docutils literal notranslate"><span class="pre">evaluate_result</span></code> is False.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">Result</span></code> instance has three attributes:</p>
+<dl class="simple">
+<dt>fixed</dt><dd><p>A tuple of the fixed-position, anonymous fields extracted from the input.</p>
+</dd>
+<dt>named</dt><dd><p>A dictionary of the named fields extracted from the input.</p>
+</dd>
+<dt>spans</dt><dd><p>A dictionary mapping the names and fixed position indices matched to a
+2-tuple slice range of where the match occurred in the input.
+The span does not include any stripped padding (alignment or width).</p>
+</dd>
+</dl>
+<p>The <code class="docutils literal notranslate"><span class="pre">Match</span></code> instance has one method:</p>
+<dl class="simple">
+<dt>evaluate_result()</dt><dd><p>Generates and returns a <code class="docutils literal notranslate"><span class="pre">Result</span></code> instance for this <code class="docutils literal notranslate"><span class="pre">Match</span></code> object.</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="custom-type-conversions">
+<h2>Custom Type Conversions<a class="headerlink" href="#custom-type-conversions" title="Permalink to this headline">¶</a></h2>
+<p>If you wish to have matched fields automatically converted to your own type you
+may pass in a dictionary of type conversion information to <code class="docutils literal notranslate"><span class="pre">parse()</span></code> and
+<code class="docutils literal notranslate"><span class="pre">compile()</span></code>.</p>
+<p>The converter will be passed the field string matched. Whatever it returns
+will be substituted in the <code class="docutils literal notranslate"><span class="pre">Result</span></code> instance for that field.</p>
+<p>Your custom type conversions may override the builtin types if you supply one
+with the same identifier.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">shouty</span><span class="p">(</span><span class="n">string</span><span class="p">):</span>
+<span class="gp">... </span>   <span class="k">return</span> <span class="n">string</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+<span class="gp">...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">parse</span><span class="p">(</span><span class="s1">&#39;{:shouty} world&#39;</span><span class="p">,</span> <span class="s1">&#39;hello world&#39;</span><span class="p">,</span> <span class="nb">dict</span><span class="p">(</span><span class="n">shouty</span><span class="o">=</span><span class="n">shouty</span><span class="p">))</span>
+<span class="go">&lt;Result (&#39;HELLO&#39;,) {}&gt;</span>
+</pre></div>
+</div>
+<p>If the type converter has the optional <code class="docutils literal notranslate"><span class="pre">pattern</span></code> attribute, it is used as
+regular expression for better pattern matching (instead of the default one).</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">parse_number</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+<span class="gp">... </span>   <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">parse_number</span><span class="o">.</span><span class="n">pattern</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;\d+&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">parse</span><span class="p">(</span><span class="s1">&#39;Answer: {number:Number}&#39;</span><span class="p">,</span> <span class="s1">&#39;Answer: 42&#39;</span><span class="p">,</span> <span class="nb">dict</span><span class="p">(</span><span class="n">Number</span><span class="o">=</span><span class="n">parse_number</span><span class="p">))</span>
+<span class="go">&lt;Result () {&#39;number&#39;: 42}&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">_</span> <span class="o">=</span> <span class="n">parse</span><span class="p">(</span><span class="s1">&#39;Answer: {:Number}&#39;</span><span class="p">,</span> <span class="s1">&#39;Answer: Alice&#39;</span><span class="p">,</span> <span class="nb">dict</span><span class="p">(</span><span class="n">Number</span><span class="o">=</span><span class="n">parse_number</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">_</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;MISMATCH&quot;</span>
+</pre></div>
+</div>
+<p>You can also use the <code class="docutils literal notranslate"><span class="pre">with_pattern(pattern)</span></code> decorator to add this
+information to a type converter function:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nd">@with_pattern</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\d+&#39;</span><span class="p">)</span>
+<span class="gp">... </span><span class="k">def</span> <span class="nf">parse_number</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+<span class="gp">... </span>   <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">parse</span><span class="p">(</span><span class="s1">&#39;Answer: {number:Number}&#39;</span><span class="p">,</span> <span class="s1">&#39;Answer: 42&#39;</span><span class="p">,</span> <span class="nb">dict</span><span class="p">(</span><span class="n">Number</span><span class="o">=</span><span class="n">parse_number</span><span class="p">))</span>
+<span class="go">&lt;Result () {&#39;number&#39;: 42}&gt;</span>
+</pre></div>
+</div>
+<p>A more complete example of a custom type might be:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">yesno_mapping</span> <span class="o">=</span> <span class="p">{</span>
+<span class="gp">... </span>    <span class="s2">&quot;yes&quot;</span><span class="p">:</span>  <span class="kc">True</span><span class="p">,</span>   <span class="s2">&quot;no&quot;</span><span class="p">:</span>    <span class="kc">False</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="s2">&quot;on&quot;</span><span class="p">:</span>   <span class="kc">True</span><span class="p">,</span>   <span class="s2">&quot;off&quot;</span><span class="p">:</span>   <span class="kc">False</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="s2">&quot;true&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>   <span class="s2">&quot;false&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+<span class="gp">... </span><span class="p">}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nd">@with_pattern</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;|&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">yesno_mapping</span><span class="p">))</span>
+<span class="gp">... </span><span class="k">def</span> <span class="nf">parse_yesno</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">return</span> <span class="n">yesno_mapping</span><span class="p">[</span><span class="n">text</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span>
+</pre></div>
+</div>
+<p>If the type converter <code class="docutils literal notranslate"><span class="pre">pattern</span></code> uses regex-grouping (with parenthesis),
+you should indicate this by using the optional <code class="docutils literal notranslate"><span class="pre">regex_group_count</span></code> parameter
+in the <code class="docutils literal notranslate"><span class="pre">with_pattern()</span></code> decorator:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nd">@with_pattern</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;((\d+))&#39;</span><span class="p">,</span> <span class="n">regex_group_count</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="gp">... </span><span class="k">def</span> <span class="nf">parse_number2</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+<span class="gp">... </span>   <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">parse</span><span class="p">(</span><span class="s1">&#39;Answer: {:Number2} {:Number2}&#39;</span><span class="p">,</span> <span class="s1">&#39;Answer: 42 43&#39;</span><span class="p">,</span> <span class="nb">dict</span><span class="p">(</span><span class="n">Number2</span><span class="o">=</span><span class="n">parse_number2</span><span class="p">))</span>
+<span class="go">&lt;Result (42, 43) {}&gt;</span>
+</pre></div>
+</div>
+<p>Otherwise, this may cause parsing problems with unnamed/fixed parameters.</p>
+</div>
+<div class="section" id="potential-gotchas">
+<h2>Potential Gotchas<a class="headerlink" href="#potential-gotchas" title="Permalink to this headline">¶</a></h2>
+<p><cite>parse()</cite> will always match the shortest text necessary (from left to right)
+to fulfil the parse pattern, so for example:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">pattern</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{dir1}</span><span class="s1">/</span><span class="si">{dir2}</span><span class="s1">&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="s1">&#39;root/parent/subdir&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">sorted</span><span class="p">(</span><span class="n">parse</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="n">named</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
+<span class="go">[(&#39;dir1&#39;, &#39;root&#39;), (&#39;dir2&#39;, &#39;parent/subdir&#39;)]</span>
+</pre></div>
+</div>
+<p>So, even though <cite>{‘dir1’: ‘root/parent’, ‘dir2’: ‘subdir’}</cite> would also fit
+the pattern, the actual match represents the shortest successful match for
+<cite>dir1</cite>.</p>
+<hr class="docutils" />
+<p><strong>Version history (in brief)</strong>:</p>
+<ul class="simple">
+<li><p>1.9.0 We now honor precision and width specifiers when parsing numbers
+and strings, allowing parsing of concatenated elements of fixed width
+(thanks Julia Signell)</p></li>
+<li><p>1.8.4 Add LICENSE file at request of packagers.
+Correct handling of AM/PM to follow most common interpretation.
+Correct parsing of hexadecimal that looks like a binary prefix.
+Add ability to parse case sensitively.
+Add parsing of numbers to Decimal with “F” (thanks John Vandenberg)</p></li>
+<li><p>1.8.3 Add regex_group_count to with_pattern() decorator to support
+user-defined types that contain brackets/parenthesis (thanks Jens Engel)</p></li>
+<li><p>1.8.2 add documentation for including braces in format string</p></li>
+<li><p>1.8.1 ensure bare hexadecimal digits are not matched</p></li>
+<li><p>1.8.0 support manual control over result evaluation (thanks Timo Furrer)</p></li>
+<li><p>1.7.0 parse dict fields (thanks Mark Visser) and adapted to allow
+more than 100 re groups in Python 3.5+ (thanks David King)</p></li>
+<li><p>1.6.6 parse Linux system log dates (thanks Alex Cowan)</p></li>
+<li><p>1.6.5 handle precision in float format (thanks Levi Kilcher)</p></li>
+<li><p>1.6.4 handle pipe “|” characters in parse string (thanks Martijn Pieters)</p></li>
+<li><p>1.6.3 handle repeated instances of named fields, fix bug in PM time
+overflow</p></li>
+<li><p>1.6.2 fix logging to use local, not root logger (thanks Necku)</p></li>
+<li><p>1.6.1 be more flexible regarding matched ISO datetimes and timezones in
+general, fix bug in timezones without “:” and improve docs</p></li>
+<li><p>1.6.0 add support for optional <code class="docutils literal notranslate"><span class="pre">pattern</span></code> attribute in user-defined types
+(thanks Jens Engel)</p></li>
+<li><p>1.5.3 fix handling of question marks</p></li>
+<li><p>1.5.2 fix type conversion error with dotted names (thanks Sebastian Thiel)</p></li>
+<li><p>1.5.1 implement handling of named datetime fields</p></li>
+<li><p>1.5 add handling of dotted field names (thanks Sebastian Thiel)</p></li>
+<li><p>1.4.1 fix parsing of “0” in int conversion (thanks James Rowe)</p></li>
+<li><p>1.4 add __getitem__ convenience access on Result.</p></li>
+<li><p>1.3.3 fix Python 2.5 setup.py issue.</p></li>
+<li><p>1.3.2 fix Python 3.2 setup.py issue.</p></li>
+<li><p>1.3.1 fix a couple of Python 3.2 compatibility issues.</p></li>
+<li><p>1.3 added search() and findall(); removed compile() from <code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">*</span></code>
+export as it overwrites builtin.</p></li>
+<li><p>1.2 added ability for custom and override type conversions to be
+provided; some cleanup</p></li>
+<li><p>1.1.9 to keep things simpler number sign is handled automatically;
+significant robustification in the face of edge-case input.</p></li>
+<li><p>1.1.8 allow “d” fields to have number base “0x” etc. prefixes;
+fix up some field type interactions after stress-testing the parser;
+implement “%” type.</p></li>
+<li><p>1.1.7 Python 3 compatibility tweaks (2.5 to 2.7 and 3.2 are supported).</p></li>
+<li><p>1.1.6 add “e” and “g” field types; removed redundant “h” and “X”;
+removed need for explicit “#”.</p></li>
+<li><p>1.1.5 accept textual dates in more places; Result now holds match span
+positions.</p></li>
+<li><p>1.1.4 fixes to some int type conversion; implemented “=” alignment; added
+date/time parsing with a variety of formats handled.</p></li>
+<li><p>1.1.3 type conversion is automatic based on specified field types. Also added
+“f” and “n” types.</p></li>
+<li><p>1.1.2 refactored, added compile() and limited <code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">parse</span> <span class="pre">import</span> <span class="pre">*</span></code></p></li>
+<li><p>1.1.1 documentation improvements</p></li>
+<li><p>1.1.0 implemented more of the <a class="reference external" href="http://docs.python.org/library/string.html#format-specification-mini-language">Format Specification Mini-Language</a>
+and removed the restriction on mixing fixed-position and named fields</p></li>
+<li><p>1.0.0 initial release</p></li>
+</ul>
+<p>This code is copyright 2012-2017 Richard Jones &lt;<a class="reference external" href="mailto:richard&#37;&#52;&#48;python&#46;org">richard<span>&#64;</span>python<span>&#46;</span>org</a>&gt;
+See the end of the source file for the license of use.</p>
+<dl class="py function">
+<dt id="py2store.parse_format.findall">
+<code class="sig-prename descclassname">py2store.parse_format.</code><code class="sig-name descname">findall</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">format</span></em>, <em class="sig-param"><span class="n">string</span></em>, <em class="sig-param"><span class="n">pos</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">endpos</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">extra_types</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">evaluate_result</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">case_sensitive</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/py2store/parse_format.html#findall"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.parse_format.findall" title="Permalink to this definition">¶</a></dt>
+<dd><p>Search “string” for all occurrences of “format”.</p>
+<p>You will be returned an iterator that holds Result instances
+for each format match found.</p>
+<p>Optionally start the search at “pos” character index and limit the search
+to a maximum index of endpos - equivalent to search(string[:endpos]).</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">evaluate_result</span></code> is True each returned Result instance has two attributes:</p>
+<blockquote>
+<div><p>.fixed - tuple of fixed-position values from the string
+.named - dict of named values from the string</p>
+</div></blockquote>
+<p>If <code class="docutils literal notranslate"><span class="pre">evaluate_result</span></code> is False each returned value is a Match instance with one method:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>.evaluate_result() - This will return a Result instance like you would get</dt><dd><p>with <code class="docutils literal notranslate"><span class="pre">evaluate_result</span></code> set to True</p>
+</dd>
+</dl>
+</div></blockquote>
+<p>The default behaviour is to match strings case insensitively. You may match with
+case by specifying case_sensitive=True.</p>
+<p>If the format is invalid a ValueError will be raised.</p>
+<p>See the module documentation for the use of “extra_types”.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="py2store.parse_format.parse">
+<code class="sig-prename descclassname">py2store.parse_format.</code><code class="sig-name descname">parse</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">format</span></em>, <em class="sig-param"><span class="n">string</span></em>, <em class="sig-param"><span class="n">extra_types</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">evaluate_result</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">case_sensitive</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/py2store/parse_format.html#parse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.parse_format.parse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Using “format” attempt to pull values from “string”.</p>
+<p>The format must match the string contents exactly. If the value
+you’re looking for is instead just a part of the string use
+search().</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">evaluate_result</span></code> is True the return value will be an Result instance with two attributes:</p>
+<blockquote>
+<div><p>.fixed - tuple of fixed-position values from the string
+.named - dict of named values from the string</p>
+</div></blockquote>
+<p>If <code class="docutils literal notranslate"><span class="pre">evaluate_result</span></code> is False the return value will be a Match instance with one method:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>.evaluate_result() - This will return a Result instance like you would get</dt><dd><p>with <code class="docutils literal notranslate"><span class="pre">evaluate_result</span></code> set to True</p>
+</dd>
+</dl>
+</div></blockquote>
+<p>The default behaviour is to match strings case insensitively. You may match with
+case by specifying case_sensitive=True.</p>
+<p>If the format is invalid a ValueError will be raised.</p>
+<p>See the module documentation for the use of “extra_types”.</p>
+<p>In the case there is no match parse() will return None.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="py2store.parse_format.search">
+<code class="sig-prename descclassname">py2store.parse_format.</code><code class="sig-name descname">search</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">format</span></em>, <em class="sig-param"><span class="n">string</span></em>, <em class="sig-param"><span class="n">pos</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">endpos</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">extra_types</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">evaluate_result</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">case_sensitive</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/py2store/parse_format.html#search"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.parse_format.search" title="Permalink to this definition">¶</a></dt>
+<dd><p>Search “string” for the first occurrence of “format”.</p>
+<p>The format may occur anywhere within the string. If
+instead you wish for the format to exactly match the string
+use parse().</p>
+<p>Optionally start the search at “pos” character index and limit the search
+to a maximum index of endpos - equivalent to search(string[:endpos]).</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">evaluate_result</span></code> is True the return value will be an Result instance with two attributes:</p>
+<blockquote>
+<div><p>.fixed - tuple of fixed-position values from the string
+.named - dict of named values from the string</p>
+</div></blockquote>
+<p>If <code class="docutils literal notranslate"><span class="pre">evaluate_result</span></code> is False the return value will be a Match instance with one method:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>.evaluate_result() - This will return a Result instance like you would get</dt><dd><p>with <code class="docutils literal notranslate"><span class="pre">evaluate_result</span></code> set to True</p>
+</dd>
+</dl>
+</div></blockquote>
+<p>The default behaviour is to match strings case insensitively. You may match with
+case by specifying case_sensitive=True.</p>
+<p>If the format is invalid a ValueError will be raised.</p>
+<p>See the module documentation for the use of “extra_types”.</p>
+<p>In the case there is no match parse() will return None.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="py2store.parse_format.with_pattern">
+<code class="sig-prename descclassname">py2store.parse_format.</code><code class="sig-name descname">with_pattern</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">pattern</span></em>, <em class="sig-param"><span class="n">regex_group_count</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/py2store/parse_format.html#with_pattern"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.parse_format.with_pattern" title="Permalink to this definition">¶</a></dt>
+<dd><p>Attach a regular expression pattern matcher to a custom type converter
+function.</p>
+<p>This annotates the type converter with the <code class="xref py py-attr docutils literal notranslate"><span class="pre">pattern</span></code> attribute.</p>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nd">@with_pattern</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\d+&quot;</span><span class="p">)</span>
+<span class="gp">... </span><span class="k">def</span> <span class="nf">parse_number</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>is equivalent to:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">parse_number</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">parse_number</span><span class="o">.</span><span class="n">pattern</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;\d+&quot;</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pattern</strong> – regular expression pattern (as text)</p></li>
+<li><p><strong>regex_group_count</strong> – Indicates how many regex-groups are in pattern.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>wrapped function</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">py2store</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html">py2store.filesys</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.misc">py2store.misc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.mixins">py2store.mixins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.test.util">py2store.test.util</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-test-quick">py2store.test.quick</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.test">py2store.test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-test-simple">py2store.test.simple</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-test-scrap">py2store.test.scrap</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.util">py2store.util</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-ext-docx">py2store.ext.docx</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.ext.gitlab">py2store.ext.gitlab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-ext-hdf">py2store.ext.hdf</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.ext">py2store.ext</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-ext-matlab">py2store.ext.matlab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.ext.kaggle">py2store.ext.kaggle</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-ext-module-imports">py2store.ext.module_imports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.ext.audio">py2store.ext.audio</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-ext-github">py2store.ext.github</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.ext.dataframes">py2store.ext.dataframes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.access">py2store.access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.__init__">py2store.__init__</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.stores.s3_store">py2store.stores.s3_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.stores.delegation_stores">py2store.stores.delegation_stores</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.stores.sql_w_sqlalchemy">py2store.stores.sql_w_sqlalchemy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-stores-arangodb-store">py2store.stores.arangodb_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-stores-dropbox-store">py2store.stores.dropbox_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.stores.local_store">py2store.stores.local_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.stores">py2store.stores</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-stores-couchdb-store">py2store.stores.couchdb_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.stores.mongo_store">py2store.stores.mongo_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.core">py2store.core</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.uri_utils">py2store.utils.uri_utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.explicit">py2store.utils.explicit</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.timeseries_caching">py2store.utils.timeseries_caching</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-utils-attr-dict-py-attr-dict">py2store.utils.attr_dict.py.attr_dict</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-utils-attr-dict-py">py2store.utils.attr_dict.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.cumul_aggreg_write">py2store.utils.cumul_aggreg_write</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils">py2store.utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.cache_descriptors">py2store.utils.cache_descriptors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.appendable">py2store.utils.appendable</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.affine_conversion">py2store.utils.affine_conversion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.signatures">py2store.utils.signatures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.sliceable">py2store.utils.sliceable</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.mappify">py2store.utils.mappify</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.glom">py2store.utils.glom</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-persisters-sql-w-odbc">py2store.persisters.sql_w_odbc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.dynamodb_w_boto3">py2store.persisters.dynamodb_w_boto3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-persisters-couchdb-w-couchdb">py2store.persisters.couchdb_w_couchdb</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.ftp_persister">py2store.persisters.ftp_persister</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.dropbox_w_urllib">py2store.persisters.dropbox_w_urllib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters._google_drive_in_progress">py2store.persisters._google_drive_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-persisters-dropbox-w-dropbox">py2store.persisters.dropbox_w_dropbox</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-persisters-redis-w-redis">py2store.persisters.redis_w_redis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.sql_w_sqlalchemy">py2store.persisters.sql_w_sqlalchemy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.new_s3">py2store.persisters.new_s3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters">py2store.persisters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.dropbox_w_requests">py2store.persisters.dropbox_w_requests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.w_aiofile">py2store.persisters.w_aiofile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.local_files">py2store.persisters.local_files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-persisters-arangodb-w-pyarango">py2store.persisters.arangodb_w_pyarango</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters._cassandra_in_progress">py2store.persisters._cassandra_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters._couchdb_in_progress">py2store.persisters._couchdb_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.s3_w_boto3">py2store.persisters.s3_w_boto3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-persisters-postgres-w-psycopg2-in-progress">py2store.persisters._postgres_w_psycopg2_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-persisters-ssh-persister">py2store.persisters.ssh_persister</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.mongo_w_pymongo">py2store.persisters.mongo_w_pymongo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-persisters-googledrive-w-pydrive">py2store.persisters.googledrive_w_pydrive</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.sources">py2store.sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.dig">py2store.dig</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.serializers.pickled">py2store.serializers.pickled</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.serializers.jsonization">py2store.serializers.jsonization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.serializers">py2store.serializers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.serializers.sequential">py2store.serializers.sequential</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.serializers.regular_panel_data">py2store.serializers.regular_panel_data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.serializers.audio">py2store.serializers.audio</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.caching">py2store.caching</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.scrap">py2store.scrap</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.scrap.new_gen_local">py2store.scrap.new_gen_local</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.examples.write_caches">py2store.examples.write_caches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.examples">py2store.examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.examples.python_code_stats">py2store.examples.python_code_stats</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.examples.kv_walking">py2store.examples.kv_walking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.my">py2store.my</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.my.grabbers">py2store.my.grabbers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.trans">py2store.trans</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.key_mappers.str_utils">py2store.key_mappers.str_utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.key_mappers.tuples">py2store.key_mappers.tuples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.key_mappers.paths">py2store.key_mappers.paths</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.key_mappers.naming">py2store.key_mappers.naming</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.key_mappers">py2store.key_mappers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.errors">py2store.errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.slib.s_configparser">py2store.slib.s_configparser</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.slib">py2store.slib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.slib.s_zipfile">py2store.slib.s_zipfile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.base">py2store.base</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-selectors-mg-selectors">py2store.selectors.mg_selectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-selectors-mongoquery">py2store.selectors.mongoquery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-selectors">py2store.selectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.parse_format">py2store.parse_format</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../../_sources/module_docs/py2store/parse_format.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

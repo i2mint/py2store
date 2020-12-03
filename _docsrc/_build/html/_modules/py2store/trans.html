@@ -1,0 +1,1027 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>py2store.trans &#8212; py2store 0.0.1 documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css" />
+    <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for py2store.trans</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">functools</span> <span class="k">import</span> <span class="n">wraps</span><span class="p">,</span> <span class="n">partial</span>
+<span class="kn">import</span> <span class="nn">types</span>
+<span class="kn">from</span> <span class="nn">inspect</span> <span class="k">import</span> <span class="n">signature</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="k">import</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Optional</span>
+<span class="kn">from</span> <span class="nn">py2store.base</span> <span class="k">import</span> <span class="n">Store</span><span class="p">,</span> <span class="n">KvReader</span>
+<span class="kn">from</span> <span class="nn">py2store.util</span> <span class="k">import</span> <span class="n">lazyprop</span>
+
+
+<span class="k">def</span> <span class="nf">get_class_name</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">dflt_name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="s1">&#39;__qualname__&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="s1">&#39;__class__&#39;</span><span class="p">,</span> <span class="nb">object</span><span class="p">),</span> <span class="s1">&#39;__qualname__&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">dflt_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">dflt_name</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;</span><span class="si">{cls}</span><span class="s2"> has no name I could extract&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">name</span>
+
+
+<span class="k">def</span> <span class="nf">store_wrap</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="nb">type</span><span class="p">):</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">name</span> <span class="ow">or</span> <span class="n">f</span><span class="s2">&quot;{get_class_name(obj, &#39;StoreWrap&#39;)}Store&quot;</span>
+
+        <span class="k">class</span> <span class="nc">StoreWrap</span><span class="p">(</span><span class="n">Store</span><span class="p">):</span>
+            <span class="nd">@wraps</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="fm">__init__</span><span class="p">)</span>
+            <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+                <span class="n">persister</span> <span class="o">=</span> <span class="n">obj</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+                <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">persister</span><span class="p">)</span>
+
+        <span class="n">StoreWrap</span><span class="o">.</span><span class="vm">__qualname__</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="k">return</span> <span class="n">StoreWrap</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">Store</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">num_of_args</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+    <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">signature</span><span class="p">(</span><span class="n">func</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">transparent_key_method</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">k</span>
+
+
+<div class="viewcode-block" id="mk_kv_reader_from_kv_collection"><a class="viewcode-back" href="../../other.html#py2store.trans.mk_kv_reader_from_kv_collection">[docs]</a><span class="k">def</span> <span class="nf">mk_kv_reader_from_kv_collection</span><span class="p">(</span><span class="n">kv_collection</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">getitem</span><span class="o">=</span><span class="n">transparent_key_method</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Make a KvReader class from a Collection class.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        kv_collection: The Collection class</span>
+<span class="sd">        name: The name to give the KvReader class (by default, it will be kv_collection.__qualname__ + &#39;Reader&#39;)</span>
+<span class="sd">        getitem: The method that will be assigned to __getitem__. Should have the (self, k) signature.</span>
+<span class="sd">            By default, getitem will be transparent_key_method, returning the key as is.</span>
+<span class="sd">            This default is useful when you want to delegate the actual getting to a _obj_of_data wrapper.</span>
+
+<span class="sd">    Returns: A KvReader class that subclasses the input kv_collection</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="n">name</span> <span class="ow">or</span> <span class="n">kv_collection</span><span class="o">.</span><span class="vm">__qualname__</span> <span class="o">+</span> <span class="s1">&#39;Reader&#39;</span>
+    <span class="n">reader_cls</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="p">(</span><span class="n">kv_collection</span><span class="p">,</span> <span class="n">KvReader</span><span class="p">),</span> <span class="p">{</span><span class="s1">&#39;__getitem__&#39;</span><span class="p">:</span> <span class="n">getitem</span><span class="p">})</span>
+    <span class="k">return</span> <span class="n">reader_cls</span></div>
+
+
+<span class="k">def</span> <span class="nf">raise_disabled_error</span><span class="p">(</span><span class="n">functionality</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">disabled_function</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;</span><span class="si">{functionality}</span><span class="s2"> is disabled&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">disabled_function</span>
+
+
+<span class="k">def</span> <span class="nf">disable_delitem</span><span class="p">(</span><span class="n">o</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="s1">&#39;__delitem__&#39;</span><span class="p">):</span>
+        <span class="n">o</span><span class="o">.</span><span class="fm">__delitem__</span> <span class="o">=</span> <span class="n">raise_disabled_error</span><span class="p">(</span><span class="s1">&#39;deletion&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">o</span>
+
+
+<span class="k">def</span> <span class="nf">disable_setitem</span><span class="p">(</span><span class="n">o</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="s1">&#39;__setitem__&#39;</span><span class="p">):</span>
+        <span class="n">o</span><span class="o">.</span><span class="fm">__setitem__</span> <span class="o">=</span> <span class="n">raise_disabled_error</span><span class="p">(</span><span class="s1">&#39;writing&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">o</span>
+
+
+<span class="k">def</span> <span class="nf">mk_read_only</span><span class="p">(</span><span class="n">o</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">disable_delitem</span><span class="p">(</span><span class="n">disable_setitem</span><span class="p">(</span><span class="n">o</span><span class="p">))</span>
+
+
+<div class="viewcode-block" id="cache_iter"><a class="viewcode-back" href="../../other.html#py2store.trans.cache_iter">[docs]</a><span class="k">def</span> <span class="nf">cache_iter</span><span class="p">(</span><span class="n">store</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">iter_to_container</span><span class="o">=</span><span class="nb">list</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Make a class that wraps input class&#39;s __iter__ becomes cached.</span>
+
+<span class="sd">    Quite often we have a lot of keys, that we get from a remote data source, and don&#39;t want to have to ask for</span>
+<span class="sd">    them again and again, having them be fetched, sent over the network, etc.</span>
+<span class="sd">    So we need caching.</span>
+
+<span class="sd">    But this caching is not the typical read caching, since it&#39;s __iter__ we want to cache, and that&#39;s a generator.</span>
+<span class="sd">    So we&#39;ll implement a store class decorator specialized for this.</span>
+
+<span class="sd">    The following decorator, when applied to a class (that has an __iter__), will perform the __iter__ code, consuming</span>
+<span class="sd">    all items of the generator and storing them in _iter_cache, and then will yield from there every subsequent call.</span>
+
+<span class="sd">    It is assumed, if you&#39;re using the cache_iter transformation, that you&#39;re dealing with static data</span>
+<span class="sd">    (or data that can be considered static for the life of the store -- for example, when conducting analytics).</span>
+<span class="sd">    If you ever need to refresh the cache during the life of the store, you can to delete _iter_cache like this:</span>
+<span class="sd">    ```</span>
+<span class="sd">    del your_store._iter_cache</span>
+<span class="sd">    ```</span>
+<span class="sd">    Once you do that, the next time you try to ask something about the contents of the store, it will actually do</span>
+<span class="sd">    a live query again, as for the first time.</span>
+
+
+<span class="sd">    Args:</span>
+<span class="sd">        collection_cls: The class to wrap (must have an __iter__)</span>
+<span class="sd">        iter_to_container: The function that will be applied to existing __iter__() and assigned to cache.</span>
+<span class="sd">            The default is list. Another useful one is the sorted function.</span>
+<span class="sd">        name: The name of the new class</span>
+
+
+<span class="sd">    &gt;&gt;&gt; @cache_iter</span>
+<span class="sd">    ... class A:</span>
+<span class="sd">    ...     def __iter__(self):</span>
+<span class="sd">    ...         yield from [1, 2, 3]</span>
+<span class="sd">    &gt;&gt;&gt; # Note, could have also used this form: AA = cache_iter(A)</span>
+<span class="sd">    &gt;&gt;&gt; a = A()</span>
+<span class="sd">    &gt;&gt;&gt; list(a)</span>
+<span class="sd">    [1, 2, 3]</span>
+<span class="sd">    &gt;&gt;&gt; a._iter_cache = [&#39;a&#39;, &#39;b&#39;, &#39;c&#39;]  # changing the cache, to prove that subsequent listing will read from there</span>
+<span class="sd">    &gt;&gt;&gt; list(a)  # proof:</span>
+<span class="sd">    [&#39;a&#39;, &#39;b&#39;, &#39;c&#39;]</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; # Let&#39;s demo the iter_to_container argument. The default is &quot;list&quot;, which will just consume the iter in order</span>
+<span class="sd">    &gt;&gt;&gt; sorted_dict = cache_iter(dict, iter_to_container=list)</span>
+<span class="sd">    &gt;&gt;&gt; s = sorted_dict({&#39;b&#39;: 3, &#39;a&#39;: 2, &#39;c&#39;: 1})</span>
+<span class="sd">    &gt;&gt;&gt; list(s)  # keys will be in the order they were defined</span>
+<span class="sd">    [&#39;b&#39;, &#39;a&#39;, &#39;c&#39;]</span>
+<span class="sd">    &gt;&gt;&gt; sorted_dict = cache_iter(dict, iter_to_container=sorted)</span>
+<span class="sd">    &gt;&gt;&gt; s = sorted_dict({&#39;b&#39;: 3, &#39;a&#39;: 2, &#39;c&#39;: 1})</span>
+<span class="sd">    &gt;&gt;&gt; list(s)  # keys will be sorted</span>
+<span class="sd">    [&#39;a&#39;, &#39;b&#39;, &#39;c&#39;]</span>
+<span class="sd">    &gt;&gt;&gt; sorted_dict = cache_iter(dict, iter_to_container=lambda x: sorted(x, key=len))</span>
+<span class="sd">    &gt;&gt;&gt; s = sorted_dict({&#39;bbb&#39;: 3, &#39;aa&#39;: 2, &#39;c&#39;: 1})</span>
+<span class="sd">    &gt;&gt;&gt; list(s)  # keys will be sorted according to their length</span>
+<span class="sd">    [&#39;c&#39;, &#39;aa&#39;, &#39;bbb&#39;]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">store</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">partial</span><span class="p">(</span><span class="n">cache_iter</span><span class="p">,</span> <span class="n">iter_to_container</span><span class="o">=</span><span class="n">iter_to_container</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="nb">type</span><span class="p">):</span>  <span class="c1"># then consider it to be an instance</span>
+        <span class="n">store_instance</span> <span class="o">=</span> <span class="n">store</span>
+        <span class="n">WrapperStore</span> <span class="o">=</span> <span class="n">cache_iter</span><span class="p">(</span><span class="n">Store</span><span class="p">,</span> <span class="n">iter_to_container</span><span class="o">=</span><span class="n">iter_to_container</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">WrapperStore</span><span class="p">(</span><span class="n">store_instance</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">store_cls</span> <span class="o">=</span> <span class="n">store</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">name</span> <span class="ow">or</span> <span class="s1">&#39;IterCached&#39;</span> <span class="o">+</span> <span class="n">get_class_name</span><span class="p">(</span><span class="n">store_cls</span><span class="p">)</span>
+        <span class="n">cached_cls</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="p">(</span><span class="n">store_cls</span><span class="p">,),</span> <span class="p">{</span><span class="s1">&#39;_iter_cache&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">})</span>
+
+        <span class="nd">@lazyprop</span>
+        <span class="k">def</span> <span class="nf">_iter_cache</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">iter_to_container</span><span class="p">(</span><span class="nb">super</span><span class="p">(</span><span class="n">cached_cls</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__iter__</span><span class="p">())</span>  <span class="c1"># TODO: Should it be iter(super(...)?</span>
+
+        <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="c1"># if getattr(self, &#39;_iter_cache&#39;, None) is None:</span>
+            <span class="c1">#     self._iter_cache = iter_to_container(super(cached_cls, self).__iter__())</span>
+            <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">_iter_cache</span>
+
+        <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_iter_cache</span><span class="p">)</span>
+
+        <span class="n">cached_cls</span><span class="o">.</span><span class="fm">__iter__</span> <span class="o">=</span> <span class="fm">__iter__</span>
+        <span class="n">cached_cls</span><span class="o">.</span><span class="fm">__len__</span> <span class="o">=</span> <span class="fm">__len__</span>
+        <span class="n">cached_cls</span><span class="o">.</span><span class="n">_iter_cache</span> <span class="o">=</span> <span class="n">_iter_cache</span>
+
+        <span class="n">_define_keys_values_and_items_according_to_iter</span><span class="p">(</span><span class="n">cached_cls</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">cached_cls</span></div>
+
+
+<span class="c1"># TODO: Factor out the method injection pattern (e.g. __getitem__, __setitem__ and __delitem__ are nearly identical)</span>
+<div class="viewcode-block" id="filtered_iter"><a class="viewcode-back" href="../../other.html#py2store.trans.filtered_iter">[docs]</a><span class="k">def</span> <span class="nf">filtered_iter</span><span class="p">(</span><span class="n">filt</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">callable</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Make a wrapper that will transform a store (class or instance thereof) into a sub-store (i.e. subset of keys).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        filt: A callable or iterable:</span>
+<span class="sd">            callable: Boolean filter function. A func taking a key and and returns True iff the key should be included.</span>
+<span class="sd">            iterable: The collection of keys you want to filter &quot;in&quot;</span>
+<span class="sd">        name: The name to give the wrapped class</span>
+
+<span class="sd">    Returns: A wrapper (that then needs to be applied to a store instance or class.</span>
+
+<span class="sd">    &gt;&gt;&gt; filtered_dict = filtered_iter(filt=lambda k: (len(k) % 2) == 1)(dict)  # keep only odd length keys</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; s = filtered_dict({&#39;a&#39;: 1, &#39;bb&#39;: object, &#39;ccc&#39;: &#39;a string&#39;, &#39;dddd&#39;: [1, 2]})</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; list(s)</span>
+<span class="sd">    [&#39;a&#39;, &#39;ccc&#39;]</span>
+<span class="sd">    &gt;&gt;&gt; &#39;a&#39; in s  # True because odd (length) key</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; &#39;bb&#39; in s  # False because odd (length) key</span>
+<span class="sd">    False</span>
+<span class="sd">    &gt;&gt;&gt; s.get(&#39;bb&#39;, None)</span>
+<span class="sd">    None</span>
+<span class="sd">    &gt;&gt;&gt; len(s)</span>
+<span class="sd">    2</span>
+<span class="sd">    &gt;&gt;&gt; list(s.keys())</span>
+<span class="sd">    [&#39;a&#39;, &#39;ccc&#39;]</span>
+<span class="sd">    &gt;&gt;&gt; list(s.values())</span>
+<span class="sd">    [1, &#39;a string&#39;]</span>
+<span class="sd">    &gt;&gt;&gt; list(s.items())</span>
+<span class="sd">    [(&#39;a&#39;, 1), (&#39;ccc&#39;, &#39;a string&#39;)]</span>
+<span class="sd">    &gt;&gt;&gt; s.get(&#39;a&#39;)</span>
+<span class="sd">    1</span>
+<span class="sd">    &gt;&gt;&gt; assert s.get(&#39;bb&#39;) is None</span>
+<span class="sd">    &gt;&gt;&gt; s[&#39;x&#39;] = 10</span>
+<span class="sd">    &gt;&gt;&gt; list(s.items())</span>
+<span class="sd">    [(&#39;a&#39;, 1), (&#39;ccc&#39;, &#39;a string&#39;), (&#39;x&#39;, 10)]</span>
+<span class="sd">    &gt;&gt;&gt; try:</span>
+<span class="sd">    ...     s[&#39;xx&#39;] = &#39;not an odd key&#39;</span>
+<span class="sd">    ...     raise ValueError(&quot;This should have failed&quot;)</span>
+<span class="sd">    ... except KeyError:</span>
+<span class="sd">    ...     pass</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">callable</span><span class="p">(</span><span class="n">filt</span><span class="p">):</span>  <span class="c1"># if filt is not a callable...</span>
+        <span class="c1"># ... assume it&#39;s the collection of keys you want and make a filter function to filter those &quot;in&quot;.</span>
+        <span class="k">assert</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">filt</span><span class="p">)),</span> <span class="s2">&quot;filt should be a callable, or an iterable&quot;</span>
+        <span class="n">keys_that_should_be_filtered_in</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">filt</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">filt</span><span class="p">(</span><span class="n">k</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">keys_that_should_be_filtered_in</span>
+
+    <span class="k">def</span> <span class="nf">wrap</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="nb">type</span><span class="p">):</span>  <span class="c1"># then consider it to be an instance</span>
+            <span class="n">store_instance</span> <span class="o">=</span> <span class="n">store</span>
+            <span class="n">WrapperStore</span> <span class="o">=</span> <span class="n">filtered_iter</span><span class="p">(</span><span class="n">filt</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)(</span><span class="n">Store</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">WrapperStore</span><span class="p">(</span><span class="n">store_instance</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>  <span class="c1"># it&#39;s a class we&#39;re wrapping</span>
+            <span class="n">collection_cls</span> <span class="o">=</span> <span class="n">store</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">name</span> <span class="ow">or</span> <span class="s1">&#39;Filtered&#39;</span> <span class="o">+</span> <span class="n">get_class_name</span><span class="p">(</span><span class="n">collection_cls</span><span class="p">)</span>
+            <span class="n">wrapped_cls</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="p">(</span><span class="n">collection_cls</span><span class="p">,),</span> <span class="p">{})</span>
+
+            <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+                <span class="k">yield from</span> <span class="nb">filter</span><span class="p">(</span><span class="n">filt</span><span class="p">,</span> <span class="nb">super</span><span class="p">(</span><span class="n">wrapped_cls</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__iter__</span><span class="p">())</span>
+
+            <span class="n">wrapped_cls</span><span class="o">.</span><span class="fm">__iter__</span> <span class="o">=</span> <span class="fm">__iter__</span>
+
+            <span class="n">_define_keys_values_and_items_according_to_iter</span><span class="p">(</span><span class="n">wrapped_cls</span><span class="p">)</span>
+
+            <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+                <span class="n">c</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__iter__</span><span class="p">():</span>
+                    <span class="n">c</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">return</span> <span class="n">c</span>
+
+            <span class="n">wrapped_cls</span><span class="o">.</span><span class="fm">__len__</span> <span class="o">=</span> <span class="fm">__len__</span>
+
+            <span class="k">def</span> <span class="nf">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">filt</span><span class="p">(</span><span class="n">k</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">wrapped_cls</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__contains__</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="kc">False</span>
+
+            <span class="n">wrapped_cls</span><span class="o">.</span><span class="fm">__contains__</span> <span class="o">=</span> <span class="fm">__contains__</span>
+
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">wrapped_cls</span><span class="p">,</span> <span class="s1">&#39;__getitem__&#39;</span><span class="p">):</span>
+                <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">filt</span><span class="p">(</span><span class="n">k</span><span class="p">):</span>
+                        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">wrapped_cls</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Key not in store: </span><span class="si">{k}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+                <span class="n">wrapped_cls</span><span class="o">.</span><span class="fm">__getitem__</span> <span class="o">=</span> <span class="fm">__getitem__</span>
+
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">wrapped_cls</span><span class="p">,</span> <span class="s1">&#39;get&#39;</span><span class="p">):</span>
+                <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">filt</span><span class="p">(</span><span class="n">k</span><span class="p">):</span>
+                        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">wrapped_cls</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">default</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="n">default</span>
+
+                <span class="n">wrapped_cls</span><span class="o">.</span><span class="n">get</span> <span class="o">=</span> <span class="n">get</span>
+
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">wrapped_cls</span><span class="p">,</span> <span class="s1">&#39;__setitem__&#39;</span><span class="p">):</span>
+                <span class="k">def</span> <span class="nf">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">filt</span><span class="p">(</span><span class="n">k</span><span class="p">):</span>
+                        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">wrapped_cls</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__setitem__</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Key not in store: </span><span class="si">{k}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+                <span class="n">wrapped_cls</span><span class="o">.</span><span class="fm">__setitem__</span> <span class="o">=</span> <span class="fm">__setitem__</span>
+
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">wrapped_cls</span><span class="p">,</span> <span class="s1">&#39;__delitem__&#39;</span><span class="p">):</span>
+                <span class="k">def</span> <span class="nf">__delitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">filt</span><span class="p">(</span><span class="n">k</span><span class="p">):</span>
+                        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">wrapped_cls</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__delitem__</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Key not in store: </span><span class="si">{k}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+                <span class="n">wrapped_cls</span><span class="o">.</span><span class="fm">__delitem__</span> <span class="o">=</span> <span class="fm">__delitem__</span>
+
+            <span class="k">return</span> <span class="n">wrapped_cls</span>
+
+    <span class="k">return</span> <span class="n">wrap</span></div>
+
+
+<span class="k">def</span> <span class="nf">_define_keys_values_and_items_according_to_iter</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="s1">&#39;keys&#39;</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">keys</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__iter__</span><span class="p">()</span>  <span class="c1"># TODO: Should it be iter(self)?</span>
+
+        <span class="bp">cls</span><span class="o">.</span><span class="n">keys</span> <span class="o">=</span> <span class="n">keys</span>
+
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="s1">&#39;values&#39;</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">yield from</span> <span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">)</span>
+
+        <span class="bp">cls</span><span class="o">.</span><span class="n">values</span> <span class="o">=</span> <span class="n">values</span>
+
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="s1">&#39;items&#39;</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">items</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">yield from</span> <span class="p">((</span><span class="n">k</span><span class="p">,</span> <span class="bp">self</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">)</span>
+
+        <span class="bp">cls</span><span class="o">.</span><span class="n">items</span> <span class="o">=</span> <span class="n">items</span>
+
+
+<span class="k">class</span> <span class="nc">_DefineKeysValuesAndItemsAccordingToIter</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">keys</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__iter__</span><span class="p">()</span>  <span class="c1"># TODO: Should it be iter(self)?</span>
+
+    <span class="k">def</span> <span class="nf">values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">yield from</span> <span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">items</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">yield from</span> <span class="p">((</span><span class="n">k</span><span class="p">,</span> <span class="bp">self</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="kv_wrap_persister_cls"><a class="viewcode-back" href="../../other.html#py2store.trans.kv_wrap_persister_cls">[docs]</a><span class="k">def</span> <span class="nf">kv_wrap_persister_cls</span><span class="p">(</span><span class="n">persister_cls</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Make a class that wraps a persister into a py2store.base.Store,</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        persister_cls: The persister class to wrap</span>
+
+<span class="sd">    Returns: A Store wrapping the persister (see py2store.base)</span>
+
+<span class="sd">    &gt;&gt;&gt; A = kv_wrap_persister_cls(dict)</span>
+<span class="sd">    &gt;&gt;&gt; a = A()</span>
+<span class="sd">    &gt;&gt;&gt; a[&#39;one&#39;] = 1</span>
+<span class="sd">    &gt;&gt;&gt; a[&#39;two&#39;] = 2</span>
+<span class="sd">    &gt;&gt;&gt; a[&#39;three&#39;] = 3</span>
+<span class="sd">    &gt;&gt;&gt; list(a.items())</span>
+<span class="sd">    [(&#39;one&#39;, 1), (&#39;two&#39;, 2), (&#39;three&#39;, 3)]</span>
+<span class="sd">    &gt;&gt;&gt; A  # looks like a dict, but is not:</span>
+<span class="sd">    &lt;class &#39;abc.dictPWrapped&#39;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; assert hasattr(a, &#39;_obj_of_data&#39;)  # for example, it has this magic method</span>
+<span class="sd">    &gt;&gt;&gt; # If you overwrite the _obj_of_data method, you&#39;ll transform outcomming values with it.</span>
+<span class="sd">    &gt;&gt;&gt; # For example, say the data you stored were minutes, but you want to get then in secs...</span>
+<span class="sd">    &gt;&gt;&gt; a._obj_of_data = lambda data: data * 60</span>
+<span class="sd">    &gt;&gt;&gt; list(a.items())</span>
+<span class="sd">    [(&#39;one&#39;, 60), (&#39;two&#39;, 120), (&#39;three&#39;, 180)]</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; # And if you want to have class that has this weird &quot;store minutes, retrieve seconds&quot;, you can do this:</span>
+<span class="sd">    &gt;&gt;&gt; class B(kv_wrap_persister_cls(dict)):</span>
+<span class="sd">    ...     def _obj_of_data(self, data):</span>
+<span class="sd">    ...         return data * 60</span>
+<span class="sd">    &gt;&gt;&gt; b = B()</span>
+<span class="sd">    &gt;&gt;&gt; b.update({&#39;one&#39;: 1, &#39;two&#39;: 2, &#39;three&#39;: 3})  # you can write several key-value pairs at once this way!</span>
+<span class="sd">    &gt;&gt;&gt; list(b.items())</span>
+<span class="sd">    [(&#39;one&#39;, 60), (&#39;two&#39;, 120), (&#39;three&#39;, 180)]</span>
+<span class="sd">    &gt;&gt;&gt; # Warning! Advanced under-the-hood chat coming up.... Note this:</span>
+<span class="sd">    &gt;&gt;&gt; print(b)</span>
+<span class="sd">    {&#39;one&#39;: 1, &#39;two&#39;: 2, &#39;three&#39;: 3}</span>
+<span class="sd">    &gt;&gt;&gt; # What?!? Well, remember, printing an object calls the objects __str__, which usually calls __repr__</span>
+<span class="sd">    &gt;&gt;&gt; # The wrapper doesn&#39;t wrap those methods, since they don&#39;t have consistent behaviors.</span>
+<span class="sd">    &gt;&gt;&gt; # Here you&#39;re getting the __repr__ of the underlying dict store, without the key and value transforms.</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; # Say you wanted to transform the incoming minute-unit data, converting to secs BEFORE they were stored...</span>
+<span class="sd">    &gt;&gt;&gt; class C(kv_wrap_persister_cls(dict)):</span>
+<span class="sd">    ...     def _data_of_obj(self, obj):</span>
+<span class="sd">    ...         return obj * 60</span>
+<span class="sd">    &gt;&gt;&gt; c = C()</span>
+<span class="sd">    &gt;&gt;&gt; c.update(one=1, two=2, three=3)  # yet another way you can write multiple key-vals at once</span>
+<span class="sd">    &gt;&gt;&gt; list(c.items())</span>
+<span class="sd">    [(&#39;one&#39;, 60), (&#39;two&#39;, 120), (&#39;three&#39;, 180)]</span>
+<span class="sd">    &gt;&gt;&gt; print(c)  # but notice that unlike when we printed b, here the stored data is actually transformed!</span>
+<span class="sd">    {&#39;one&#39;: 60, &#39;two&#39;: 120, &#39;three&#39;: 180}</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; # Now, just to demonstrate key transformation, let&#39;s say that we need internal (stored) keys to be upper case,</span>
+<span class="sd">    &gt;&gt;&gt; # but external (the keys you see when listed) ones to be lower case, for some reason...</span>
+<span class="sd">    &gt;&gt;&gt; class D(kv_wrap_persister_cls(dict)):</span>
+<span class="sd">    ...     _data_of_obj = staticmethod(lambda obj: obj * 60)  # to demonstrated another way of doing this</span>
+<span class="sd">    ...     _key_of_id = lambda self, _id: _id.lower()  # note if you don&#39;t specify staticmethod, 1st arg must be self</span>
+<span class="sd">    ...     def _id_of_key(self, k):  # a function definition like you&#39;re used to</span>
+<span class="sd">    ...         return k.upper()</span>
+<span class="sd">    &gt;&gt;&gt; d = D()</span>
+<span class="sd">    &gt;&gt;&gt; d[&#39;oNe&#39;] = 1</span>
+<span class="sd">    &gt;&gt;&gt; d.update(TwO=2, tHrEE=3)</span>
+<span class="sd">    &gt;&gt;&gt; list(d.items())  # you see clean lower cased keys at the interface of the store</span>
+<span class="sd">    [(&#39;one&#39;, 60), (&#39;two&#39;, 120), (&#39;three&#39;, 180)]</span>
+<span class="sd">    &gt;&gt;&gt; # but internally, the keys are all upper case</span>
+<span class="sd">    &gt;&gt;&gt; print(d)  # equivalent to print(d.store), so keys and values not wrapped (values were transformed before stored)</span>
+<span class="sd">    {&#39;ONE&#39;: 60, &#39;TWO&#39;: 120, &#39;THREE&#39;: 180}</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; # On the other hand, careful, if you gave the data directly to D, you wouldn&#39;t get that.</span>
+<span class="sd">    &gt;&gt;&gt; d = D({&#39;one&#39;: 1, &#39;two&#39;: 2, &#39;three&#39;: 3})</span>
+<span class="sd">    &gt;&gt;&gt; print(d)</span>
+<span class="sd">    {&#39;one&#39;: 1, &#39;two&#39;: 2, &#39;three&#39;: 3}</span>
+<span class="sd">    &gt;&gt;&gt; # Thus is because when you construct a D with the dict, it initializes the dicts data with it directly</span>
+<span class="sd">    &gt;&gt;&gt; # before the key/val transformers are in place to do their jobs.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="n">name</span> <span class="ow">or</span> <span class="p">(</span><span class="n">persister_cls</span><span class="o">.</span><span class="vm">__qualname__</span> <span class="o">+</span> <span class="s1">&#39;PWrapped&#39;</span><span class="p">)</span>
+
+    <span class="bp">cls</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="p">(</span><span class="n">Store</span><span class="p">,),</span> <span class="p">{})</span>
+
+    <span class="nd">@wraps</span><span class="p">(</span><span class="n">persister_cls</span><span class="o">.</span><span class="fm">__init__</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">persister_cls</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">))</span>
+
+    <span class="bp">cls</span><span class="o">.</span><span class="fm">__init__</span> <span class="o">=</span> <span class="fm">__init__</span>
+
+    <span class="k">return</span> <span class="bp">cls</span></div>
+
+
+<span class="k">def</span> <span class="nf">_wrap_outcoming</span><span class="p">(</span><span class="n">store_cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">,</span> <span class="n">wrapped_method</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">trans_func</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Output-transforming wrapping of the wrapped_method of store_cls.</span>
+<span class="sd">    The transformation is given by trans_func, which could be a one (trans_func(x)</span>
+<span class="sd">    or two (trans_func(self, x)) argument function.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        store_cls: The class that will be transformed</span>
+<span class="sd">        wrapped_method: The method (name) that will be transformed.</span>
+<span class="sd">        trans_func: The transformation function.</span>
+
+<span class="sd">    Returns: Nothing. It transforms the class in-place</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">trans_func</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">num_of_args</span><span class="p">(</span><span class="n">trans_func</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="nd">@wraps</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">store_cls</span><span class="p">,</span> <span class="n">wrapped_method</span><span class="p">))</span>
+            <span class="k">def</span> <span class="nf">new_method</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+                <span class="c1"># # Long form (for explanation)</span>
+                <span class="c1"># super_method = getattr(super(store_cls, self), wrapped_method)</span>
+                <span class="c1"># output_of_super_method = super_method(x)</span>
+                <span class="c1"># transformed_output_of_super_method = trans_func(output_of_super_method)</span>
+                <span class="c1"># return transformed_output_of_super_method</span>
+                <span class="k">return</span> <span class="n">trans_func</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="nb">super</span><span class="p">(</span><span class="n">store_cls</span><span class="p">,</span> <span class="bp">self</span><span class="p">),</span> <span class="n">wrapped_method</span><span class="p">)(</span><span class="n">x</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nd">@wraps</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">store_cls</span><span class="p">,</span> <span class="n">wrapped_method</span><span class="p">))</span>
+            <span class="k">def</span> <span class="nf">new_method</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+                <span class="c1"># # Long form (for explanation)</span>
+                <span class="c1"># super_method = getattr(super(store_cls, self), wrapped_method)</span>
+                <span class="c1"># output_of_super_method = super_method(x)</span>
+                <span class="c1"># transformed_output_of_super_method = trans_func(self, output_of_super_method)</span>
+                <span class="c1"># return transformed_output_of_super_method</span>
+                <span class="k">return</span> <span class="n">trans_func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="nb">super</span><span class="p">(</span><span class="n">store_cls</span><span class="p">,</span> <span class="bp">self</span><span class="p">),</span> <span class="n">wrapped_method</span><span class="p">)(</span><span class="n">x</span><span class="p">))</span>
+
+        <span class="nb">setattr</span><span class="p">(</span><span class="n">store_cls</span><span class="p">,</span> <span class="n">wrapped_method</span><span class="p">,</span> <span class="n">new_method</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_wrap_ingoing</span><span class="p">(</span><span class="n">store_cls</span><span class="p">,</span> <span class="n">wrapped_method</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">trans_func</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">trans_func</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">num_of_args</span><span class="p">(</span><span class="n">trans_func</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="nd">@wraps</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">store_cls</span><span class="p">,</span> <span class="n">wrapped_method</span><span class="p">))</span>
+            <span class="k">def</span> <span class="nf">new_method</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+                <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="nb">super</span><span class="p">(</span><span class="n">store_cls</span><span class="p">,</span> <span class="bp">self</span><span class="p">),</span> <span class="n">wrapped_method</span><span class="p">)(</span><span class="n">trans_func</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nd">@wraps</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">store_cls</span><span class="p">,</span> <span class="n">wrapped_method</span><span class="p">))</span>
+            <span class="k">def</span> <span class="nf">new_method</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+                <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="nb">super</span><span class="p">(</span><span class="n">store_cls</span><span class="p">,</span> <span class="bp">self</span><span class="p">),</span> <span class="n">wrapped_method</span><span class="p">)(</span><span class="n">trans_func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">))</span>
+
+        <span class="nb">setattr</span><span class="p">(</span><span class="n">store_cls</span><span class="p">,</span> <span class="n">wrapped_method</span><span class="p">,</span> <span class="n">new_method</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="wrap_kvs"><a class="viewcode-back" href="../../other.html#py2store.trans.wrap_kvs">[docs]</a><span class="k">def</span> <span class="nf">wrap_kvs</span><span class="p">(</span><span class="n">store</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span>
+             <span class="n">key_of_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">id_of_key</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">obj_of_data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">data_of_obj</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">preset</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">postget</span><span class="o">=</span><span class="kc">None</span>
+             <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Make a Store that is wrapped with the given key/val transformers.</span>
+
+<span class="sd">    Naming convention:</span>
+<span class="sd">        Morphemes:</span>
+<span class="sd">            key: outer key</span>
+<span class="sd">            _id: inner key</span>
+<span class="sd">            obj: outer value</span>
+<span class="sd">            data: inner value</span>
+<span class="sd">        Grammar:</span>
+<span class="sd">            Y_of_X: means that you get a Y output when giving an X input. Also known as X_to_Y.</span>
+
+
+<span class="sd">    Args:</span>
+<span class="sd">        store: Store class or instance</span>
+<span class="sd">        name: Name to give the wrapper class</span>
+<span class="sd">        key_of_id: The outcoming key transformation function.</span>
+<span class="sd">            Forms are `k = key_of_id(_id)` or `k = key_of_id(self, _id)`</span>
+<span class="sd">        id_of_key: The ingoing key transformation function.</span>
+<span class="sd">            Forms are `_id = id_of_key(k)` or `_id = id_of_key(self, k)`</span>
+<span class="sd">        obj_of_data: The outcoming val transformation function.</span>
+<span class="sd">            Forms are `obj = obj_of_data(data)` or `obj = obj_of_data(self, data)`</span>
+<span class="sd">        data_of_obj: The ingoing val transformation function.</span>
+<span class="sd">            Forms are `data = data_of_obj(obj)` or `data = data_of_obj(self, obj)`</span>
+<span class="sd">        preset: A function that is called before doing a `__setitem__`.</span>
+<span class="sd">            The function is called with both `k` and `v` as inputs, and should output a transformed value.</span>
+<span class="sd">            The intent use is to do ingoing value transformations conditioned on the key.</span>
+<span class="sd">            For example, you may want to serialize an object depending on if you&#39;re writing to a</span>
+<span class="sd">             &#39;.csv&#39;, or &#39;.json&#39;, or &#39;.pickle&#39; file.</span>
+<span class="sd">            Forms are `preset(k, obj)` or `preset(self, k, obj)`</span>
+<span class="sd">        postget: A function that is called after the value `v` for a key `k` is be `__getitem__`.</span>
+<span class="sd">            The function is called with both `k` and `v` as inputs, and should output a transformed value.</span>
+<span class="sd">            The intent use is to do outcoming value transformations conditioned on the key.</span>
+<span class="sd">            We already have `obj_of_data` for outcoming value trans, but cannot condition it&#39;s behavior on k.</span>
+<span class="sd">            For example, you may want to deserialize the bytes of a &#39;.csv&#39;, or &#39;.json&#39;, or &#39;.pickle&#39; in different ways.</span>
+<span class="sd">            Forms are `obj = postget(k, data)` or `obj = postget(self, k, data)`</span>
+
+<span class="sd">    Returns:</span>
+
+<span class="sd">    &gt;&gt;&gt; def key_of_id(_id):</span>
+<span class="sd">    ...     return _id.upper()</span>
+<span class="sd">    &gt;&gt;&gt; def id_of_key(k):</span>
+<span class="sd">    ...     return k.lower()</span>
+<span class="sd">    &gt;&gt;&gt; def obj_of_data(data):</span>
+<span class="sd">    ...     return data - 100</span>
+<span class="sd">    &gt;&gt;&gt; def data_of_obj(obj):</span>
+<span class="sd">    ...     return obj + 100</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; A = wrap_kvs(dict, &#39;A&#39;,</span>
+<span class="sd">    ...             key_of_id=key_of_id, id_of_key=id_of_key, obj_of_data=obj_of_data, data_of_obj=data_of_obj)</span>
+<span class="sd">    &gt;&gt;&gt; a = A()</span>
+<span class="sd">    &gt;&gt;&gt; a[&#39;KEY&#39;] = 1</span>
+<span class="sd">    &gt;&gt;&gt; a  # repr is just the base class (dict) repr, so shows &quot;inside&quot; the store (lower case keys and +100)</span>
+<span class="sd">    {&#39;key&#39;: 101}</span>
+<span class="sd">    &gt;&gt;&gt; a[&#39;key&#39;] = 2</span>
+<span class="sd">    &gt;&gt;&gt; print(a)  # repr is just the base class (dict) repr, so shows &quot;inside&quot; the store (lower case keys and +100)</span>
+<span class="sd">    {&#39;key&#39;: 102}</span>
+<span class="sd">    &gt;&gt;&gt; a[&#39;kEy&#39;] = 3</span>
+<span class="sd">    &gt;&gt;&gt; a  # repr is just the base class (dict) repr, so shows &quot;inside&quot; the store (lower case keys and +100)</span>
+<span class="sd">    {&#39;key&#39;: 103}</span>
+<span class="sd">    &gt;&gt;&gt; list(a)  # but from the point of view of the interface the keys are all upper case</span>
+<span class="sd">    [&#39;KEY&#39;]</span>
+<span class="sd">    &gt;&gt;&gt; list(a.items())  # and the values are those we put there.</span>
+<span class="sd">    [(&#39;KEY&#39;, 3)]</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; # And now this: Showing how to condition the value transform (like obj_of_data), but conditioned on key.</span>
+<span class="sd">    &gt;&gt;&gt; B = wrap_kvs(dict, &#39;B&#39;, postget=lambda k, v: f&#39;upper {v}&#39; if k[0].isupper() else f&#39;lower {v}&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; b = B()</span>
+<span class="sd">    &gt;&gt;&gt; b[&#39;BIG&#39;] = &#39;letters&#39;</span>
+<span class="sd">    &gt;&gt;&gt; b[&#39;small&#39;] = &#39;text&#39;</span>
+<span class="sd">    &gt;&gt;&gt; list(b.items())</span>
+<span class="sd">    [(&#39;BIG&#39;, &#39;upper letters&#39;), (&#39;small&#39;, &#39;lower text&#39;)]</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; # Let&#39;s try preset and postget. We&#39;ll wrap a dict and write the same list of lists object to</span>
+<span class="sd">    &gt;&gt;&gt; # keys ending with .csv, .json, and .pkl, specifying the obvious extension-dependent</span>
+<span class="sd">    &gt;&gt;&gt; # serialization/deserialization we want to associate with it.</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; # First, some very simple csv transformation functions</span>
+<span class="sd">    &gt;&gt;&gt; to_csv = lambda LoL: &#39;\\n&#39;.join(map(&#39;,&#39;.join, map(lambda L: (x for x in L), LoL)))</span>
+<span class="sd">    &gt;&gt;&gt; from_csv = lambda csv: list(map(lambda x: x.split(&#39;,&#39;), csv.split(&#39;\\n&#39;)))</span>
+<span class="sd">    &gt;&gt;&gt; LoL = [[&#39;a&#39;,&#39;b&#39;,&#39;c&#39;],[&#39;d&#39;,&#39;e&#39;,&#39;f&#39;]]</span>
+<span class="sd">    &gt;&gt;&gt; assert from_csv(to_csv(LoL)) == LoL</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; import json, pickle</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; def preset(k, v):</span>
+<span class="sd">    ...     if k.endswith(&#39;.csv&#39;):</span>
+<span class="sd">    ...         return to_csv(v)</span>
+<span class="sd">    ...     elif k.endswith(&#39;.json&#39;):</span>
+<span class="sd">    ...         return json.dumps(v)</span>
+<span class="sd">    ...     elif k.endswith(&#39;.pkl&#39;):</span>
+<span class="sd">    ...         return pickle.dumps(v)</span>
+<span class="sd">    ...     else:</span>
+<span class="sd">    ...         return v  # as is</span>
+<span class="sd">    ...</span>
+<span class="sd">    ...</span>
+<span class="sd">    &gt;&gt;&gt; def postget(k, v):</span>
+<span class="sd">    ...     if k.endswith(&#39;.csv&#39;):</span>
+<span class="sd">    ...         return from_csv(v)</span>
+<span class="sd">    ...     elif k.endswith(&#39;.json&#39;):</span>
+<span class="sd">    ...         return json.loads(v)</span>
+<span class="sd">    ...     elif k.endswith(&#39;.pkl&#39;):</span>
+<span class="sd">    ...         return pickle.loads(v)</span>
+<span class="sd">    ...     else:</span>
+<span class="sd">    ...         return v  # as is</span>
+<span class="sd">    ...</span>
+<span class="sd">    &gt;&gt;&gt; mydict = wrap_kvs(dict, preset=preset, postget=postget)</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; obj = [[&#39;a&#39;,&#39;b&#39;,&#39;c&#39;],[&#39;d&#39;,&#39;e&#39;,&#39;f&#39;]]</span>
+<span class="sd">    &gt;&gt;&gt; d = mydict()</span>
+<span class="sd">    &gt;&gt;&gt; d[&#39;foo.csv&#39;] = obj  # store the object as csv</span>
+<span class="sd">    &gt;&gt;&gt; d  # &quot;printing&quot; a dict by-passes the transformations, so we see the data in the &quot;raw&quot; format it is stored in.</span>
+<span class="sd">    {&#39;foo.csv&#39;: &#39;a,b,c\\nd,e,f&#39;}</span>
+<span class="sd">    &gt;&gt;&gt; d[&#39;foo.csv&#39;]  # but if we actually ask for the data, it deserializes to our original object</span>
+<span class="sd">    [[&#39;a&#39;, &#39;b&#39;, &#39;c&#39;], [&#39;d&#39;, &#39;e&#39;, &#39;f&#39;]]</span>
+<span class="sd">    &gt;&gt;&gt; d[&#39;bar.json&#39;] = obj  # store the object as json</span>
+<span class="sd">    &gt;&gt;&gt; d</span>
+<span class="sd">    {&#39;foo.csv&#39;: &#39;a,b,c\\nd,e,f&#39;, &#39;bar.json&#39;: &#39;[[&quot;a&quot;, &quot;b&quot;, &quot;c&quot;], [&quot;d&quot;, &quot;e&quot;, &quot;f&quot;]]&#39;}</span>
+<span class="sd">    &gt;&gt;&gt; d[&#39;bar.json&#39;]</span>
+<span class="sd">    [[&#39;a&#39;, &#39;b&#39;, &#39;c&#39;], [&#39;d&#39;, &#39;e&#39;, &#39;f&#39;]]</span>
+<span class="sd">    &gt;&gt;&gt; d[&#39;bar.json&#39;] = {&#39;a&#39;: 1, &#39;b&#39;: [1, 2], &#39;c&#39;: &#39;normal json&#39;}  # let&#39;s write a normal json instead.</span>
+<span class="sd">    &gt;&gt;&gt; d</span>
+<span class="sd">    {&#39;foo.csv&#39;: &#39;a,b,c\\nd,e,f&#39;, &#39;bar.json&#39;: &#39;{&quot;a&quot;: 1, &quot;b&quot;: [1, 2], &quot;c&quot;: &quot;normal json&quot;}&#39;}</span>
+<span class="sd">    &gt;&gt;&gt; del d[&#39;foo.csv&#39;]</span>
+<span class="sd">    &gt;&gt;&gt; del d[&#39;bar.json&#39;]</span>
+<span class="sd">    &gt;&gt;&gt; d[&#39;foo.pkl&#39;] = obj</span>
+<span class="sd">    &gt;&gt;&gt; print(str(d)[:49])  # see that it looks like bytes of a pickle, indeed!</span>
+<span class="sd">    {&#39;foo.pkl&#39;: b&#39;\\x80\\x03]q\\x00(]q\\x01(X\\x01\\x00\\x00</span>
+<span class="sd">    &gt;&gt;&gt; d[&#39;foo.pkl&#39;]</span>
+<span class="sd">    [[&#39;a&#39;, &#39;b&#39;, &#39;c&#39;], [&#39;d&#39;, &#39;e&#39;, &#39;f&#39;]]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">store</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">partial</span><span class="p">(</span><span class="n">wrap_kvs</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">key_of_id</span><span class="o">=</span><span class="n">key_of_id</span><span class="p">,</span> <span class="n">id_of_key</span><span class="o">=</span><span class="n">id_of_key</span><span class="p">,</span> <span class="n">obj_of_data</span><span class="o">=</span><span class="n">obj_of_data</span><span class="p">,</span>
+                       <span class="n">data_of_obj</span><span class="o">=</span><span class="n">data_of_obj</span><span class="p">,</span> <span class="n">preset</span><span class="o">=</span><span class="n">preset</span><span class="p">,</span> <span class="n">postget</span><span class="o">=</span><span class="n">postget</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="nb">type</span><span class="p">):</span>  <span class="c1"># then consider it to be an instance</span>
+        <span class="n">store_instance</span> <span class="o">=</span> <span class="n">store</span>
+        <span class="n">WrapperStore</span> <span class="o">=</span> <span class="n">wrap_kvs</span><span class="p">(</span><span class="n">Store</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+                                <span class="n">key_of_id</span><span class="o">=</span><span class="n">key_of_id</span><span class="p">,</span> <span class="n">id_of_key</span><span class="o">=</span><span class="n">id_of_key</span><span class="p">,</span>
+                                <span class="n">obj_of_data</span><span class="o">=</span><span class="n">obj_of_data</span><span class="p">,</span> <span class="n">data_of_obj</span><span class="o">=</span><span class="n">data_of_obj</span><span class="p">,</span>
+                                <span class="n">postget</span><span class="o">=</span><span class="n">postget</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">WrapperStore</span><span class="p">(</span><span class="n">store_instance</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>  <span class="c1"># it&#39;s a class we&#39;re wrapping</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">name</span> <span class="ow">or</span> <span class="n">store</span><span class="o">.</span><span class="vm">__qualname__</span> <span class="o">+</span> <span class="s1">&#39;Wrapped&#39;</span>
+
+        <span class="c1"># TODO: This is not the best way to handle this. Investigate another way. ######################</span>
+        <span class="n">global_names</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="nb">globals</span><span class="p">())</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="nb">locals</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">global_names</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NameError</span><span class="p">(</span><span class="s2">&quot;That name is already in use&quot;</span><span class="p">)</span>
+        <span class="c1"># TODO: ########################################################################################</span>
+
+        <span class="n">store_cls</span> <span class="o">=</span> <span class="n">kv_wrap_persister_cls</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>  <span class="c1"># experiment</span>
+
+        <span class="c1"># outcoming ####################################################################################################</span>
+
+        <span class="n">_wrap_outcoming</span><span class="p">(</span><span class="n">store_cls</span><span class="p">,</span> <span class="s1">&#39;_key_of_id&#39;</span><span class="p">,</span> <span class="n">key_of_id</span><span class="p">)</span>
+        <span class="n">_wrap_outcoming</span><span class="p">(</span><span class="n">store_cls</span><span class="p">,</span> <span class="s1">&#39;_obj_of_data&#39;</span><span class="p">,</span> <span class="n">obj_of_data</span><span class="p">)</span>
+
+        <span class="n">_wrap_ingoing</span><span class="p">(</span><span class="n">store_cls</span><span class="p">,</span> <span class="s1">&#39;_id_of_key&#39;</span><span class="p">,</span> <span class="n">id_of_key</span><span class="p">)</span>
+        <span class="n">_wrap_ingoing</span><span class="p">(</span><span class="n">store_cls</span><span class="p">,</span> <span class="s1">&#39;_data_of_obj&#39;</span><span class="p">,</span> <span class="n">data_of_obj</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">postget</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">num_of_args</span><span class="p">(</span><span class="n">postget</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="n">postget</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="nb">super</span><span class="p">(</span><span class="n">store_cls</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">k</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="n">postget</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="nb">super</span><span class="p">(</span><span class="n">store_cls</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">k</span><span class="p">))</span>
+
+            <span class="n">store_cls</span><span class="o">.</span><span class="fm">__getitem__</span> <span class="o">=</span> <span class="fm">__getitem__</span>
+
+        <span class="k">if</span> <span class="n">preset</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">num_of_args</span><span class="p">(</span><span class="n">postget</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="k">def</span> <span class="nf">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">store_cls</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__setitem__</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">preset</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">def</span> <span class="nf">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">store_cls</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__setitem__</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">preset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">))</span>
+
+            <span class="n">store_cls</span><span class="o">.</span><span class="fm">__setitem__</span> <span class="o">=</span> <span class="fm">__setitem__</span>
+
+        <span class="k">return</span> <span class="n">store_cls</span></div>
+
+
+<span class="k">def</span> <span class="nf">_kv_wrap_outcoming_keys</span><span class="p">(</span><span class="n">trans_func</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Transform &#39;out-coming&#39; keys, that is, the keys you see when you ask for them,</span>
+<span class="sd">    say, through __iter__(), keys(), or first element of the items() pairs.</span>
+
+<span class="sd">    Use this when you wouldn&#39;t use the keys in their original format,</span>
+<span class="sd">    or when you want to extract information from it.</span>
+
+<span class="sd">    Warning: If you haven&#39;t also wrapped incoming keys with a corresponding inverse transformation,</span>
+<span class="sd">    you won&#39;t be able to use the outcoming keys to fetch data.</span>
+
+<span class="sd">    &gt;&gt;&gt; from collections import UserDict</span>
+<span class="sd">    &gt;&gt;&gt; S = kv_wrap.outcoming_keys(lambda x: x[5:])(UserDict)</span>
+<span class="sd">    &gt;&gt;&gt; s = S({&#39;root/foo&#39;: 10, &#39;root/bar&#39;: &#39;xo&#39;})</span>
+<span class="sd">    &gt;&gt;&gt; list(s)</span>
+<span class="sd">    [&#39;foo&#39;, &#39;bar&#39;]</span>
+<span class="sd">    &gt;&gt;&gt; list(s.keys())</span>
+<span class="sd">    [&#39;foo&#39;, &#39;bar&#39;]</span>
+
+<span class="sd">    # TODO: Asymmetric key trans breaks getting items (therefore items()). Resolve (remove items() for asym keys?)</span>
+<span class="sd">    # &gt;&gt;&gt; list(s.items())</span>
+<span class="sd">    # [(&#39;foo&#39;, 10), (&#39;bar&#39;, &#39;xo&#39;)]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">name</span> <span class="ow">or</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="s1">&#39;__qualname__&#39;</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">o</span><span class="o">.</span><span class="vm">__class__</span><span class="p">,</span> <span class="s1">&#39;__qualname__&#39;</span><span class="p">))</span> <span class="o">+</span> <span class="s1">&#39;_kr&#39;</span>
+        <span class="k">return</span> <span class="n">wrap_kvs</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">key_of_id</span><span class="o">=</span><span class="n">trans_func</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">wrapper</span>
+
+
+<span class="k">def</span> <span class="nf">_kv_wrap_ingoing_keys</span><span class="p">(</span><span class="n">trans_func</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Transform &#39;in-going&#39; keys, that is, the keys you see when you ask for them,</span>
+<span class="sd">    say, through __iter__(), keys(), or first element of the items() pairs.</span>
+
+<span class="sd">    Use this when your context holds objects themselves holding key information, but you don&#39;t want to</span>
+<span class="sd">    (because you shouldn&#39;t) &#39;manually&#39; extract that information and construct the key manually every time you need</span>
+<span class="sd">    to write something or fetch some existing data.</span>
+
+<span class="sd">    Warning: If you haven&#39;t also wrapped outcoming keys with a corresponding inverse transformation,</span>
+<span class="sd">    you won&#39;t be able to use the incoming keys to fetch data.</span>
+
+<span class="sd">    &gt;&gt;&gt; from collections import UserDict</span>
+<span class="sd">    &gt;&gt;&gt; S = kv_wrap.ingoing_keys(lambda x: &#39;root/&#39; + x)(UserDict)</span>
+<span class="sd">    &gt;&gt;&gt; s = S()</span>
+<span class="sd">    &gt;&gt;&gt; s[&#39;foo&#39;] = 10</span>
+<span class="sd">    &gt;&gt;&gt; s[&#39;bar&#39;] = &#39;xo&#39;</span>
+<span class="sd">    &gt;&gt;&gt; list(s)</span>
+<span class="sd">    [&#39;root/foo&#39;, &#39;root/bar&#39;]</span>
+<span class="sd">    &gt;&gt;&gt; list(s.keys())</span>
+<span class="sd">    [&#39;root/foo&#39;, &#39;root/bar&#39;]</span>
+
+<span class="sd">    # TODO: Asymmetric key trans breaks getting items (therefore items()). Resolve (remove items() for asym keys?)</span>
+<span class="sd">    # &gt;&gt;&gt; list(s.items())</span>
+<span class="sd">    # [(&#39;root/foo&#39;, 10), (&#39;root/bar&#39;, &#39;xo&#39;)]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">name</span> <span class="ow">or</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="s1">&#39;__qualname__&#39;</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">o</span><span class="o">.</span><span class="vm">__class__</span><span class="p">,</span> <span class="s1">&#39;__qualname__&#39;</span><span class="p">))</span> <span class="o">+</span> <span class="s1">&#39;_kw&#39;</span>
+        <span class="k">return</span> <span class="n">wrap_kvs</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">id_of_key</span><span class="o">=</span><span class="n">trans_func</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">wrapper</span>
+
+
+<span class="k">def</span> <span class="nf">_kv_wrap_outcoming_vals</span><span class="p">(</span><span class="n">trans_func</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Transform &#39;out-coming&#39; values, that is, the values you see when you ask for them,</span>
+<span class="sd">    say, through the values() or the second element of items() pairs.</span>
+<span class="sd">    This can be seen as adding a de-serialization layer: trans_func being the de-serialization function.</span>
+
+<span class="sd">    For example, say your store gives you values of the bytes type, but you want to use text, or gives you text,</span>
+<span class="sd">    but you want it to be interpreted as a JSON formatted text and get a dict instead. Both of these are</span>
+<span class="sd">    de-serialization layers, or out-coming value transformations.</span>
+
+<span class="sd">    Warning: If it matters, make sure you also wrapped with a corresponding inverse serialization.</span>
+
+<span class="sd">    &gt;&gt;&gt; from collections import UserDict</span>
+<span class="sd">    &gt;&gt;&gt; S = kv_wrap.outcoming_vals(lambda x: x * 2)(UserDict)</span>
+<span class="sd">    &gt;&gt;&gt; s = S(foo=10, bar=&#39;xo&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; list(s.values())</span>
+<span class="sd">    [20, &#39;xoxo&#39;]</span>
+<span class="sd">    &gt;&gt;&gt; list(s.items())</span>
+<span class="sd">    [(&#39;foo&#39;, 20), (&#39;bar&#39;, &#39;xoxo&#39;)]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">name</span> <span class="ow">or</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="s1">&#39;__qualname__&#39;</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">o</span><span class="o">.</span><span class="vm">__class__</span><span class="p">,</span> <span class="s1">&#39;__qualname__&#39;</span><span class="p">))</span> <span class="o">+</span> <span class="s1">&#39;_vr&#39;</span>
+        <span class="k">return</span> <span class="n">wrap_kvs</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">obj_of_data</span><span class="o">=</span><span class="n">trans_func</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">wrapper</span>
+
+
+<span class="k">def</span> <span class="nf">_kv_wrap_ingoing_vals</span><span class="p">(</span><span class="n">trans_func</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Transform &#39;in-going&#39; values, that is, the values at the level of the store&#39;s interface are transformed</span>
+<span class="sd">    to a different value before writing to the wrapped store.</span>
+<span class="sd">    This can be seen as adding a serialization layer: trans_func being the serialization function.</span>
+
+<span class="sd">    For example, say you have a list of audio samples, and you want to save these in a WAV format.</span>
+
+<span class="sd">    Warning: If it matters, make sure you also wrapped with a corresponding inverse de-serialization.</span>
+
+<span class="sd">    &gt;&gt;&gt; from collections import UserDict</span>
+<span class="sd">    &gt;&gt;&gt; S = kv_wrap.ingoing_vals(lambda x: x * 2)(UserDict)</span>
+<span class="sd">    &gt;&gt;&gt; s = S()</span>
+<span class="sd">    &gt;&gt;&gt; s[&#39;foo&#39;] = 10</span>
+<span class="sd">    &gt;&gt;&gt; s[&#39;bar&#39;] = &#39;xo&#39;</span>
+<span class="sd">    &gt;&gt;&gt; list(s.values())</span>
+<span class="sd">    [20, &#39;xoxo&#39;]</span>
+<span class="sd">    &gt;&gt;&gt; list(s.items())</span>
+<span class="sd">    [(&#39;foo&#39;, 20), (&#39;bar&#39;, &#39;xoxo&#39;)]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">name</span> <span class="ow">or</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="s1">&#39;__qualname__&#39;</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">o</span><span class="o">.</span><span class="vm">__class__</span><span class="p">,</span> <span class="s1">&#39;__qualname__&#39;</span><span class="p">))</span> <span class="o">+</span> <span class="s1">&#39;_vw&#39;</span>
+        <span class="k">return</span> <span class="n">wrap_kvs</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">data_of_obj</span><span class="o">=</span><span class="n">trans_func</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">wrapper</span>
+
+
+<span class="k">def</span> <span class="nf">_ingoing_vals_wrt_to_keys</span><span class="p">(</span><span class="n">trans_func</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">name</span> <span class="ow">or</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="s1">&#39;__qualname__&#39;</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">o</span><span class="o">.</span><span class="vm">__class__</span><span class="p">,</span> <span class="s1">&#39;__qualname__&#39;</span><span class="p">))</span> <span class="o">+</span> <span class="s1">&#39;_vwk&#39;</span>
+        <span class="k">return</span> <span class="n">wrap_kvs</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">preset</span><span class="o">=</span><span class="n">trans_func</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">wrapper</span>
+
+
+<span class="k">def</span> <span class="nf">_outcoming_vals_wrt_to_keys</span><span class="p">(</span><span class="n">trans_func</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">name</span> <span class="ow">or</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="s1">&#39;__qualname__&#39;</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">o</span><span class="o">.</span><span class="vm">__class__</span><span class="p">,</span> <span class="s1">&#39;__qualname__&#39;</span><span class="p">))</span> <span class="o">+</span> <span class="s1">&#39;_vrk&#39;</span>
+        <span class="k">return</span> <span class="n">wrap_kvs</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">postget</span><span class="o">=</span><span class="n">trans_func</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">wrapper</span>
+
+
+<div class="viewcode-block" id="mk_trans_obj"><a class="viewcode-back" href="../../other.html#py2store.trans.mk_trans_obj">[docs]</a><span class="k">def</span> <span class="nf">mk_trans_obj</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Convenience method to quickly make a trans_obj (just an object holding some trans functions&quot;&quot;&quot;</span>
+    <span class="c1"># TODO: Could make this more flexible (assuming here only staticmethods) and validate inputs...</span>
+    <span class="k">return</span> <span class="nb">type</span><span class="p">(</span><span class="s1">&#39;TransObj&#39;</span><span class="p">,</span> <span class="p">(),</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="nb">staticmethod</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()})()</span></div>
+
+
+<div class="viewcode-block" id="kv_wrap"><a class="viewcode-back" href="../../other.html#py2store.trans.kv_wrap">[docs]</a><span class="k">def</span> <span class="nf">kv_wrap</span><span class="p">(</span><span class="n">trans_obj</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    kv_wrap: A function that makes a wrapper (a decorator) that will get the wrappers from methods of the input object.</span>
+
+<span class="sd">    kv_wrap also has attributes:</span>
+<span class="sd">        outcoming_keys, ingoing_keys, outcoming_vals, ingoing_vals, and val_reads_wrt_to_keys</span>
+<span class="sd">    which will only add a single specific wrapper (specified as a function), when that&#39;s what you need.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">key_of_id</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">trans_obj</span><span class="p">,</span> <span class="s1">&#39;_key_of_id&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">id_of_key</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">trans_obj</span><span class="p">,</span> <span class="s1">&#39;_id_of_key&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">obj_of_data</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">trans_obj</span><span class="p">,</span> <span class="s1">&#39;_obj_of_data&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">data_of_obj</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">trans_obj</span><span class="p">,</span> <span class="s1">&#39;_data_of_obj&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">preset</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">trans_obj</span><span class="p">,</span> <span class="s1">&#39;_preset&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">postget</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">trans_obj</span><span class="p">,</span> <span class="s1">&#39;_postget&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">name</span> <span class="ow">or</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="s1">&#39;__qualname__&#39;</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">o</span><span class="o">.</span><span class="vm">__class__</span><span class="p">,</span> <span class="s1">&#39;__qualname__&#39;</span><span class="p">))</span> <span class="o">+</span> <span class="s1">&#39;_kr&#39;</span>
+        <span class="k">return</span> <span class="n">wrap_kvs</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">key_of_id</span><span class="o">=</span><span class="n">key_of_id</span><span class="p">,</span> <span class="n">id_of_key</span><span class="o">=</span><span class="n">id_of_key</span><span class="p">,</span> <span class="n">obj_of_data</span><span class="o">=</span><span class="n">obj_of_data</span><span class="p">,</span>
+                        <span class="n">data_of_obj</span><span class="o">=</span><span class="n">data_of_obj</span><span class="p">,</span> <span class="n">preset</span><span class="o">=</span><span class="n">preset</span><span class="p">,</span> <span class="n">postget</span><span class="o">=</span><span class="n">postget</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">wrapper</span></div>
+
+
+<span class="n">kv_wrap</span><span class="o">.</span><span class="n">mk_trans_obj</span> <span class="o">=</span> <span class="n">mk_trans_obj</span>  <span class="c1"># to have a trans_obj maker handy</span>
+<span class="n">kv_wrap</span><span class="o">.</span><span class="n">outcoming_keys</span> <span class="o">=</span> <span class="n">_kv_wrap_outcoming_keys</span>
+<span class="n">kv_wrap</span><span class="o">.</span><span class="n">ingoing_keys</span> <span class="o">=</span> <span class="n">_kv_wrap_ingoing_keys</span>
+<span class="n">kv_wrap</span><span class="o">.</span><span class="n">outcoming_vals</span> <span class="o">=</span> <span class="n">_kv_wrap_outcoming_vals</span>
+<span class="n">kv_wrap</span><span class="o">.</span><span class="n">ingoing_vals</span> <span class="o">=</span> <span class="n">_kv_wrap_ingoing_vals</span>
+<span class="n">kv_wrap</span><span class="o">.</span><span class="n">ingoing_vals_wrt_to_keys</span> <span class="o">=</span> <span class="n">_ingoing_vals_wrt_to_keys</span>
+<span class="n">kv_wrap</span><span class="o">.</span><span class="n">outcoming_vals_wrt_to_keys</span> <span class="o">=</span> <span class="n">_outcoming_vals_wrt_to_keys</span>
+
+<span class="n">_method_name_for</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;write&#39;</span><span class="p">:</span> <span class="s1">&#39;__setitem__&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;read&#39;</span><span class="p">:</span> <span class="s1">&#39;__getitem__&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;delete&#39;</span><span class="p">:</span> <span class="s1">&#39;__delitem__&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;list&#39;</span><span class="p">:</span> <span class="s1">&#39;__iter__&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;count&#39;</span><span class="p">:</span> <span class="s1">&#39;__len__&#39;</span>
+<span class="p">}</span>
+
+
+<span class="k">def</span> <span class="nf">_insert_alias</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">method_name</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">alias</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">method_name</span><span class="p">):</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">alias</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">method_name</span><span class="p">))</span>
+
+
+<div class="viewcode-block" id="insert_aliases"><a class="viewcode-back" href="../../other.html#py2store.trans.insert_aliases">[docs]</a><span class="k">def</span> <span class="nf">insert_aliases</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">write</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">read</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">delete</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="nb">list</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Insert method aliases of CRUD operations of a store (class or instance).</span>
+<span class="sd">    If store is a class, you&#39;ll get a copy of the class with those methods added.</span>
+<span class="sd">    If store is an instance, the methods will be added in place (no copy will be made).</span>
+
+<span class="sd">    Note: If an operation (write, read, delete, list, count) is not specified, no alias will be created for</span>
+<span class="sd">    that operation.</span>
+
+<span class="sd">    IMPORTANT NOTE: The signatures of the methods the aliases will point to will not change.</span>
+<span class="sd">    We say this because, you can call the write method &quot;dump&quot;, but you&#39;ll have to use it as</span>
+<span class="sd">    `store.dump(key, val)`, not `store.dump(val, key)`, which is the signature you&#39;re probably used to</span>
+<span class="sd">    (it&#39;s the one used by json.dump or pickle.dump for example). If you want that familiar interface,</span>
+<span class="sd">    using the insert_load_dump_aliases function.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        store: The store to extend with aliases.</span>
+<span class="sd">        write: Desired method name for __setitem__</span>
+<span class="sd">        read: Desired method name for __getitem__</span>
+<span class="sd">        delete: Desired method name for __delitem__</span>
+<span class="sd">        list: Desired method name for __iter__</span>
+<span class="sd">        count: Desired method name for __len__</span>
+
+<span class="sd">    Returns: A store with the desired aliases.</span>
+
+<span class="sd">    &gt;&gt;&gt; # Example of extending a class</span>
+<span class="sd">    &gt;&gt;&gt; mydict = insert_aliases(dict, write=&#39;dump&#39;, read=&#39;load&#39;, delete=&#39;rm&#39;, list=&#39;peek&#39;, count=&#39;size&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; s = mydict(true=&#39;love&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; s.dump(&#39;friends&#39;, &#39;forever&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; s</span>
+<span class="sd">    {&#39;true&#39;: &#39;love&#39;, &#39;friends&#39;: &#39;forever&#39;}</span>
+<span class="sd">    &gt;&gt;&gt; s.load(&#39;true&#39;)</span>
+<span class="sd">    &#39;love&#39;</span>
+<span class="sd">    &gt;&gt;&gt; list(s.peek())</span>
+<span class="sd">    [&#39;true&#39;, &#39;friends&#39;]</span>
+<span class="sd">    &gt;&gt;&gt; s.size()</span>
+<span class="sd">    2</span>
+<span class="sd">    &gt;&gt;&gt; s.rm(&#39;true&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; s</span>
+<span class="sd">    {&#39;friends&#39;: &#39;forever&#39;}</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; # Example of extending an instance</span>
+<span class="sd">    &gt;&gt;&gt; from collections import UserDict</span>
+<span class="sd">    &gt;&gt;&gt; s = UserDict(true=&#39;love&#39;)  # make (and instance) of a UserDict (can&#39;t modify a dict instance)</span>
+<span class="sd">    &gt;&gt;&gt; # make aliases of note that you don&#39;t need</span>
+<span class="sd">    &gt;&gt;&gt; s = insert_aliases(s, write=&#39;put&#39;, read=&#39;retrieve&#39;, count=&#39;num_of_items&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; s.put(&#39;friends&#39;, &#39;forever&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; s</span>
+<span class="sd">    {&#39;true&#39;: &#39;love&#39;, &#39;friends&#39;: &#39;forever&#39;}</span>
+<span class="sd">    &gt;&gt;&gt; s.retrieve(&#39;true&#39;)</span>
+<span class="sd">    &#39;love&#39;</span>
+<span class="sd">    &gt;&gt;&gt; s.num_of_items()</span>
+<span class="sd">    2</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="nb">type</span><span class="p">):</span>
+        <span class="n">store</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">store</span><span class="o">.</span><span class="vm">__qualname__</span><span class="p">,</span> <span class="p">(</span><span class="n">store</span><span class="p">,),</span> <span class="p">{})</span>
+    <span class="k">for</span> <span class="n">alias</span><span class="p">,</span> <span class="n">method_name</span> <span class="ow">in</span> <span class="n">_method_name_for</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">_insert_alias</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">method_name</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="nb">locals</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">alias</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">store</span></div>
+
+
+<div class="viewcode-block" id="insert_load_dump_aliases"><a class="viewcode-back" href="../../other.html#py2store.trans.insert_load_dump_aliases">[docs]</a><span class="k">def</span> <span class="nf">insert_load_dump_aliases</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">delete</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="nb">list</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Insert load and dump methods, with familiar dump(obj, location) signature.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        store: The store to extend with aliases.</span>
+<span class="sd">        delete: Desired method name for __delitem__</span>
+<span class="sd">        list: Desired method name for __iter__</span>
+<span class="sd">        count: Desired method name for __len__</span>
+
+<span class="sd">    Returns: A store with the desired aliases.</span>
+
+<span class="sd">    &gt;&gt;&gt; mydict = insert_load_dump_aliases(dict)</span>
+<span class="sd">    &gt;&gt;&gt; s = mydict()</span>
+<span class="sd">    &gt;&gt;&gt; s.dump(obj=&#39;love&#39;, key=&#39;true&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; s</span>
+<span class="sd">    {&#39;true&#39;: &#39;love&#39;}</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">store</span> <span class="o">=</span> <span class="n">insert_aliases</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">read</span><span class="o">=</span><span class="s1">&#39;load&#39;</span><span class="p">,</span> <span class="n">delete</span><span class="o">=</span><span class="n">delete</span><span class="p">,</span> <span class="nb">list</span><span class="o">=</span><span class="nb">list</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="n">count</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">dump</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__setitem__</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">obj</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="nb">type</span><span class="p">):</span>
+        <span class="n">store</span><span class="o">.</span><span class="n">dump</span> <span class="o">=</span> <span class="n">dump</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">store</span><span class="o">.</span><span class="n">dump</span> <span class="o">=</span> <span class="n">types</span><span class="o">.</span><span class="n">MethodType</span><span class="p">(</span><span class="n">dump</span><span class="p">,</span> <span class="n">store</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">store</span></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">py2store</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, Thor.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.4.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

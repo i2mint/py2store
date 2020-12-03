@@ -1,0 +1,699 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>py2store.appendable &#8212; py2store 0.0.7 documentation</title>
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css" />
+    <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for py2store.appendable</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Tools to add append-functionality to key-val stores. The main function is</span>
+<span class="sd">    `appendable_store_cls = add_append_functionality_to_store_cls(store_cls, item2kv, ...)`</span>
+<span class="sd">You give it the `store_cls` you want to sub class, and a item -&gt; (key, val) function, and you get a store (subclass) that</span>
+<span class="sd">has a `store.append(item)` method. Also includes an extend method (that just called appends in a loop.</span>
+
+<span class="sd">See add_append_functionality_to_store_cls docs for examples.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">types</span>
+
+<span class="kn">from</span> <span class="nn">py2store.trans</span> <span class="kn">import</span> <span class="n">store_decorator</span>
+
+
+<div class="viewcode-block" id="define_extend_as_seq_of_appends"><a class="viewcode-back" href="../../module_docs/py2store/appendable.html#py2store.appendable.define_extend_as_seq_of_appends">[docs]</a><span class="k">def</span> <span class="nf">define_extend_as_seq_of_appends</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Inject an extend method in obj that will used append method.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        obj: Class (type) or instance of an object that has an &quot;append&quot; method.</span>
+
+<span class="sd">    Returns: The obj, but with that extend method.</span>
+
+<span class="sd">    &gt;&gt;&gt; class A:</span>
+<span class="sd">    ...     def __init__(self):</span>
+<span class="sd">    ...         self.t = list()</span>
+<span class="sd">    ...     def append(self, item):</span>
+<span class="sd">    ...         self.t.append(item)</span>
+<span class="sd">    ...</span>
+<span class="sd">    &gt;&gt;&gt; AA = define_extend_as_seq_of_appends(A)</span>
+<span class="sd">    &gt;&gt;&gt; a = AA()</span>
+<span class="sd">    &gt;&gt;&gt; a.extend([1,2,3])</span>
+<span class="sd">    &gt;&gt;&gt; a.t</span>
+<span class="sd">    [1, 2, 3]</span>
+<span class="sd">    &gt;&gt;&gt; a.extend([10, 20])</span>
+<span class="sd">    &gt;&gt;&gt; a.t</span>
+<span class="sd">    [1, 2, 3, 10, 20]</span>
+<span class="sd">    &gt;&gt;&gt; a = A()</span>
+<span class="sd">    &gt;&gt;&gt; a = define_extend_as_seq_of_appends(a)</span>
+<span class="sd">    &gt;&gt;&gt; a.extend([1,2,3])</span>
+<span class="sd">    &gt;&gt;&gt; a.t</span>
+<span class="sd">    [1, 2, 3]</span>
+<span class="sd">    &gt;&gt;&gt; a.extend([10, 20])</span>
+<span class="sd">    &gt;&gt;&gt; a.t</span>
+<span class="sd">    [1, 2, 3, 10, 20]</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="nb">hasattr</span><span class="p">(</span>
+        <span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;append&quot;</span>
+    <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Your object needs to have an append method! Object was: </span><span class="si">{</span><span class="n">obj</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="k">def</span> <span class="nf">extend</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">items</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">items</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="nb">type</span><span class="p">):</span>
+        <span class="n">obj</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="p">(</span><span class="n">obj</span><span class="p">,),</span> <span class="p">{})</span>
+        <span class="n">obj</span><span class="o">.</span><span class="n">extend</span> <span class="o">=</span> <span class="n">extend</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">obj</span><span class="o">.</span><span class="n">extend</span> <span class="o">=</span> <span class="n">types</span><span class="o">.</span><span class="n">MethodType</span><span class="p">(</span><span class="n">extend</span><span class="p">,</span> <span class="n">obj</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">obj</span></div>
+
+
+<span class="c1">########################################################################################################################</span>
+
+<span class="k">class</span> <span class="nc">NotSpecified</span><span class="p">:</span>
+    <span class="k">pass</span>
+
+
+<div class="viewcode-block" id="mk_item2kv_for"><a class="viewcode-back" href="../../module_docs/py2store/appendable.html#py2store.appendable.mk_item2kv_for">[docs]</a><span class="k">class</span> <span class="nc">mk_item2kv_for</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;A bunch of functions to make item2kv functions</span>
+
+<span class="sd">    A few examples (see individual methods&#39; docs for more examples)</span>
+
+<span class="sd">    &gt;&gt;&gt; # item_to_key</span>
+<span class="sd">    &gt;&gt;&gt; item2kv = mk_item2kv_for.item_to_key(item2key=lambda item: item[&#39;L&#39;] )</span>
+<span class="sd">    &gt;&gt;&gt; item2kv({&#39;L&#39;: &#39;let&#39;, &#39;I&#39;: &#39;it&#39;, &#39;G&#39;: &#39;go&#39;})</span>
+<span class="sd">    (&#39;let&#39;, {&#39;L&#39;: &#39;let&#39;, &#39;I&#39;: &#39;it&#39;, &#39;G&#39;: &#39;go&#39;})</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; # utc_key</span>
+<span class="sd">    &gt;&gt;&gt; import time</span>
+<span class="sd">    &gt;&gt;&gt; item2key = mk_item2kv_for.utc_key()</span>
+<span class="sd">    &gt;&gt;&gt; k, v = item2key(&#39;some data&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; assert abs(time.time() - k) &lt; 0.01  # which asserts that k is indeed a (current) utc timestamp</span>
+<span class="sd">    &gt;&gt;&gt; assert v == &#39;some data&#39;  # just the item itself</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; # item_to_key_params_and_val</span>
+<span class="sd">    &gt;&gt;&gt; item_to_kv = mk_item2kv_for.item_to_key_params_and_val(lambda x: ((x[&#39;L&#39;], x[&#39;I&#39;]), x[&#39;G&#39;]), &#39;{}/{}&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; item_to_kv({&#39;L&#39;: &#39;let&#39;, &#39;I&#39;: &#39;it&#39;, &#39;G&#39;: &#39;go&#39;})</span>
+<span class="sd">    (&#39;let/it&#39;, &#39;go&#39;)</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; # fields</span>
+<span class="sd">    &gt;&gt;&gt; item_to_kv = mk_item2kv_for.fields([&#39;L&#39;, &#39;I&#39;])</span>
+<span class="sd">    &gt;&gt;&gt; item_to_kv({&#39;L&#39;: &#39;let&#39;, &#39;I&#39;: &#39;it&#39;, &#39;G&#39;: &#39;go&#39;})</span>
+<span class="sd">    ({&#39;L&#39;: &#39;let&#39;, &#39;I&#39;: &#39;it&#39;}, {&#39;G&#39;: &#39;go&#39;})</span>
+<span class="sd">    &gt;&gt;&gt; item_to_kv = mk_item2kv_for.fields((&#39;G&#39;, &#39;L&#39;), keep_field_in_value=True)</span>
+<span class="sd">    &gt;&gt;&gt; item_to_kv({&#39;L&#39;: &#39;let&#39;, &#39;I&#39;: &#39;it&#39;, &#39;G&#39;: &#39;go&#39;})  # note the order of the key is not (&#39;G&#39;, &#39;L&#39;)...</span>
+<span class="sd">    ({&#39;L&#39;: &#39;let&#39;, &#39;G&#39;: &#39;go&#39;}, {&#39;L&#39;: &#39;let&#39;, &#39;I&#39;: &#39;it&#39;, &#39;G&#39;: &#39;go&#39;})</span>
+<span class="sd">    &gt;&gt;&gt; item_to_kv = mk_item2kv_for.fields((&#39;G&#39;, &#39;L&#39;), key_as_tuple=True)  # but (&#39;G&#39;, &#39;L&#39;) order is respected here</span>
+<span class="sd">    &gt;&gt;&gt; item_to_kv({&#39;L&#39;: &#39;let&#39;, &#39;I&#39;: &#39;it&#39;, &#39;G&#39;: &#39;go&#39;})</span>
+<span class="sd">    ((&#39;go&#39;, &#39;let&#39;), {&#39;I&#39;: &#39;it&#39;})</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="mk_item2kv_for.item_to_key"><a class="viewcode-back" href="../../module_docs/py2store/appendable.html#py2store.appendable.mk_item2kv_for.item_to_key">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">item_to_key</span><span class="p">(</span><span class="n">item2key</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Make item2kv from a item2key function (the value will be the item itself).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item2key: an item -&gt; key function</span>
+
+<span class="sd">        Returns: an item -&gt; (key, val) function</span>
+
+<span class="sd">        &gt;&gt;&gt; item2key = lambda item: item[&#39;G&#39;]  # use value of &#39;L&#39; as the key</span>
+<span class="sd">        &gt;&gt;&gt; item2key({&#39;L&#39;: &#39;let&#39;, &#39;I&#39;: &#39;it&#39;, &#39;G&#39;: &#39;go&#39;})</span>
+<span class="sd">        &#39;go&#39;</span>
+<span class="sd">        &gt;&gt;&gt; item2kv = mk_item2kv_for.item_to_key(item2key)</span>
+<span class="sd">        &gt;&gt;&gt; item2kv({&#39;L&#39;: &#39;let&#39;, &#39;I&#39;: &#39;it&#39;, &#39;G&#39;: &#39;go&#39;})</span>
+<span class="sd">        (&#39;go&#39;, {&#39;L&#39;: &#39;let&#39;, &#39;I&#39;: &#39;it&#39;, &#39;G&#39;: &#39;go&#39;})</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">def</span> <span class="nf">item2kv</span><span class="p">(</span><span class="n">item</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">item2key</span><span class="p">(</span><span class="n">item</span><span class="p">),</span> <span class="n">item</span>
+
+        <span class="k">return</span> <span class="n">item2kv</span></div>
+
+<div class="viewcode-block" id="mk_item2kv_for.field"><a class="viewcode-back" href="../../module_docs/py2store/appendable.html#py2store.appendable.mk_item2kv_for.field">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">field</span><span class="p">(</span><span class="n">field</span><span class="p">,</span> <span class="n">keep_field_in_value</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">dflt_if_missing</span><span class="o">=</span><span class="n">NotSpecified</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;item2kv that uses a specific key of a (mapping) item as the key</span>
+
+<span class="sd">        Note: If keep_field_in_value=False, the field will be popped OUT of the item.</span>
+<span class="sd">         If that&#39;s not the desired effect, one should feed copies of the items (e.g. map(dict.copy, items))</span>
+
+<span class="sd">        :param field: The field (value) to use as the returned key</span>
+<span class="sd">        :param keep_field_in_value: Whether to leave the field in the item. If False, will pop it out</span>
+<span class="sd">        :param dflt_if_missing: If specified (even None) will use the specified key as the key, if the field is missig</span>
+<span class="sd">        :return: A item2kv function</span>
+
+<span class="sd">        &gt;&gt;&gt; item2kv = mk_item2kv_for.field(&#39;G&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; item2kv({&#39;L&#39;: &#39;let&#39;, &#39;I&#39;: &#39;it&#39;, &#39;G&#39;: &#39;go&#39;})</span>
+<span class="sd">        (&#39;go&#39;, {&#39;L&#39;: &#39;let&#39;, &#39;I&#39;: &#39;it&#39;, &#39;G&#39;: &#39;go&#39;})</span>
+<span class="sd">        &gt;&gt;&gt; item2kv = mk_item2kv_for.field(&#39;G&#39;, keep_field_in_value=False)</span>
+<span class="sd">        &gt;&gt;&gt; item2kv({&#39;L&#39;: &#39;let&#39;, &#39;I&#39;: &#39;it&#39;, &#39;G&#39;: &#39;go&#39;})</span>
+<span class="sd">        (&#39;go&#39;, {&#39;L&#39;: &#39;let&#39;, &#39;I&#39;: &#39;it&#39;})</span>
+<span class="sd">        &gt;&gt;&gt; item2kv = mk_item2kv_for.field(&#39;G&#39;, dflt_if_missing=None)</span>
+<span class="sd">        &gt;&gt;&gt; item2kv({&#39;L&#39;: &#39;let&#39;, &#39;I&#39;: &#39;it&#39;, &#39;DIE&#39;: &#39;go&#39;})</span>
+<span class="sd">        (None, {&#39;L&#39;: &#39;let&#39;, &#39;I&#39;: &#39;it&#39;, &#39;DIE&#39;: &#39;go&#39;})</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">dflt_if_missing</span> <span class="ow">is</span> <span class="n">NotSpecified</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">keep_field_in_value</span><span class="p">:</span>
+                <span class="k">def</span> <span class="nf">item2kv</span><span class="p">(</span><span class="n">item</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="n">item</span><span class="p">[</span><span class="n">field</span><span class="p">],</span> <span class="n">item</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">def</span> <span class="nf">item2kv</span><span class="p">(</span><span class="n">item</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="n">item</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">field</span><span class="p">),</span> <span class="n">item</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">keep_field_in_value</span><span class="p">:</span>
+                <span class="k">def</span> <span class="nf">item2kv</span><span class="p">(</span><span class="n">item</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">field</span><span class="p">,</span> <span class="n">dflt_if_missing</span><span class="p">),</span> <span class="n">item</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">def</span> <span class="nf">item2kv</span><span class="p">(</span><span class="n">item</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="n">item</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">field</span><span class="p">,</span> <span class="n">dflt_if_missing</span><span class="p">),</span> <span class="n">item</span>
+
+        <span class="k">return</span> <span class="n">item2kv</span></div>
+
+<div class="viewcode-block" id="mk_item2kv_for.utc_key"><a class="viewcode-back" href="../../module_docs/py2store/appendable.html#py2store.appendable.mk_item2kv_for.utc_key">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">utc_key</span><span class="p">(</span><span class="n">offset_s</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Make an item2kv function that uses the current time as the key, and the unchanged item as a value.</span>
+<span class="sd">        The offset_s, which is added to the output key, can be used, for example, to align to another system&#39;s clock,</span>
+<span class="sd">        or to get a more accurate timestamp of an event.</span>
+
+<span class="sd">        Use case for offset_s:</span>
+<span class="sd">            * Align to another system&#39;s clock</span>
+<span class="sd">            * Get more accurate timestamping of an event. For example, in situations where the item is a chunk of live</span>
+<span class="sd">            streaming data and we want the key (timestamp) to represent the timestamp of the beginning of the chunk.</span>
+<span class="sd">            Without an offset_s, the timestamp would be the timestamp after the last byte of the chunk was produced,</span>
+<span class="sd">            plus the time it took to reach the present function. If we know the data production rate (e.g. sample rate)</span>
+<span class="sd">            and the average lag to get to the present function, we can get a more accurate timestamp for the beginning</span>
+<span class="sd">            of the chunk</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            offset_s: An offset (in seconds, possibly negative) to add to the current time.</span>
+
+<span class="sd">        Returns: an item -&gt; (current_utc_s, item) function</span>
+
+<span class="sd">        &gt;&gt;&gt; import time</span>
+<span class="sd">        &gt;&gt;&gt; item2key = mk_item2kv_for.utc_key()</span>
+<span class="sd">        &gt;&gt;&gt; k, v = item2key(&#39;some data&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; assert abs(time.time() - k) &lt; 0.01  # which asserts that k is indeed a (current) utc timestamp</span>
+<span class="sd">        &gt;&gt;&gt; assert v == &#39;some data&#39;  # just the item itself</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="p">(</span>
+                <span class="n">offset_s</span> <span class="o">==</span> <span class="mf">0.0</span>
+        <span class="p">):</span>  <span class="c1"># splitting for extra speed (important in real time apps)</span>
+
+            <span class="k">def</span> <span class="nf">item2kv</span><span class="p">(</span><span class="n">item</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">(),</span> <span class="n">item</span>
+
+        <span class="k">else</span><span class="p">:</span>
+
+            <span class="k">def</span> <span class="nf">item2kv</span><span class="p">(</span><span class="n">item</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">+</span> <span class="n">offset_s</span><span class="p">,</span> <span class="n">item</span>
+
+        <span class="k">return</span> <span class="n">item2kv</span></div>
+
+<div class="viewcode-block" id="mk_item2kv_for.item_to_key_params_and_val"><a class="viewcode-back" href="../../module_docs/py2store/appendable.html#py2store.appendable.mk_item2kv_for.item_to_key_params_and_val">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">item_to_key_params_and_val</span><span class="p">(</span><span class="n">item_to_key_params_and_val</span><span class="p">,</span> <span class="n">key_str_format</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Make item2kv from a function that produces key_params and val,</span>
+<span class="sd">        and a key_template that will produce a string key from the key_params</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_to_key_params_and_val: an item -&gt; (key_params, val) function</span>
+<span class="sd">            key_str_format: A string format such that</span>
+<span class="sd">                    key_str_format.format(*key_params) or</span>
+<span class="sd">                    key_str_format.format(**key_params)</span>
+<span class="sd">                will produce the desired key string</span>
+
+<span class="sd">        Returns: an item -&gt; (key, val) function</span>
+
+<span class="sd">        &gt;&gt;&gt; # Using tuple key params with unnamed string format fields</span>
+<span class="sd">        &gt;&gt;&gt; item_to_kv = mk_item2kv_for.item_to_key_params_and_val(lambda x: ((x[&#39;L&#39;], x[&#39;I&#39;]), x[&#39;G&#39;]), &#39;{}/{}&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; item_to_kv({&#39;L&#39;: &#39;let&#39;, &#39;I&#39;: &#39;it&#39;, &#39;G&#39;: &#39;go&#39;})</span>
+<span class="sd">        (&#39;let/it&#39;, &#39;go&#39;)</span>
+<span class="sd">        &gt;&gt;&gt;</span>
+<span class="sd">        &gt;&gt;&gt; # Using dict key params with named string format fields</span>
+<span class="sd">        &gt;&gt;&gt; item_to_kv = mk_item2kv_for.item_to_key_params_and_val(</span>
+<span class="sd">        ...                             lambda x: ({&#39;second&#39;: x[&#39;L&#39;], &#39;first&#39;: x[&#39;G&#39;]}, x[&#39;I&#39;]), &#39;{first}_{second}&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; item_to_kv({&#39;L&#39;: &#39;let&#39;, &#39;I&#39;: &#39;it&#39;, &#39;G&#39;: &#39;go&#39;})</span>
+<span class="sd">        (&#39;go_let&#39;, &#39;it&#39;)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">def</span> <span class="nf">item2kv</span><span class="p">(</span><span class="n">item</span><span class="p">):</span>
+            <span class="n">key_params</span><span class="p">,</span> <span class="n">val</span> <span class="o">=</span> <span class="n">item_to_key_params_and_val</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key_params</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">key_str_format</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">key_params</span><span class="p">),</span> <span class="n">val</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">key_str_format</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">*</span><span class="n">key_params</span><span class="p">),</span> <span class="n">val</span>
+
+        <span class="k">return</span> <span class="n">item2kv</span></div>
+
+<div class="viewcode-block" id="mk_item2kv_for.fields"><a class="viewcode-back" href="../../module_docs/py2store/appendable.html#py2store.appendable.mk_item2kv_for.fields">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">fields</span><span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="n">keep_field_in_value</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">key_as_tuple</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Make item2kv from specific fields of a Mapping (i.e. dict-like object) item.</span>
+
+<span class="sd">        Note: item2kv will not mutate item (even if keep_field_in_value=False).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            fields: The sequence (list, tuple, etc.) of item fields that should be used to create the key.</span>
+<span class="sd">            keep_field_in_value: Set to True to return the item as is, as the value</span>
+<span class="sd">            key_as_tuple: Set to True if you want keys to be tuples (note that the fields order is important here!)</span>
+
+<span class="sd">        Returns: an item -&gt; (item[fields], item[not in fields]) function</span>
+
+<span class="sd">        &gt;&gt;&gt; item_to_kv = mk_item2kv_for.fields(&#39;L&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; item_to_kv({&#39;L&#39;: &#39;let&#39;, &#39;I&#39;: &#39;it&#39;, &#39;G&#39;: &#39;go&#39;})</span>
+<span class="sd">        ({&#39;L&#39;: &#39;let&#39;}, {&#39;I&#39;: &#39;it&#39;, &#39;G&#39;: &#39;go&#39;})</span>
+<span class="sd">        &gt;&gt;&gt; item_to_kv = mk_item2kv_for.fields([&#39;L&#39;, &#39;I&#39;])</span>
+<span class="sd">        &gt;&gt;&gt; item_to_kv({&#39;L&#39;: &#39;let&#39;, &#39;I&#39;: &#39;it&#39;, &#39;G&#39;: &#39;go&#39;})</span>
+<span class="sd">        ({&#39;L&#39;: &#39;let&#39;, &#39;I&#39;: &#39;it&#39;}, {&#39;G&#39;: &#39;go&#39;})</span>
+<span class="sd">        &gt;&gt;&gt; item_to_kv = mk_item2kv_for.fields((&#39;G&#39;, &#39;L&#39;), keep_field_in_value=True)</span>
+<span class="sd">        &gt;&gt;&gt; item_to_kv({&#39;L&#39;: &#39;let&#39;, &#39;I&#39;: &#39;it&#39;, &#39;G&#39;: &#39;go&#39;})  # note the order of the key is not (&#39;G&#39;, &#39;L&#39;)...</span>
+<span class="sd">        ({&#39;L&#39;: &#39;let&#39;, &#39;G&#39;: &#39;go&#39;}, {&#39;L&#39;: &#39;let&#39;, &#39;I&#39;: &#39;it&#39;, &#39;G&#39;: &#39;go&#39;})</span>
+<span class="sd">        &gt;&gt;&gt; item_to_kv = mk_item2kv_for.fields((&#39;G&#39;, &#39;L&#39;), key_as_tuple=True)  # but (&#39;G&#39;, &#39;L&#39;) order is respected here</span>
+<span class="sd">        &gt;&gt;&gt; item_to_kv({&#39;L&#39;: &#39;let&#39;, &#39;I&#39;: &#39;it&#39;, &#39;G&#39;: &#39;go&#39;})</span>
+<span class="sd">        ((&#39;go&#39;, &#39;let&#39;), {&#39;I&#39;: &#39;it&#39;})</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">fields_set</span> <span class="o">=</span> <span class="p">{</span><span class="n">fields</span><span class="p">}</span>
+            <span class="n">fields</span> <span class="o">=</span> <span class="p">(</span><span class="n">fields</span><span class="p">,)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">fields_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">fields</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">item2kv</span><span class="p">(</span><span class="n">item</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">keep_field_in_value</span><span class="p">:</span>
+                <span class="n">key</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">item</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">fields_set</span><span class="p">:</span>
+                        <span class="n">key</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+                <span class="n">val</span> <span class="o">=</span> <span class="n">item</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">key</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+                <span class="n">val</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">item</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">fields_set</span><span class="p">:</span>
+                        <span class="n">key</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+                    <span class="k">elif</span> <span class="ow">not</span> <span class="n">keep_field_in_value</span><span class="p">:</span>
+                        <span class="n">val</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+
+            <span class="k">if</span> <span class="n">key_as_tuple</span><span class="p">:</span>
+                <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">key</span><span class="p">[</span><span class="n">f</span><span class="p">]</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">),</span> <span class="n">val</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span>
+
+        <span class="k">return</span> <span class="n">item2kv</span></div></div>
+
+
+<div class="viewcode-block" id="appendable"><a class="viewcode-back" href="../../module_docs/py2store/appendable.html#py2store.appendable.appendable">[docs]</a><span class="nd">@store_decorator</span>
+<span class="k">def</span> <span class="nf">appendable</span><span class="p">(</span>
+        <span class="n">store_cls</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">item2kv</span><span class="p">,</span>
+<span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Makes a new class with append (and consequential extend) methods</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        store_cls: The store class to subclass</span>
+<span class="sd">        item2kv: The function that produces a (key, val) pair from an item</span>
+<span class="sd">        new_store_name: The name to give the new class (default will be &#39;Appendable&#39; + store_cls.__name__)</span>
+
+<span class="sd">    Returns: A subclass of store_cls with two additional methods: append, and extend.</span>
+
+
+<span class="sd">    &gt;&gt;&gt; item_to_kv = lambda item: (item[&#39;L&#39;], item)  # use value of &#39;L&#39; as the key, and value is the item itself</span>
+<span class="sd">    &gt;&gt;&gt; MyStore = appendable(dict, item2kv=item_to_kv)</span>
+<span class="sd">    &gt;&gt;&gt; s = MyStore(); s.append({&#39;L&#39;: &#39;let&#39;, &#39;I&#39;: &#39;it&#39;, &#39;G&#39;: &#39;go&#39;}); list(s.items())</span>
+<span class="sd">    [(&#39;let&#39;, {&#39;L&#39;: &#39;let&#39;, &#39;I&#39;: &#39;it&#39;, &#39;G&#39;: &#39;go&#39;})]</span>
+
+<span class="sd">    Use mk_item2kv.from_item_to_key_params_and_val with tuple key params</span>
+
+<span class="sd">    &gt;&gt;&gt; item_to_kv = appendable.mk_item2kv_for.item_to_key_params_and_val(lambda x: ((x[&#39;L&#39;], x[&#39;I&#39;]), x[&#39;G&#39;]), &#39;{}/{}&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; MyStore = appendable(item2kv=item_to_kv)(dict)  # showing the append(...)(store) form</span>
+<span class="sd">    &gt;&gt;&gt; s = MyStore(); s.append({&#39;L&#39;: &#39;let&#39;, &#39;I&#39;: &#39;it&#39;, &#39;G&#39;: &#39;go&#39;}); list(s.items())</span>
+<span class="sd">    [(&#39;let/it&#39;, &#39;go&#39;)]</span>
+
+<span class="sd">    Use mk_item2kv.from_item_to_key_params_and_val with dict key params</span>
+
+<span class="sd">    &gt;&gt;&gt; item_to_kv = appendable.mk_item2kv_for.item_to_key_params_and_val(</span>
+<span class="sd">    ...     lambda x: ({&#39;L&#39;: x[&#39;L&#39;], &#39;G&#39;: x[&#39;G&#39;]}, x[&#39;I&#39;]), &#39;{G}_{L}&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; @appendable(item2kv=item_to_kv)  # showing the @ form</span>
+<span class="sd">    ... class MyStore(dict):</span>
+<span class="sd">    ...     pass</span>
+<span class="sd">    &gt;&gt;&gt; s = MyStore(); s.append({&#39;L&#39;: &#39;let&#39;, &#39;I&#39;: &#39;it&#39;, &#39;G&#39;: &#39;go&#39;}); list(s.items())</span>
+<span class="sd">    [(&#39;go_let&#39;, &#39;it&#39;)]</span>
+
+<span class="sd">    Use mk_item2kv.fields to get a tuple key from item fields,</span>
+<span class="sd">    defining the sub-dict of the remaining fields to be the value.</span>
+<span class="sd">    Also showing here how you can decorate the instance itself.</span>
+
+<span class="sd">    &gt;&gt;&gt; item_to_kv = appendable.mk_item2kv_for.fields([&#39;G&#39;, &#39;L&#39;], key_as_tuple=True)</span>
+<span class="sd">    &gt;&gt;&gt; d = {}</span>
+<span class="sd">    &gt;&gt;&gt; s = appendable(d, item2kv=item_to_kv)</span>
+<span class="sd">    &gt;&gt;&gt; s.append({&#39;L&#39;: &#39;let&#39;, &#39;I&#39;: &#39;it&#39;, &#39;G&#39;: &#39;go&#39;}); list(s.items())</span>
+<span class="sd">    [((&#39;go&#39;, &#39;let&#39;), {&#39;I&#39;: &#39;it&#39;})]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+        <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="o">=</span> <span class="n">item2kv</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+        <span class="bp">self</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+
+    <span class="k">def</span> <span class="nf">extend</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">items</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">items</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="nb">type</span><span class="p">(</span>
+        <span class="s2">&quot;Appendable&quot;</span> <span class="o">+</span> <span class="n">store_cls</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
+        <span class="p">(</span><span class="n">store_cls</span><span class="p">,),</span>
+        <span class="p">{</span><span class="s2">&quot;append&quot;</span><span class="p">:</span> <span class="n">append</span><span class="p">,</span> <span class="s2">&quot;extend&quot;</span><span class="p">:</span> <span class="n">extend</span><span class="p">}</span>
+    <span class="p">)</span></div>
+
+
+<span class="n">add_append_functionality_to_store_cls</span> <span class="o">=</span> <span class="n">appendable</span>  <span class="c1"># for back compatibility</span>
+
+<span class="n">appendable</span><span class="o">.</span><span class="n">mk_item2kv_for</span> <span class="o">=</span> <span class="n">mk_item2kv_for</span>  <span class="c1"># adding as attribute for convenient access</span>
+
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Sequence</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Optional</span>
+
+<span class="n">NotAVal</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span>
+    <span class="s2">&quot;NotAVal&quot;</span><span class="p">,</span> <span class="p">(),</span> <span class="p">{}</span>
+<span class="p">)()</span>  <span class="c1"># singleton instance to distinguish from None</span>
+
+
+<span class="c1">#</span>
+<span class="c1"># class FixedSizeStack(Sequence):</span>
+<span class="c1">#     &quot;&quot;&quot;A finite Sequence that can have no more than one element.</span>
+<span class="c1">#</span>
+<span class="c1">#     &gt;&gt;&gt; t = FixedSizeStack(maxsize=1)</span>
+<span class="c1">#     &gt;&gt;&gt; assert len(t) == 0</span>
+<span class="c1">#     &gt;&gt;&gt;</span>
+<span class="c1">#     &gt;&gt;&gt; t.append(&#39;something&#39;)</span>
+<span class="c1">#     &gt;&gt;&gt; assert len(t) == 1</span>
+<span class="c1">#     &gt;&gt;&gt; assert t[0] == &#39;something&#39;</span>
+<span class="c1">#     &gt;&gt;&gt;</span>
+<span class="c1">#     &gt;&gt;&gt; t.append(&#39;something else&#39;)</span>
+<span class="c1">#     &gt;&gt;&gt; assert len(t) == 1  # still only one item</span>
+<span class="c1">#     &gt;&gt;&gt; assert t[0] == &#39;something&#39;  # still the same item</span>
+<span class="c1">#</span>
+<span class="c1">#     Not that we&#39;d ever these methods of FirstAppendOnly,</span>
+<span class="c1">#     but know that FirstAppendOnly is a collection.abc.Sequence, so...</span>
+<span class="c1">#</span>
+<span class="c1">#     &gt;&gt;&gt; t[:1] == t[:10] == t[::-1] == t[::-10] == t[0:2:10] == list(reversed(t)) == [&#39;something&#39;]</span>
+<span class="c1">#     True</span>
+<span class="c1">#     &gt;&gt;&gt;</span>
+<span class="c1">#     &gt;&gt;&gt; assert t.count(&#39;something&#39;) == 1</span>
+<span class="c1">#     &gt;&gt;&gt; assert t.index(&#39;something&#39;) == 0</span>
+<span class="c1">#</span>
+<span class="c1">#     &quot;&quot;&quot;</span>
+<span class="c1">#</span>
+<span class="c1">#     def __init__(self, iterable: Optional[Iterable] = None, *, maxsize: int):</span>
+<span class="c1">#         self.maxsize = maxsize</span>
+<span class="c1">#         self.data = [NotAVal] * maxsize</span>
+<span class="c1">#         # self.data = (isinstance(iterable, Iterable) and list(iterable)) or []</span>
+<span class="c1">#         # if iterable is not None:</span>
+<span class="c1">#         #     pass</span>
+<span class="c1">#         self.cursor = 0</span>
+<span class="c1">#</span>
+<span class="c1">#     def append(self, v):</span>
+<span class="c1">#         if self.cursor &lt; self.maxsize:</span>
+<span class="c1">#             self.data[self.cursor] = v</span>
+<span class="c1">#             self.cursor += 1</span>
+<span class="c1">#</span>
+<span class="c1">#     def __len__(self):</span>
+<span class="c1">#         return self.cursor</span>
+<span class="c1">#</span>
+<span class="c1">#     def __getitem__(self, k):</span>
+<span class="c1">#         if isinstance(k, int):</span>
+<span class="c1">#             if k &lt; self.cursor:</span>
+<span class="c1">#                 return self.data[k]</span>
+<span class="c1">#             else:</span>
+<span class="c1">#                 raise IndexError(</span>
+<span class="c1">#                     f&quot;There are only {len(self)} items: You asked for self[{k}].&quot;</span>
+<span class="c1">#                 )</span>
+<span class="c1">#         elif isinstance(k, slice):</span>
+<span class="c1">#             return self.data[: self.cursor][k]</span>
+<span class="c1">#         else:</span>
+<span class="c1">#             raise IndexError(</span>
+<span class="c1">#                 f&quot;A {self.__class__} instance can only have one value, or none at all.&quot;</span>
+<span class="c1">#             )</span>
+<span class="c1">#</span>
+
+<div class="viewcode-block" id="FirstAppendOnly"><a class="viewcode-back" href="../../module_docs/py2store/appendable.html#py2store.appendable.FirstAppendOnly">[docs]</a><span class="k">class</span> <span class="nc">FirstAppendOnly</span><span class="p">(</span><span class="n">Sequence</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A finite Sequence that can have no more than one element.</span>
+
+<span class="sd">    &gt;&gt;&gt; t = FirstAppendOnly()</span>
+<span class="sd">    &gt;&gt;&gt; assert len(t) == 0</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; t.append(&#39;something&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; assert len(t) == 1</span>
+<span class="sd">    &gt;&gt;&gt; assert t[0] == &#39;something&#39;</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; t.append(&#39;something else&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; assert len(t) == 1  # still only one item</span>
+<span class="sd">    &gt;&gt;&gt; assert t[0] == &#39;something&#39;  # still the same item</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; # Not that we&#39;d ever these methods of FirstAppendOnly, but know that FirstAppendOnly is a collection.abc.Sequence, so...</span>
+<span class="sd">    &gt;&gt;&gt; t[:1] == t[:10] == t[::-1] == t[::-10] == t[0:2:10] == list(reversed(t)) == [&#39;something&#39;]</span>
+<span class="sd">    &lt;stdin&gt;:1: RuntimeWarning: coroutine &#39;AioFileBytesPersister.asetitem&#39; was never awaited</span>
+<span class="sd">    RuntimeWarning: Enable tracemalloc to get the object allocation traceback</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; t.count(&#39;something&#39;) == 1</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; t.index(&#39;something&#39;) == 0</span>
+<span class="sd">    True</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">val</span> <span class="o">=</span> <span class="n">NotAVal</span>
+
+    <span class="k">def</span> <span class="nf">append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">val</span> <span class="o">==</span> <span class="n">NotAVal</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">val</span> <span class="o">=</span> <span class="n">v</span>
+
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">val</span> <span class="o">!=</span> <span class="n">NotAVal</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;There are no items in this </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="si">}</span><span class="s2"> instance&quot;</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">k</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">val</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="nb">slice</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">val</span><span class="p">][</span><span class="n">k</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;A </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="si">}</span><span class="s2"> instance can only have one value, or none at all.&quot;</span>
+            <span class="p">)</span></div>
+
+    <span class="c1"># @staticmethod</span>
+    <span class="c1"># def from</span>
+
+<span class="c1"># def add_append_functionality_to_str_key_store(store_cls,</span>
+<span class="c1">#                                               item_to_key_params_and_val,</span>
+<span class="c1">#                                               key_template=None,</span>
+<span class="c1">#                                               new_store_name=None):</span>
+<span class="c1">#     def item_to_kv(item):</span>
+<span class="c1">#         nonlocal key_template</span>
+<span class="c1">#         if key_template is None:</span>
+<span class="c1">#             key_params, _ = item_to_key_params_and_val(item)</span>
+<span class="c1">#             key_template = path_sep.join(&#39;{{{}}}&#39;.format(p) for p in key_params)</span>
+<span class="c1">#         key_params, val = item_to_key_params_and_val(item)</span>
+<span class="c1">#         return key_template.format(**key_params), val</span>
+<span class="c1">#</span>
+<span class="c1">#     return add_append_functionality_to_store_cls(store_cls, item_to_kv, new_store_name)</span>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">py2store</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html">py2store.filesys</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.misc">py2store.misc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.mixins">py2store.mixins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.test.util">py2store.test.util</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-test-quick">py2store.test.quick</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.test">py2store.test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-test-simple">py2store.test.simple</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-test-scrap">py2store.test.scrap</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.util">py2store.util</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-ext-docx">py2store.ext.docx</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.ext.gitlab">py2store.ext.gitlab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-ext-hdf">py2store.ext.hdf</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.ext">py2store.ext</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-ext-matlab">py2store.ext.matlab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.ext.kaggle">py2store.ext.kaggle</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-ext-module-imports">py2store.ext.module_imports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.ext.audio">py2store.ext.audio</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-ext-github">py2store.ext.github</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.ext.dataframes">py2store.ext.dataframes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.access">py2store.access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.__init__">py2store.__init__</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.stores.s3_store">py2store.stores.s3_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.stores.delegation_stores">py2store.stores.delegation_stores</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.stores.sql_w_sqlalchemy">py2store.stores.sql_w_sqlalchemy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-stores-arangodb-store">py2store.stores.arangodb_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-stores-dropbox-store">py2store.stores.dropbox_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.stores.local_store">py2store.stores.local_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.stores">py2store.stores</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-stores-couchdb-store">py2store.stores.couchdb_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.stores.mongo_store">py2store.stores.mongo_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.core">py2store.core</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.uri_utils">py2store.utils.uri_utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.explicit">py2store.utils.explicit</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.timeseries_caching">py2store.utils.timeseries_caching</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-utils-attr-dict-py-attr-dict">py2store.utils.attr_dict.py.attr_dict</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-utils-attr-dict-py">py2store.utils.attr_dict.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.cumul_aggreg_write">py2store.utils.cumul_aggreg_write</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils">py2store.utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.cache_descriptors">py2store.utils.cache_descriptors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.appendable">py2store.utils.appendable</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.affine_conversion">py2store.utils.affine_conversion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.signatures">py2store.utils.signatures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.sliceable">py2store.utils.sliceable</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.mappify">py2store.utils.mappify</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.glom">py2store.utils.glom</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-persisters-sql-w-odbc">py2store.persisters.sql_w_odbc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.dynamodb_w_boto3">py2store.persisters.dynamodb_w_boto3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-persisters-couchdb-w-couchdb">py2store.persisters.couchdb_w_couchdb</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.ftp_persister">py2store.persisters.ftp_persister</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.dropbox_w_urllib">py2store.persisters.dropbox_w_urllib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters._google_drive_in_progress">py2store.persisters._google_drive_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-persisters-dropbox-w-dropbox">py2store.persisters.dropbox_w_dropbox</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-persisters-redis-w-redis">py2store.persisters.redis_w_redis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.sql_w_sqlalchemy">py2store.persisters.sql_w_sqlalchemy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.new_s3">py2store.persisters.new_s3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters">py2store.persisters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.dropbox_w_requests">py2store.persisters.dropbox_w_requests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.w_aiofile">py2store.persisters.w_aiofile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.local_files">py2store.persisters.local_files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-persisters-arangodb-w-pyarango">py2store.persisters.arangodb_w_pyarango</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters._cassandra_in_progress">py2store.persisters._cassandra_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters._couchdb_in_progress">py2store.persisters._couchdb_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.s3_w_boto3">py2store.persisters.s3_w_boto3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-persisters-postgres-w-psycopg2-in-progress">py2store.persisters._postgres_w_psycopg2_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-persisters-ssh-persister">py2store.persisters.ssh_persister</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.mongo_w_pymongo">py2store.persisters.mongo_w_pymongo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-persisters-googledrive-w-pydrive">py2store.persisters.googledrive_w_pydrive</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.sources">py2store.sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.dig">py2store.dig</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.serializers.pickled">py2store.serializers.pickled</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.serializers.jsonization">py2store.serializers.jsonization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.serializers">py2store.serializers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.serializers.sequential">py2store.serializers.sequential</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.serializers.regular_panel_data">py2store.serializers.regular_panel_data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.serializers.audio">py2store.serializers.audio</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.caching">py2store.caching</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.scrap">py2store.scrap</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.scrap.new_gen_local">py2store.scrap.new_gen_local</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.examples.write_caches">py2store.examples.write_caches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.examples">py2store.examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.examples.python_code_stats">py2store.examples.python_code_stats</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.examples.kv_walking">py2store.examples.kv_walking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.my">py2store.my</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.my.grabbers">py2store.my.grabbers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.trans">py2store.trans</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.key_mappers.str_utils">py2store.key_mappers.str_utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.key_mappers.tuples">py2store.key_mappers.tuples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.key_mappers.paths">py2store.key_mappers.paths</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.key_mappers.naming">py2store.key_mappers.naming</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.key_mappers">py2store.key_mappers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.errors">py2store.errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.slib.s_configparser">py2store.slib.s_configparser</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.slib">py2store.slib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.slib.s_zipfile">py2store.slib.s_zipfile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.base">py2store.base</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-selectors-mg-selectors">py2store.selectors.mg_selectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-selectors-mongoquery">py2store.selectors.mongoquery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-selectors">py2store.selectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.parse_format">py2store.parse_format</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  <li><a href="../py2store.html">py2store</a><ul>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,750 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>py2store.slib.s_zipfile &#8212; py2store 0.0.7 documentation</title>
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css" />
+    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for py2store.slib.s_zipfile</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">inspect</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">wraps</span>
+<span class="kn">from</span> <span class="nn">io</span> <span class="kn">import</span> <span class="n">BytesIO</span>
+<span class="kn">from</span> <span class="nn">zipfile</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ZipFile</span><span class="p">,</span>
+    <span class="n">ZIP_STORED</span><span class="p">,</span>
+    <span class="n">ZIP_DEFLATED</span><span class="p">,</span>
+    <span class="n">ZIP_BZIP2</span><span class="p">,</span>
+    <span class="n">ZIP_LZMA</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">py2store.base</span> <span class="kn">import</span> <span class="n">KvReader</span><span class="p">,</span> <span class="n">KvPersister</span>
+<span class="kn">from</span> <span class="nn">py2store.filesys</span> <span class="kn">import</span> <span class="n">FileCollection</span>
+<span class="kn">from</span> <span class="nn">py2store.util</span> <span class="kn">import</span> <span class="n">lazyprop</span><span class="p">,</span> <span class="n">fullpath</span>
+
+
+<span class="k">class</span> <span class="nc">COMPRESSION</span><span class="p">:</span>
+    <span class="n">ZIP_STORED</span> <span class="o">=</span> <span class="n">ZIP_STORED</span>  <span class="c1"># The numeric constant for an uncompressed archive member.</span>
+    <span class="n">ZIP_DEFLATED</span> <span class="o">=</span> <span class="n">ZIP_DEFLATED</span>  <span class="c1"># The numeric constant for the usual ZIP compression method. This requires zlib module.</span>
+    <span class="n">ZIP_BZIP2</span> <span class="o">=</span> <span class="n">ZIP_BZIP2</span>  <span class="c1"># The numeric constant for the BZIP2 compression method. This requires the bz2 module.</span>
+    <span class="n">ZIP_LZMA</span> <span class="o">=</span> <span class="n">ZIP_LZMA</span>  <span class="c1"># The numeric constant for the LZMA compression method. This requires the lzma module.</span>
+
+
+<div class="viewcode-block" id="func_conjunction"><a class="viewcode-back" href="../../../test.html#py2store.slib.s_zipfile.func_conjunction">[docs]</a><span class="k">def</span> <span class="nf">func_conjunction</span><span class="p">(</span><span class="n">func1</span><span class="p">,</span> <span class="n">func2</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns a function that is equivalent to lambda x: func1(x) and func2(x)&quot;&quot;&quot;</span>
+    <span class="c1"># Should assert that the input paramters of func1 and func2 are the same</span>
+    <span class="k">assert</span> <span class="p">(</span>
+            <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">func1</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span>
+            <span class="o">==</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">func2</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span>
+    <span class="p">)</span>
+
+    <span class="nd">@wraps</span><span class="p">(</span><span class="n">func2</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">func1</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="ow">and</span> <span class="n">func2</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">func</span></div>
+
+
+<span class="k">def</span> <span class="nf">take_everything</span><span class="p">(</span><span class="n">fileinfo</span><span class="p">):</span>
+    <span class="k">return</span> <span class="kc">True</span>
+
+
+<div class="viewcode-block" id="ZipReader"><a class="viewcode-back" href="../../../test.html#py2store.slib.s_zipfile.ZipReader">[docs]</a><span class="k">class</span> <span class="nc">ZipReader</span><span class="p">(</span><span class="n">KvReader</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A KvReader to read the contents of a zip file.</span>
+<span class="sd">    Provides a KV perspective of https://docs.python.org/3/library/zipfile.html</span>
+
+<span class="sd">    ``ZipReader`` has two value categories: Directories and Files.</span>
+<span class="sd">    Both categories are distinguishable by the keys, through the &quot;ends with slash&quot; convention.</span>
+
+<span class="sd">    When a file, the value return is bytes, as usual.</span>
+
+<span class="sd">    When a directory, the value returned is a ``ZipReader`` itself, with all params the same, except for the ``prefix``</span>
+<span class="sd">     which serves `to specify the subfolder (that is, ``prefix`` acts as a filter).</span>
+
+<span class="sd">    Note: If you get data zipped by a mac, you might get some junk along with it.</span>
+<span class="sd">    Namely `__MACOSX` folders `.DS_Store` files. I won&#39;t rant about it, since others have.</span>
+<span class="sd">    But you might find it useful to remove them from view. One choice is to use `py2store.trans.filt_iter`</span>
+<span class="sd">    to get a filtered view of the zips contents. In most cases, this should do the job:</span>
+<span class="sd">    ```</span>
+<span class="sd">    # applied to store instance or class:</span>
+<span class="sd">    store = filt_iter(filt=lambda x: not x.startswith(&#39;__MACOSX&#39;) and &#39;.DS_Store&#39; not in x)(store)</span>
+<span class="sd">    ```</span>
+
+<span class="sd">    Another option is just to remove these from the zip file once and for all. In unix-like systems:</span>
+<span class="sd">    ```</span>
+<span class="sd">    zip -d filename.zip __MACOSX/\*</span>
+<span class="sd">    zip -d filename.zip \*/.DS_Store</span>
+<span class="sd">    ```</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        # &gt;&gt;&gt; s = ZipReader(&#39;/path/to/some_zip_file.zip&#39;)</span>
+<span class="sd">        # &gt;&gt;&gt; len(s)</span>
+<span class="sd">        # 53432</span>
+<span class="sd">        # &gt;&gt;&gt; list(s)[:3]  # the first 3 elements (well... their keys)</span>
+<span class="sd">        # [&#39;odir/&#39;, &#39;odir/app/&#39;, &#39;odir/app/data/&#39;]</span>
+<span class="sd">        # &gt;&gt;&gt; list(s)[-3:]  # the last 3 elements (well... their keys)</span>
+<span class="sd">        # [&#39;odir/app/data/audio/d/1574287049078391/m/Ctor.json&#39;,</span>
+<span class="sd">        #  &#39;odir/app/data/audio/d/1574287049078391/m/intensity.json&#39;,</span>
+<span class="sd">        #  &#39;odir/app/data/run/status.json&#39;]</span>
+<span class="sd">        # &gt;&gt;&gt; # getting a file (note that by default, you get bytes, so need to decode)</span>
+<span class="sd">        # &gt;&gt;&gt; s[&#39;odir/app/data/run/status.json&#39;].decode()</span>
+<span class="sd">        # b&#39;{&quot;test_phase_number&quot;: 9, &quot;test_phase&quot;: &quot;TestActions.IGNORE_TEST&quot;, &quot;session_id&quot;: 0}&#39;</span>
+<span class="sd">        # &gt;&gt;&gt; # when you ask for the contents for a key that&#39;s a directory,</span>
+<span class="sd">        # &gt;&gt;&gt; # you get a ZipReader filtered for that prefix:</span>
+<span class="sd">        # &gt;&gt;&gt; s[&#39;odir/app/data/audio/&#39;]</span>
+<span class="sd">        # ZipReader(&#39;/path/to/some_zip_file.zip&#39;, &#39;odir/app/data/audio/&#39;, {}, &lt;function take_everything at 0x1538999e0&gt;)</span>
+<span class="sd">        # &gt;&gt;&gt; # Often, you only want files (not directories)</span>
+<span class="sd">        # &gt;&gt;&gt; # You can filter directories out using the file_info_filt argument</span>
+<span class="sd">        # &gt;&gt;&gt; s = ZipReader(&#39;/path/to/some_zip_file.zip&#39;, file_info_filt=ZipReader.FILES_ONLY)</span>
+<span class="sd">        # &gt;&gt;&gt; len(s)  # compare to the 53432 above, that contained dirs too</span>
+<span class="sd">        # 53280</span>
+<span class="sd">        # &gt;&gt;&gt; list(s)[:3]  # first 3 keys are all files now</span>
+<span class="sd">        # [&#39;odir/app/data/plc/d/1574304926795633/d/1574305026895702&#39;,</span>
+<span class="sd">        #  &#39;odir/app/data/plc/d/1574304926795633/d/1574305276853053&#39;,</span>
+<span class="sd">        #  &#39;odir/app/data/plc/d/1574304926795633/d/1574305159343326&#39;]</span>
+<span class="sd">        # &gt;&gt;&gt;</span>
+<span class="sd">        # &gt;&gt;&gt; # ZipReader.FILES_ONLY and ZipReader.DIRS_ONLY are just convenience filt functions</span>
+<span class="sd">        # &gt;&gt;&gt; # Really, you can provide any custom one yourself.</span>
+<span class="sd">        # &gt;&gt;&gt; # This filter function should take a ZipInfo object, and return True or False.</span>
+<span class="sd">        # &gt;&gt;&gt; # (https://docs.python.org/3/library/zipfile.html#zipfile.ZipInfo)</span>
+<span class="sd">        # &gt;&gt;&gt;</span>
+<span class="sd">        # &gt;&gt;&gt; import re</span>
+<span class="sd">        # &gt;&gt;&gt; p = re.compile(&#39;audio.*\.json$&#39;)</span>
+<span class="sd">        # &gt;&gt;&gt; my_filt_func = lambda fileinfo: bool(p.search(fileinfo.filename))</span>
+<span class="sd">        # &gt;&gt;&gt; s = ZipReader(&#39;/Users/twhalen/Downloads/2019_11_21.zip&#39;, file_info_filt=my_filt_func)</span>
+<span class="sd">        # &gt;&gt;&gt; len(s)</span>
+<span class="sd">        # 48</span>
+<span class="sd">        # &gt;&gt;&gt; list(s)[:3]</span>
+<span class="sd">        # [&#39;odir/app/data/audio/d/1574333557263758/m/Ctor.json&#39;,</span>
+<span class="sd">        #  &#39;odir/app/data/audio/d/1574333557263758/m/intensity.json&#39;,</span>
+<span class="sd">        #  &#39;odir/app/data/audio/d/1574288084739961/m/Ctor.json&#39;]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">zip_file</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">open_kws</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">file_info_filt</span><span class="o">=</span><span class="kc">None</span>
+    <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            zip_file: A path to make ZipFile(zip_file)</span>
+<span class="sd">            prefix: A prefix to filter by.</span>
+<span class="sd">            open_kws:  To be used when doing a ZipFile(...).open</span>
+<span class="sd">            file_info_filt: Filter for the FileInfo objects (see https://docs.python.org/3/library/zipfile.html)</span>
+<span class="sd">                of the paths listed in the zip file</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">open_kws</span> <span class="o">=</span> <span class="n">open_kws</span> <span class="ow">or</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">file_info_filt</span> <span class="o">=</span> <span class="n">file_info_filt</span> <span class="ow">or</span> <span class="n">ZipReader</span><span class="o">.</span><span class="n">EVERYTHING</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prefix</span> <span class="o">=</span> <span class="n">prefix</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">zip_file</span><span class="p">,</span> <span class="n">ZipFile</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">zip_file</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="n">zip_file</span> <span class="o">=</span> <span class="n">fullpath</span><span class="p">(</span><span class="n">zip_file</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">zip_file</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="n">zip_file</span> <span class="o">=</span> <span class="n">ZipFile</span><span class="p">(</span><span class="o">**</span><span class="n">zip_file</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">zip_file</span><span class="p">,</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">)):</span>
+                <span class="n">zip_file</span> <span class="o">=</span> <span class="n">ZipFile</span><span class="p">(</span><span class="o">*</span><span class="n">zip_file</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">zip_file</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>
+                <span class="n">zip_file</span> <span class="o">=</span> <span class="n">ZipFile</span><span class="p">(</span><span class="n">BytesIO</span><span class="p">(</span><span class="n">zip_file</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">zip_file</span> <span class="o">=</span> <span class="n">ZipFile</span><span class="p">(</span><span class="n">zip_file</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">zip_file</span> <span class="o">=</span> <span class="n">zip_file</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">for_files_only</span><span class="p">(</span>
+            <span class="bp">cls</span><span class="p">,</span> <span class="n">zip_file</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">open_kws</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">file_info_filt</span><span class="o">=</span><span class="kc">None</span>
+    <span class="p">):</span>
+        <span class="k">if</span> <span class="n">file_info_filt</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">file_info_filt</span> <span class="o">=</span> <span class="n">ZipReader</span><span class="o">.</span><span class="n">FILES_ONLY</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_file_info_filt</span> <span class="o">=</span> <span class="n">file_info_filt</span>
+
+            <span class="k">def</span> <span class="nf">file_info_filt</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">ZipReader</span><span class="o">.</span><span class="n">FILES_ONLY</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="ow">and</span> <span class="n">_file_info_filt</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">zip_file</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">open_kws</span><span class="p">,</span> <span class="n">file_info_filt</span><span class="p">)</span>
+
+    <span class="nd">@lazyprop</span>
+    <span class="k">def</span> <span class="nf">info_for_key</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="n">x</span><span class="o">.</span><span class="n">filename</span><span class="p">:</span> <span class="n">x</span>
+            <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">zip_file</span><span class="o">.</span><span class="n">infolist</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">filename</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prefix</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_info_filt</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="p">}</span>
+
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># using zip_file.infolist(), we could also filter for info (like directory/file)</span>
+        <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">info_for_key</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">info_for_key</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">is_dir</span><span class="p">():</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">zip_file</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">open_kws</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">fp</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>  <span class="c1"># is a directory</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">zip_file</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">open_kws</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_info_filt</span>
+            <span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">info_for_key</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">FILES_ONLY</span><span class="p">(</span><span class="n">fileinfo</span><span class="p">):</span>
+        <span class="k">return</span> <span class="ow">not</span> <span class="n">fileinfo</span><span class="o">.</span><span class="n">is_dir</span><span class="p">()</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">DIRS_ONLY</span><span class="p">(</span><span class="n">fileinfo</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">fileinfo</span><span class="o">.</span><span class="n">is_dir</span><span class="p">()</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">EVERYTHING</span><span class="p">(</span><span class="n">fileinfo</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">args_str</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">zip_file</span><span class="o">.</span><span class="n">filename</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">prefix</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">open_kws</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">file_info_filt</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(</span><span class="si">{</span><span class="n">args_str</span><span class="si">}</span><span class="s2">)&quot;</span></div>
+
+
+<div class="viewcode-block" id="ZipFilesReader"><a class="viewcode-back" href="../../../test.html#py2store.slib.s_zipfile.ZipFilesReader">[docs]</a><span class="k">class</span> <span class="nc">ZipFilesReader</span><span class="p">(</span><span class="n">FileCollection</span><span class="p">,</span> <span class="n">KvReader</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A local file reader whose keys are the zip filepaths of the rootdir and values are corresponding ZipReaders.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">rootdir</span><span class="p">,</span>
+            <span class="n">subpath</span><span class="o">=</span><span class="s2">&quot;.+\.zip&quot;</span><span class="p">,</span>
+            <span class="n">pattern_for_field</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">max_levels</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+            <span class="n">zip_reader</span><span class="o">=</span><span class="n">ZipReader</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">zip_reader_kwargs</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">rootdir</span><span class="p">,</span> <span class="n">subpath</span><span class="p">,</span> <span class="n">pattern_for_field</span><span class="p">,</span> <span class="n">max_levels</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">zip_reader</span> <span class="o">=</span> <span class="n">zip_reader</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">zip_reader_kwargs</span> <span class="o">=</span> <span class="n">zip_reader_kwargs</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">zip_reader</span> <span class="ow">is</span> <span class="n">ZipReader</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">zip_reader_kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+                <span class="nb">dict</span><span class="p">(</span><span class="n">prefix</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">open_kws</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">file_info_filt</span><span class="o">=</span><span class="n">ZipReader</span><span class="o">.</span><span class="n">FILES_ONLY</span><span class="p">),</span>
+                <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">zip_reader_kwargs</span>
+            <span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">zip_reader</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">zip_reader_kwargs</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">FileNotFoundError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s2">&quot;FileNotFoundError: &quot;</span> <span class="o">+</span> <span class="n">e</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ZipFilesReaderAndBytesWriter"><a class="viewcode-back" href="../../../test.html#py2store.slib.s_zipfile.ZipFilesReaderAndBytesWriter">[docs]</a><span class="k">class</span> <span class="nc">ZipFilesReaderAndBytesWriter</span><span class="p">(</span><span class="n">ZipFilesReader</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Like ZipFilesReader, but the ability to write bytes (assumed to be valid bytes of the zip format) to a key</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+            <span class="n">fp</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">v</span><span class="p">)</span></div>
+
+
+<span class="c1"># TODO: Add easy connection to ExplicitKeymapReader and other path trans and cache useful for the folder of zips context</span>
+<div class="viewcode-block" id="FlatZipFilesReader"><a class="viewcode-back" href="../../../test.html#py2store.slib.s_zipfile.FlatZipFilesReader">[docs]</a><span class="k">class</span> <span class="nc">FlatZipFilesReader</span><span class="p">(</span><span class="n">ZipFilesReader</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Read the union of the contents of multiple zip files.</span>
+<span class="sd">    A local file reader whose keys are the zip filepaths of the rootdir and values are corresponding ZipReaders.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@lazyprop</span>
+    <span class="k">def</span> <span class="nf">_zip_readers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">rootdir_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rootdir</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="n">path</span><span class="p">[</span><span class="n">rootdir_len</span><span class="p">:]:</span> <span class="nb">super</span><span class="p">(</span><span class="n">FlatZipFilesReader</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span>
+                <span class="n">path</span>
+            <span class="p">)</span>
+            <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__iter__</span><span class="p">()</span>
+        <span class="p">}</span>
+
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="p">(</span>
+                <span class="n">zip_relpath</span><span class="p">,</span>
+                <span class="n">zip_reader</span><span class="p">,</span>
+        <span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_zip_readers</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>  <span class="c1"># go through the zip paths</span>
+            <span class="k">for</span> <span class="p">(</span>
+                    <span class="n">path_in_zip</span>
+            <span class="p">)</span> <span class="ow">in</span> <span class="p">(</span>
+                    <span class="n">zip_reader</span>
+            <span class="p">):</span>  <span class="c1"># go through the keys of the ZipReader (the zipped filepaths)</span>
+                <span class="k">yield</span> <span class="p">(</span><span class="n">zip_relpath</span><span class="p">,</span> <span class="n">path_in_zip</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+        <span class="p">(</span>
+            <span class="n">zip_relpath</span><span class="p">,</span>
+            <span class="n">path_in_zip</span><span class="p">,</span>
+        <span class="p">)</span> <span class="o">=</span> <span class="n">k</span>  <span class="c1"># k is a pair of the path to the zip file and the path of a file within it</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_zip_readers</span><span class="p">[</span><span class="n">zip_relpath</span><span class="p">][</span><span class="n">path_in_zip</span><span class="p">]</span></div>
+
+
+<span class="n">ZipFileReader</span> <span class="o">=</span> <span class="n">ZipFilesReader</span>  <span class="c1"># back-compatibility alias</span>
+
+
+<div class="viewcode-block" id="FilesOfZip"><a class="viewcode-back" href="../../../test.html#py2store.slib.s_zipfile.FilesOfZip">[docs]</a><span class="k">class</span> <span class="nc">FilesOfZip</span><span class="p">(</span><span class="n">ZipReader</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">zip_file</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">open_kws</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">zip_file</span><span class="p">,</span>
+            <span class="n">prefix</span><span class="o">=</span><span class="n">prefix</span><span class="p">,</span>
+            <span class="n">open_kws</span><span class="o">=</span><span class="n">open_kws</span><span class="p">,</span>
+            <span class="n">file_info_filt</span><span class="o">=</span><span class="n">ZipReader</span><span class="o">.</span><span class="n">FILES_ONLY</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+<span class="c1"># TODO: This file object item is more fundemental than file contents. Should it be at the base?</span>
+<div class="viewcode-block" id="FileStreamsOfZip"><a class="viewcode-back" href="../../../test.html#py2store.slib.s_zipfile.FileStreamsOfZip">[docs]</a><span class="k">class</span> <span class="nc">FileStreamsOfZip</span><span class="p">(</span><span class="n">FilesOfZip</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Like FilesOfZip, but object returns are file streams instead.</span>
+<span class="sd">    So you use it like this:</span>
+
+<span class="sd">    ```</span>
+<span class="sd">    z = FileStreamsOfZip(rootdir)</span>
+<span class="sd">    with z[relpath] as fp:</span>
+<span class="sd">        ...  # do stuff with fp, like fp.readlines() or such...</span>
+<span class="sd">    ```</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">zip_file</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">open_kws</span><span class="p">)</span></div>
+
+
+<span class="kn">from</span> <span class="nn">py2store.key_mappers.paths</span> <span class="kn">import</span> <span class="n">mk_relative_path_store</span>
+<span class="kn">from</span> <span class="nn">py2store.util</span> <span class="kn">import</span> <span class="n">partialclass</span>
+
+<span class="n">ZipFileStreamsReader</span> <span class="o">=</span> <span class="n">mk_relative_path_store</span><span class="p">(</span>
+    <span class="n">partialclass</span><span class="p">(</span><span class="n">ZipFilesReader</span><span class="p">,</span> <span class="n">zip_reader</span><span class="o">=</span><span class="n">FileStreamsOfZip</span><span class="p">),</span>
+    <span class="n">prefix_attr</span><span class="o">=</span><span class="s1">&#39;rootdir&#39;</span>
+<span class="p">)</span>
+<span class="n">ZipFileStreamsReader</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">=</span> <span class="s1">&#39;ZipFileStreamsReader&#39;</span>
+<span class="n">ZipFileStreamsReader</span><span class="o">.</span><span class="vm">__qualname__</span> <span class="o">=</span> <span class="s1">&#39;ZipFileStreamsReader&#39;</span>
+<span class="n">ZipFileStreamsReader</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;Like ZipFilesReader, but objects returned are file streams instead.&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">py2store.errors</span> <span class="kn">import</span> <span class="n">OverWritesNotAllowedError</span>
+
+
+<div class="viewcode-block" id="OverwriteNotAllowed"><a class="viewcode-back" href="../../../test.html#py2store.slib.s_zipfile.OverwriteNotAllowed">[docs]</a><span class="k">class</span> <span class="nc">OverwriteNotAllowed</span><span class="p">(</span><span class="ne">FileExistsError</span><span class="p">,</span> <span class="n">OverWritesNotAllowedError</span><span class="p">):</span>
+    <span class="o">...</span></div>
+
+
+<div class="viewcode-block" id="EmptyZipError"><a class="viewcode-back" href="../../../test.html#py2store.slib.s_zipfile.EmptyZipError">[docs]</a><span class="k">class</span> <span class="nc">EmptyZipError</span><span class="p">(</span><span class="ne">KeyError</span><span class="p">,</span> <span class="ne">FileNotFoundError</span><span class="p">):</span>
+    <span class="o">...</span></div>
+
+
+<span class="k">class</span> <span class="nc">_EmptyZipReader</span><span class="p">(</span><span class="n">KvReader</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">zip_filepath</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">zip_filepath</span> <span class="o">=</span> <span class="n">zip_filepath</span>
+
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">yield from</span> <span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">infolist</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">EmptyZipError</span><span class="p">(</span>
+            <span class="s2">&quot;The store is empty: ZipStore(zip_filepath=</span><span class="si">{self.zip_filepath}</span><span class="s2">)&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">EmptyZipError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;The zip file doesn&#39;t exist yet! Nothing was written in it: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">zip_filepath</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+        <span class="c1">#</span>
+        <span class="c1"># class OpenedNotExistingFile:</span>
+        <span class="c1">#     zip_filepath = self.zip_filepath</span>
+        <span class="c1">#</span>
+        <span class="c1">#     def read(self):</span>
+        <span class="c1">#         raise EmptyZipError(</span>
+        <span class="c1">#             f&quot;The zip file doesn&#39;t exist yet! Nothing was written in it: {self.zip_filepath}&quot;)</span>
+        <span class="c1">#</span>
+        <span class="c1">#     def __enter__(self, ):</span>
+        <span class="c1">#         return self</span>
+        <span class="c1">#</span>
+        <span class="c1">#     def __exit__(self, *exc):</span>
+        <span class="c1">#         return False</span>
+        <span class="c1">#</span>
+        <span class="c1"># return OpenedNotExistingFile()</span>
+
+
+<span class="kn">from</span> <span class="nn">zipfile</span> <span class="kn">import</span> <span class="n">BadZipFile</span>
+
+<span class="c1"># TODO: Do all systems have this? If not, need to choose dflt carefully (choose dynamically?)</span>
+<span class="n">DFLT_COMPRESSION</span> <span class="o">=</span> <span class="n">COMPRESSION</span><span class="o">.</span><span class="n">ZIP_DEFLATED</span>
+
+
+<span class="c1"># TODO: Revise ZipReader and ZipFilesReader architecture and make ZipStore be a subclass of Reader if poss</span>
+<span class="c1"># TODO: What if I just want to zip a (single) file. What does py2store offer for that?</span>
+<span class="c1"># TODO: How about set_obj (in misc.py)? Make it recognize the .zip extension and subextension (e.g. .txt.zip) serialize</span>
+<div class="viewcode-block" id="ZipStore"><a class="viewcode-back" href="../../../test.html#py2store.slib.s_zipfile.ZipStore">[docs]</a><span class="k">class</span> <span class="nc">ZipStore</span><span class="p">(</span><span class="n">KvPersister</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Zip read and writing.</span>
+<span class="sd">    When you want to read zips, there&#39;s the `FilesOfZip`, `ZipReader`, or `ZipFilesReader` we know and love.</span>
+
+<span class="sd">    Sometimes though, you want to write to zips too. For this, we have `ZipStore`.</span>
+
+<span class="sd">    Since ZipStore can write to a zip, it&#39;s read functionality is not going to assume static data,</span>
+<span class="sd">    and cache things, as your favorite zip readers did.</span>
+<span class="sd">    This, and the acrobatics need to disguise the weird zipfile into something more... key-value natural,</span>
+<span class="sd">    makes for a not so efficient store, out of the box.</span>
+
+<span class="sd">    I advise using one of the zip readers if all you need to do is read, or subclassing or</span>
+<span class="sd">     wrapping ZipStore with caching layers if it is appropriate to you.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">_zipfile_init_kw</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+        <span class="n">compression</span><span class="o">=</span><span class="n">DFLT_COMPRESSION</span><span class="p">,</span>
+        <span class="n">allowZip64</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">compresslevel</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">strict_timestamps</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">_open_kw</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">pwd</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">force_zip64</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">_writestr_kw</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">compress_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">compresslevel</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="n">zip_writer</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="c1"># @wraps(ZipReader.__init__)</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">zip_filepath</span><span class="p">,</span>
+            <span class="n">compression</span><span class="o">=</span><span class="n">DFLT_COMPRESSION</span><span class="p">,</span>
+            <span class="n">allow_overwrites</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">pwd</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">zip_filepath</span> <span class="o">=</span> <span class="n">fullpath</span><span class="p">(</span><span class="n">zip_filepath</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">zip_filepath</span> <span class="o">=</span> <span class="n">zip_filepath</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">zip_writer_opened</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">allow_overwrites</span> <span class="o">=</span> <span class="n">allow_overwrites</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_zipfile_init_kw</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_zipfile_init_kw</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="n">compression</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_open_kw</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_open_kw</span><span class="p">,</span> <span class="n">pwd</span><span class="o">=</span><span class="n">pwd</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">files_only_filt</span><span class="p">(</span><span class="n">fileinfo</span><span class="p">):</span>
+        <span class="k">return</span> <span class="ow">not</span> <span class="n">fileinfo</span><span class="o">.</span><span class="n">is_dir</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">zip_reader</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">zip_filepath</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">ZipFile</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">zip_filepath</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">_zipfile_init_kw</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">_EmptyZipReader</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">zip_filepath</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># using zip_file.infolist(), we could also filter for info (like directory/file)</span>
+        <span class="k">yield from</span> <span class="p">(</span>
+            <span class="n">fi</span><span class="o">.</span><span class="n">filename</span>
+            <span class="k">for</span> <span class="n">fi</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">zip_reader</span><span class="o">.</span><span class="n">infolist</span><span class="p">()</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">files_only_filt</span><span class="p">(</span><span class="n">fi</span><span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">zip_reader</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="o">**</span><span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_open_kw</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;r&quot;</span><span class="p">))</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">fp</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">args_str</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">zip_filepath</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s2">&quot;&#39;allow_overwrites=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">allow_overwrites</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(</span><span class="si">{</span><span class="n">args_str</span><span class="si">}</span><span class="s2">)&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">zip_reader</span><span class="o">.</span><span class="n">open</span><span class="p">(</span>
+                    <span class="n">k</span><span class="p">,</span> <span class="o">**</span><span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_open_kw</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;r&quot;</span><span class="p">)</span>
+            <span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+                <span class="k">pass</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">except</span> <span class="p">(</span>
+                <span class="ne">KeyError</span><span class="p">,</span>
+                <span class="n">BadZipFile</span><span class="p">,</span>
+        <span class="p">):</span>  <span class="c1"># BadZipFile is to catch when zip file exists, but is empty.</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="c1"># # TODO: Find better way to avoid duplicate keys!</span>
+    <span class="c1"># # TODO: What&#39;s the right Error to raise</span>
+    <span class="c1"># def _assert_non_existing_key(self, k):</span>
+    <span class="c1">#     # if self.zip_writer is not None:</span>
+    <span class="c1">#     if not self.zip_writer_opened:</span>
+    <span class="c1">#         try:</span>
+    <span class="c1">#             self.zip_reader.open(k)</span>
+    <span class="c1">#             raise OverwriteNotAllowed(f&quot;You&#39;re not allowed to overwrite an existing key: {k}&quot;)</span>
+    <span class="c1">#         except KeyError as e:</span>
+    <span class="c1">#             if isinstance(e, EmptyZipError) or e.args[-1].endswith(&#39;archive&#39;):</span>
+    <span class="c1">#                 pass  #</span>
+    <span class="c1">#             else:</span>
+    <span class="c1">#                 raise OverwriteNotAllowed(f&quot;You&#39;re not allowed to overwrite an existing key: {k}&quot;)</span>
+
+    <span class="c1"># TODO: Repeated with zip_writer logic. Consider DRY possibilities.</span>
+    <span class="k">def</span> <span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">allow_overwrites</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">zip_writer_opened</span><span class="p">:</span>
+                <span class="k">del</span> <span class="bp">self</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>  <span class="c1"># remove key so it can be overwritten</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">zip_writer_opened</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">OverwriteNotAllowed</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;When using the context mode, you&#39;re not allowed to overwrite an existing key: </span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">OverwriteNotAllowed</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;You&#39;re not allowed to overwrite an existing key: </span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">zip_writer_opened</span><span class="p">:</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">zip_writer</span><span class="o">.</span><span class="n">open</span><span class="p">(</span>
+                    <span class="n">k</span><span class="p">,</span> <span class="o">**</span><span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_open_kw</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">)</span>
+            <span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">fp</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">ZipFile</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">zip_filepath</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">_zipfile_init_kw</span>
+            <span class="p">)</span> <span class="k">as</span> <span class="n">zip_writer</span><span class="p">:</span>
+                <span class="k">with</span> <span class="n">zip_writer</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="o">**</span><span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_open_kw</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">))</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">fp</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__delitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;zip -d </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">zip_filepath</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">e</span><span class="o">.</span><span class="vm">__class__</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="o">.</span><span class="n">args</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="c1"># raise NotImplementedError(&quot;zipfile, the backend of ZipStore, doesn&#39;t support deletion, so neither will we.&quot;)</span>
+
+    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">zip_writer</span> <span class="o">=</span> <span class="n">ZipFile</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">zip_filepath</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">_zipfile_init_kw</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">zip_writer_opened</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">zip_writer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">zip_writer</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">zip_writer_opened</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="fm">__enter__</span> <span class="o">=</span> <span class="nb">open</span>
+
+    <span class="k">def</span> <span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">exc</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+<span class="c1"># TODO: The way prefix and file_info_filt is handled is not efficient</span>
+<span class="c1"># TODO: prefix is silly: less general than filename_filt would be, and not even producing relative paths</span>
+<span class="c1"># (especially when getitem returns subdirs)</span>
+
+
+<span class="c1"># trans alternative:</span>
+<span class="c1"># from py2store.trans import mk_kv_reader_from_kv_collection, wrap_kvs</span>
+<span class="c1">#</span>
+<span class="c1"># ZipFileReader = wrap_kvs(mk_kv_reader_from_kv_collection(FileCollection, name=&#39;_ZipFileReader&#39;),</span>
+<span class="c1">#                          name=&#39;ZipFileReader&#39;,</span>
+<span class="c1">#                          obj_of_data=ZipReader)</span>
+
+<span class="c1">#</span>
+<span class="c1"># if __name__ == &#39;__main__&#39;:</span>
+<span class="c1">#     from py2store.test.simple import test_local_file_ops</span>
+<span class="c1">#</span>
+<span class="c1">#     test_local_file_ops()</span>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">py2store</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html">py2store.filesys</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.misc">py2store.misc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.mixins">py2store.mixins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.test.util">py2store.test.util</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-test-quick">py2store.test.quick</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.test">py2store.test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-test-simple">py2store.test.simple</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-test-scrap">py2store.test.scrap</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.util">py2store.util</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-ext-docx">py2store.ext.docx</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext.gitlab">py2store.ext.gitlab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-ext-hdf">py2store.ext.hdf</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext">py2store.ext</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-ext-matlab">py2store.ext.matlab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext.kaggle">py2store.ext.kaggle</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-ext-module-imports">py2store.ext.module_imports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext.audio">py2store.ext.audio</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-ext-github">py2store.ext.github</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext.dataframes">py2store.ext.dataframes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.access">py2store.access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.__init__">py2store.__init__</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores.s3_store">py2store.stores.s3_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores.delegation_stores">py2store.stores.delegation_stores</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores.sql_w_sqlalchemy">py2store.stores.sql_w_sqlalchemy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-stores-arangodb-store">py2store.stores.arangodb_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-stores-dropbox-store">py2store.stores.dropbox_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores.local_store">py2store.stores.local_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores">py2store.stores</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-stores-couchdb-store">py2store.stores.couchdb_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores.mongo_store">py2store.stores.mongo_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.core">py2store.core</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.uri_utils">py2store.utils.uri_utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.explicit">py2store.utils.explicit</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.timeseries_caching">py2store.utils.timeseries_caching</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-utils-attr-dict-py-attr-dict">py2store.utils.attr_dict.py.attr_dict</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-utils-attr-dict-py">py2store.utils.attr_dict.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.cumul_aggreg_write">py2store.utils.cumul_aggreg_write</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils">py2store.utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.cache_descriptors">py2store.utils.cache_descriptors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.appendable">py2store.utils.appendable</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.affine_conversion">py2store.utils.affine_conversion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.signatures">py2store.utils.signatures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.sliceable">py2store.utils.sliceable</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.mappify">py2store.utils.mappify</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.glom">py2store.utils.glom</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-sql-w-odbc">py2store.persisters.sql_w_odbc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.dynamodb_w_boto3">py2store.persisters.dynamodb_w_boto3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-couchdb-w-couchdb">py2store.persisters.couchdb_w_couchdb</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.ftp_persister">py2store.persisters.ftp_persister</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.dropbox_w_urllib">py2store.persisters.dropbox_w_urllib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters._google_drive_in_progress">py2store.persisters._google_drive_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-dropbox-w-dropbox">py2store.persisters.dropbox_w_dropbox</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-redis-w-redis">py2store.persisters.redis_w_redis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.sql_w_sqlalchemy">py2store.persisters.sql_w_sqlalchemy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.new_s3">py2store.persisters.new_s3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters">py2store.persisters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.dropbox_w_requests">py2store.persisters.dropbox_w_requests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.w_aiofile">py2store.persisters.w_aiofile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.local_files">py2store.persisters.local_files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-arangodb-w-pyarango">py2store.persisters.arangodb_w_pyarango</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters._cassandra_in_progress">py2store.persisters._cassandra_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters._couchdb_in_progress">py2store.persisters._couchdb_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.s3_w_boto3">py2store.persisters.s3_w_boto3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-postgres-w-psycopg2-in-progress">py2store.persisters._postgres_w_psycopg2_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-ssh-persister">py2store.persisters.ssh_persister</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.mongo_w_pymongo">py2store.persisters.mongo_w_pymongo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-googledrive-w-pydrive">py2store.persisters.googledrive_w_pydrive</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.sources">py2store.sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.dig">py2store.dig</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers.pickled">py2store.serializers.pickled</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers.jsonization">py2store.serializers.jsonization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers">py2store.serializers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers.sequential">py2store.serializers.sequential</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers.regular_panel_data">py2store.serializers.regular_panel_data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers.audio">py2store.serializers.audio</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.caching">py2store.caching</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.scrap">py2store.scrap</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.scrap.new_gen_local">py2store.scrap.new_gen_local</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.examples.write_caches">py2store.examples.write_caches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.examples">py2store.examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.examples.python_code_stats">py2store.examples.python_code_stats</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.examples.kv_walking">py2store.examples.kv_walking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.my">py2store.my</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.my.grabbers">py2store.my.grabbers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.trans">py2store.trans</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.key_mappers.str_utils">py2store.key_mappers.str_utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.key_mappers.tuples">py2store.key_mappers.tuples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.key_mappers.paths">py2store.key_mappers.paths</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.key_mappers.naming">py2store.key_mappers.naming</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.key_mappers">py2store.key_mappers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.errors">py2store.errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.slib.s_configparser">py2store.slib.s_configparser</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.slib">py2store.slib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.slib.s_zipfile">py2store.slib.s_zipfile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.base">py2store.base</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-selectors-mg-selectors">py2store.selectors.mg_selectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-selectors-mongoquery">py2store.selectors.mongoquery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-selectors">py2store.selectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.parse_format">py2store.parse_format</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  <li><a href="../../py2store.html">py2store</a><ul>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

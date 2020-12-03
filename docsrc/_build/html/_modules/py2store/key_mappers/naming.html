@@ -1,0 +1,1409 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>py2store.key_mappers.naming &#8212; py2store 0.0.7 documentation</title>
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css" />
+    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for py2store.key_mappers.naming</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module is about generating, validating, and operating on (parametrized) fields (i.e. stings, e.g. paths).</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span><span class="p">,</span> <span class="n">wraps</span>
+<span class="kn">from</span> <span class="nn">types</span> <span class="kn">import</span> <span class="n">MethodType</span>
+
+<span class="kn">from</span> <span class="nn">py2store.utils.signatures</span> <span class="kn">import</span> <span class="n">set_signature_of_func</span>
+<span class="kn">from</span> <span class="nn">py2store.errors</span> <span class="kn">import</span> <span class="n">KeyValidationError</span><span class="p">,</span> <span class="n">_assert_condition</span>
+
+<span class="n">assert_condition</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">_assert_condition</span><span class="p">,</span> <span class="n">err_cls</span><span class="o">=</span><span class="n">KeyValidationError</span><span class="p">)</span>
+
+<span class="n">path_sep</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">sep</span>
+
+<span class="n">base_validation_funs</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;be a&quot;</span><span class="p">:</span> <span class="nb">isinstance</span><span class="p">,</span>
+    <span class="s2">&quot;be in&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">val</span><span class="p">,</span> <span class="n">check_val</span><span class="p">:</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">check_val</span><span class="p">,</span>
+    <span class="s2">&quot;be at least&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">val</span><span class="p">,</span> <span class="n">check_val</span><span class="p">:</span> <span class="n">val</span> <span class="o">&gt;=</span> <span class="n">check_val</span><span class="p">,</span>
+    <span class="s2">&quot;be more than&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">val</span><span class="p">,</span> <span class="n">check_val</span><span class="p">:</span> <span class="n">val</span> <span class="o">&gt;</span> <span class="n">check_val</span><span class="p">,</span>
+    <span class="s2">&quot;be no more than&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">val</span><span class="p">,</span> <span class="n">check_val</span><span class="p">:</span> <span class="n">val</span> <span class="o">&lt;=</span> <span class="n">check_val</span><span class="p">,</span>
+    <span class="s2">&quot;be less than&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">val</span><span class="p">,</span> <span class="n">check_val</span><span class="p">:</span> <span class="n">val</span> <span class="o">&lt;</span> <span class="n">check_val</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="n">dflt_validation_funs</span> <span class="o">=</span> <span class="n">base_validation_funs</span>
+<span class="n">dflt_all_kwargs_should_be_in_validation_dict</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="n">dflt_ignore_misunderstood_validation_instructions</span> <span class="o">=</span> <span class="kc">False</span>
+
+<span class="n">dflt_arg_pattern</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;.+&quot;</span>
+
+<span class="n">day_format</span> <span class="o">=</span> <span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">&quot;</span>
+<span class="n">day_format_pattern</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s2">&quot;\d</span><span class="si">{4}</span><span class="s2">-\d</span><span class="si">{2}</span><span class="s2">-\d</span><span class="si">{2}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="n">capture_template</span> <span class="o">=</span> <span class="s2">&quot;(</span><span class="si">{format}</span><span class="s2">)&quot;</span>
+<span class="n">named_capture_template</span> <span class="o">=</span> <span class="s2">&quot;(?P&lt;</span><span class="si">{name}</span><span class="s2">&gt;</span><span class="si">{format}</span><span class="s2">)&quot;</span>
+
+<span class="n">fields_re</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s2">&quot;(?&lt;={)[^}]+(?=})&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="validate_kwargs"><a class="viewcode-back" href="../../../test.html#py2store.key_mappers.naming.validate_kwargs">[docs]</a><span class="k">def</span> <span class="nf">validate_kwargs</span><span class="p">(</span>
+        <span class="n">kwargs_to_validate</span><span class="p">,</span>
+        <span class="n">validation_dict</span><span class="p">,</span>
+        <span class="n">validation_funs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">all_kwargs_should_be_in_validation_dict</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">ignore_misunderstood_validation_instructions</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Utility to validate a dict. It&#39;s main use is to validate function arguments (expressing the validation checks</span>
+<span class="sd">    in validation_dict) by doing validate_kwargs(locals()), usually in the beginning of the function</span>
+<span class="sd">    (to avoid having more accumulated variables than we need in locals())</span>
+<span class="sd">    :param kwargs_to_validate: as the name implies...</span>
+<span class="sd">    :param validation_dict: A dict specifying what to validate. Keys are usually name of variables (when feeding</span>
+<span class="sd">        locals()) and values are dicts, themselves specifying check:check_val pairs where check is a string that</span>
+<span class="sd">        points to a function (see validation_funs argument) and check_val is an object that the kwargs_to_validate</span>
+<span class="sd">        value will be checked against.</span>
+<span class="sd">    :param validation_funs: A dict of check:check_function(val, check_val) where check_function is a function returning</span>
+<span class="sd">        True if val is valid (with respect to check_val).</span>
+<span class="sd">    :param all_kwargs_should_be_in_validation_dict: If True, will raise an error if kwargs_to_validate contains</span>
+<span class="sd">        keys that are not in validation_dict.</span>
+<span class="sd">    :param ignore_misunderstood_validation_instructions: If True, will raise an error if validation_dict contains</span>
+<span class="sd">        a key that is not in validation_funs (safer, since if you mistype a key in validation_dict, the function will</span>
+<span class="sd">        tell you so!</span>
+<span class="sd">    :return: True if all the validations passed.</span>
+
+<span class="sd">    &gt;&gt;&gt; validation_dict = {</span>
+<span class="sd">    ...     &#39;system&#39;: {</span>
+<span class="sd">    ...         &#39;be in&#39;: {&#39;darwin&#39;, &#39;linux&#39;}</span>
+<span class="sd">    ...     },</span>
+<span class="sd">    ...     &#39;fv_version&#39;: {</span>
+<span class="sd">    ...         &#39;be a&#39;: int,</span>
+<span class="sd">    ...         &#39;be at least&#39;: 5</span>
+<span class="sd">    ...     }</span>
+<span class="sd">    ... }</span>
+<span class="sd">    &gt;&gt;&gt; validate_kwargs({&#39;system&#39;: &#39;darwin&#39;}, validation_dict)</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; try:</span>
+<span class="sd">    ...     validate_kwargs({&#39;system&#39;: &#39;windows&#39;}, validation_dict)</span>
+<span class="sd">    ... except AssertionError as e:</span>
+<span class="sd">    ...     assert str(e).startswith(&#39;system must be in&#39;)  # omitting the set because inconsistent order</span>
+<span class="sd">    &gt;&gt;&gt; try:</span>
+<span class="sd">    ...     validate_kwargs({&#39;fv_version&#39;: 9.9}, validation_dict)</span>
+<span class="sd">    ... except AssertionError as e:</span>
+<span class="sd">    ...     print(e)</span>
+<span class="sd">    fv_version must be a &lt;class &#39;int&#39;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; try:</span>
+<span class="sd">    ...     validate_kwargs({&#39;fv_version&#39;: 4}, validation_dict)</span>
+<span class="sd">    ... except AssertionError as e:</span>
+<span class="sd">    ...     print(e)</span>
+<span class="sd">    fv_version must be at least 5</span>
+<span class="sd">    &gt;&gt;&gt; validate_kwargs({&#39;fv_version&#39;: 6}, validation_dict)</span>
+<span class="sd">    True</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">validation_funs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+        <span class="n">base_validation_funs</span> <span class="ow">or</span> <span class="p">{},</span> <span class="o">**</span><span class="p">(</span><span class="n">validation_funs</span> <span class="ow">or</span> <span class="p">{})</span>
+    <span class="p">)</span>
+    <span class="k">for</span> <span class="p">(</span>
+            <span class="n">var</span><span class="p">,</span>
+            <span class="n">val</span><span class="p">,</span>
+    <span class="p">)</span> <span class="ow">in</span> <span class="n">kwargs_to_validate</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>  <span class="c1"># for every (var, val) pair of kwargs</span>
+        <span class="k">if</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">validation_dict</span><span class="p">:</span>  <span class="c1"># if var is in the validation_dict</span>
+            <span class="k">for</span> <span class="n">check</span><span class="p">,</span> <span class="n">check_val</span> <span class="ow">in</span> <span class="n">validation_dict</span><span class="p">[</span>
+                <span class="n">var</span>
+            <span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>  <span class="c1"># for every (key, val) of this dict</span>
+                <span class="k">if</span> <span class="p">(</span>
+                        <span class="n">check</span> <span class="ow">in</span> <span class="n">base_validation_funs</span>
+                <span class="p">):</span>  <span class="c1"># if you have a validation check for it</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">validation_funs</span><span class="p">[</span><span class="n">check</span><span class="p">](</span>
+                            <span class="n">val</span><span class="p">,</span> <span class="n">check_val</span>
+                    <span class="p">):</span>  <span class="c1"># check it&#39;s valid</span>
+                        <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span>
+                            <span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> must </span><span class="si">{}</span><span class="s2"> </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">check</span><span class="p">,</span> <span class="n">check_val</span><span class="p">)</span>
+                        <span class="p">)</span>  <span class="c1"># and raise an error if not</span>
+                <span class="k">elif</span> <span class="p">(</span>
+                        <span class="ow">not</span> <span class="n">ignore_misunderstood_validation_instructions</span>
+                <span class="p">):</span>  <span class="c1"># should ignore if check not understood?</span>
+                    <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span>
+                        <span class="s2">&quot;I don&#39;t know what to do with the validation check &#39;</span><span class="si">{}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                            <span class="n">check</span>
+                        <span class="p">)</span>
+                    <span class="p">)</span>
+        <span class="k">elif</span> <span class="p">(</span>
+                <span class="n">all_kwargs_should_be_in_validation_dict</span>
+        <span class="p">):</span>  <span class="c1"># should all variables have checks?</span>
+            <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> wasn&#39;t in the validation_dict&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="namedtuple_to_dict"><a class="viewcode-back" href="../../../test.html#py2store.key_mappers.naming.namedtuple_to_dict">[docs]</a><span class="k">def</span> <span class="nf">namedtuple_to_dict</span><span class="p">(</span><span class="n">nt</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    &gt;&gt;&gt; from collections import namedtuple</span>
+<span class="sd">    &gt;&gt;&gt; NT = namedtuple(&#39;MyTuple&#39;, (&#39;foo&#39;, &#39;hello&#39;))</span>
+<span class="sd">    &gt;&gt;&gt; nt = NT(1, 42)</span>
+<span class="sd">    &gt;&gt;&gt; nt</span>
+<span class="sd">    MyTuple(foo=1, hello=42)</span>
+<span class="sd">    &gt;&gt;&gt; d = namedtuple_to_dict(nt)</span>
+<span class="sd">    &gt;&gt;&gt; d</span>
+<span class="sd">    {&#39;foo&#39;: 1, &#39;hello&#39;: 42}</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">{</span><span class="n">field</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">nt</span><span class="p">,</span> <span class="n">field</span><span class="p">)</span> <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">nt</span><span class="o">.</span><span class="n">_fields</span><span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="dict_to_namedtuple"><a class="viewcode-back" href="../../../test.html#py2store.key_mappers.naming.dict_to_namedtuple">[docs]</a><span class="k">def</span> <span class="nf">dict_to_namedtuple</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">namedtuple_obj</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    &gt;&gt;&gt; from collections import namedtuple</span>
+<span class="sd">    &gt;&gt;&gt; NT = namedtuple(&#39;MyTuple&#39;, (&#39;foo&#39;, &#39;hello&#39;))</span>
+<span class="sd">    &gt;&gt;&gt; nt = NT(1, 42)</span>
+<span class="sd">    &gt;&gt;&gt; nt</span>
+<span class="sd">    MyTuple(foo=1, hello=42)</span>
+<span class="sd">    &gt;&gt;&gt; d = namedtuple_to_dict(nt)</span>
+<span class="sd">    &gt;&gt;&gt; d</span>
+<span class="sd">    {&#39;foo&#39;: 1, &#39;hello&#39;: 42}</span>
+<span class="sd">    &gt;&gt;&gt; dict_to_namedtuple(d)</span>
+<span class="sd">    NamedTupleFromDict(foo=1, hello=42)</span>
+<span class="sd">    &gt;&gt;&gt; dict_to_namedtuple(d, nt)</span>
+<span class="sd">    MyTuple(foo=1, hello=42)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">namedtuple_obj</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">namedtuple_obj</span> <span class="o">=</span> <span class="s2">&quot;NamedTupleFromDict&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">namedtuple_obj</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">namedtuple_name</span> <span class="o">=</span> <span class="n">namedtuple_obj</span>
+        <span class="n">namedtuple_cls</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="n">namedtuple_name</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">namedtuple_obj</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span>
+            <span class="n">namedtuple_obj</span><span class="p">,</span> <span class="s2">&quot;_fields&quot;</span>
+    <span class="p">):</span>
+        <span class="n">namedtuple_cls</span> <span class="o">=</span> <span class="n">namedtuple_obj</span><span class="o">.</span><span class="vm">__class__</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">namedtuple_obj</span><span class="p">,</span> <span class="nb">type</span><span class="p">):</span>
+        <span class="n">namedtuple_cls</span> <span class="o">=</span> <span class="n">namedtuple_obj</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Can&#39;t resolve the nametuple class specification: </span><span class="si">{</span><span class="n">namedtuple_obj</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">namedtuple_cls</span><span class="p">(</span><span class="o">**</span><span class="n">d</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="update_fields_of_namedtuple"><a class="viewcode-back" href="../../../test.html#py2store.key_mappers.naming.update_fields_of_namedtuple">[docs]</a><span class="k">def</span> <span class="nf">update_fields_of_namedtuple</span><span class="p">(</span>
+        <span class="n">nt</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">name_of_output_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">remove_fields</span><span class="o">=</span><span class="p">(),</span> <span class="o">**</span><span class="n">kwargs</span>
+<span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Replace fields of namedtuple</span>
+<span class="sd">    &gt;&gt;&gt; from collections import namedtuple</span>
+<span class="sd">    &gt;&gt;&gt; NT = namedtuple(&#39;NT&#39;, (&#39;a&#39;, &#39;b&#39;, &#39;c&#39;))</span>
+<span class="sd">    &gt;&gt;&gt; nt = NT(1,2,3)</span>
+<span class="sd">    &gt;&gt;&gt; nt</span>
+<span class="sd">    NT(a=1, b=2, c=3)</span>
+<span class="sd">    &gt;&gt;&gt; update_fields_of_namedtuple(nt, c=3000)  # replacing a single field</span>
+<span class="sd">    NT(a=1, b=2, c=3000)</span>
+<span class="sd">    &gt;&gt;&gt; update_fields_of_namedtuple(nt, c=3000, a=1000)  # replacing two fields</span>
+<span class="sd">    NT(a=1000, b=2, c=3000)</span>
+<span class="sd">    &gt;&gt;&gt; update_fields_of_namedtuple(nt, a=1000, c=3000)  # see that the original order doesn&#39;t change</span>
+<span class="sd">    NT(a=1000, b=2, c=3000)</span>
+<span class="sd">    &gt;&gt;&gt; update_fields_of_namedtuple(nt, b=2000, d=&#39;hello&#39;)  # replacing one field and adding a new one</span>
+<span class="sd">    UpdatedNT(a=1, b=2000, c=3, d=&#39;hello&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; # Now let&#39;s try controlling the name of the output type, remove fields, and add new ones</span>
+<span class="sd">    &gt;&gt;&gt; update_fields_of_namedtuple(nt, name_of_output_type=&#39;NewGuy&#39;, remove_fields=(&#39;a&#39;, &#39;c&#39;), hello=&#39;world&#39;)</span>
+<span class="sd">    NewGuy(b=2, hello=&#39;world&#39;)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">output_type_can_be_the_same_as_input_type</span> <span class="o">=</span> <span class="p">(</span><span class="ow">not</span> <span class="n">remove_fields</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">set</span><span class="p">(</span>
+        <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="n">nt</span><span class="o">.</span><span class="n">_fields</span><span class="p">)</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">namedtuple_to_dict</span><span class="p">(</span><span class="n">nt</span><span class="p">),</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">remove_fields</span><span class="p">:</span>
+        <span class="n">d</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="p">(</span>
+            <span class="n">output_type_can_be_the_same_as_input_type</span>
+            <span class="ow">and</span> <span class="n">name_of_output_type</span> <span class="ow">is</span> <span class="kc">None</span>
+    <span class="p">):</span>
+        <span class="k">return</span> <span class="n">dict_to_namedtuple</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">nt</span><span class="o">.</span><span class="vm">__class__</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">name_of_output_type</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">name_of_output_type</span> <span class="ow">or</span> <span class="sa">f</span><span class="s2">&quot;Updated</span><span class="si">{</span><span class="n">nt</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">dict_to_namedtuple</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">name_of_output_type</span><span class="p">)</span></div>
+
+
+<span class="n">empty_field_p</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="get_fields_from_template"><a class="viewcode-back" href="../../../test.html#py2store.key_mappers.naming.get_fields_from_template">[docs]</a><span class="k">def</span> <span class="nf">get_fields_from_template</span><span class="p">(</span><span class="n">template</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Get list from {item} items of template string</span>
+<span class="sd">    :param template: a &quot;template&quot; string (a string with {item} items</span>
+<span class="sd">    -- the kind that is used to mark token for str.format)</span>
+<span class="sd">    :return: a list of the token items of the string, in the order they appear</span>
+<span class="sd">    &gt;&gt;&gt; get_fields_from_template(&#39;this{is}an{example}of{a}template&#39;)</span>
+<span class="sd">    [&#39;is&#39;, &#39;example&#39;, &#39;a&#39;]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># TODO: Need to use the string module, and need to auto-name the fields instead of refusing unnamed</span>
+    <span class="k">assert</span> <span class="ow">not</span> <span class="n">empty_field_p</span><span class="o">.</span><span class="n">search</span><span class="p">(</span>
+        <span class="n">template</span>
+    <span class="p">),</span> <span class="s2">&quot;All fields must be named: That is, no empty </span><span class="si">{}</span><span class="s2"> allowed&quot;</span>
+    <span class="k">return</span> <span class="n">fields_re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">template</span><span class="p">)</span></div>
+
+
+<span class="c1"># until_slash = &quot;[^&quot; + path_sep + &quot;]+&quot;</span>
+<span class="c1"># until_slash_capture = &#39;(&#39; + until_slash + &#39;)&#39;</span>
+
+
+<span class="k">def</span> <span class="nf">mk_format_mapping_dict</span><span class="p">(</span><span class="n">format_dict</span><span class="p">,</span> <span class="n">required_keys</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="n">path_sep</span><span class="p">):</span>
+    <span class="n">until_sep</span> <span class="o">=</span> <span class="s2">&quot;[^&quot;</span> <span class="o">+</span> <span class="n">re</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="n">sep</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;]+&quot;</span>
+    <span class="n">new_format_dict</span> <span class="o">=</span> <span class="n">format_dict</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">required_keys</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">new_format_dict</span><span class="p">:</span>
+            <span class="n">new_format_dict</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">until_sep</span>
+    <span class="k">return</span> <span class="n">new_format_dict</span>
+
+
+<span class="k">def</span> <span class="nf">mk_capture_patterns</span><span class="p">(</span><span class="n">mapping_dict</span><span class="p">):</span>
+    <span class="n">new_mapping_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">mapping_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">new_v</span> <span class="o">=</span> <span class="n">capture_template</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">format</span><span class="o">=</span><span class="n">v</span><span class="p">)</span>
+        <span class="n">new_mapping_dict</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_v</span>
+    <span class="k">return</span> <span class="n">new_mapping_dict</span>
+
+
+<span class="k">def</span> <span class="nf">mk_named_capture_patterns</span><span class="p">(</span><span class="n">mapping_dict</span><span class="p">):</span>
+    <span class="n">new_mapping_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">mapping_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">new_v</span> <span class="o">=</span> <span class="n">named_capture_template</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">k</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="n">v</span><span class="p">)</span>
+        <span class="n">new_mapping_dict</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_v</span>
+    <span class="k">return</span> <span class="n">new_mapping_dict</span>
+
+
+<span class="k">def</span> <span class="nf">template_to_pattern</span><span class="p">(</span><span class="n">mapping_dict</span><span class="p">,</span> <span class="n">template</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">mapping_dict</span><span class="p">:</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
+            <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="s2">&quot;|&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                    <span class="p">[</span>
+                        <span class="s2">&quot;{&quot;</span> <span class="o">+</span> <span class="n">re</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;}&quot;</span>
+                        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">mapping_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+                    <span class="p">]</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">p</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span>
+            <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">mapping_dict</span><span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">string</span><span class="p">[(</span><span class="n">x</span><span class="o">.</span><span class="n">start</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span> <span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">end</span><span class="p">()</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)]],</span>
+            <span class="n">template</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">template</span>
+
+
+<span class="k">def</span> <span class="nf">mk_extract_pattern</span><span class="p">(</span>
+        <span class="n">template</span><span class="p">,</span> <span class="n">format_dict</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">named_capture_patterns</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span>
+<span class="p">):</span>
+    <span class="n">format_dict</span> <span class="o">=</span> <span class="n">format_dict</span> <span class="ow">or</span> <span class="p">{}</span>
+    <span class="n">named_capture_patterns</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">named_capture_patterns</span> <span class="ow">or</span> <span class="n">mk_named_capture_patterns</span><span class="p">(</span><span class="n">format_dict</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="k">assert</span> <span class="n">name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="n">mapping_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">format_dict</span><span class="p">,</span> <span class="o">**</span><span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">named_capture_patterns</span><span class="p">[</span><span class="n">name</span><span class="p">]})</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
+        <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="s2">&quot;|&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="p">[</span><span class="s2">&quot;{&quot;</span> <span class="o">+</span> <span class="n">re</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;}&quot;</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">mapping_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">())]</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
+        <span class="n">p</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span>
+            <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">mapping_dict</span><span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">string</span><span class="p">[(</span><span class="n">x</span><span class="o">.</span><span class="n">start</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span> <span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">end</span><span class="p">()</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)]],</span>
+            <span class="n">template</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+
+
+<div class="viewcode-block" id="mk_pattern_from_template_and_format_dict"><a class="viewcode-back" href="../../../test.html#py2store.key_mappers.naming.mk_pattern_from_template_and_format_dict">[docs]</a><span class="k">def</span> <span class="nf">mk_pattern_from_template_and_format_dict</span><span class="p">(</span><span class="n">template</span><span class="p">,</span> <span class="n">format_dict</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Make a compiled regex to match template</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        template: A format string</span>
+<span class="sd">        format_dict: A dict whose keys are template fields and values are regex strings to capture them</span>
+
+<span class="sd">    Returns: a compiled regex</span>
+
+<span class="sd">    &gt;&gt;&gt; mk_pattern_from_template_and_format_dict(&#39;{here}/and/{there}&#39;)</span>
+<span class="sd">    re.compile(&#39;(?P&lt;here&gt;[^/]+)/and/(?P&lt;there&gt;[^/]+)&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; p = mk_pattern_from_template_and_format_dict(&#39;{here}/and/{there}&#39;, {&#39;there&#39;: &#39;\d+&#39;})</span>
+<span class="sd">    &gt;&gt;&gt; p</span>
+<span class="sd">    re.compile(&#39;(?P&lt;here&gt;[^/]+)/and/(?P&lt;there&gt;\\\d+)&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; type(p)</span>
+<span class="sd">    &lt;class &#39;re.Pattern&#39;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; p.match(&#39;HERE/and/1234&#39;).groupdict()</span>
+<span class="sd">    {&#39;here&#39;: &#39;HERE&#39;, &#39;there&#39;: &#39;1234&#39;}</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">format_dict</span> <span class="o">=</span> <span class="n">format_dict</span> <span class="ow">or</span> <span class="p">{}</span>
+
+    <span class="n">fields</span> <span class="o">=</span> <span class="n">get_fields_from_template</span><span class="p">(</span><span class="n">template</span><span class="p">)</span>
+    <span class="n">format_dict</span> <span class="o">=</span> <span class="n">mk_format_mapping_dict</span><span class="p">(</span><span class="n">format_dict</span><span class="p">,</span> <span class="n">fields</span><span class="p">)</span>
+    <span class="n">named_capture_patterns</span> <span class="o">=</span> <span class="n">mk_named_capture_patterns</span><span class="p">(</span><span class="n">format_dict</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">template_to_pattern</span><span class="p">(</span><span class="n">named_capture_patterns</span><span class="p">,</span> <span class="n">template</span><span class="p">))</span></div>
+
+
+<span class="k">def</span> <span class="nf">mk_prefix_templates_dicts</span><span class="p">(</span><span class="n">template</span><span class="p">):</span>
+    <span class="n">fields</span> <span class="o">=</span> <span class="n">get_fields_from_template</span><span class="p">(</span><span class="n">template</span><span class="p">)</span>
+    <span class="n">prefix_template_dict_including_name</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+    <span class="n">none_and_fields</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">+</span> <span class="n">fields</span>
+    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">none_and_fields</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="n">fields</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="n">prefix_template_dict_including_name</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">template</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">next_name</span> <span class="o">=</span> <span class="n">fields</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">next_name</span> <span class="o">=</span> <span class="n">fields</span><span class="p">[</span>
+                    <span class="mi">1</span>
+                    <span class="o">+</span> <span class="nb">next</span><span class="p">(</span>
+                        <span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">_name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">fields</span><span class="p">)</span> <span class="k">if</span> <span class="n">_name</span> <span class="o">==</span> <span class="n">name</span>
+                    <span class="p">)</span>
+                    <span class="p">]</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="s2">&quot;{&quot;</span> <span class="o">+</span> <span class="n">next_name</span> <span class="o">+</span> <span class="s2">&quot;}&quot;</span>
+            <span class="n">template_idx_of_next_name</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">template</span><span class="p">)</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+            <span class="n">prefix_template_dict_including_name</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">template</span><span class="p">[</span>
+                                                        <span class="p">:</span><span class="n">template_idx_of_next_name</span>
+                                                        <span class="p">]</span>
+
+    <span class="n">prefix_template_dict_excluding_name</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">fields</span><span class="p">):</span>
+        <span class="n">prefix_template_dict_excluding_name</span><span class="p">[</span>
+            <span class="n">name</span>
+        <span class="p">]</span> <span class="o">=</span> <span class="n">prefix_template_dict_including_name</span><span class="p">[</span><span class="n">none_and_fields</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span>
+    <span class="n">prefix_template_dict_excluding_name</span><span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="n">template</span>
+
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">prefix_template_dict_including_name</span><span class="p">,</span>
+        <span class="n">prefix_template_dict_excluding_name</span><span class="p">,</span>
+    <span class="p">)</span>
+
+
+<div class="viewcode-block" id="mk_kwargs_trans"><a class="viewcode-back" href="../../../test.html#py2store.key_mappers.naming.mk_kwargs_trans">[docs]</a><span class="k">def</span> <span class="nf">mk_kwargs_trans</span><span class="p">(</span><span class="o">**</span><span class="n">trans_func_for_key</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Make a dict transformer from functions that depends solely on keys (of the dict to be transformed)</span>
+<span class="sd">    Used to easily make process_kwargs and process_info_dict arguments for LinearNaming.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span>
+        <span class="nb">map</span><span class="p">(</span><span class="n">callable</span><span class="p">,</span> <span class="n">trans_func_for_key</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+    <span class="p">),</span> <span class="s2">&quot;all argument values must be callable&quot;</span>
+
+    <span class="k">def</span> <span class="nf">key_based_val_trans</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">trans_func_for_key</span><span class="p">:</span>
+                <span class="n">kwargs</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">trans_func_for_key</span><span class="p">[</span><span class="n">k</span><span class="p">](</span><span class="n">v</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">kwargs</span>
+
+    <span class="k">return</span> <span class="n">key_based_val_trans</span></div>
+
+
+<span class="k">def</span> <span class="nf">_mk</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Make a full name with given kwargs. All required name=val must be present (or infered by self.process_kwargs</span>
+<span class="sd">    function.</span>
+<span class="sd">    The required fields are in self.fields.</span>
+<span class="sd">    Does NOT check for validity of the vals.</span>
+<span class="sd">    :param kwargs: The name=val arguments needed to construct a valid name</span>
+<span class="sd">    :return: an name</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_fields</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;You have too many arguments: (args, kwargs) is (</span><span class="si">{</span><span class="n">args</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">kwargs</span><span class="si">}</span><span class="s2">)&quot;</span>
+        <span class="p">)</span>
+    <span class="k">elif</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_fields</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;You have too few arguments: (args, kwargs) is (</span><span class="si">{</span><span class="n">args</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">kwargs</span><span class="si">}</span><span class="s2">)&quot;</span>
+        <span class="p">)</span>
+    <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">({</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">,</span> <span class="n">args</span><span class="p">)},</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">process_kwargs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">kwargs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">process_kwargs</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">template</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">StrTupleDict</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">template</span><span class="p">:</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">),</span>
+            <span class="n">format_dict</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">process_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">process_info_dict</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">named_tuple_type_name</span><span class="o">=</span><span class="s2">&quot;NamedTuple&quot;</span><span class="p">,</span>
+            <span class="n">sep</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">path_sep</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Converting from and to strings, tuples, and dicts.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            template: The string format template</span>
+<span class="sd">            format_dict: A {field_name: field_value_format_regex, ...} dict</span>
+<span class="sd">            process_kwargs: A function taking the field=value pairs and producing a dict of processed</span>
+<span class="sd">                {field: value,...} dict (where both fields and values could have been processed.</span>
+<span class="sd">                This is useful when we need to process (format, default, etc.) fields, or their values,</span>
+<span class="sd">                according to the other fields of values in the collection.</span>
+<span class="sd">                A specification of {field: function_to_process_this_value,...} wouldn&#39;t allow the full powers</span>
+<span class="sd">                we are allowing here.</span>
+<span class="sd">            process_info_dict: A sort of converse of format_dict.</span>
+<span class="sd">                This is a {field_name: field_conversion_func, ...} dict that is used to convert info_dict values</span>
+<span class="sd">                before returning them.</span>
+<span class="sd">            name_separator: Used</span>
+
+<span class="sd">        &gt;&gt;&gt; ln = StrTupleDict(&#39;/home/{user}/fav/{num}.txt&#39;,</span>
+<span class="sd">        ...	                  format_dict={&#39;user&#39;: &#39;[^/]+&#39;, &#39;num&#39;: &#39;\d+&#39;},</span>
+<span class="sd">        ...	                  process_info_dict={&#39;num&#39;: int},</span>
+<span class="sd">        ...                   sep=&#39;/&#39;</span>
+<span class="sd">        ...	                 )</span>
+<span class="sd">        &gt;&gt;&gt; ln.is_valid(&#39;/home/USER/fav/123.txt&#39;)</span>
+<span class="sd">        True</span>
+<span class="sd">        &gt;&gt;&gt; ln.is_valid(&#39;/home/US/ER/fav/123.txt&#39;)</span>
+<span class="sd">        False</span>
+<span class="sd">        &gt;&gt;&gt; ln.is_valid(&#39;/home/US/ER/fav/not_a_number.txt&#39;)</span>
+<span class="sd">        False</span>
+<span class="sd">        &gt;&gt;&gt; ln.mk(&#39;USER&#39;, num=123)  # making a string (with args or kwargs)</span>
+<span class="sd">        &#39;/home/USER/fav/123.txt&#39;</span>
+<span class="sd">        &gt;&gt;&gt; # Note: but ln.mk(&#39;USER&#39;, num=&#39;not_a_number&#39;) would fail because num is not valid</span>
+<span class="sd">        &gt;&gt;&gt; ln.info_dict(&#39;/home/USER/fav/123.txt&#39;)  # note in the output, 123 is an int, not a string</span>
+<span class="sd">        {&#39;user&#39;: &#39;USER&#39;, &#39;num&#39;: 123}</span>
+<span class="sd">        &gt;&gt;&gt;</span>
+<span class="sd">        &gt;&gt;&gt; # Trying with template given as a tuple, and with different separator</span>
+<span class="sd">        &gt;&gt;&gt; ln = StrTupleDict(template=(&#39;first&#39;, &#39;last&#39;, &#39;age&#39;),</span>
+<span class="sd">        ...                   format_dict={&#39;age&#39;: &#39;-*\d+&#39;},</span>
+<span class="sd">        ...                   process_info_dict={&#39;age&#39;: int},</span>
+<span class="sd">        ...                   sep=&#39;,&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; ln.tuple_to_str((&#39;Thor&#39;, &quot;Odinson&quot;, 1500))</span>
+<span class="sd">        &#39;Thor,Odinson,1500&#39;</span>
+<span class="sd">        &gt;&gt;&gt; ln.str_to_dict(&#39;Loki,Laufeyson,1070&#39;)</span>
+<span class="sd">        {&#39;first&#39;: &#39;Loki&#39;, &#39;last&#39;: &#39;Laufeyson&#39;, &#39;age&#39;: 1070}</span>
+<span class="sd">        &gt;&gt;&gt; ln.str_to_tuple(&#39;Odin,Himself,-1&#39;)</span>
+<span class="sd">        (&#39;Odin&#39;, &#39;Himself&#39;, -1)</span>
+<span class="sd">        &gt;&gt;&gt; ln.tuple_to_dict((&#39;Odin&#39;, &#39;Himself&#39;, -1))</span>
+<span class="sd">        {&#39;first&#39;: &#39;Odin&#39;, &#39;last&#39;: &#39;Himself&#39;, &#39;age&#39;: -1}</span>
+<span class="sd">        &gt;&gt;&gt; ln.dict_to_tuple({&#39;first&#39;: &#39;Odin&#39;, &#39;last&#39;: &#39;Himself&#39;, &#39;age&#39;: -1})</span>
+<span class="sd">        (&#39;Odin&#39;, &#39;Himself&#39;, -1)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">format_dict</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">format_dict</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">sep</span> <span class="o">=</span> <span class="n">sep</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">template</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">template</span> <span class="o">=</span> <span class="n">template</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">template</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sep</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">{{</span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="se">}}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">template</span><span class="p">])</span>
+
+        <span class="n">fields</span> <span class="o">=</span> <span class="n">get_fields_from_template</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">template</span><span class="p">)</span>
+
+        <span class="n">format_dict</span> <span class="o">=</span> <span class="n">mk_format_mapping_dict</span><span class="p">(</span><span class="n">format_dict</span><span class="p">,</span> <span class="n">fields</span><span class="p">)</span>
+
+        <span class="n">named_capture_patterns</span> <span class="o">=</span> <span class="n">mk_named_capture_patterns</span><span class="p">(</span><span class="n">format_dict</span><span class="p">)</span>
+
+        <span class="n">pattern</span> <span class="o">=</span> <span class="n">template_to_pattern</span><span class="p">(</span><span class="n">named_capture_patterns</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">template</span><span class="p">)</span>
+        <span class="n">pattern</span> <span class="o">+=</span> <span class="s2">&quot;$&quot;</span>
+        <span class="n">pattern</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">pattern</span><span class="p">)</span>
+
+        <span class="n">extract_pattern</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">:</span>
+            <span class="n">extract_pattern</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">mk_extract_pattern</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">template</span><span class="p">,</span> <span class="n">format_dict</span><span class="p">,</span> <span class="n">named_capture_patterns</span><span class="p">,</span> <span class="n">name</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">process_info_dict</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">_processor_for_kw</span> <span class="o">=</span> <span class="n">process_info_dict</span>
+
+            <span class="k">def</span> <span class="nf">process_info_dict</span><span class="p">(</span><span class="o">**</span><span class="n">info_dict</span><span class="p">):</span>
+                <span class="k">return</span> <span class="p">{</span>
+                    <span class="n">k</span><span class="p">:</span> <span class="n">_processor_for_kw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">)(</span><span class="n">v</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">info_dict</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                <span class="p">}</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">fields</span> <span class="o">=</span> <span class="n">fields</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_fields</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">fields</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">format_dict</span> <span class="o">=</span> <span class="n">format_dict</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">named_capture_patterns</span> <span class="o">=</span> <span class="n">named_capture_patterns</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pattern</span> <span class="o">=</span> <span class="n">pattern</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">extract_pattern</span> <span class="o">=</span> <span class="n">extract_pattern</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">process_kwargs</span> <span class="o">=</span> <span class="n">process_kwargs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">process_info_dict</span> <span class="o">=</span> <span class="n">process_info_dict</span>
+
+        <span class="k">def</span> <span class="nf">_mk</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Make a full name with given kwargs. All required name=val must be present (or infered by self.process_kwargs</span>
+<span class="sd">            function.</span>
+<span class="sd">            The required fields are in self.fields.</span>
+<span class="sd">            Does NOT check for validity of the vals.</span>
+<span class="sd">            :param kwargs: The name=val arguments needed to construct a valid name</span>
+<span class="sd">            :return: an name</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_fields</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;You have too many arguments: (args, kwargs) is (</span><span class="si">{</span><span class="n">args</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">kwargs</span><span class="si">}</span><span class="s2">)&quot;</span>
+                <span class="p">)</span>
+            <span class="k">elif</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_fields</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;You have too few arguments: (args, kwargs) is (</span><span class="si">{</span><span class="n">args</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">kwargs</span><span class="si">}</span><span class="s2">)&quot;</span>
+                <span class="p">)</span>
+            <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">({</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">,</span> <span class="n">args</span><span class="p">)},</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">process_kwargs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">kwargs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">process_kwargs</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">template</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="n">set_signature_of_func</span><span class="p">(</span><span class="n">_mk</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;self&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mk</span> <span class="o">=</span> <span class="n">MethodType</span><span class="p">(</span><span class="n">_mk</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">NamedTuple</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="n">named_tuple_type_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">is_valid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">s</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Check if the name has the &quot;upload format&quot; (i.e. the kind of fields that are _ids of fv_mgc, and what</span>
+<span class="sd">        name means in most of the iatis system.</span>
+<span class="sd">        :param s: the string to check</span>
+<span class="sd">        :return: True iff name has the upload format</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pattern</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">s</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">str_to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">s</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get a dict with the arguments of an name (for example group, user, subuser, etc.)</span>
+<span class="sd">        :param s:</span>
+<span class="sd">        :return: a dict holding the argument fields and values</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pattern</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">m</span><span class="p">:</span>
+            <span class="n">info_dict</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">groupdict</span><span class="p">()</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">process_info_dict</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">process_info_dict</span><span class="p">(</span><span class="o">**</span><span class="n">info_dict</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">info_dict</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid string format: </span><span class="si">{</span><span class="n">s</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">str_to_tuple</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">s</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">info_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">str_to_dict</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">info_dict</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">str_to_namedtuple</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">s</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">dict_to_namedtuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">str_to_dict</span><span class="p">(</span><span class="n">s</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">str_to_simple_str</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">s</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">sep</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">str_to_tuple</span><span class="p">(</span><span class="n">s</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">simple_str_to_str</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ss</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">tuple_to_str</span><span class="p">(</span><span class="n">ss</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sep</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">super_dict_to_str</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Like dict_to_str, but the input dict can have extra keys that are not used by dict_to_str&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">mk</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">})</span>
+
+    <span class="k">def</span> <span class="nf">dict_to_str</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">mk</span><span class="p">(</span><span class="o">**</span><span class="n">d</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">dict_to_tuple</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d</span><span class="p">):</span>
+        <span class="n">assert_condition</span><span class="p">(</span>
+            <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">d</span><span class="p">),</span>
+            <span class="sa">f</span><span class="s2">&quot;len(d)=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">d</span><span class="p">)</span><span class="si">}</span><span class="s2"> but len(fields)=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="n">f</span><span class="p">]</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">dict_to_namedtuple</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">NamedTuple</span><span class="p">(</span><span class="o">**</span><span class="n">d</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">tuple_to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+        <span class="n">assert_condition</span><span class="p">(</span>
+            <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">),</span>
+            <span class="sa">f</span><span class="s2">&quot;len(d)=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">)</span><span class="si">}</span><span class="s2"> but len(fields)=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">f</span><span class="p">:</span> <span class="n">x</span> <span class="k">for</span> <span class="n">f</span><span class="p">,</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">,</span> <span class="n">t</span><span class="p">)}</span>
+
+    <span class="k">def</span> <span class="nf">tuple_to_str</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">mk</span><span class="p">(</span><span class="o">*</span><span class="n">t</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">namedtuple_to_tuple</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nt</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">nt</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">namedtuple_to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nt</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">nt</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">namedtuple_to_str</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nt</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">dict_to_str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">namedtuple_to_dict</span><span class="p">(</span><span class="n">nt</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">extract</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">s</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Extract a single item from an name</span>
+<span class="sd">        :param field: field of the item to extract</span>
+<span class="sd">        :param s: the string from which to extract it</span>
+<span class="sd">        :return: the value for name</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">extract_pattern</span><span class="p">[</span><span class="n">field</span><span class="p">]</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">s</span><span class="p">)</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">info_dict</span> <span class="o">=</span> <span class="n">str_to_dict</span>  <span class="c1"># alias</span>
+    <span class="n">info_tuple</span> <span class="o">=</span> <span class="n">str_to_tuple</span>  <span class="c1"># alias</span>
+
+    <span class="k">def</span> <span class="nf">replace_name_elements</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">s</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">elements_kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Replace specific name argument values with others</span>
+<span class="sd">        :param s: the string to replace</span>
+<span class="sd">        :param elements_kwargs: the arguments to replace (and their values)</span>
+<span class="sd">        :return: a new name</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">name_info_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">info_dict</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">elements_kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">name_info_dict</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">mk</span><span class="p">(</span><span class="o">**</span><span class="n">name_info_dict</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_info_str</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">kv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">exclude</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s2">&quot;process_kwargs&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;extract_pattern&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;prefix_pattern&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;prefix_template_including_name&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;prefix_template_excluding_name&quot;</span><span class="p">,</span>
+        <span class="p">]</span>
+        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">exclude</span><span class="p">:</span>
+            <span class="n">kv</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">s</span> <span class="o">+=</span> <span class="s2">&quot;  * </span><span class="si">{}</span><span class="s2">: </span><span class="si">{}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;template&quot;</span><span class="p">,</span> <span class="n">kv</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;template&quot;</span><span class="p">))</span>
+        <span class="n">s</span> <span class="o">+=</span> <span class="s2">&quot;  * </span><span class="si">{}</span><span class="s2">: </span><span class="si">{}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;template&quot;</span><span class="p">,</span> <span class="n">kv</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;sep&quot;</span><span class="p">))</span>
+        <span class="n">s</span> <span class="o">+=</span> <span class="s2">&quot;  * </span><span class="si">{}</span><span class="s2">: </span><span class="si">{}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;format_dict&quot;</span><span class="p">,</span> <span class="n">kv</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;format_dict&quot;</span><span class="p">))</span>
+
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kv</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="s2">&quot;pattern&quot;</span><span class="p">):</span>
+                <span class="n">v</span> <span class="o">=</span> <span class="n">v</span><span class="o">.</span><span class="n">pattern</span>
+            <span class="n">s</span> <span class="o">+=</span> <span class="s2">&quot;  * </span><span class="si">{}</span><span class="s2">: </span><span class="si">{}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">s</span>
+
+    <span class="k">def</span> <span class="nf">_print_info_str</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_info_str</span><span class="p">())</span>
+
+
+<span class="c1"># TODO: mk_prefix has wrong signature. Repair.</span>
+<div class="viewcode-block" id="StrTupleDictWithPrefix"><a class="viewcode-back" href="../../../test.html#py2store.key_mappers.naming.StrTupleDictWithPrefix">[docs]</a><span class="k">class</span> <span class="nc">StrTupleDictWithPrefix</span><span class="p">(</span><span class="n">StrTupleDict</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Converting from and to strings, tuples, and dicts, but with partial &quot;prefix&quot; specs allowed.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        template: The string format template</span>
+<span class="sd">        format_dict: A {field_name: field_value_format_regex, ...} dict</span>
+<span class="sd">        process_kwargs: A function taking the field=value pairs and producing a dict of processed</span>
+<span class="sd">            {field: value,...} dict (where both fields and values could have been processed.</span>
+<span class="sd">            This is useful when we need to process (format, default, etc.) fields, or their values,</span>
+<span class="sd">            according to the other fields of values in the collection.</span>
+<span class="sd">            A specification of {field: function_to_process_this_value,...} wouldn&#39;t allow the full powers</span>
+<span class="sd">            we are allowing here.</span>
+<span class="sd">        process_info_dict: A sort of converse of format_dict.</span>
+<span class="sd">            This is a {field_name: field_conversion_func, ...} dict that is used to convert info_dict values</span>
+<span class="sd">            before returning them.</span>
+<span class="sd">        name_separator: Used</span>
+
+<span class="sd">    &gt;&gt;&gt; ln = StrTupleDictWithPrefix(&#39;/home/{user}/fav/{num}.txt&#39;,</span>
+<span class="sd">    ...	                  format_dict={&#39;user&#39;: &#39;[^/]+&#39;, &#39;num&#39;: &#39;\d+&#39;},</span>
+<span class="sd">    ...	                  process_info_dict={&#39;num&#39;: int},</span>
+<span class="sd">    ...                   sep=&#39;/&#39;</span>
+<span class="sd">    ...	                 )</span>
+<span class="sd">    &gt;&gt;&gt; ln.mk(&#39;USER&#39;, num=123)  # making a string (with args or kwargs)</span>
+<span class="sd">    &#39;/home/USER/fav/123.txt&#39;</span>
+<span class="sd">    &gt;&gt;&gt; ####### prefix methods #######</span>
+<span class="sd">    &gt;&gt;&gt; ln.is_valid_prefix(&#39;/home/USER/fav/&#39;)</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; ln.is_valid_prefix(&#39;/home/USER/fav/12&#39;)  # False because too long</span>
+<span class="sd">    False</span>
+<span class="sd">    &gt;&gt;&gt; ln.is_valid_prefix(&#39;/home/USER/fav&#39;)  # False because too short</span>
+<span class="sd">    False</span>
+<span class="sd">    &gt;&gt;&gt; ln.is_valid_prefix(&#39;/home/&#39;)  # True because just right</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; ln.is_valid_prefix(&#39;/home/USER/fav/123.txt&#39;)  # full path, so output same as is_valid() method</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; ln.mk_prefix(&#39;ME&#39;)</span>
+<span class="sd">    &#39;/home/ME/fav/&#39;</span>
+<span class="sd">    &gt;&gt;&gt; ln.mk_prefix(user=&#39;YOU&#39;, num=456)  # full specification, so output same as same as mk() method</span>
+<span class="sd">    &#39;/home/YOU/fav/456.txt&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@wraps</span><span class="p">(</span><span class="n">StrTupleDict</span><span class="o">.</span><span class="fm">__init__</span><span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">prefix_template_including_name</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">prefix_template_excluding_name</span><span class="p">,</span>
+        <span class="p">)</span> <span class="o">=</span> <span class="n">mk_prefix_templates_dicts</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">template</span><span class="p">)</span>
+
+        <span class="n">_prefix_pattern</span> <span class="o">=</span> <span class="s2">&quot;$|&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="n">x</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">format_dict</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span>
+                <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prefix_template_including_name</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span> <span class="n">key</span><span class="o">=</span><span class="nb">len</span>
+            <span class="p">)</span>
+            <span class="p">]</span>
+        <span class="p">)</span>
+        <span class="n">_prefix_pattern</span> <span class="o">+=</span> <span class="s2">&quot;$&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prefix_pattern</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">_prefix_pattern</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">_mk_prefix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Make a prefix for an uploads name that has has the path up to the first None argument.</span>
+<span class="sd">            :return: A string that is the prefix of a valid name</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="k">assert</span> <span class="p">(</span>
+                    <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_fields</span>
+            <span class="p">),</span> <span class="s2">&quot;You have too many arguments&quot;</span>
+            <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">({</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">,</span> <span class="n">args</span><span class="p">)},</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">process_kwargs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">kwargs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">process_kwargs</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+            <span class="c1"># ascertain that no fields were skipped (we can leave fields out at the end, but not in the middle)</span>
+            <span class="n">a_name_was_skipped</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">a_name_was_skipped</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                            <span class="s2">&quot;You are making a PREFIX: This means you can&#39;t skip any fields. &quot;</span>
+                            <span class="s2">&quot;Once a name is omitted, you need to omit all further fields. &quot;</span>
+                            <span class="sa">f</span><span class="s2">&quot;The name order is </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="si">}</span><span class="s2">. You specified </span><span class="si">{</span><span class="nb">tuple</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span>
+                        <span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">a_name_was_skipped</span> <span class="o">=</span> <span class="kc">True</span>
+
+            <span class="n">keep_kwargs</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">last_name</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                    <span class="n">keep_kwargs</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+                    <span class="n">last_name</span> <span class="o">=</span> <span class="n">name</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">break</span>
+
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">prefix_template_including_name</span><span class="p">[</span><span class="n">last_name</span><span class="p">]</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="o">**</span><span class="n">keep_kwargs</span>
+            <span class="p">)</span>
+
+        <span class="n">set_signature_of_func</span><span class="p">(</span><span class="n">_mk_prefix</span><span class="p">,</span> <span class="p">[(</span><span class="n">s</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mk_prefix</span> <span class="o">=</span> <span class="n">MethodType</span><span class="p">(</span><span class="n">_mk_prefix</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+
+<div class="viewcode-block" id="StrTupleDictWithPrefix.is_valid_prefix"><a class="viewcode-back" href="../../../test.html#py2store.key_mappers.naming.StrTupleDictWithPrefix.is_valid_prefix">[docs]</a>    <span class="k">def</span> <span class="nf">is_valid_prefix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">s</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Check if name is a valid prefix.</span>
+<span class="sd">        :param s: a string (that might or might not be a valid prefix)</span>
+<span class="sd">        :return: True iff name is a valid prefix</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prefix_pattern</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">s</span><span class="p">))</span></div></div>
+
+
+<span class="n">LinearNaming</span> <span class="o">=</span> <span class="n">StrTupleDictWithPrefix</span>
+
+<span class="kn">from</span> <span class="nn">py2store.base</span> <span class="kn">import</span> <span class="n">Store</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">namedtuple</span>
+<span class="kn">from</span> <span class="nn">py2store.util</span> <span class="kn">import</span> <span class="n">lazyprop</span>
+
+
+<div class="viewcode-block" id="ParametricKeyStore"><a class="viewcode-back" href="../../../test.html#py2store.key_mappers.naming.ParametricKeyStore">[docs]</a><span class="k">class</span> <span class="nc">ParametricKeyStore</span><span class="p">(</span><span class="n">Store</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">store</span><span class="p">,</span> <span class="n">keymap</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">store</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_keymap</span> <span class="o">=</span> <span class="n">keymap</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">_linear_naming</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;_linear_naming Deprecated: Use _keymap instead&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_keymap</span></div>
+
+
+<div class="viewcode-block" id="StoreWithTupleKeys"><a class="viewcode-back" href="../../../test.html#py2store.key_mappers.naming.StoreWithTupleKeys">[docs]</a><span class="k">class</span> <span class="nc">StoreWithTupleKeys</span><span class="p">(</span><span class="n">ParametricKeyStore</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_id_of_key</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_keymap</span><span class="o">.</span><span class="n">mk</span><span class="p">(</span><span class="o">*</span><span class="n">key</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_key_of_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_id</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_keymap</span><span class="o">.</span><span class="n">info_tuple</span><span class="p">(</span><span class="n">_id</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="StoreWithDictKeys"><a class="viewcode-back" href="../../../test.html#py2store.key_mappers.naming.StoreWithDictKeys">[docs]</a><span class="k">class</span> <span class="nc">StoreWithDictKeys</span><span class="p">(</span><span class="n">ParametricKeyStore</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_id_of_key</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_keymap</span><span class="o">.</span><span class="n">mk</span><span class="p">(</span><span class="o">**</span><span class="n">key</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_key_of_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_id</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_keymap</span><span class="o">.</span><span class="n">info_dict</span><span class="p">(</span><span class="n">_id</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="StoreWithNamedTupleKeys"><a class="viewcode-back" href="../../../test.html#py2store.key_mappers.naming.StoreWithNamedTupleKeys">[docs]</a><span class="k">class</span> <span class="nc">StoreWithNamedTupleKeys</span><span class="p">(</span><span class="n">ParametricKeyStore</span><span class="p">):</span>
+    <span class="nd">@lazyprop</span>
+    <span class="k">def</span> <span class="nf">NamedTupleKey</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s2">&quot;NamedTupleKey&quot;</span><span class="p">,</span> <span class="n">field_names</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_keymap</span><span class="o">.</span><span class="n">fields</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_id_of_key</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_keymap</span><span class="o">.</span><span class="n">mk</span><span class="p">(</span><span class="o">*</span><span class="n">key</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_key_of_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_id</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">NamedTupleKey</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_keymap</span><span class="o">.</span><span class="n">info_tuple</span><span class="p">(</span><span class="n">_id</span><span class="p">))</span></div>
+
+
+<span class="c1"># def mk_parametric_key_store_cls(store_cls, key_type=tuple):</span>
+<span class="c1">#     if key_type == tuple:</span>
+<span class="c1">#         super_cls = StoreWithTupleKeys</span>
+<span class="c1">#     elif key_type == dict:</span>
+<span class="c1">#         super_cls = StoreWithDictKeys</span>
+<span class="c1">#     else:</span>
+<span class="c1">#         raise ValueError(&quot;key_type needs to be tuple or dict&quot;)</span>
+<span class="c1">#</span>
+<span class="c1">#     class A(super_cls, store_cls):</span>
+<span class="c1">#         def __init__(self, rootdir, subpath=&#39;&#39;, format_dict=None, process_kwargs=None, process_info_dict=None,</span>
+<span class="c1">#                      **extra_store_kwargs):</span>
+<span class="c1">#</span>
+<span class="c1">#             path_format = os.path.join(rootdir, subpath)</span>
+<span class="c1">#             store = store_cls.__init__(self, path_format=path_format, **extra_store_kwargs)</span>
+<span class="c1">#             linear_naming = LinearNaming()</span>
+<span class="c1">#</span>
+<span class="c1">#             # FilepathFormatKeys.__init__(self, path_format)</span>
+
+
+<span class="k">class</span> <span class="nc">NamingInterface</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">validation_funs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">all_kwargs_should_be_in_validation_dict</span><span class="o">=</span><span class="n">dflt_all_kwargs_should_be_in_validation_dict</span><span class="p">,</span>
+            <span class="n">ignore_misunderstood_validation_instructions</span><span class="o">=</span><span class="n">dflt_ignore_misunderstood_validation_instructions</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="k">if</span> <span class="n">params</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">validation_funs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">validation_funs</span> <span class="o">=</span> <span class="n">dflt_validation_funs</span>
+        <span class="n">validation_dict</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">var</span><span class="p">:</span> <span class="n">info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;validation&quot;</span><span class="p">,</span> <span class="p">{})</span> <span class="k">for</span> <span class="n">var</span><span class="p">,</span> <span class="n">info</span> <span class="ow">in</span> <span class="n">params</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">}</span>
+        <span class="n">default_dict</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">var</span><span class="p">:</span> <span class="n">info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;default&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="k">for</span> <span class="n">var</span><span class="p">,</span> <span class="n">info</span> <span class="ow">in</span> <span class="n">params</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">}</span>
+        <span class="n">arg_pattern</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">var</span><span class="p">:</span> <span class="n">info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;arg_pattern&quot;</span><span class="p">,</span> <span class="n">dflt_arg_pattern</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">var</span><span class="p">,</span> <span class="n">info</span> <span class="ow">in</span> <span class="n">params</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">}</span>
+        <span class="n">named_arg_pattern</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">var</span><span class="p">:</span> <span class="s2">&quot;(?P&lt;&quot;</span> <span class="o">+</span> <span class="n">var</span> <span class="o">+</span> <span class="s2">&quot;&gt;&quot;</span> <span class="o">+</span> <span class="n">pat</span> <span class="o">+</span> <span class="s2">&quot;)&quot;</span>
+            <span class="k">for</span> <span class="n">var</span><span class="p">,</span> <span class="n">pat</span> <span class="ow">in</span> <span class="n">arg_pattern</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">}</span>
+        <span class="n">to_str</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">var</span><span class="p">:</span> <span class="n">info</span><span class="p">[</span><span class="s2">&quot;to_str&quot;</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">var</span><span class="p">,</span> <span class="n">info</span> <span class="ow">in</span> <span class="n">params</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+            <span class="k">if</span> <span class="s2">&quot;to_str&quot;</span> <span class="ow">in</span> <span class="n">info</span>
+        <span class="p">}</span>
+        <span class="n">to_val</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">var</span><span class="p">:</span> <span class="n">info</span><span class="p">[</span><span class="s2">&quot;to_val&quot;</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">var</span><span class="p">,</span> <span class="n">info</span> <span class="ow">in</span> <span class="n">params</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+            <span class="k">if</span> <span class="s2">&quot;to_val&quot;</span> <span class="ow">in</span> <span class="n">info</span>
+        <span class="p">}</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">validation_dict</span> <span class="o">=</span> <span class="n">validation_dict</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">default_dict</span> <span class="o">=</span> <span class="n">default_dict</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">arg_pattern</span> <span class="o">=</span> <span class="n">arg_pattern</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">named_arg_pattern</span> <span class="o">=</span> <span class="n">named_arg_pattern</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">to_str</span> <span class="o">=</span> <span class="n">to_str</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">to_val</span> <span class="o">=</span> <span class="n">to_val</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">validation_funs</span> <span class="o">=</span> <span class="n">validation_funs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">all_kwargs_should_be_in_validation_dict</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">all_kwargs_should_be_in_validation_dict</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ignore_misunderstood_validation_instructions</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">ignore_misunderstood_validation_instructions</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">validate_kwargs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">validate_kwargs</span><span class="p">(</span>
+            <span class="n">kwargs_to_validate</span><span class="o">=</span><span class="n">kwargs</span><span class="p">,</span>
+            <span class="n">validation_dict</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">validation_dict</span><span class="p">,</span>
+            <span class="n">validation_funs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">validation_funs</span><span class="p">,</span>
+            <span class="n">all_kwargs_should_be_in_validation_dict</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">all_kwargs_should_be_in_validation_dict</span><span class="p">,</span>
+            <span class="n">ignore_misunderstood_validation_instructions</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ignore_misunderstood_validation_instructions</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">default_for</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arg</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">default</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_dict</span><span class="p">[</span><span class="n">arg</span><span class="p">]</span>
+        <span class="k">if</span> <span class="p">(</span>
+                <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">default</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>
+                <span class="ow">or</span> <span class="s2">&quot;args&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">default</span>
+                <span class="ow">or</span> <span class="s2">&quot;func&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">default</span>
+        <span class="p">):</span>
+            <span class="k">return</span> <span class="n">default</span>
+        <span class="k">else</span><span class="p">:</span>  <span class="c1"># call the func on the default[&#39;args&#39;] values given in kwargs</span>
+            <span class="n">args</span> <span class="o">=</span> <span class="p">{</span><span class="n">arg_</span><span class="p">:</span> <span class="n">kwargs</span><span class="p">[</span><span class="n">arg_</span><span class="p">]</span> <span class="k">for</span> <span class="n">arg_</span> <span class="ow">in</span> <span class="n">default</span><span class="p">[</span><span class="s2">&quot;args&quot;</span><span class="p">]}</span>
+            <span class="k">return</span> <span class="n">default</span><span class="p">[</span><span class="s2">&quot;func&quot;</span><span class="p">](</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">str_kwargs_from</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="n">k</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_str</span><span class="p">[</span><span class="n">k</span><span class="p">](</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_str</span>
+        <span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">val_kwargs_from</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="n">k</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_val</span><span class="p">[</span><span class="n">k</span><span class="p">](</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_val</span>
+        <span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">name_for</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+            <span class="s2">&quot;Interface method: Method needs to be implemented&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">info_for</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+            <span class="s2">&quot;Interface method: Method needs to be implemented&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">is_valid_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+            <span class="s2">&quot;Interface method: Method needs to be implemented&quot;</span>
+        <span class="p">)</span>
+
+
+<div class="viewcode-block" id="BigDocTest"><a class="viewcode-back" href="../../../test.html#py2store.key_mappers.naming.BigDocTest">[docs]</a><span class="k">class</span> <span class="nc">BigDocTest</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; e_name = BigDocTest.mk_e_naming()</span>
+<span class="sd">    &gt;&gt;&gt; u_name = BigDocTest.mk_u_naming()</span>
+<span class="sd">    &gt;&gt;&gt; e_sref = &#39;s3://bucket-GROUP/example/files/USER/SUBUSER/2017-01-24/1485272231982_1485261448469&#39;</span>
+<span class="sd">    &gt;&gt;&gt; u_sref = &quot;s3://uploads/GROUP/upload/files/USER/2017-01-24/SUBUSER/a_file.wav&quot;</span>
+<span class="sd">    &gt;&gt;&gt; u_name_2 = &quot;s3://uploads/ANOTHER_GROUP/upload/files/ANOTHER_USER/2017-01-24/SUBUSER/a_file.wav&quot;</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; ####### is_valid(self, name): ######</span>
+<span class="sd">    &gt;&gt;&gt; e_name.is_valid(e_sref)</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; e_name.is_valid(u_sref)</span>
+<span class="sd">    False</span>
+<span class="sd">    &gt;&gt;&gt; u_name.is_valid(u_sref)</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; ####### is_valid_prefix(self, name): ######</span>
+<span class="sd">    &gt;&gt;&gt; e_name.is_valid_prefix(&#39;s3://bucket-&#39;)</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; e_name.is_valid_prefix(&#39;s3://bucket-GROUP&#39;)</span>
+<span class="sd">    False</span>
+<span class="sd">    &gt;&gt;&gt; e_name.is_valid_prefix(&#39;s3://bucket-GROUP/example/&#39;)</span>
+<span class="sd">    False</span>
+<span class="sd">    &gt;&gt;&gt; e_name.is_valid_prefix(&#39;s3://bucket-GROUP/example/files&#39;)</span>
+<span class="sd">    False</span>
+<span class="sd">    &gt;&gt;&gt; e_name.is_valid_prefix(&#39;s3://bucket-GROUP/example/files/&#39;)</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; e_name.is_valid_prefix(&#39;s3://bucket-GROUP/example/files/USER/SUBUSER/2017-01-24/&#39;)</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; e_name.is_valid_prefix(&#39;s3://bucket-GROUP/example/files/USER/SUBUSER/2017-01-24/0_0&#39;)</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; ####### info_dict(self, name): ######</span>
+<span class="sd">    &gt;&gt;&gt; e_name.info_dict(e_sref)  # see that utc_ms args were cast to ints</span>
+<span class="sd">    {&#39;group&#39;: &#39;GROUP&#39;, &#39;user&#39;: &#39;USER&#39;, &#39;subuser&#39;: &#39;SUBUSER&#39;, &#39;day&#39;: &#39;2017-01-24&#39;, &#39;s_ums&#39;: 1485272231982, &#39;e_ums&#39;: 1485261448469}</span>
+<span class="sd">    &gt;&gt;&gt; u_name.info_dict(u_sref)  # returns None (because self was made for example!</span>
+<span class="sd">    {&#39;group&#39;: &#39;GROUP&#39;, &#39;user&#39;: &#39;USER&#39;, &#39;day&#39;: &#39;2017-01-24&#39;, &#39;subuser&#39;: &#39;SUBUSER&#39;, &#39;filename&#39;: &#39;a_file.wav&#39;}</span>
+<span class="sd">    &gt;&gt;&gt; # but with a u_name, it will work</span>
+<span class="sd">    &gt;&gt;&gt; u_name.info_dict(u_sref)</span>
+<span class="sd">    {&#39;group&#39;: &#39;GROUP&#39;, &#39;user&#39;: &#39;USER&#39;, &#39;day&#39;: &#39;2017-01-24&#39;, &#39;subuser&#39;: &#39;SUBUSER&#39;, &#39;filename&#39;: &#39;a_file.wav&#39;}</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; ####### extract(self, item, name): ######</span>
+<span class="sd">    &gt;&gt;&gt; e_name.extract(&#39;group&#39;, e_sref)</span>
+<span class="sd">    &#39;GROUP&#39;</span>
+<span class="sd">    &gt;&gt;&gt; e_name.extract(&#39;user&#39;, e_sref)</span>
+<span class="sd">    &#39;USER&#39;</span>
+<span class="sd">    &gt;&gt;&gt; u_name.extract(&#39;group&#39;, u_name_2)</span>
+<span class="sd">    &#39;ANOTHER_GROUP&#39;</span>
+<span class="sd">    &gt;&gt;&gt; u_name.extract(&#39;user&#39;, u_name_2)</span>
+<span class="sd">    &#39;ANOTHER_USER&#39;</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; ####### mk_prefix(self, *args, **kwargs): ######</span>
+<span class="sd">    &gt;&gt;&gt; e_name.mk_prefix()</span>
+<span class="sd">    &#39;s3://bucket-&#39;</span>
+<span class="sd">    &gt;&gt;&gt; e_name.mk_prefix(group=&#39;GROUP&#39;)</span>
+<span class="sd">    &#39;s3://bucket-GROUP/example/files/&#39;</span>
+<span class="sd">    &gt;&gt;&gt; e_name.mk_prefix(group=&#39;GROUP&#39;, user=&#39;USER&#39;)</span>
+<span class="sd">    &#39;s3://bucket-GROUP/example/files/USER/&#39;</span>
+<span class="sd">    &gt;&gt;&gt; e_name.mk_prefix(group=&#39;GROUP&#39;, user=&#39;USER&#39;, subuser=&#39;SUBUSER&#39;)</span>
+<span class="sd">    &#39;s3://bucket-GROUP/example/files/USER/SUBUSER/&#39;</span>
+<span class="sd">    &gt;&gt;&gt; e_name.mk_prefix(group=&#39;GROUP&#39;, user=&#39;USER&#39;, subuser=&#39;SUBUSER&#39;, day=&#39;0000-00-00&#39;)</span>
+<span class="sd">    &#39;s3://bucket-GROUP/example/files/USER/SUBUSER/0000-00-00/&#39;</span>
+<span class="sd">    &gt;&gt;&gt; e_name.mk_prefix(group=&#39;GROUP&#39;, user=&#39;USER&#39;, subuser=&#39;SUBUSER&#39;, day=&#39;0000-00-00&#39;,</span>
+<span class="sd">    ... s_ums=1485272231982)</span>
+<span class="sd">    &#39;s3://bucket-GROUP/example/files/USER/SUBUSER/0000-00-00/1485272231982_&#39;</span>
+<span class="sd">    &gt;&gt;&gt; e_name.mk_prefix(group=&#39;GROUP&#39;, user=&#39;USER&#39;, subuser=&#39;SUBUSER&#39;, day=&#39;0000-00-00&#39;,</span>
+<span class="sd">    ... s_ums=1485272231982, e_ums=1485261448469)</span>
+<span class="sd">    &#39;s3://bucket-GROUP/example/files/USER/SUBUSER/0000-00-00/1485272231982_1485261448469&#39;</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; u_name.mk_prefix()</span>
+<span class="sd">    &#39;s3://uploads/&#39;</span>
+<span class="sd">    &gt;&gt;&gt; u_name.mk_prefix(group=&#39;GROUP&#39;)</span>
+<span class="sd">    &#39;s3://uploads/GROUP/upload/files/&#39;</span>
+<span class="sd">    &gt;&gt;&gt; u_name.mk_prefix(group=&#39;GROUP&#39;, user=&#39;USER&#39;)</span>
+<span class="sd">    &#39;s3://uploads/GROUP/upload/files/USER/&#39;</span>
+<span class="sd">    &gt;&gt;&gt; u_name.mk_prefix(group=&#39;GROUP&#39;, user=&#39;USER&#39;, day=&#39;DAY&#39;)</span>
+<span class="sd">    &#39;s3://uploads/GROUP/upload/files/USER/DAY/&#39;</span>
+<span class="sd">    &gt;&gt;&gt; u_name.mk_prefix(group=&#39;GROUP&#39;, user=&#39;USER&#39;, day=&#39;DAY&#39;)</span>
+<span class="sd">    &#39;s3://uploads/GROUP/upload/files/USER/DAY/&#39;</span>
+<span class="sd">    &gt;&gt;&gt; u_name.mk_prefix(group=&#39;GROUP&#39;, user=&#39;USER&#39;, day=&#39;DAY&#39;, subuser=&#39;SUBUSER&#39;)</span>
+<span class="sd">    &#39;s3://uploads/GROUP/upload/files/USER/DAY/SUBUSER/&#39;</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; ####### mk(self, *args, **kwargs): ######</span>
+<span class="sd">    &gt;&gt;&gt; e_name.mk(group=&#39;GROUP&#39;, user=&#39;USER&#39;, subuser=&#39;SUBUSER&#39;, day=&#39;0000-00-00&#39;,</span>
+<span class="sd">    ...             s_ums=1485272231982, e_ums=1485261448469)</span>
+<span class="sd">    &#39;s3://bucket-GROUP/example/files/USER/SUBUSER/0000-00-00/1485272231982_1485261448469&#39;</span>
+<span class="sd">    &gt;&gt;&gt; e_name.mk(group=&#39;GROUP&#39;, user=&#39;USER&#39;, subuser=&#39;SUBUSER&#39;, day=&#39;from_s_ums&#39;,</span>
+<span class="sd">    ...             s_ums=1485272231982, e_ums=1485261448469)</span>
+<span class="sd">    &#39;s3://bucket-GROUP/example/files/USER/SUBUSER/2017-01-24/1485272231982_1485261448469&#39;</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; ####### replace_name_elements(self, *args, **kwargs): ######</span>
+<span class="sd">    &gt;&gt;&gt; name = &#39;s3://bucket-redrum/example/files/oopsy@domain.com/ozeip/2008-11-04/1225779243969_1225779246969&#39;</span>
+<span class="sd">    &gt;&gt;&gt; e_name.replace_name_elements(name, user=&#39;NEW_USER&#39;, group=&#39;NEW_GROUP&#39;)</span>
+<span class="sd">    &#39;s3://bucket-NEW_GROUP/example/files/NEW_USER/ozeip/2008-11-04/1225779243969_1225779246969&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">process_info_dict_for_example</span><span class="p">(</span><span class="o">**</span><span class="n">info_dict</span><span class="p">):</span>
+        <span class="k">if</span> <span class="s2">&quot;s_ums&quot;</span> <span class="ow">in</span> <span class="n">info_dict</span><span class="p">:</span>
+            <span class="n">info_dict</span><span class="p">[</span><span class="s2">&quot;s_ums&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">info_dict</span><span class="p">[</span><span class="s2">&quot;s_ums&quot;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="s2">&quot;e_ums&quot;</span> <span class="ow">in</span> <span class="n">info_dict</span><span class="p">:</span>
+            <span class="n">info_dict</span><span class="p">[</span><span class="s2">&quot;e_ums&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">info_dict</span><span class="p">[</span><span class="s2">&quot;e_ums&quot;</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">info_dict</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">example_process_kwargs</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+
+        <span class="n">epoch</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">utcfromtimestamp</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">second_ms</span> <span class="o">=</span> <span class="mf">1000.0</span>
+
+        <span class="k">def</span> <span class="nf">utcnow_ms</span><span class="p">():</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span> <span class="o">-</span> <span class="n">epoch</span><span class="p">)</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span> <span class="o">*</span> <span class="n">second_ms</span>
+
+        <span class="c1"># from ut.util.time import second_ms, utcnow_ms</span>
+        <span class="k">if</span> <span class="s2">&quot;s_ums&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;s_ums&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;s_ums&quot;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="s2">&quot;e_ums&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;e_ums&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;e_ums&quot;</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="s2">&quot;day&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">day</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;day&quot;</span><span class="p">]</span>
+            <span class="c1"># get the day in the expected format</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">day</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">day</span> <span class="o">==</span> <span class="s2">&quot;now&quot;</span><span class="p">:</span>
+                    <span class="n">day</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">utcfromtimestamp</span><span class="p">(</span>
+                        <span class="nb">int</span><span class="p">(</span><span class="n">utcnow_ms</span><span class="p">()</span> <span class="o">/</span> <span class="n">second_ms</span><span class="p">)</span>
+                    <span class="p">)</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="n">day_format</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">day</span> <span class="o">==</span> <span class="s2">&quot;from_s_ums&quot;</span><span class="p">:</span>
+                    <span class="k">assert</span> <span class="s2">&quot;s_ums&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s2">&quot;need to have s_ums argument&quot;</span>
+                    <span class="n">day</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">utcfromtimestamp</span><span class="p">(</span>
+                        <span class="nb">int</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;s_ums&quot;</span><span class="p">]</span> <span class="o">/</span> <span class="n">second_ms</span><span class="p">)</span>
+                    <span class="p">)</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="n">day_format</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">assert</span> <span class="n">day_format_pattern</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">day</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">day</span><span class="p">,</span> <span class="n">datetime</span><span class="p">):</span>
+                <span class="n">day</span> <span class="o">=</span> <span class="n">day</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="n">day_format</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="p">(</span>
+                    <span class="s2">&quot;s_ums&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span>
+            <span class="p">):</span>  <span class="c1"># if day is neither a string nor a datetime</span>
+                <span class="n">day</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">utcfromtimestamp</span><span class="p">(</span>
+                    <span class="nb">int</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;s_ums&quot;</span><span class="p">]</span> <span class="o">/</span> <span class="n">second_ms</span><span class="p">)</span>
+                <span class="p">)</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="n">day_format</span><span class="p">)</span>
+
+            <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;day&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">day</span>
+
+        <span class="k">return</span> <span class="n">kwargs</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">mk_e_naming</span><span class="p">():</span>
+        <span class="k">return</span> <span class="n">LinearNaming</span><span class="p">(</span>
+            <span class="n">template</span><span class="o">=</span><span class="s2">&quot;s3://bucket-</span><span class="si">{group}</span><span class="s2">/example/files/</span><span class="si">{user}</span><span class="s2">/</span><span class="si">{subuser}</span><span class="s2">/</span><span class="si">{day}</span><span class="s2">/</span><span class="si">{s_ums}</span><span class="s2">_</span><span class="si">{e_ums}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">format_dict</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;s_ums&quot;</span><span class="p">:</span> <span class="s2">&quot;\d+&quot;</span><span class="p">,</span> <span class="s2">&quot;e_ums&quot;</span><span class="p">:</span> <span class="s2">&quot;\d+&quot;</span><span class="p">,</span> <span class="s2">&quot;day&quot;</span><span class="p">:</span> <span class="s2">&quot;[^/]+&quot;</span><span class="p">},</span>
+            <span class="n">process_kwargs</span><span class="o">=</span><span class="n">BigDocTest</span><span class="o">.</span><span class="n">example_process_kwargs</span><span class="p">,</span>
+            <span class="n">process_info_dict</span><span class="o">=</span><span class="n">BigDocTest</span><span class="o">.</span><span class="n">process_info_dict_for_example</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">mk_u_naming</span><span class="p">():</span>
+        <span class="k">return</span> <span class="n">LinearNaming</span><span class="p">(</span>
+            <span class="n">template</span><span class="o">=</span><span class="s2">&quot;s3://uploads/</span><span class="si">{group}</span><span class="s2">/upload/files/</span><span class="si">{user}</span><span class="s2">/</span><span class="si">{day}</span><span class="s2">/</span><span class="si">{subuser}</span><span class="s2">/</span><span class="si">{filename}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">format_dict</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;day&quot;</span><span class="p">:</span> <span class="s2">&quot;[^/]+&quot;</span><span class="p">,</span> <span class="s2">&quot;filepath&quot;</span><span class="p">:</span> <span class="s2">&quot;.+&quot;</span><span class="p">},</span>
+        <span class="p">)</span></div>
+
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">wraps</span>
+<span class="kn">from</span> <span class="nn">py2store.trans</span> <span class="kn">import</span> <span class="n">wrap_kvs</span>
+
+<span class="n">pjoin</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span>
+
+<span class="n">KeyMapNames</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s2">&quot;KeyMaps&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;key_of_id&quot;</span><span class="p">,</span> <span class="s2">&quot;id_of_key&quot;</span><span class="p">])</span>
+<span class="n">KeyMaps</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s2">&quot;KeyMaps&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;key_of_id&quot;</span><span class="p">,</span> <span class="s2">&quot;id_of_key&quot;</span><span class="p">])</span>
+
+
+<span class="k">def</span> <span class="nf">_get_keymap_names_for_str_to_key_type</span><span class="p">(</span><span class="n">key_type</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key_type</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">key_type</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="nb">tuple</span><span class="p">:</span> <span class="s2">&quot;tuple&quot;</span><span class="p">,</span>
+            <span class="n">namedtuple</span><span class="p">:</span> <span class="s2">&quot;namedtuple&quot;</span><span class="p">,</span>
+            <span class="nb">dict</span><span class="p">:</span> <span class="s2">&quot;dict&quot;</span><span class="p">,</span>
+            <span class="nb">str</span><span class="p">:</span> <span class="s2">&quot;str&quot;</span><span class="p">,</span>
+        <span class="p">}</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key_type</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">key_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;tuple&quot;</span><span class="p">,</span> <span class="s2">&quot;namedtuple&quot;</span><span class="p">,</span> <span class="s2">&quot;dict&quot;</span><span class="p">,</span> <span class="s2">&quot;str&quot;</span><span class="p">}:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Not a recognized key_type: </span><span class="si">{</span><span class="n">key_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">KeyMapNames</span><span class="p">(</span>
+        <span class="n">key_of_id</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;str_to_</span><span class="si">{</span><span class="n">key_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">id_of_key</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key_type</span><span class="si">}</span><span class="s2">_to_str&quot;</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_get_method_for_str_to_key_type</span><span class="p">(</span><span class="n">keymap</span><span class="p">,</span> <span class="n">key_type</span><span class="p">):</span>
+    <span class="n">kmn</span> <span class="o">=</span> <span class="n">_get_keymap_names_for_str_to_key_type</span><span class="p">(</span><span class="n">key_type</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">KeyMaps</span><span class="p">(</span>
+        <span class="n">key_of_id</span><span class="o">=</span><span class="nb">getattr</span><span class="p">(</span><span class="n">keymap</span><span class="p">,</span> <span class="n">kmn</span><span class="o">.</span><span class="n">key_of_id</span><span class="p">),</span>
+        <span class="n">id_of_key</span><span class="o">=</span><span class="nb">getattr</span><span class="p">(</span><span class="n">keymap</span><span class="p">,</span> <span class="n">kmn</span><span class="o">.</span><span class="n">id_of_key</span><span class="p">),</span>
+    <span class="p">)</span>
+
+
+<div class="viewcode-block" id="mk_store_from_path_format_store_cls"><a class="viewcode-back" href="../../../test.html#py2store.key_mappers.naming.mk_store_from_path_format_store_cls">[docs]</a><span class="k">def</span> <span class="nf">mk_store_from_path_format_store_cls</span><span class="p">(</span>
+        <span class="n">store</span><span class="p">,</span>
+        <span class="n">subpath</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="n">store_cls_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">key_type</span><span class="o">=</span><span class="n">namedtuple</span><span class="p">,</span>
+        <span class="n">keymap</span><span class="o">=</span><span class="n">StrTupleDict</span><span class="p">,</span>
+        <span class="n">keymap_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Wrap a store (instance or class) that uses string keys to make it into a store that uses a specific key format.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        store: The instance or class to wrap</span>
+<span class="sd">        subpath: The subpath (defining the subset of the data pointed at by the URI</span>
+<span class="sd">        store_cls_kwargs:  # if store is a class, the kwargs that you would have given the store_cls to make itself</span>
+<span class="sd">        key_type: The key type you want to interface with:</span>
+<span class="sd">            dict, tuple, namedtuple, str or &#39;dict&#39;, &#39;tuple&#39;, &#39;namedtuple&#39;, &#39;str&#39;</span>
+<span class="sd">        keymap:  # the keymap instance or class you want to use to map keys</span>
+<span class="sd">        keymap_kwargs:  # if keymap is a cls, the kwargs to give it (besides the subpath)</span>
+<span class="sd">        name: The name to give the class the function will make here</span>
+
+<span class="sd">    Returns: An instance of a wrapped class</span>
+
+
+<span class="sd">    Example:</span>
+<span class="sd">    ```</span>
+<span class="sd">    # Get a (sessiono,bt) indexed LocalJsonStore</span>
+<span class="sd">    s = mk_store_from_path_format_store_cls(LocalJsonStore,</span>
+<span class="sd">                                                   os.path.join(root_dir, &#39;d&#39;),</span>
+<span class="sd">                                                   subpath=&#39;{session}/d/{bt}&#39;,</span>
+<span class="sd">                                                   keymap_kwargs=dict(process_info_dict={&#39;session&#39;: int, &#39;bt&#39;: int}))</span>
+<span class="sd">    ```</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">keymap</span><span class="p">,</span> <span class="nb">type</span><span class="p">):</span>
+        <span class="n">keymap</span> <span class="o">=</span> <span class="n">keymap</span><span class="p">(</span>
+            <span class="n">subpath</span><span class="p">,</span> <span class="o">**</span><span class="p">(</span><span class="n">keymap_kwargs</span> <span class="ow">or</span> <span class="p">{})</span>
+        <span class="p">)</span>  <span class="c1"># make the keymap instance</span>
+
+    <span class="n">km</span> <span class="o">=</span> <span class="n">_get_method_for_str_to_key_type</span><span class="p">(</span><span class="n">keymap</span><span class="p">,</span> <span class="n">key_type</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="nb">type</span><span class="p">):</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">name</span> <span class="ow">or</span> <span class="s2">&quot;KeyWrapped&quot;</span> <span class="o">+</span> <span class="n">store</span><span class="o">.</span><span class="vm">__name__</span>
+        <span class="n">_WrappedStoreCls</span> <span class="o">=</span> <span class="n">wrap_kvs</span><span class="p">(</span>
+            <span class="n">store</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">key_of_id</span><span class="o">=</span><span class="n">km</span><span class="o">.</span><span class="n">key_of_id</span><span class="p">,</span> <span class="n">id_of_key</span><span class="o">=</span><span class="n">km</span><span class="o">.</span><span class="n">id_of_key</span>
+        <span class="p">)</span>
+
+        <span class="k">class</span> <span class="nc">WrappedStoreCls</span><span class="p">(</span><span class="n">_WrappedStoreCls</span><span class="p">):</span>
+            <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root_uri</span><span class="p">):</span>
+                <span class="n">path_format</span> <span class="o">=</span> <span class="n">pjoin</span><span class="p">(</span><span class="n">root_uri</span><span class="p">,</span> <span class="n">subpath</span><span class="p">)</span>
+                <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">path_format</span><span class="p">,</span> <span class="o">**</span><span class="p">(</span><span class="n">store_cls_kwargs</span> <span class="ow">or</span> <span class="p">{}))</span>
+
+        <span class="k">return</span> <span class="n">WrappedStoreCls</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">name</span> <span class="ow">or</span> <span class="s2">&quot;KeyWrapped&quot;</span> <span class="o">+</span> <span class="n">store</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
+        <span class="k">return</span> <span class="n">wrap_kvs</span><span class="p">(</span>
+            <span class="n">store</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">key_of_id</span><span class="o">=</span><span class="n">km</span><span class="o">.</span><span class="n">key_of_id</span><span class="p">,</span> <span class="n">id_of_key</span><span class="o">=</span><span class="n">km</span><span class="o">.</span><span class="n">id_of_key</span>
+        <span class="p">)</span></div>
+
+
+<span class="n">mk_tupled_store_from_path_format_store_cls</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">mk_store_from_path_format_store_cls</span>
+<span class="p">)</span>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">py2store</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html">py2store.filesys</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.misc">py2store.misc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.mixins">py2store.mixins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.test.util">py2store.test.util</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-test-quick">py2store.test.quick</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.test">py2store.test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-test-simple">py2store.test.simple</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-test-scrap">py2store.test.scrap</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.util">py2store.util</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-ext-docx">py2store.ext.docx</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext.gitlab">py2store.ext.gitlab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-ext-hdf">py2store.ext.hdf</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext">py2store.ext</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-ext-matlab">py2store.ext.matlab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext.kaggle">py2store.ext.kaggle</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-ext-module-imports">py2store.ext.module_imports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext.audio">py2store.ext.audio</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-ext-github">py2store.ext.github</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext.dataframes">py2store.ext.dataframes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.access">py2store.access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.__init__">py2store.__init__</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores.s3_store">py2store.stores.s3_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores.delegation_stores">py2store.stores.delegation_stores</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores.sql_w_sqlalchemy">py2store.stores.sql_w_sqlalchemy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-stores-arangodb-store">py2store.stores.arangodb_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-stores-dropbox-store">py2store.stores.dropbox_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores.local_store">py2store.stores.local_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores">py2store.stores</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-stores-couchdb-store">py2store.stores.couchdb_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores.mongo_store">py2store.stores.mongo_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.core">py2store.core</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.uri_utils">py2store.utils.uri_utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.explicit">py2store.utils.explicit</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.timeseries_caching">py2store.utils.timeseries_caching</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-utils-attr-dict-py-attr-dict">py2store.utils.attr_dict.py.attr_dict</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-utils-attr-dict-py">py2store.utils.attr_dict.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.cumul_aggreg_write">py2store.utils.cumul_aggreg_write</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils">py2store.utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.cache_descriptors">py2store.utils.cache_descriptors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.appendable">py2store.utils.appendable</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.affine_conversion">py2store.utils.affine_conversion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.signatures">py2store.utils.signatures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.sliceable">py2store.utils.sliceable</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.mappify">py2store.utils.mappify</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.glom">py2store.utils.glom</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-sql-w-odbc">py2store.persisters.sql_w_odbc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.dynamodb_w_boto3">py2store.persisters.dynamodb_w_boto3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-couchdb-w-couchdb">py2store.persisters.couchdb_w_couchdb</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.ftp_persister">py2store.persisters.ftp_persister</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.dropbox_w_urllib">py2store.persisters.dropbox_w_urllib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters._google_drive_in_progress">py2store.persisters._google_drive_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-dropbox-w-dropbox">py2store.persisters.dropbox_w_dropbox</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-redis-w-redis">py2store.persisters.redis_w_redis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.sql_w_sqlalchemy">py2store.persisters.sql_w_sqlalchemy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.new_s3">py2store.persisters.new_s3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters">py2store.persisters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.dropbox_w_requests">py2store.persisters.dropbox_w_requests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.w_aiofile">py2store.persisters.w_aiofile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.local_files">py2store.persisters.local_files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-arangodb-w-pyarango">py2store.persisters.arangodb_w_pyarango</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters._cassandra_in_progress">py2store.persisters._cassandra_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters._couchdb_in_progress">py2store.persisters._couchdb_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.s3_w_boto3">py2store.persisters.s3_w_boto3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-postgres-w-psycopg2-in-progress">py2store.persisters._postgres_w_psycopg2_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-ssh-persister">py2store.persisters.ssh_persister</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.mongo_w_pymongo">py2store.persisters.mongo_w_pymongo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-googledrive-w-pydrive">py2store.persisters.googledrive_w_pydrive</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.sources">py2store.sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.dig">py2store.dig</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers.pickled">py2store.serializers.pickled</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers.jsonization">py2store.serializers.jsonization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers">py2store.serializers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers.sequential">py2store.serializers.sequential</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers.regular_panel_data">py2store.serializers.regular_panel_data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers.audio">py2store.serializers.audio</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.caching">py2store.caching</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.scrap">py2store.scrap</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.scrap.new_gen_local">py2store.scrap.new_gen_local</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.examples.write_caches">py2store.examples.write_caches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.examples">py2store.examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.examples.python_code_stats">py2store.examples.python_code_stats</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.examples.kv_walking">py2store.examples.kv_walking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.my">py2store.my</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.my.grabbers">py2store.my.grabbers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.trans">py2store.trans</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.key_mappers.str_utils">py2store.key_mappers.str_utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.key_mappers.tuples">py2store.key_mappers.tuples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.key_mappers.paths">py2store.key_mappers.paths</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.key_mappers.naming">py2store.key_mappers.naming</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.key_mappers">py2store.key_mappers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.errors">py2store.errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.slib.s_configparser">py2store.slib.s_configparser</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.slib">py2store.slib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.slib.s_zipfile">py2store.slib.s_zipfile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.base">py2store.base</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-selectors-mg-selectors">py2store.selectors.mg_selectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-selectors-mongoquery">py2store.selectors.mongoquery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-selectors">py2store.selectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.parse_format">py2store.parse_format</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  <li><a href="../../py2store.html">py2store</a><ul>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

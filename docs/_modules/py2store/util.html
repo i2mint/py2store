@@ -1,0 +1,1093 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>py2store.util &#8212; py2store 0.0.7 documentation</title>
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css" />
+    <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for py2store.util</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">shutil</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">namedtuple</span><span class="p">,</span> <span class="n">defaultdict</span>
+<span class="kn">from</span> <span class="nn">warnings</span> <span class="kn">import</span> <span class="n">warn</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Hashable</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Optional</span>
+<span class="c1"># from functools import update_wrapper as _update_wrapper</span>
+<span class="c1"># from functools import wraps as _wraps</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partialmethod</span>
+<span class="kn">import</span> <span class="nn">functools</span>
+
+<span class="c1"># monkey patching WRAPPER_ASSIGNMENTS to get &quot;proper&quot; wrapping (adding defaults and kwdefaults</span>
+
+<span class="n">wrapper_assignments</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s1">&#39;__module__&#39;</span><span class="p">,</span> <span class="s1">&#39;__name__&#39;</span><span class="p">,</span> <span class="s1">&#39;__qualname__&#39;</span><span class="p">,</span> <span class="s1">&#39;__doc__&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;__annotations__&#39;</span><span class="p">,</span> <span class="s1">&#39;__defaults__&#39;</span><span class="p">,</span> <span class="s1">&#39;__kwdefaults__&#39;</span><span class="p">)</span>
+
+<span class="n">update_wrapper</span> <span class="o">=</span> <span class="n">functools</span><span class="o">.</span><span class="n">update_wrapper</span>
+<span class="n">update_wrapper</span><span class="o">.</span><span class="vm">__defaults__</span> <span class="o">=</span> <span class="p">(</span><span class="n">functools</span><span class="o">.</span><span class="n">WRAPPER_ASSIGNMENTS</span><span class="p">,</span> <span class="n">functools</span><span class="o">.</span><span class="n">WRAPPER_UPDATES</span><span class="p">)</span>
+<span class="n">wraps</span> <span class="o">=</span> <span class="n">functools</span><span class="o">.</span><span class="n">wraps</span>
+<span class="n">wraps</span><span class="o">.</span><span class="vm">__defaults__</span> <span class="o">=</span> <span class="p">(</span><span class="n">functools</span><span class="o">.</span><span class="n">WRAPPER_ASSIGNMENTS</span><span class="p">,</span> <span class="n">functools</span><span class="o">.</span><span class="n">WRAPPER_UPDATES</span><span class="p">)</span>
+
+
+<span class="c1"># @_wraps(_wraps)</span>
+<span class="c1"># def wraps(wrapped, *args, **kwargs):</span>
+<span class="c1">#     _wrapped = _wraps(wrapped, *args, **kwargs)</span>
+<span class="c1">#     for attr</span>
+
+
+<div class="viewcode-block" id="partialclass"><a class="viewcode-back" href="../../test.html#py2store.util.partialclass">[docs]</a><span class="k">def</span> <span class="nf">partialclass</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;What partial(cls, *args, **kwargs) does, but returning a class instead of an object.</span>
+
+<span class="sd">    :param cls: Class to get the partial of</span>
+<span class="sd">    :param kwargs: The kwargs to fix</span>
+
+<span class="sd">    The raison d&#39;être of partialclass is that it returns a type, so let&#39;s have a look at that with</span>
+<span class="sd">    a useless class.</span>
+
+<span class="sd">    &gt;&gt;&gt; class A:</span>
+<span class="sd">    ...     pass</span>
+<span class="sd">    &gt;&gt;&gt; assert isinstance(A, type) == isinstance(partialclass(A), type) == True</span>
+
+<span class="sd">    &gt;&gt;&gt; class A:</span>
+<span class="sd">    ...     def __init__(self, a=0, b=1):</span>
+<span class="sd">    ...         self.a, self.b = a, b</span>
+<span class="sd">    ...     def mysum(self):</span>
+<span class="sd">    ...         return self.a + self.b</span>
+<span class="sd">    ...     def __repr__(self):</span>
+<span class="sd">    ...         return f&quot;{self.__class__.__name__}(a={self.a}, b={self.b})&quot;</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; assert isinstance(A, type) == isinstance(partialclass(A), type) == True</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; assert str(signature(A)) == &#39;(a=0, b=1)&#39;</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; a = A()</span>
+<span class="sd">    &gt;&gt;&gt; assert a.mysum() == 1</span>
+<span class="sd">    &gt;&gt;&gt; assert str(a) == &#39;A(a=0, b=1)&#39;</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; assert A(a=10).mysum() == 11</span>
+<span class="sd">    &gt;&gt;&gt; assert str(A()) == &#39;A(a=0, b=1)&#39;</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; AA = partialclass(A, b=2)</span>
+<span class="sd">    &gt;&gt;&gt; assert str(signature(AA)) == &#39;(a=0, *, b=2)&#39;</span>
+<span class="sd">    &gt;&gt;&gt; aa = AA()</span>
+<span class="sd">    &gt;&gt;&gt; assert aa.mysum() == 2</span>
+<span class="sd">    &gt;&gt;&gt; assert str(aa) == &#39;A(a=0, b=2)&#39;</span>
+<span class="sd">    &gt;&gt;&gt; assert AA(a=1, b=3).mysum() == 4</span>
+<span class="sd">    &gt;&gt;&gt; assert str(AA(3)) == &#39;A(a=3, b=2)&#39;</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; AA = partialclass(A, a=7)</span>
+<span class="sd">    &gt;&gt;&gt; assert str(signature(AA)) == &#39;(*, a=7, b=1)&#39;</span>
+<span class="sd">    &gt;&gt;&gt; assert AA().mysum() == 8</span>
+<span class="sd">    &gt;&gt;&gt; assert str(AA(a=3)) == &#39;A(a=3, b=1)&#39;</span>
+
+<span class="sd">    Note in the last partial that since ``a`` was fixed, you need to specify the keyword ``AA(a=3)``.</span>
+<span class="sd">    ``AA(3)`` won&#39;t work:</span>
+
+<span class="sd">    &gt;&gt;&gt; AA(3)</span>
+<span class="sd">    Traceback (most recent call last):</span>
+<span class="sd">      ...</span>
+<span class="sd">    TypeError: __init__() got multiple values for argument &#39;a&#39;</span>
+
+<span class="sd">    On the other hand, you can use *args to specify the fixtures:</span>
+
+<span class="sd">    &gt;&gt;&gt; AA = partialclass(A, 22)</span>
+<span class="sd">    &gt;&gt;&gt; assert str(AA()) == &#39;A(a=22, b=1)&#39;</span>
+<span class="sd">    &gt;&gt;&gt; assert str(signature(AA)) == &#39;(b=1)&#39;</span>
+<span class="sd">    &gt;&gt;&gt; assert str(AA(3)) == &#39;A(a=22, b=3)&#39;</span>
+
+<span class="sd">    ```</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="nb">type</span><span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;cls should be a type, was a </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="bp">cls</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="k">class</span> <span class="nc">PartialClass</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+        <span class="fm">__init__</span> <span class="o">=</span> <span class="n">partialmethod</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="fm">__init__</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="n">copy_attrs</span><span class="p">(</span><span class="n">PartialClass</span><span class="p">,</span> <span class="bp">cls</span><span class="p">,</span> <span class="n">attrs</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;__name__&#39;</span><span class="p">,</span> <span class="s1">&#39;__qualname__&#39;</span><span class="p">,</span> <span class="s1">&#39;__module__&#39;</span><span class="p">,</span> <span class="s1">&#39;__doc__&#39;</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">PartialClass</span></div>
+
+
+<div class="viewcode-block" id="copy_attrs"><a class="viewcode-back" href="../../test.html#py2store.util.copy_attrs">[docs]</a><span class="k">def</span> <span class="nf">copy_attrs</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">attrs</span><span class="p">,</span> <span class="n">raise_error_if_an_attr_is_missing</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Copy attributes from one object to another.</span>
+
+<span class="sd">    &gt;&gt;&gt; class A:</span>
+<span class="sd">    ...     x = 0</span>
+<span class="sd">    &gt;&gt;&gt; class B:</span>
+<span class="sd">    ...     x = 1</span>
+<span class="sd">    ...     yy = 2</span>
+<span class="sd">    ...     zzz = 3</span>
+<span class="sd">    &gt;&gt;&gt; dict_of = lambda o: {a: getattr(o, a) for a in dir(A) if not a.startswith(&#39;_&#39;)}</span>
+<span class="sd">    &gt;&gt;&gt; dict_of(A)</span>
+<span class="sd">    {&#39;x&#39;: 0}</span>
+<span class="sd">    &gt;&gt;&gt; copy_attrs(A, B, &#39;yy&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; dict_of(A)</span>
+<span class="sd">    {&#39;x&#39;: 0, &#39;yy&#39;: 2}</span>
+<span class="sd">    &gt;&gt;&gt; copy_attrs(A, B, [&#39;x&#39;, &#39;zzz&#39;])</span>
+<span class="sd">    &gt;&gt;&gt; dict_of(A)</span>
+<span class="sd">    {&#39;x&#39;: 1, &#39;yy&#39;: 2, &#39;zzz&#39;: 3}</span>
+
+<span class="sd">    But if you try to copy something that `B` (the source) doesn&#39;t have, copy_attrs will complain:</span>
+<span class="sd">    &gt;&gt;&gt; copy_attrs(A, B, &#39;this_is_not_an_attr&#39;)</span>
+<span class="sd">    Traceback (most recent call last):</span>
+<span class="sd">        ...</span>
+<span class="sd">    AttributeError: type object &#39;B&#39; has no attribute &#39;this_is_not_an_attr&#39;</span>
+
+<span class="sd">    If you tell it not to complain, it&#39;ll just ignore attributes that are not in source.</span>
+<span class="sd">    &gt;&gt;&gt; copy_attrs(A, B, [&#39;nothing&#39;, &#39;here&#39;, &#39;exists&#39;], raise_error_if_an_attr_is_missing=False)</span>
+<span class="sd">    &gt;&gt;&gt; dict_of(A)</span>
+<span class="sd">    {&#39;x&#39;: 1, &#39;yy&#39;: 2, &#39;zzz&#39;: 3}</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">attrs</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">attrs</span> <span class="o">=</span> <span class="p">(</span><span class="n">attrs</span><span class="p">,)</span>
+    <span class="k">if</span> <span class="n">raise_error_if_an_attr_is_missing</span><span class="p">:</span>
+        <span class="n">filt</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">a</span><span class="p">:</span> <span class="kc">True</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">filt</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">a</span><span class="p">:</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="nb">filter</span><span class="p">(</span><span class="n">filt</span><span class="p">,</span> <span class="n">attrs</span><span class="p">):</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">a</span><span class="p">))</span></div>
+
+
+<span class="k">def</span> <span class="nf">copy_attrs_from</span><span class="p">(</span><span class="n">from_obj</span><span class="p">,</span> <span class="n">to_obj</span><span class="p">,</span> <span class="n">attrs</span><span class="p">):</span>
+    <span class="kn">from</span> <span class="nn">warnings</span> <span class="kn">import</span> <span class="n">warn</span>
+
+    <span class="n">warn</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Deprecated. Use copy_attrs instead.&quot;</span><span class="p">,</span> <span class="ne">DeprecationWarning</span><span class="p">)</span>
+    <span class="n">copy_attrs</span><span class="p">(</span><span class="n">to_obj</span><span class="p">,</span> <span class="n">from_obj</span><span class="p">,</span> <span class="n">attrs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">to_obj</span>
+
+
+<div class="viewcode-block" id="norm_kv_filt"><a class="viewcode-back" href="../../test.html#py2store.util.norm_kv_filt">[docs]</a><span class="k">def</span> <span class="nf">norm_kv_filt</span><span class="p">(</span><span class="n">kv_filt</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]):</span>
+    <span class="sd">&quot;&quot;&quot;Prepare a boolean function to be used with `filter` when fed an iterable of (k, v) pairs.</span>
+
+<span class="sd">    So you have a mapping. Say a dict `d`. Now you want to go through d.items(),</span>
+<span class="sd">    filtering based on the keys, or the values, or both.</span>
+
+<span class="sd">    It&#39;s not hard to do, really. If you&#39;re using a dict you might use a dict comprehension,</span>
+<span class="sd">    or in the general case you might do a `filter(lambda kv: my_filt(kv[0], kv[1]), d.items())`</span>
+<span class="sd">    if you have a `my_filt` that works wiith k and v, etc.</span>
+
+<span class="sd">    But thought simple, it can become a bit muddled.</span>
+<span class="sd">    `norm_kv_filt` simplifies this by allowing you to bring your own filtering boolean function,</span>
+<span class="sd">    whether it&#39;s a key-based, value-based, or key-value-based one, and it will make a</span>
+<span class="sd">    ready-to-use with `filter` function for you.</span>
+
+<span class="sd">    Only thing: Your function needs to call a key `k` and a value `v`.</span>
+<span class="sd">    But hey, it&#39;s alright, if you have a function that calls things differently, just do</span>
+<span class="sd">    something like</span>
+<span class="sd">    ```</span>
+<span class="sd">        new_filt_func = lambda k, v: your_filt_func(..., key=k, ..., value=v, ...)</span>
+<span class="sd">    ```</span>
+<span class="sd">    and all will be fine.</span>
+
+<span class="sd">    :param kv_filt: callable (starting with signature (k), (v), or (k, v)), and returning  a boolean</span>
+<span class="sd">    :return: A normalized callable.</span>
+
+<span class="sd">    &gt;&gt;&gt; d = {&#39;a&#39;: 1, &#39;b&#39;: 2, &#39;c&#39;: 3, &#39;d&#39;: 4}</span>
+<span class="sd">    &gt;&gt;&gt; list(filter(norm_kv_filt(lambda k: k in {&#39;b&#39;, &#39;d&#39;}), d.items()))</span>
+<span class="sd">    [(&#39;b&#39;, 2), (&#39;d&#39;, 4)]</span>
+<span class="sd">    &gt;&gt;&gt; list(filter(norm_kv_filt(lambda v: v &gt; 2), d.items()))</span>
+<span class="sd">    [(&#39;c&#39;, 3), (&#39;d&#39;, 4)]</span>
+<span class="sd">    &gt;&gt;&gt; list(filter(norm_kv_filt(lambda k, v: (v &gt; 1) &amp; (k != &#39;c&#39;)), d.items()))</span>
+<span class="sd">    [(&#39;b&#39;, 2), (&#39;d&#39;, 4)]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">kv_filt</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>  <span class="c1"># because `filter` works with a callable, or None, so we align</span>
+
+    <span class="n">raise_msg</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;kv_filt should be callable (starting with signature (k), (v), or (k, v)),&quot;</span>
+        <span class="s2">&quot;and returning  a boolean. What you gave me was </span><span class="si">{fv_filt}</span><span class="s2">&quot;</span>
+    <span class="p">)</span>
+    <span class="k">assert</span> <span class="n">callable</span><span class="p">(</span><span class="n">kv_filt</span><span class="p">),</span> <span class="n">raise_msg</span>
+
+    <span class="n">params</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">signature</span><span class="p">(</span><span class="n">kv_filt</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">params</span><span class="p">),</span> <span class="n">raise_msg</span>
+    <span class="n">_kv_filt</span> <span class="o">=</span> <span class="n">kv_filt</span>
+    <span class="k">if</span> <span class="n">params</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;v&quot;</span><span class="p">:</span>
+
+        <span class="k">def</span> <span class="nf">kv_filt</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">_kv_filt</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">params</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;k&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">params</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">params</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">name</span> <span class="o">!=</span> <span class="s2">&quot;v&quot;</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">raise_msg</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+
+            <span class="k">def</span> <span class="nf">kv_filt</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">_kv_filt</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">raise_msg</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__kv_filt</span><span class="p">(</span><span class="n">kv_item</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">kv_filt</span><span class="p">(</span><span class="o">*</span><span class="n">kv_item</span><span class="p">)</span>
+
+    <span class="n">__kv_filt</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">=</span> <span class="n">kv_filt</span><span class="o">.</span><span class="vm">__name__</span>
+
+    <span class="k">return</span> <span class="n">__kv_filt</span></div>
+
+
+<span class="n">var_str_p</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s2">&quot;\W|^(?=\d)&quot;</span><span class="p">)</span>
+
+<span class="n">Item</span> <span class="o">=</span> <span class="n">Any</span>
+
+
+<div class="viewcode-block" id="add_attrs"><a class="viewcode-back" href="../../test.html#py2store.util.add_attrs">[docs]</a><span class="k">def</span> <span class="nf">add_attrs</span><span class="p">(</span><span class="n">remember_added_attrs</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">if_attr_exists</span><span class="o">=</span><span class="s2">&quot;raise&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">attrs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Make a function that will add attributes to an obj.</span>
+<span class="sd">    Originally meant to be used as a decorator of a function, to inject</span>
+<span class="sd">    &gt;&gt;&gt; from py2store.util import add_attrs</span>
+<span class="sd">    &gt;&gt;&gt; @add_attrs(bar=&#39;bituate&#39;, hello=&#39;world&#39;)</span>
+<span class="sd">    ... def foo():</span>
+<span class="sd">    ...     pass</span>
+<span class="sd">    &gt;&gt;&gt; [x for x in dir(foo) if not x.startswith(&#39;_&#39;)]</span>
+<span class="sd">    [&#39;bar&#39;, &#39;hello&#39;]</span>
+<span class="sd">    &gt;&gt;&gt; foo.bar</span>
+<span class="sd">    &#39;bituate&#39;</span>
+<span class="sd">    &gt;&gt;&gt; foo.hello</span>
+<span class="sd">    &#39;world&#39;</span>
+<span class="sd">    &gt;&gt;&gt; foo._added_attrs  # Another attr was added to hold the list of attributes added (in case we need to remove them</span>
+<span class="sd">    [&#39;bar&#39;, &#39;hello&#39;]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">add_attrs_to_func</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
+        <span class="n">attrs_added</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">attr_name</span><span class="p">,</span> <span class="n">attr_val</span> <span class="ow">in</span> <span class="n">attrs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">attr_name</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">if_attr_exists</span> <span class="o">==</span> <span class="s2">&quot;raise&quot;</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Attribute </span><span class="si">{</span><span class="n">attr_name</span><span class="si">}</span><span class="s2"> already exists in </span><span class="si">{</span><span class="n">obj</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+                <span class="k">elif</span> <span class="n">if_attr_exists</span> <span class="o">==</span> <span class="s2">&quot;warn&quot;</span><span class="p">:</span>
+                    <span class="n">warn</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Attribute </span><span class="si">{</span><span class="n">attr_name</span><span class="si">}</span><span class="s2"> already exists in </span><span class="si">{</span><span class="n">obj</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">if_attr_exists</span> <span class="o">==</span> <span class="s2">&quot;skip&quot;</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Unknown value for if_attr_exists: </span><span class="si">{</span><span class="n">if_attr_exists</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">attr_name</span><span class="p">,</span> <span class="n">attr_val</span><span class="p">)</span>
+            <span class="n">attrs_added</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">attr_name</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">remember_added_attrs</span><span class="p">:</span>
+            <span class="n">obj</span><span class="o">.</span><span class="n">_added_attrs</span> <span class="o">=</span> <span class="n">attrs_added</span>
+
+        <span class="k">return</span> <span class="n">obj</span>
+
+    <span class="k">return</span> <span class="n">add_attrs_to_func</span></div>
+
+
+<span class="k">def</span> <span class="nf">fullpath</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">path</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;~&#39;</span><span class="p">):</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">attrs_of</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
+    <span class="k">return</span> <span class="nb">set</span><span class="p">(</span><span class="nb">dir</span><span class="p">(</span><span class="n">obj</span><span class="p">))</span>
+
+
+<div class="viewcode-block" id="format_invocation"><a class="viewcode-back" href="../../test.html#py2store.util.format_invocation">[docs]</a><span class="k">def</span> <span class="nf">format_invocation</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(),</span> <span class="n">kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Given a name, positional arguments, and keyword arguments, format</span>
+<span class="sd">    a basic Python-style function call.</span>
+
+<span class="sd">    &gt;&gt;&gt; print(format_invocation(&#39;func&#39;, args=(1, 2), kwargs={&#39;c&#39;: 3}))</span>
+<span class="sd">    func(1, 2, c=3)</span>
+<span class="sd">    &gt;&gt;&gt; print(format_invocation(&#39;a_func&#39;, args=(1,)))</span>
+<span class="sd">    a_func(1)</span>
+<span class="sd">    &gt;&gt;&gt; print(format_invocation(&#39;kw_func&#39;, kwargs=[(&#39;a&#39;, 1), (&#39;b&#39;, 2)]))</span>
+<span class="sd">    kw_func(a=1, b=2)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">kwargs</span> <span class="o">=</span> <span class="n">kwargs</span> <span class="ow">or</span> <span class="p">{}</span>
+    <span class="n">a_text</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">repr</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">args</span><span class="p">])</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="n">kwarg_items</span> <span class="o">=</span> <span class="p">[(</span><span class="n">k</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">kwarg_items</span> <span class="o">=</span> <span class="n">kwargs</span>
+    <span class="n">kw_text</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">=</span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwarg_items</span><span class="p">])</span>
+
+    <span class="n">all_args_text</span> <span class="o">=</span> <span class="n">a_text</span>
+    <span class="k">if</span> <span class="n">all_args_text</span> <span class="ow">and</span> <span class="n">kw_text</span><span class="p">:</span>
+        <span class="n">all_args_text</span> <span class="o">+=</span> <span class="s2">&quot;, &quot;</span>
+    <span class="n">all_args_text</span> <span class="o">+=</span> <span class="n">kw_text</span>
+
+    <span class="k">return</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">(</span><span class="si">%s</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">all_args_text</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="groupby"><a class="viewcode-back" href="../../test.html#py2store.util.groupby">[docs]</a><span class="k">def</span> <span class="nf">groupby</span><span class="p">(</span>
+        <span class="n">items</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Item</span><span class="p">],</span>
+        <span class="n">key</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Item</span><span class="p">],</span> <span class="n">Hashable</span><span class="p">],</span>
+        <span class="n">val</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="n">Item</span><span class="p">],</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">group_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Groups items according to group keys updated from those items through the given (item_to_)key function.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        items: iterable of items</span>
+<span class="sd">        key: The function that computes a key from an item. Needs to return a hashable.</span>
+<span class="sd">        val: An optional function that computes a val from an item. If not given, the item itself will be taken.</span>
+<span class="sd">        group_factory: The function to make new (empty) group objects and accumulate group items.</span>
+<span class="sd">            group_items = group_collector() will be called to make a new empty group collection</span>
+<span class="sd">            group_items.append(x) will be called to add x to that collection</span>
+<span class="sd">            The default is `list`</span>
+
+<span class="sd">    Returns: A dict of {group_key: items_in_that_group, ...}</span>
+
+<span class="sd">    &gt;&gt;&gt; groupby(range(11), key=lambda x: x % 3)</span>
+<span class="sd">    {0: [0, 3, 6, 9], 1: [1, 4, 7, 10], 2: [2, 5, 8]}</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; tokens = [&#39;the&#39;, &#39;fox&#39;, &#39;is&#39;, &#39;in&#39;, &#39;a&#39;, &#39;box&#39;]</span>
+<span class="sd">    &gt;&gt;&gt; groupby(tokens, len)</span>
+<span class="sd">    {3: [&#39;the&#39;, &#39;fox&#39;, &#39;box&#39;], 2: [&#39;is&#39;, &#39;in&#39;], 1: [&#39;a&#39;]}</span>
+<span class="sd">    &gt;&gt;&gt; key_map = {1: &#39;one&#39;, 2: &#39;two&#39;}</span>
+<span class="sd">    &gt;&gt;&gt; groupby(tokens, lambda x: key_map.get(len(x), &#39;more&#39;))</span>
+<span class="sd">    {&#39;more&#39;: [&#39;the&#39;, &#39;fox&#39;, &#39;box&#39;], &#39;two&#39;: [&#39;is&#39;, &#39;in&#39;], &#39;one&#39;: [&#39;a&#39;]}</span>
+<span class="sd">    &gt;&gt;&gt; stopwords = {&#39;the&#39;, &#39;in&#39;, &#39;a&#39;, &#39;on&#39;}</span>
+<span class="sd">    &gt;&gt;&gt; groupby(tokens, lambda w: w in stopwords)</span>
+<span class="sd">    {True: [&#39;the&#39;, &#39;in&#39;, &#39;a&#39;], False: [&#39;fox&#39;, &#39;is&#39;, &#39;box&#39;]}</span>
+<span class="sd">    &gt;&gt;&gt; groupby(tokens, lambda w: [&#39;words&#39;, &#39;stopwords&#39;][int(w in stopwords)])</span>
+<span class="sd">    {&#39;stopwords&#39;: [&#39;the&#39;, &#39;in&#39;, &#39;a&#39;], &#39;words&#39;: [&#39;fox&#39;, &#39;is&#39;, &#39;box&#39;]}</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">groups</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="n">group_factory</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">val</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">items</span><span class="p">:</span>
+            <span class="n">groups</span><span class="p">[</span><span class="n">key</span><span class="p">(</span><span class="n">item</span><span class="p">)]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">items</span><span class="p">:</span>
+            <span class="n">groups</span><span class="p">[</span><span class="n">key</span><span class="p">(</span><span class="n">item</span><span class="p">)]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">val</span><span class="p">(</span><span class="n">item</span><span class="p">))</span>
+    <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">groups</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="regroupby"><a class="viewcode-back" href="../../test.html#py2store.util.regroupby">[docs]</a><span class="k">def</span> <span class="nf">regroupby</span><span class="p">(</span><span class="n">items</span><span class="p">,</span> <span class="o">*</span><span class="n">key_funcs</span><span class="p">,</span> <span class="o">**</span><span class="n">named_key_funcs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;REcursive groupby. Applies the groupby function recursively, using a sequence of key functions.</span>
+
+<span class="sd">    Note: The named_key_funcs argument names don&#39;t have any external effect.</span>
+<span class="sd">        They just give a name to the key function, for code reading clarity purposes.</span>
+
+<span class="sd">    &gt;&gt;&gt; # group by how big the number is, then by it&#39;s mod 3 value</span>
+<span class="sd">    &gt;&gt;&gt; # note that named_key_funcs argument names doesn&#39;t have any external effect (but give a name to the function)</span>
+<span class="sd">    &gt;&gt;&gt; regroupby([1, 2, 3, 4, 5, 6, 7], lambda x: &#39;big&#39; if x &gt; 5 else &#39;small&#39;, mod3=lambda x: x % 3)</span>
+<span class="sd">    {&#39;small&#39;: {1: [1, 4], 2: [2, 5], 0: [3]}, &#39;big&#39;: {0: [6], 1: [7]}}</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; tokens = [&#39;the&#39;, &#39;fox&#39;, &#39;is&#39;, &#39;in&#39;, &#39;a&#39;, &#39;box&#39;]</span>
+<span class="sd">    &gt;&gt;&gt; stopwords = {&#39;the&#39;, &#39;in&#39;, &#39;a&#39;, &#39;on&#39;}</span>
+<span class="sd">    &gt;&gt;&gt; word_category = lambda x: &#39;stopwords&#39; if x in stopwords else &#39;words&#39;</span>
+<span class="sd">    &gt;&gt;&gt; regroupby(tokens, word_category, len)</span>
+<span class="sd">    {&#39;stopwords&#39;: {3: [&#39;the&#39;], 2: [&#39;in&#39;], 1: [&#39;a&#39;]}, &#39;words&#39;: {3: [&#39;fox&#39;, &#39;box&#39;], 2: [&#39;is&#39;]}}</span>
+<span class="sd">    &gt;&gt;&gt; regroupby(tokens, len, word_category)</span>
+<span class="sd">    {3: {&#39;stopwords&#39;: [&#39;the&#39;], &#39;words&#39;: [&#39;fox&#39;, &#39;box&#39;]}, 2: {&#39;words&#39;: [&#39;is&#39;], &#39;stopwords&#39;: [&#39;in&#39;]}, 1: {&#39;stopwords&#39;: [&#39;a&#39;]}}</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">key_funcs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">key_funcs</span><span class="p">)</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">named_key_funcs</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">key_funcs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;You need to have at least one key_func&quot;</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">key_funcs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">groupby</span><span class="p">(</span><span class="n">items</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">key_funcs</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">key_func</span><span class="p">,</span> <span class="o">*</span><span class="n">key_funcs</span> <span class="o">=</span> <span class="n">key_funcs</span>
+        <span class="n">groups</span> <span class="o">=</span> <span class="n">groupby</span><span class="p">(</span><span class="n">items</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">key_func</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="n">group_key</span><span class="p">:</span> <span class="n">regroupby</span><span class="p">(</span><span class="n">group_items</span><span class="p">,</span> <span class="o">*</span><span class="n">key_funcs</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">group_key</span><span class="p">,</span> <span class="n">group_items</span> <span class="ow">in</span> <span class="n">groups</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">}</span></div>
+
+
+<span class="n">GroupItems</span> <span class="o">=</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Item</span><span class="p">]</span>
+<span class="kn">from</span> <span class="nn">inspect</span> <span class="kn">import</span> <span class="n">signature</span>
+
+
+<div class="viewcode-block" id="igroupby"><a class="viewcode-back" href="../../test.html#py2store.util.igroupby">[docs]</a><span class="k">def</span> <span class="nf">igroupby</span><span class="p">(</span>
+        <span class="n">items</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Item</span><span class="p">],</span>
+        <span class="n">key</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Item</span><span class="p">],</span> <span class="n">Hashable</span><span class="p">],</span>
+        <span class="n">val</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="n">Item</span><span class="p">],</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">group_factory</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="n">GroupItems</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">,</span>
+        <span class="n">group_release_cond</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">release_remainding</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">append_to_group_items</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">GroupItems</span><span class="p">,</span> <span class="n">Item</span><span class="p">],</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="o">.</span><span class="n">append</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;The generator version of py2store groupby.</span>
+<span class="sd">    Groups items according to group keys updated from those items through the given (item_to_)key function,</span>
+<span class="sd">    yielding the groups according to a logic defined by ``group_release_cond``</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        items: iterable of items</span>
+<span class="sd">        key: The function that computes a key from an item. Needs to return a hashable.</span>
+<span class="sd">        val: An optional function that computes a val from an item. If not given, the item itself will be taken.</span>
+<span class="sd">        group_factory: The function to make new (empty) group objects and accumulate group items.</span>
+<span class="sd">            group_items = group_collector() will be called to make a new empty group collection</span>
+<span class="sd">            group_items.append(x) will be called to add x to that collection</span>
+<span class="sd">            The default is `list`</span>
+<span class="sd">        group_release_cond: A boolean function that will be applied, at every iteration,</span>
+<span class="sd">            to the accumulated items of the group that was just updated,</span>
+<span class="sd">            and determines (if True) if the (group_key, group_items) should be yielded.</span>
+<span class="sd">            The default is False, which results in</span>
+<span class="sd">            ``lambda group_key, group_items: False`` being used.</span>
+<span class="sd">        release_remainding: Once the input items have been consumed, there may still be some</span>
+<span class="sd">            items in the grouping &quot;cache&quot;. ``release_remainding`` is a boolean that indicates whether</span>
+<span class="sd">            the contents of this cache should be released or not.</span>
+
+<span class="sd">    Yields: ``(group_key, items_in_that_group)`` pairs</span>
+
+
+<span class="sd">    The following will group numbers according to their parity (0 for even, 1 for odd),</span>
+<span class="sd">    releasing a list of numbers collected when that list reaches length 3:</span>
+
+<span class="sd">    &gt;&gt;&gt; g = igroupby(items=range(11),</span>
+<span class="sd">    ...             key=lambda x: x % 2,</span>
+<span class="sd">    ...             group_release_cond=lambda k, v: len(v) == 3)</span>
+<span class="sd">    &gt;&gt;&gt; list(g)</span>
+<span class="sd">    [(0, [0, 2, 4]), (1, [1, 3, 5]), (0, [6, 8, 10]), (1, [7, 9])]</span>
+
+<span class="sd">    If we specify ``release_remainding=False`` though, we won&#39;t get</span>
+<span class="sd">    &gt;&gt;&gt; g = igroupby(items=range(11),</span>
+<span class="sd">    ...             key=lambda x: x % 2,</span>
+<span class="sd">    ...             group_release_cond=lambda k, v: len(v) == 3,</span>
+<span class="sd">    ...             release_remainding=False)</span>
+<span class="sd">    &gt;&gt;&gt; list(g)</span>
+<span class="sd">    [(0, [0, 2, 4]), (1, [1, 3, 5]), (0, [6, 8, 10])]</span>
+
+<span class="sd">    # &gt;&gt;&gt; grps = partial(igroupby, group_release_cond=False, release_remainding=True)</span>
+
+
+<span class="sd">    Below we show that, with the default ``group_release_cond = lambda k, v: False``</span>
+<span class="sd">    and release_remainding=True`` we have ``dict(igroupby(...)) == groupby(...)``</span>
+
+<span class="sd">    &gt;&gt;&gt; from functools import partial</span>
+<span class="sd">    &gt;&gt;&gt; from py2store import groupby</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; kws = dict(items=range(11), key=lambda x: x % 3)</span>
+<span class="sd">    &gt;&gt;&gt; assert (dict(igroupby(**kws)) == groupby(**kws)</span>
+<span class="sd">    ...         == {0: [0, 3, 6, 9], 1: [1, 4, 7, 10], 2: [2, 5, 8]})</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; tokens = [&#39;the&#39;, &#39;fox&#39;, &#39;is&#39;, &#39;in&#39;, &#39;a&#39;, &#39;box&#39;]</span>
+<span class="sd">    &gt;&gt;&gt; kws = dict(items=tokens, key=len)</span>
+<span class="sd">    &gt;&gt;&gt; assert (dict(igroupby(**kws)) == groupby(**kws)</span>
+<span class="sd">    ...         == {3: [&#39;the&#39;, &#39;fox&#39;, &#39;box&#39;], 2: [&#39;is&#39;, &#39;in&#39;], 1: [&#39;a&#39;]})</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; key_map = {1: &#39;one&#39;, 2: &#39;two&#39;}</span>
+<span class="sd">    &gt;&gt;&gt; kws.update(key=lambda x: key_map.get(len(x), &#39;more&#39;))</span>
+<span class="sd">    &gt;&gt;&gt; assert (dict(igroupby(**kws)) == groupby(**kws)</span>
+<span class="sd">    ...         == {&#39;more&#39;: [&#39;the&#39;, &#39;fox&#39;, &#39;box&#39;], &#39;two&#39;: [&#39;is&#39;, &#39;in&#39;], &#39;one&#39;: [&#39;a&#39;]})</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; stopwords = {&#39;the&#39;, &#39;in&#39;, &#39;a&#39;, &#39;on&#39;}</span>
+<span class="sd">    &gt;&gt;&gt; kws.update(key=lambda w: w in stopwords)</span>
+<span class="sd">    &gt;&gt;&gt; assert (dict(igroupby(**kws)) == groupby(**kws)</span>
+<span class="sd">    ...         == {True: [&#39;the&#39;, &#39;in&#39;, &#39;a&#39;], False: [&#39;fox&#39;, &#39;is&#39;, &#39;box&#39;]})</span>
+<span class="sd">    &gt;&gt;&gt; kws.update(key=lambda w: [&#39;words&#39;, &#39;stopwords&#39;][int(w in stopwords)])</span>
+<span class="sd">    &gt;&gt;&gt; assert (dict(igroupby(**kws)) == groupby(**kws)</span>
+<span class="sd">    ...         == {&#39;stopwords&#39;: [&#39;the&#39;, &#39;in&#39;, &#39;a&#39;], &#39;words&#39;: [&#39;fox&#39;, &#39;is&#39;, &#39;box&#39;]})</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">groups</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="n">group_factory</span><span class="p">)</span>
+
+    <span class="k">assert</span> <span class="n">callable</span><span class="p">(</span><span class="n">group_release_cond</span><span class="p">),</span> <span class="p">(</span>
+        <span class="s2">&quot;group_release_cond should be callable (filter boolean function) or False. &quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;Was </span><span class="si">{</span><span class="n">group_release_cond</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">signature</span><span class="p">(</span><span class="n">group_release_cond</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">,</span> <span class="p">(</span>
+        <span class="s2">&quot;group_release_cond should take two inputs: The group_key and the group_items.</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;The arguments of the function you gave me are: </span><span class="si">{</span><span class="n">signature</span><span class="p">(</span><span class="n">group_release_cond</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="p">)</span>
+    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">items</span><span class="p">:</span>
+        <span class="n">group_key</span> <span class="o">=</span> <span class="n">key</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+        <span class="n">group_items</span> <span class="o">=</span> <span class="n">groups</span><span class="p">[</span><span class="n">group_key</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">val</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">append_to_group_items</span><span class="p">(</span><span class="n">group_items</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">append_to_group_items</span><span class="p">(</span><span class="n">group_items</span><span class="p">,</span> <span class="n">val</span><span class="p">(</span><span class="n">item</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">group_release_cond</span><span class="p">(</span><span class="n">group_key</span><span class="p">,</span> <span class="n">group_items</span><span class="p">):</span>
+            <span class="k">yield</span> <span class="n">group_key</span><span class="p">,</span> <span class="n">group_items</span>
+            <span class="k">del</span> <span class="n">groups</span><span class="p">[</span><span class="n">group_key</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">release_remainding</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">group_key</span><span class="p">,</span> <span class="n">group_items</span> <span class="ow">in</span> <span class="n">groups</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">yield</span> <span class="n">group_key</span><span class="p">,</span> <span class="n">group_items</span></div>
+
+
+<span class="k">def</span> <span class="nf">ntup</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s2">&quot;NamedTuple&quot;</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">kwargs</span><span class="p">))(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="str_to_var_str"><a class="viewcode-back" href="../../test.html#py2store.util.str_to_var_str">[docs]</a><span class="k">def</span> <span class="nf">str_to_var_str</span><span class="p">(</span><span class="n">s</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Make a valid python variable string from the input string.</span>
+<span class="sd">    Left untouched if already valid.</span>
+
+<span class="sd">    &gt;&gt;&gt; str_to_var_str(&#39;this_is_a_valid_var_name&#39;)</span>
+<span class="sd">    &#39;this_is_a_valid_var_name&#39;</span>
+<span class="sd">    &gt;&gt;&gt; str_to_var_str(&#39;not valid  #)*(&amp;434&#39;)</span>
+<span class="sd">    &#39;not_valid_______434&#39;</span>
+<span class="sd">    &gt;&gt;&gt; str_to_var_str(&#39;99_ballons&#39;)</span>
+<span class="sd">    &#39;_99_ballons&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">var_str_p</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="fill_with_dflts"><a class="viewcode-back" href="../../test.html#py2store.util.fill_with_dflts">[docs]</a><span class="k">def</span> <span class="nf">fill_with_dflts</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">dflt_dict</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Fed up with multiline handling of dict arguments?</span>
+<span class="sd">    Fed up of repeating the if d is None: d = {} lines ad nauseam (because defaults can&#39;t be dicts as a default</span>
+<span class="sd">    because dicts are mutable blah blah, and the python kings don&#39;t seem to think a mutable dict is useful enough)?</span>
+<span class="sd">    Well, my favorite solution would be a built-in handling of the problem of complex/smart defaults,</span>
+<span class="sd">    that is visible in the code and in the docs. But for now, here&#39;s one of the tricks I use.</span>
+
+<span class="sd">    Main use is to handle defaults of function arguments. Say you have a function `func(d=None)` and you want</span>
+<span class="sd">    `d` to be a dict that has at least the keys `foo` and `bar` with default values 7 and 42 respectively.</span>
+<span class="sd">    Then, in the beginning of your function code you&#39;ll say:</span>
+
+<span class="sd">        d = fill_with_dflts(d, {&#39;a&#39;: 7, &#39;b&#39;: 42})</span>
+
+<span class="sd">    See examples to know how to use it.</span>
+
+<span class="sd">    ATTENTION: A shallow copy of the dict is made. Know how that affects you (or not).</span>
+<span class="sd">    ATTENTION: This is not recursive: It won&#39;t be filling any nested fields with defaults.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        d: The dict you want to &quot;fill&quot;</span>
+<span class="sd">        dflt_dict: What to fill it with (a {k: v, ...} dict where if k is missing in d, you&#39;ll get a new field k, with</span>
+<span class="sd">            value v.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        a dict with the new key:val entries (if the key was missing in d).</span>
+
+<span class="sd">    &gt;&gt;&gt; fill_with_dflts(None)</span>
+<span class="sd">    {}</span>
+<span class="sd">    &gt;&gt;&gt; fill_with_dflts(None, {&#39;a&#39;: 7, &#39;b&#39;: 42})</span>
+<span class="sd">    {&#39;a&#39;: 7, &#39;b&#39;: 42}</span>
+<span class="sd">    &gt;&gt;&gt; fill_with_dflts({}, {&#39;a&#39;: 7, &#39;b&#39;: 42})</span>
+<span class="sd">    {&#39;a&#39;: 7, &#39;b&#39;: 42}</span>
+<span class="sd">    &gt;&gt;&gt; fill_with_dflts({&#39;b&#39;: 1000}, {&#39;a&#39;: 7, &#39;b&#39;: 42})</span>
+<span class="sd">    {&#39;a&#39;: 7, &#39;b&#39;: 1000}</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">d</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">if</span> <span class="n">dflt_dict</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">dflt_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">dflt_dict</span><span class="p">,</span> <span class="o">**</span><span class="n">d</span><span class="p">)</span></div>
+
+
+<span class="c1"># Note: Had replaced with cached_property (new in 3.8)</span>
+<span class="c1"># if not sys.version_info &gt;= (3, 8):</span>
+<span class="c1">#     from functools import cached_property</span>
+<span class="c1"># # etc...</span>
+<span class="c1"># But then I realized that the way cached_property is implemented, pycharm does not see the properties (lint)</span>
+<span class="c1"># So I&#39;m reverting to lazyprop</span>
+<span class="c1"># TODO: Keep track of the evolution of functools.cached_property and compare performance.</span>
+<div class="viewcode-block" id="lazyprop"><a class="viewcode-back" href="../../test.html#py2store.util.lazyprop">[docs]</a><span class="k">class</span> <span class="nc">lazyprop</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A descriptor implementation of lazyprop (cached property).</span>
+<span class="sd">    Made based on David Beazley&#39;s &quot;Python Cookbook&quot; book and enhanced with boltons.cacheutils ideas.</span>
+
+<span class="sd">    &gt;&gt;&gt; class Test:</span>
+<span class="sd">    ...     def __init__(self, a):</span>
+<span class="sd">    ...         self.a = a</span>
+<span class="sd">    ...     @lazyprop</span>
+<span class="sd">    ...     def len(self):</span>
+<span class="sd">    ...         print(&#39;generating &quot;len&quot;&#39;)</span>
+<span class="sd">    ...         return len(self.a)</span>
+<span class="sd">    &gt;&gt;&gt; t = Test([0, 1, 2, 3, 4])</span>
+<span class="sd">    &gt;&gt;&gt; t.__dict__</span>
+<span class="sd">    {&#39;a&#39;: [0, 1, 2, 3, 4]}</span>
+<span class="sd">    &gt;&gt;&gt; t.len</span>
+<span class="sd">    generating &quot;len&quot;</span>
+<span class="sd">    5</span>
+<span class="sd">    &gt;&gt;&gt; t.__dict__</span>
+<span class="sd">    {&#39;a&#39;: [0, 1, 2, 3, 4], &#39;len&#39;: 5}</span>
+<span class="sd">    &gt;&gt;&gt; t.len</span>
+<span class="sd">    5</span>
+<span class="sd">    &gt;&gt;&gt; # But careful when using lazyprop that no one will change the value of a without deleting the property first</span>
+<span class="sd">    &gt;&gt;&gt; t.a = [0, 1, 2]  # if we change a...</span>
+<span class="sd">    &gt;&gt;&gt; t.len  # ... we still get the old cached value of len</span>
+<span class="sd">    5</span>
+<span class="sd">    &gt;&gt;&gt; del t.len  # if we delete the len prop</span>
+<span class="sd">    &gt;&gt;&gt; t.len  # ... then len being recomputed again</span>
+<span class="sd">    generating &quot;len&quot;</span>
+<span class="sd">    3</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="s2">&quot;__doc__&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__isabstractmethod__</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span>
+            <span class="n">func</span><span class="p">,</span> <span class="s2">&quot;__isabstractmethod__&quot;</span><span class="p">,</span> <span class="kc">False</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">func</span> <span class="o">=</span> <span class="n">func</span>
+
+    <span class="k">def</span> <span class="fm">__get__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instance</span><span class="p">,</span> <span class="bp">cls</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">instance</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">instance</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="vm">__name__</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="p">(</span><span class="n">instance</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">value</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">cn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
+        <span class="k">return</span> <span class="s2">&quot;&lt;</span><span class="si">%s</span><span class="s2"> func=</span><span class="si">%s</span><span class="s2">&gt;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">cn</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="p">)</span></div>
+
+
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">lru_cache</span><span class="p">,</span> <span class="n">wraps</span>
+<span class="kn">import</span> <span class="nn">weakref</span>
+
+
+<span class="nd">@wraps</span><span class="p">(</span><span class="n">lru_cache</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">memoized_method</span><span class="p">(</span><span class="o">*</span><span class="n">lru_args</span><span class="p">,</span> <span class="o">**</span><span class="n">lru_kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">decorator</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+        <span class="nd">@wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+        <span class="k">def</span> <span class="nf">wrapped_func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="c1"># Storing the wrapped method inside the instance since a strong reference to self would not allow it to die.</span>
+            <span class="n">self_weak</span> <span class="o">=</span> <span class="n">weakref</span><span class="o">.</span><span class="n">ref</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+            <span class="nd">@wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+            <span class="nd">@lru_cache</span><span class="p">(</span><span class="o">*</span><span class="n">lru_args</span><span class="p">,</span> <span class="o">**</span><span class="n">lru_kwargs</span><span class="p">)</span>
+            <span class="k">def</span> <span class="nf">cached_method</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="n">self_weak</span><span class="p">(),</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">cached_method</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">cached_method</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">wrapped_func</span>
+
+    <span class="k">return</span> <span class="n">decorator</span>
+
+
+<div class="viewcode-block" id="lazyprop_w_sentinel"><a class="viewcode-back" href="../../test.html#py2store.util.lazyprop_w_sentinel">[docs]</a><span class="k">class</span> <span class="nc">lazyprop_w_sentinel</span><span class="p">(</span><span class="n">lazyprop</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A descriptor implementation of lazyprop (cached property).</span>
+<span class="sd">    Inserts a `self.func.__name__ + &#39;__cache_active&#39;` attribute</span>
+
+<span class="sd">    &gt;&gt;&gt; class Test:</span>
+<span class="sd">    ...     def __init__(self, a):</span>
+<span class="sd">    ...         self.a = a</span>
+<span class="sd">    ...     @lazyprop_w_sentinel</span>
+<span class="sd">    ...     def len(self):</span>
+<span class="sd">    ...         print(&#39;generating &quot;len&quot;&#39;)</span>
+<span class="sd">    ...         return len(self.a)</span>
+<span class="sd">    &gt;&gt;&gt; t = Test([0, 1, 2, 3, 4])</span>
+<span class="sd">    &gt;&gt;&gt; lazyprop_w_sentinel.cache_is_active(t, &#39;len&#39;)</span>
+<span class="sd">    False</span>
+<span class="sd">    &gt;&gt;&gt; t.__dict__  # let&#39;s look under the hood</span>
+<span class="sd">    {&#39;a&#39;: [0, 1, 2, 3, 4]}</span>
+<span class="sd">    &gt;&gt;&gt; t.len</span>
+<span class="sd">    generating &quot;len&quot;</span>
+<span class="sd">    5</span>
+<span class="sd">    &gt;&gt;&gt; lazyprop_w_sentinel.cache_is_active(t, &#39;len&#39;)</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; t.len  # notice there&#39;s no &#39;generating &quot;len&quot;&#39; print this time!</span>
+<span class="sd">    5</span>
+<span class="sd">    &gt;&gt;&gt; t.__dict__  # let&#39;s look under the hood</span>
+<span class="sd">    {&#39;a&#39;: [0, 1, 2, 3, 4], &#39;len&#39;: 5, &#39;sentinel_of__len&#39;: True}</span>
+<span class="sd">    &gt;&gt;&gt; # But careful when using lazyprop that no one will change the value of a without deleting the property first</span>
+<span class="sd">    &gt;&gt;&gt; t.a = [0, 1, 2]  # if we change a...</span>
+<span class="sd">    &gt;&gt;&gt; t.len  # ... we still get the old cached value of len</span>
+<span class="sd">    5</span>
+<span class="sd">    &gt;&gt;&gt; del t.len  # if we delete the len prop</span>
+<span class="sd">    &gt;&gt;&gt; t.len  # ... then len being recomputed again</span>
+<span class="sd">    generating &quot;len&quot;</span>
+<span class="sd">    3</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">sentinel_prefix</span> <span class="o">=</span> <span class="s2">&quot;sentinel_of__&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__get__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instance</span><span class="p">,</span> <span class="bp">cls</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">instance</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">instance</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="vm">__name__</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="p">(</span><span class="n">instance</span><span class="p">)</span>
+            <span class="nb">setattr</span><span class="p">(</span>
+                <span class="n">instance</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sentinel_prefix</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="kc">True</span>
+            <span class="p">)</span>  <span class="c1"># my hack</span>
+            <span class="k">return</span> <span class="n">value</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">cache_is_active</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">instance</span><span class="p">,</span> <span class="n">attr</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">instance</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">sentinel_prefix</span> <span class="o">+</span> <span class="n">attr</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span></div>
+
+
+<span class="k">class</span> <span class="nc">Struct</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">attr_val_dict</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">attr</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">attr_val_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">MutableStruct</span><span class="p">(</span><span class="n">Struct</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">extend</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">attr_val_dict</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">attr_val_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;The attribute </span><span class="si">{</span><span class="n">attr</span><span class="si">}</span><span class="s2"> already exists. Delete it if you want to reuse it!&quot;</span>
+                <span class="p">)</span>
+        <span class="k">for</span> <span class="n">attr</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">attr_val_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="max_common_prefix"><a class="viewcode-back" href="../../test.html#py2store.util.max_common_prefix">[docs]</a><span class="k">def</span> <span class="nf">max_common_prefix</span><span class="p">(</span><span class="n">a</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given a list of strings (or other sliceable sequences), returns the longest common prefix</span>
+<span class="sd">    :param a: list-like of strings</span>
+<span class="sd">    :return: the smallest common prefix of all strings in a</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">a</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+    <span class="c1"># Note: Try to optimize by using a min_max function to give me both in one pass. The current version is still faster</span>
+    <span class="n">s1</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+    <span class="n">s2</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">s1</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">c</span> <span class="o">!=</span> <span class="n">s2</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="n">s1</span><span class="p">[:</span><span class="n">i</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">s1</span></div>
+
+
+<span class="k">class</span> <span class="nc">SimpleProperty</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__get__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">objtype</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">obj</span><span class="o">.</span><span class="n">d</span>
+
+    <span class="k">def</span> <span class="fm">__set__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="n">obj</span><span class="o">.</span><span class="n">d</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="k">def</span> <span class="fm">__delete__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">):</span>
+        <span class="k">del</span> <span class="n">obj</span><span class="o">.</span><span class="n">d</span>
+
+
+<span class="k">class</span> <span class="nc">DelegatedAttribute</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">delegate_name</span><span class="p">,</span> <span class="n">attr_name</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attr_name</span> <span class="o">=</span> <span class="n">attr_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">delegate_name</span> <span class="o">=</span> <span class="n">delegate_name</span>
+
+    <span class="k">def</span> <span class="fm">__get__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instance</span><span class="p">,</span> <span class="n">owner</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">instance</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># return instance.delegate.attr</span>
+            <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">delegate</span><span class="p">(</span><span class="n">instance</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">attr_name</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__set__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instance</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="c1"># instance.delegate.attr = value</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">delegate</span><span class="p">(</span><span class="n">instance</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">attr_name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__delete__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instance</span><span class="p">):</span>
+        <span class="nb">delattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">delegate</span><span class="p">(</span><span class="n">instance</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">attr_name</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">delegate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instance</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">instance</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">delegate_name</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+
+    <span class="c1"># def __call__(self, instance, *args, **kwargs):</span>
+    <span class="c1">#     return self.delegate(instance)(*args, **kwargs)</span>
+
+
+<span class="k">def</span> <span class="nf">delegate_as</span><span class="p">(</span>
+        <span class="n">delegate_cls</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="s2">&quot;delegate&quot;</span><span class="p">,</span> <span class="n">include</span><span class="o">=</span><span class="nb">frozenset</span><span class="p">(),</span> <span class="n">exclude</span><span class="o">=</span><span class="nb">frozenset</span><span class="p">()</span>
+<span class="p">):</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Didn&#39;t manage to make this work fully&quot;</span><span class="p">)</span>
+    <span class="c1"># turn include and ignore into sets, if they aren&#39;t already</span>
+    <span class="n">include</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">include</span><span class="p">)</span>
+    <span class="n">exclude</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">exclude</span><span class="p">)</span>
+    <span class="n">delegate_attrs</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">delegate_cls</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="n">attributes</span> <span class="o">=</span> <span class="n">include</span> <span class="o">|</span> <span class="n">delegate_attrs</span> <span class="o">-</span> <span class="n">exclude</span>
+
+    <span class="k">def</span> <span class="nf">inner</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+        <span class="c1"># create property for storing the delegate</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">to</span><span class="p">,</span> <span class="nb">property</span><span class="p">())</span>
+        <span class="c1"># don&#39;t bother adding attributes that the class already has</span>
+        <span class="n">attrs</span> <span class="o">=</span> <span class="n">attributes</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="c1"># set all the attributes</span>
+        <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">attrs</span><span class="p">:</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">DelegatedAttribute</span><span class="p">(</span><span class="n">to</span><span class="p">,</span> <span class="n">attr</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">cls</span>
+
+    <span class="k">return</span> <span class="n">inner</span>
+
+
+<span class="k">class</span> <span class="nc">HashableMixin</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">ImmutableMixin</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">_immutable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kws</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;object is immutable&quot;</span><span class="p">)</span>
+
+    <span class="fm">__setitem__</span> <span class="o">=</span> <span class="n">_immutable</span>
+    <span class="fm">__delitem__</span> <span class="o">=</span> <span class="n">_immutable</span>
+    <span class="n">clear</span> <span class="o">=</span> <span class="n">_immutable</span>
+    <span class="n">update</span> <span class="o">=</span> <span class="n">_immutable</span>
+    <span class="n">setdefault</span> <span class="o">=</span> <span class="n">_immutable</span>
+    <span class="n">pop</span> <span class="o">=</span> <span class="n">_immutable</span>
+    <span class="n">popitem</span> <span class="o">=</span> <span class="n">_immutable</span>
+
+
+<div class="viewcode-block" id="imdict"><a class="viewcode-back" href="../../test.html#py2store.util.imdict">[docs]</a><span class="k">class</span> <span class="nc">imdict</span><span class="p">(</span><span class="nb">dict</span><span class="p">,</span> <span class="n">HashableMixin</span><span class="p">,</span> <span class="n">ImmutableMixin</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; A frozen hashable dict &quot;&quot;&quot;</span>
+
+    <span class="k">pass</span></div>
+
+
+<span class="k">def</span> <span class="nf">move_files_of_folder_to_trash</span><span class="p">(</span><span class="n">folder</span><span class="p">):</span>
+    <span class="n">trash_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;HOME&quot;</span><span class="p">),</span> <span class="s2">&quot;.Trash&quot;</span>
+    <span class="p">)</span>  <span class="c1"># works with mac (perhaps linux too?)</span>
+    <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">trash_dir</span><span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">trash_dir</span><span class="si">}</span><span class="s2"> directory not found&quot;</span>
+
+    <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">folder</span><span class="p">):</span>
+        <span class="n">src</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">folder</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">src</span><span class="p">):</span>
+            <span class="n">dst</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">trash_dir</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Moving to trash: </span><span class="si">{</span><span class="n">src</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">dst</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">ModuleNotFoundErrorNiceMessage</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">msg</span> <span class="o">=</span> <span class="n">msg</span>
+
+    <span class="k">def</span> <span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_val</span><span class="p">,</span> <span class="n">exc_tb</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">exc_type</span> <span class="ow">is</span> <span class="ne">ModuleNotFoundError</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">msg</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">warn</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">msg</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ModuleNotFoundError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">It seems you don&#39;t have required `</span><span class="si">{</span><span class="n">exc_val</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">` package for this Store.</span>
+<span class="s2">Try installing it by running:</span>
+
+<span class="s2">    pip install </span><span class="si">{</span><span class="n">exc_val</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"></span>
+<span class="s2">    </span>
+<span class="s2">in your terminal.</span>
+<span class="s2">For more information: https://pypi.org/project/</span><span class="si">{</span><span class="n">exc_val</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"></span>
+<span class="s2">            &quot;&quot;&quot;</span>
+                <span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">ModuleNotFoundWarning</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="o">=</span><span class="s2">&quot;It seems you don&#39;t have a required package.&quot;</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">msg</span> <span class="o">=</span> <span class="n">msg</span>
+
+    <span class="k">def</span> <span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_val</span><span class="p">,</span> <span class="n">exc_tb</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">exc_type</span> <span class="ow">is</span> <span class="ne">ModuleNotFoundError</span><span class="p">:</span>
+            <span class="n">warn</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">msg</span><span class="p">)</span>
+            <span class="c1">#             if exc_val is not None and getattr(exc_val, &#39;name&#39;, None) is not None:</span>
+            <span class="c1">#                 warn(f&quot;&quot;&quot;</span>
+            <span class="c1"># It seems you don&#39;t have required `{exc_val.name}` package for this Store.</span>
+            <span class="c1"># This is just a warning: The process goes on...</span>
+            <span class="c1"># (But, hey, if you really need that package, try installing it by running:</span>
+            <span class="c1">#</span>
+            <span class="c1">#     pip install {exc_val.name}</span>
+            <span class="c1">#</span>
+            <span class="c1"># in your terminal.</span>
+            <span class="c1"># For more information: https://pypi.org/project/{exc_val.name}, or google around...</span>
+            <span class="c1">#                 &quot;&quot;&quot;)</span>
+            <span class="c1">#             else:</span>
+            <span class="c1">#                 print(&quot;It seems you don&#39;t have a required package&quot;)</span>
+            <span class="k">return</span> <span class="kc">True</span>
+
+
+<span class="k">class</span> <span class="nc">ModuleNotFoundIgnore</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_val</span><span class="p">,</span> <span class="n">exc_tb</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">exc_type</span> <span class="ow">is</span> <span class="ne">ModuleNotFoundError</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">return</span> <span class="kc">True</span>
+
+
+<span class="k">def</span> <span class="nf">num_of_args</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+    <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">signature</span><span class="p">(</span><span class="n">func</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">py2store</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html">py2store.filesys</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.misc">py2store.misc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.mixins">py2store.mixins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.test.util">py2store.test.util</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-test-quick">py2store.test.quick</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.test">py2store.test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-test-simple">py2store.test.simple</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-test-scrap">py2store.test.scrap</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.util">py2store.util</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-ext-docx">py2store.ext.docx</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.ext.gitlab">py2store.ext.gitlab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-ext-hdf">py2store.ext.hdf</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.ext">py2store.ext</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-ext-matlab">py2store.ext.matlab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.ext.kaggle">py2store.ext.kaggle</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-ext-module-imports">py2store.ext.module_imports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.ext.audio">py2store.ext.audio</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-ext-github">py2store.ext.github</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.ext.dataframes">py2store.ext.dataframes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.access">py2store.access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.__init__">py2store.__init__</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.stores.s3_store">py2store.stores.s3_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.stores.delegation_stores">py2store.stores.delegation_stores</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.stores.sql_w_sqlalchemy">py2store.stores.sql_w_sqlalchemy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-stores-arangodb-store">py2store.stores.arangodb_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-stores-dropbox-store">py2store.stores.dropbox_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.stores.local_store">py2store.stores.local_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.stores">py2store.stores</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-stores-couchdb-store">py2store.stores.couchdb_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.stores.mongo_store">py2store.stores.mongo_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.core">py2store.core</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.uri_utils">py2store.utils.uri_utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.explicit">py2store.utils.explicit</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.timeseries_caching">py2store.utils.timeseries_caching</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-utils-attr-dict-py-attr-dict">py2store.utils.attr_dict.py.attr_dict</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-utils-attr-dict-py">py2store.utils.attr_dict.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.cumul_aggreg_write">py2store.utils.cumul_aggreg_write</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils">py2store.utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.cache_descriptors">py2store.utils.cache_descriptors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.appendable">py2store.utils.appendable</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.affine_conversion">py2store.utils.affine_conversion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.signatures">py2store.utils.signatures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.sliceable">py2store.utils.sliceable</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.mappify">py2store.utils.mappify</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.glom">py2store.utils.glom</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-persisters-sql-w-odbc">py2store.persisters.sql_w_odbc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.dynamodb_w_boto3">py2store.persisters.dynamodb_w_boto3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-persisters-couchdb-w-couchdb">py2store.persisters.couchdb_w_couchdb</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.ftp_persister">py2store.persisters.ftp_persister</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.dropbox_w_urllib">py2store.persisters.dropbox_w_urllib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters._google_drive_in_progress">py2store.persisters._google_drive_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-persisters-dropbox-w-dropbox">py2store.persisters.dropbox_w_dropbox</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-persisters-redis-w-redis">py2store.persisters.redis_w_redis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.sql_w_sqlalchemy">py2store.persisters.sql_w_sqlalchemy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.new_s3">py2store.persisters.new_s3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters">py2store.persisters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.dropbox_w_requests">py2store.persisters.dropbox_w_requests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.w_aiofile">py2store.persisters.w_aiofile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.local_files">py2store.persisters.local_files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-persisters-arangodb-w-pyarango">py2store.persisters.arangodb_w_pyarango</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters._cassandra_in_progress">py2store.persisters._cassandra_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters._couchdb_in_progress">py2store.persisters._couchdb_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.s3_w_boto3">py2store.persisters.s3_w_boto3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-persisters-postgres-w-psycopg2-in-progress">py2store.persisters._postgres_w_psycopg2_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-persisters-ssh-persister">py2store.persisters.ssh_persister</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.mongo_w_pymongo">py2store.persisters.mongo_w_pymongo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-persisters-googledrive-w-pydrive">py2store.persisters.googledrive_w_pydrive</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.sources">py2store.sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.dig">py2store.dig</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.serializers.pickled">py2store.serializers.pickled</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.serializers.jsonization">py2store.serializers.jsonization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.serializers">py2store.serializers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.serializers.sequential">py2store.serializers.sequential</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.serializers.regular_panel_data">py2store.serializers.regular_panel_data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.serializers.audio">py2store.serializers.audio</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.caching">py2store.caching</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.scrap">py2store.scrap</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.scrap.new_gen_local">py2store.scrap.new_gen_local</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.examples.write_caches">py2store.examples.write_caches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.examples">py2store.examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.examples.python_code_stats">py2store.examples.python_code_stats</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.examples.kv_walking">py2store.examples.kv_walking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.my">py2store.my</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.my.grabbers">py2store.my.grabbers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.trans">py2store.trans</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.key_mappers.str_utils">py2store.key_mappers.str_utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.key_mappers.tuples">py2store.key_mappers.tuples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.key_mappers.paths">py2store.key_mappers.paths</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.key_mappers.naming">py2store.key_mappers.naming</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.key_mappers">py2store.key_mappers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.errors">py2store.errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.slib.s_configparser">py2store.slib.s_configparser</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.slib">py2store.slib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.slib.s_zipfile">py2store.slib.s_zipfile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.base">py2store.base</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-selectors-mg-selectors">py2store.selectors.mg_selectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-selectors-mongoquery">py2store.selectors.mongoquery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-selectors">py2store.selectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.parse_format">py2store.parse_format</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  <li><a href="../py2store.html">py2store</a><ul>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

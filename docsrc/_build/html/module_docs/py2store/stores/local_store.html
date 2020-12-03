@@ -1,0 +1,410 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>py2store.stores.local_store &#8212; py2store 0.0.7 documentation</title>
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css" />
+    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="module-py2store.stores.local_store">
+<span id="py2store-stores-local-store"></span><h1>py2store.stores.local_store<a class="headerlink" href="#module-py2store.stores.local_store" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt id="py2store.stores.local_store.AutoMkDirsOnSetitemMixin">
+<em class="property">class </em><code class="sig-prename descclassname">py2store.stores.local_store.</code><code class="sig-name descname">AutoMkDirsOnSetitemMixin</code><a class="reference internal" href="../../../_modules/py2store/stores/local_store.html#AutoMkDirsOnSetitemMixin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.stores.local_store.AutoMkDirsOnSetitemMixin" title="Permalink to this definition">¶</a></dt>
+<dd><p>A mixin that will automatically create directories on setitem, when missing.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="py2store.stores.local_store.AutoMkPathformatMixin">
+<em class="property">class </em><code class="sig-prename descclassname">py2store.stores.local_store.</code><code class="sig-name descname">AutoMkPathformatMixin</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path_format</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">max_levels</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/py2store/stores/local_store.html#AutoMkPathformatMixin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.stores.local_store.AutoMkPathformatMixin" title="Permalink to this definition">¶</a></dt>
+<dd><p>A mixin that will choose a path_format if none given</p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="py2store.stores.local_store.DirStore">
+<em class="property">class </em><code class="sig-prename descclassname">py2store.stores.local_store.</code><code class="sig-name descname">DirStore</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">rootdir</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/py2store/stores/local_store.html#DirStore"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.stores.local_store.DirStore" title="Permalink to this definition">¶</a></dt>
+<dd><p>A store for local directories.
+Keys are directory names and values are subdirectory DirStores.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">py2store</span> <span class="kn">import</span> <span class="vm">__file__</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">os</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">root</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span> <span class="o">=</span> <span class="n">DirStore</span><span class="p">(</span><span class="n">root</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="nb">set</span><span class="p">(</span><span class="n">s</span><span class="p">)</span><span class="o">.</span><span class="n">issuperset</span><span class="p">({</span><span class="s1">&#39;stores&#39;</span><span class="p">,</span> <span class="s1">&#39;persisters&#39;</span><span class="p">,</span> <span class="s1">&#39;serializers&#39;</span><span class="p">,</span> <span class="s1">&#39;key_mappers&#39;</span><span class="p">})</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py class">
+<dt id="py2store.stores.local_store.LocalBinaryStore">
+<em class="property">class </em><code class="sig-prename descclassname">py2store.stores.local_store.</code><code class="sig-name descname">LocalBinaryStore</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path_format</span></em>, <em class="sig-param"><span class="n">max_levels</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/py2store/stores/local_store.html#LocalBinaryStore"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.stores.local_store.LocalBinaryStore" title="Permalink to this definition">¶</a></dt>
+<dd><p>Local files store for binary data</p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="py2store.stores.local_store.LocalJsonStore">
+<em class="property">class </em><code class="sig-prename descclassname">py2store.stores.local_store.</code><code class="sig-name descname">LocalJsonStore</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path_format</span></em>, <em class="sig-param"><span class="n">max_levels</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/py2store/stores/local_store.html#LocalJsonStore"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.stores.local_store.LocalJsonStore" title="Permalink to this definition">¶</a></dt>
+<dd><p>Local files store for text dataData is assumed to be a JSON string, and is loaded with json.loads and dumped with json.dumps</p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="py2store.stores.local_store.LocalPickleStore">
+<em class="property">class </em><code class="sig-prename descclassname">py2store.stores.local_store.</code><code class="sig-name descname">LocalPickleStore</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path_format</span></em>, <em class="sig-param"><span class="n">max_levels</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">fix_imports</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">protocol</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">pickle_encoding</span><span class="o">=</span><span class="default_value">'ASCII'</span></em>, <em class="sig-param"><span class="n">pickle_errors</span><span class="o">=</span><span class="default_value">'strict'</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">open_kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/py2store/stores/local_store.html#LocalPickleStore"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.stores.local_store.LocalPickleStore" title="Permalink to this definition">¶</a></dt>
+<dd><p>Local files store with pickle serialization</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="py2store.stores.local_store.LocalStore">
+<code class="sig-prename descclassname">py2store.stores.local_store.</code><code class="sig-name descname">LocalStore</code><a class="headerlink" href="#py2store.stores.local_store.LocalStore" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <a class="reference internal" href="../../../test.html#py2store.stores.local_store.QuickPickleStore" title="py2store.stores.local_store.QuickPickleStore"><code class="xref py py-class docutils literal notranslate"><span class="pre">py2store.stores.local_store.QuickPickleStore</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="py2store.stores.local_store.LocalTextStore">
+<em class="property">class </em><code class="sig-prename descclassname">py2store.stores.local_store.</code><code class="sig-name descname">LocalTextStore</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path_format</span></em>, <em class="sig-param"><span class="n">max_levels</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/py2store/stores/local_store.html#LocalTextStore"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.stores.local_store.LocalTextStore" title="Permalink to this definition">¶</a></dt>
+<dd><p>Local files store for text data</p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="py2store.stores.local_store.MakeMissingDirsStoreMixin">
+<em class="property">class </em><code class="sig-prename descclassname">py2store.stores.local_store.</code><code class="sig-name descname">MakeMissingDirsStoreMixin</code><a class="reference internal" href="../../../_modules/py2store/stores/local_store.html#MakeMissingDirsStoreMixin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.stores.local_store.MakeMissingDirsStoreMixin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Will make a local file store automatically create the directories needed to create a file.
+Should be placed before the concrete perisister in the mro but in such a manner so that it receives full paths.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="py2store.stores.local_store.PathFormatStore">
+<em class="property">class </em><code class="sig-prename descclassname">py2store.stores.local_store.</code><code class="sig-name descname">PathFormatStore</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path_format</span></em>, <em class="sig-param"><span class="n">max_levels</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">inf</span></em>, <em class="sig-param"><span class="n">mode</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">open_kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/py2store/stores/local_store.html#PathFormatStore"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.stores.local_store.PathFormatStore" title="Permalink to this definition">¶</a></dt>
+<dd><p>Local file store using templated relative paths.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">tempfile</span> <span class="kn">import</span> <span class="n">gettempdir</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">os</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">write_to_key</span><span class="p">(</span><span class="n">fullpath_of_relative_path</span><span class="p">,</span> <span class="n">relative_path</span><span class="p">,</span> <span class="n">content</span><span class="p">):</span>  <span class="c1"># a function to write content in files</span>
+<span class="gp">... </span>   <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">fullpath_of_relative_path</span><span class="p">(</span><span class="n">relative_path</span><span class="p">),</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+<span class="gp">... </span>       <span class="n">fp</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Preparation: Make a temporary rootdir and write two files in it</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rootdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">gettempdir</span><span class="p">(),</span> <span class="s1">&#39;path_format_store_test&#39;</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">sep</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">rootdir</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">rootdir</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># recreate directory (remove existing files, delete directory, and re-create it)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">rootdir</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">fullpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">rootdir</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">fullpath</span><span class="p">):</span>
+<span class="gp">... </span>        <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">rootdir</span><span class="p">,</span> <span class="n">f</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">rootdir</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">os</span><span class="o">.</span><span class="n">rmdir</span><span class="p">(</span><span class="n">rootdir</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">rootdir</span><span class="p">):</span>
+<span class="gp">... </span>   <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">rootdir</span><span class="p">)</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">filepath_of</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">rootdir</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>  <span class="c1"># a function to get a fullpath from a relative one</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># and make two files in this new dir, with some content</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">write_to_key</span><span class="p">(</span><span class="n">filepath_of</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;foo&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">write_to_key</span><span class="p">(</span><span class="n">filepath_of</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="s1">&#39;bar&#39;</span><span class="p">)</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># point the obj source to the rootdir</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span> <span class="o">=</span> <span class="n">PathFormatStore</span><span class="p">(</span><span class="n">path_format</span><span class="o">=</span><span class="n">rootdir</span><span class="p">)</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># assert things...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">s</span><span class="o">.</span><span class="n">_prefix</span> <span class="o">==</span> <span class="n">rootdir</span>  <span class="c1"># the _rootdir is the one given in constructor</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">s</span><span class="p">[</span><span class="n">filepath_of</span><span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">)]</span> <span class="o">==</span> <span class="s1">&#39;foo&#39;</span>  <span class="c1"># (the filepath for) &#39;a&#39; contains &#39;foo&#39;</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># two files under rootdir (as long as the OS didn&#39;t create it&#39;s own under the hood)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+<span class="go">2</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="nb">list</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="o">==</span> <span class="p">[</span><span class="n">filepath_of</span><span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">),</span> <span class="n">filepath_of</span><span class="p">(</span><span class="s1">&#39;b&#39;</span><span class="p">)]</span>  <span class="c1"># there&#39;s two files in s</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">filepath_of</span><span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">)</span> <span class="ow">in</span> <span class="n">s</span>  <span class="c1"># rootdir/a is in s</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">filepath_of</span><span class="p">(</span><span class="s1">&#39;not_there&#39;</span><span class="p">)</span> <span class="ow">in</span> <span class="n">s</span>  <span class="c1"># rootdir/not_there is not in s</span>
+<span class="go">False</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">filepath_of</span><span class="p">(</span><span class="s1">&#39;not_there&#39;</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">s</span>  <span class="c1"># rootdir/not_there is not in s</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="nb">list</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">==</span> <span class="p">[</span><span class="n">filepath_of</span><span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">),</span> <span class="n">filepath_of</span><span class="p">(</span><span class="s1">&#39;b&#39;</span><span class="p">)]</span>  <span class="c1"># the keys (filepaths) of s</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span> <span class="c1"># the values of s (contents of files)</span>
+<span class="go">[&#39;bar&#39;, &#39;foo&#39;]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="nb">list</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">items</span><span class="p">())</span> <span class="o">==</span> <span class="p">[(</span><span class="n">filepath_of</span><span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">),</span> <span class="s1">&#39;foo&#39;</span><span class="p">),</span> <span class="p">(</span><span class="n">filepath_of</span><span class="p">(</span><span class="s1">&#39;b&#39;</span><span class="p">),</span> <span class="s1">&#39;bar&#39;</span><span class="p">)]</span>  <span class="c1"># the (path, content) items</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">s</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;this key is not there&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span>  <span class="c1"># trying to get the val of a non-existing key returns None</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;this key is not there&#39;</span><span class="p">,</span> <span class="s1">&#39;some default value&#39;</span><span class="p">)</span>  <span class="c1"># ... or whatever you say</span>
+<span class="go">&#39;some default value&#39;</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># add more files to the same folder</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">write_to_key</span><span class="p">(</span><span class="n">filepath_of</span><span class="p">,</span> <span class="s1">&#39;this.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;this&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">write_to_key</span><span class="p">(</span><span class="n">filepath_of</span><span class="p">,</span> <span class="s1">&#39;that.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;blah&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">write_to_key</span><span class="p">(</span><span class="n">filepath_of</span><span class="p">,</span> <span class="s1">&#39;the_other.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;bloo&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># see that you now have 5 files</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+<span class="go">5</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># and these files contain values:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">sorted</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+<span class="go">[&#39;bar&#39;, &#39;blah&#39;, &#39;bloo&#39;, &#39;foo&#39;, &#39;this&#39;]</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># but if we make an obj source to only take files whose extension is &#39;.txt&#39;...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span> <span class="o">=</span> <span class="n">PathFormatStore</span><span class="p">(</span><span class="n">path_format</span><span class="o">=</span><span class="n">rootdir</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">.txt&#39;</span><span class="p">)</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rootdir_2</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">gettempdir</span><span class="p">(),</span> <span class="s1">&#39;obj_source_test_2&#39;</span><span class="p">)</span> <span class="c1"># get another rootdir</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">rootdir_2</span><span class="p">):</span>
+<span class="gp">... </span>   <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">rootdir_2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">filepath_of_2</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">rootdir_2</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># and make two files in this new dir, with some content</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">write_to_key</span><span class="p">(</span><span class="n">filepath_of</span><span class="p">,</span> <span class="s1">&#39;this.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;this&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">write_to_key</span><span class="p">(</span><span class="n">filepath_of</span><span class="p">,</span> <span class="s1">&#39;that.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;blah&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">write_to_key</span><span class="p">(</span><span class="n">filepath_of</span><span class="p">,</span> <span class="s1">&#39;the_other.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;bloo&#39;</span><span class="p">)</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ss</span> <span class="o">=</span> <span class="n">PathFormatStore</span><span class="p">(</span><span class="n">path_format</span><span class="o">=</span><span class="n">rootdir_2</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">.txt&#39;</span><span class="p">)</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">s</span> <span class="o">!=</span> <span class="n">ss</span>  <span class="c1"># though pointing to identical content, o and oo are not equal since the paths are not equal!</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py class">
+<dt id="py2store.stores.local_store.PathFormatStoreWithPrefix">
+<em class="property">class </em><code class="sig-prename descclassname">py2store.stores.local_store.</code><code class="sig-name descname">PathFormatStoreWithPrefix</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/py2store/stores/local_store.html#PathFormatStoreWithPrefix"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.stores.local_store.PathFormatStoreWithPrefix" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="py2store.stores.local_store.PickleStore">
+<code class="sig-prename descclassname">py2store.stores.local_store.</code><code class="sig-name descname">PickleStore</code><a class="headerlink" href="#py2store.stores.local_store.PickleStore" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <a class="reference internal" href="../../../test.html#py2store.stores.local_store.LocalPickleStore" title="py2store.stores.local_store.LocalPickleStore"><code class="xref py py-class docutils literal notranslate"><span class="pre">py2store.stores.local_store.LocalPickleStore</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="py2store.stores.local_store.QuickBinaryStore">
+<em class="property">class </em><code class="sig-prename descclassname">py2store.stores.local_store.</code><code class="sig-name descname">QuickBinaryStore</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path_format</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">max_levels</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/py2store/stores/local_store.html#QuickBinaryStore"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.stores.local_store.QuickBinaryStore" title="Permalink to this definition">¶</a></dt>
+<dd><p>Local files store for binary data with default temp root and auto dir generation on write.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="py2store.stores.local_store.QuickJsonStore">
+<em class="property">class </em><code class="sig-prename descclassname">py2store.stores.local_store.</code><code class="sig-name descname">QuickJsonStore</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path_format</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">max_levels</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/py2store/stores/local_store.html#QuickJsonStore"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.stores.local_store.QuickJsonStore" title="Permalink to this definition">¶</a></dt>
+<dd><p>Local files store for text data with default temp root and auto dir generation on write.Data is assumed to be a JSON string, and is loaded with json.loads and dumped with json.dumps</p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="py2store.stores.local_store.QuickLocalStoreMixin">
+<em class="property">class </em><code class="sig-prename descclassname">py2store.stores.local_store.</code><code class="sig-name descname">QuickLocalStoreMixin</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path_format</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">max_levels</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/py2store/stores/local_store.html#QuickLocalStoreMixin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.stores.local_store.QuickLocalStoreMixin" title="Permalink to this definition">¶</a></dt>
+<dd><p>A mixin that will choose a path_format if none given,
+and will automatically create directories on setitem, when missing.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="py2store.stores.local_store.QuickPickleStore">
+<em class="property">class </em><code class="sig-prename descclassname">py2store.stores.local_store.</code><code class="sig-name descname">QuickPickleStore</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path_format</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">max_levels</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/py2store/stores/local_store.html#QuickPickleStore"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.stores.local_store.QuickPickleStore" title="Permalink to this definition">¶</a></dt>
+<dd><p>Local files store with pickle serialization with default temp root and auto dir generation on write.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="py2store.stores.local_store.QuickStore">
+<code class="sig-prename descclassname">py2store.stores.local_store.</code><code class="sig-name descname">QuickStore</code><a class="headerlink" href="#py2store.stores.local_store.QuickStore" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <a class="reference internal" href="../../../test.html#py2store.stores.local_store.QuickPickleStore" title="py2store.stores.local_store.QuickPickleStore"><code class="xref py py-class docutils literal notranslate"><span class="pre">py2store.stores.local_store.QuickPickleStore</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="py2store.stores.local_store.QuickTextStore">
+<em class="property">class </em><code class="sig-prename descclassname">py2store.stores.local_store.</code><code class="sig-name descname">QuickTextStore</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">path_format</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">max_levels</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/py2store/stores/local_store.html#QuickTextStore"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.stores.local_store.QuickTextStore" title="Permalink to this definition">¶</a></dt>
+<dd><p>Local files store for text data with default temp root and auto dir generation on write.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="py2store.stores.local_store.RelativeDirPathFormatKeys">
+<em class="property">class </em><code class="sig-prename descclassname">py2store.stores.local_store.</code><code class="sig-name descname">RelativeDirPathFormatKeys</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/py2store/stores/local_store.html#RelativeDirPathFormatKeys"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.stores.local_store.RelativeDirPathFormatKeys" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt id="py2store.stores.local_store.RelativePathFormatStore2">
+<em class="property">class </em><code class="sig-prename descclassname">py2store.stores.local_store.</code><code class="sig-name descname">RelativePathFormatStore2</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/py2store/stores/local_store.html#RelativePathFormatStore2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.stores.local_store.RelativePathFormatStore2" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">py2store</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html">py2store.filesys</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.misc">py2store.misc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.mixins">py2store.mixins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.test.util">py2store.test.util</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-test-quick">py2store.test.quick</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.test">py2store.test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-test-simple">py2store.test.simple</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-test-scrap">py2store.test.scrap</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.util">py2store.util</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-ext-docx">py2store.ext.docx</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext.gitlab">py2store.ext.gitlab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-ext-hdf">py2store.ext.hdf</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext">py2store.ext</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-ext-matlab">py2store.ext.matlab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext.kaggle">py2store.ext.kaggle</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-ext-module-imports">py2store.ext.module_imports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext.audio">py2store.ext.audio</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-ext-github">py2store.ext.github</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext.dataframes">py2store.ext.dataframes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.access">py2store.access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.__init__">py2store.__init__</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores.s3_store">py2store.stores.s3_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores.delegation_stores">py2store.stores.delegation_stores</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores.sql_w_sqlalchemy">py2store.stores.sql_w_sqlalchemy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-stores-arangodb-store">py2store.stores.arangodb_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-stores-dropbox-store">py2store.stores.dropbox_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores.local_store">py2store.stores.local_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores">py2store.stores</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-stores-couchdb-store">py2store.stores.couchdb_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores.mongo_store">py2store.stores.mongo_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.core">py2store.core</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.uri_utils">py2store.utils.uri_utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.explicit">py2store.utils.explicit</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.timeseries_caching">py2store.utils.timeseries_caching</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-utils-attr-dict-py-attr-dict">py2store.utils.attr_dict.py.attr_dict</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-utils-attr-dict-py">py2store.utils.attr_dict.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.cumul_aggreg_write">py2store.utils.cumul_aggreg_write</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils">py2store.utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.cache_descriptors">py2store.utils.cache_descriptors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.appendable">py2store.utils.appendable</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.affine_conversion">py2store.utils.affine_conversion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.signatures">py2store.utils.signatures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.sliceable">py2store.utils.sliceable</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.mappify">py2store.utils.mappify</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.glom">py2store.utils.glom</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-sql-w-odbc">py2store.persisters.sql_w_odbc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.dynamodb_w_boto3">py2store.persisters.dynamodb_w_boto3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-couchdb-w-couchdb">py2store.persisters.couchdb_w_couchdb</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.ftp_persister">py2store.persisters.ftp_persister</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.dropbox_w_urllib">py2store.persisters.dropbox_w_urllib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters._google_drive_in_progress">py2store.persisters._google_drive_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-dropbox-w-dropbox">py2store.persisters.dropbox_w_dropbox</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-redis-w-redis">py2store.persisters.redis_w_redis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.sql_w_sqlalchemy">py2store.persisters.sql_w_sqlalchemy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.new_s3">py2store.persisters.new_s3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters">py2store.persisters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.dropbox_w_requests">py2store.persisters.dropbox_w_requests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.w_aiofile">py2store.persisters.w_aiofile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.local_files">py2store.persisters.local_files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-arangodb-w-pyarango">py2store.persisters.arangodb_w_pyarango</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters._cassandra_in_progress">py2store.persisters._cassandra_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters._couchdb_in_progress">py2store.persisters._couchdb_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.s3_w_boto3">py2store.persisters.s3_w_boto3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-postgres-w-psycopg2-in-progress">py2store.persisters._postgres_w_psycopg2_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-ssh-persister">py2store.persisters.ssh_persister</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.mongo_w_pymongo">py2store.persisters.mongo_w_pymongo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-googledrive-w-pydrive">py2store.persisters.googledrive_w_pydrive</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.sources">py2store.sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.dig">py2store.dig</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers.pickled">py2store.serializers.pickled</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers.jsonization">py2store.serializers.jsonization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers">py2store.serializers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers.sequential">py2store.serializers.sequential</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers.regular_panel_data">py2store.serializers.regular_panel_data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers.audio">py2store.serializers.audio</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.caching">py2store.caching</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.scrap">py2store.scrap</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.scrap.new_gen_local">py2store.scrap.new_gen_local</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.examples.write_caches">py2store.examples.write_caches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.examples">py2store.examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.examples.python_code_stats">py2store.examples.python_code_stats</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.examples.kv_walking">py2store.examples.kv_walking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.my">py2store.my</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.my.grabbers">py2store.my.grabbers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.trans">py2store.trans</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.key_mappers.str_utils">py2store.key_mappers.str_utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.key_mappers.tuples">py2store.key_mappers.tuples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.key_mappers.paths">py2store.key_mappers.paths</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.key_mappers.naming">py2store.key_mappers.naming</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.key_mappers">py2store.key_mappers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.errors">py2store.errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.slib.s_configparser">py2store.slib.s_configparser</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.slib">py2store.slib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.slib.s_zipfile">py2store.slib.s_zipfile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.base">py2store.base</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-selectors-mg-selectors">py2store.selectors.mg_selectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-selectors-mongoquery">py2store.selectors.mongoquery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-selectors">py2store.selectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.parse_format">py2store.parse_format</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../../../_sources/module_docs/py2store/stores/local_store.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

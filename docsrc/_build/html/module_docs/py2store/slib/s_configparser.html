@@ -1,0 +1,453 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>py2store.slib.s_configparser &#8212; py2store 0.0.7 documentation</title>
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css" />
+    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="module-py2store.slib.s_configparser">
+<span id="py2store-slib-s-configparser"></span><h1>py2store.slib.s_configparser<a class="headerlink" href="#module-py2store.slib.s_configparser" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt id="py2store.slib.s_configparser.ConfigReader">
+<em class="property">class </em><code class="sig-prename descclassname">py2store.slib.s_configparser.</code><code class="sig-name descname">ConfigReader</code><span class="sig-paren">(</span><em class="sig-param">source</em>, <em class="sig-param">*</em>, <em class="sig-param">defaults=None</em>, <em class="sig-param">dict_type=&lt;class 'dict'&gt;</em>, <em class="sig-param">allow_no_value=False</em>, <em class="sig-param">target_kind=None</em>, <em class="sig-param">**more_config_parser_kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/py2store/slib/s_configparser.html#ConfigReader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.slib.s_configparser.ConfigReader" title="Permalink to this definition">¶</a></dt>
+<dd><p>A KvReader to read config files
+&gt;&gt;&gt; from py2store.slib.s_configparser import ConfigReader
+&gt;&gt;&gt;
+&gt;&gt;&gt; # from a (pretend) file
+&gt;&gt;&gt; from io import BytesIO, StringIO
+&gt;&gt;&gt; file_content_bytes = b’’’
+… [Paths]
+… home_dir: /Users
+… my_dir: %(home_dir)s/lumberjack
+… my_pictures: %(my_dir)s/Pictures
+…
+… [Escape]
+… gain: 80%%  # use a %% to escape the % sign (% is the only character that needs to be escaped)’’’
+&gt;&gt;&gt; c = ConfigReader(file_content_bytes)  # get configs from the bytes
+&gt;&gt;&gt; list(c)
+[‘DEFAULT’, ‘Paths’, ‘Escape’]
+&gt;&gt;&gt; ######## From a (pretend) file (pointer) ########
+&gt;&gt;&gt; # Usually, you write your configs in a file and give ConfigReader the filepath, or open file pointer…
+&gt;&gt;&gt; pretend_file_pointer = StringIO(file_content_bytes.decode())
+&gt;&gt;&gt; c = ConfigReader(pretend_file_pointer)
+&gt;&gt;&gt; list(c)
+[‘DEFAULT’, ‘Paths’, ‘Escape’]
+&gt;&gt;&gt; c[‘Paths’]  # gives you a configparser.Section object
+&lt;Section: Paths&gt;
+&gt;&gt;&gt; # A configparser.Section is a mapping. Let’s see the keys
+&gt;&gt;&gt; list(c[‘Paths’])
+[‘home_dir’, ‘my_dir’, ‘my_pictures’]
+&gt;&gt;&gt; # here’s a quick way to see both keys and values. Note how the home_dir interpolation was performed!
+&gt;&gt;&gt; dict(c[‘Paths’])
+{‘home_dir’: ‘/Users’, ‘my_dir’: ‘/Users/lumberjack’, ‘my_pictures’: ‘/Users/lumberjack/Pictures’}
+&gt;&gt;&gt;
+&gt;&gt;&gt; ######## Get configs from a dict ########
+&gt;&gt;&gt; config_dict = {‘section1’: {‘key1’: ‘value1’},
+…                ‘section2’: {‘keyA’: ‘valueA’, ‘keyB’: ‘valueB’},
+…                ‘section3’: {‘foo’: ‘x’, ‘bar’: ‘y’,’baz’: ‘z’}}
+&gt;&gt;&gt; c = ConfigReader(config_dict)
+&gt;&gt;&gt;
+&gt;&gt;&gt; assert list(c) == [‘DEFAULT’, ‘section1’, ‘section2’, ‘section3’]
+&gt;&gt;&gt; assert list(c[‘section3’]) == [‘foo’, ‘bar’, ‘baz’]
+&gt;&gt;&gt;
+&gt;&gt;&gt; ######## Get configs from a string ########
+&gt;&gt;&gt; from py2store.slib.s_configparser import _test_config_str
+&gt;&gt;&gt; c = ConfigReader(_test_config_str, allow_no_value=True)
+&gt;&gt;&gt; list(c)
+[‘DEFAULT’, ‘Simple Values’, ‘All Values Are Strings’, ‘Multiline Values’, ‘No Values’, ‘You can use comments’, ‘Sections Can Be Indented’]
+&gt;&gt;&gt; list(c[‘Simple Values’])
+[‘key’, ‘spaces in keys’, ‘spaces in values’, ‘spaces around the delimiter’, ‘you can also use’]</p>
+<dl class="py method">
+<dt id="py2store.slib.s_configparser.ConfigReader.persist">
+<code class="sig-name descname">persist</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/py2store/slib/s_configparser.html#ConfigReader.persist"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.slib.s_configparser.ConfigReader.persist" title="Permalink to this definition">¶</a></dt>
+<dd><p>Persists the data (if not in a context manager).
+Persists means to call</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="py2store.slib.s_configparser.ConfigStore">
+<em class="property">class </em><code class="sig-prename descclassname">py2store.slib.s_configparser.</code><code class="sig-name descname">ConfigStore</code><span class="sig-paren">(</span><em class="sig-param">source</em>, <em class="sig-param">*</em>, <em class="sig-param">defaults=None</em>, <em class="sig-param">dict_type=&lt;class 'dict'&gt;</em>, <em class="sig-param">allow_no_value=False</em>, <em class="sig-param">target_kind=None</em>, <em class="sig-param">**more_config_parser_kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/py2store/slib/s_configparser.html#ConfigStore"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.slib.s_configparser.ConfigStore" title="Permalink to this definition">¶</a></dt>
+<dd><p>Persister (read, write, delete) for ini configs.</p>
+<p>You can read ini formated configurations with ConfigStore (though if you want to
+just read, you should use ConfigReader instead – since ConfigReader disables
+write and delete operations.</p>
+<p>See ConfigReader for more examples of how to use ConfigStore.
+We’ll mainly focus on write and delete operations here.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">os</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">py2store.slib.s_configparser</span> <span class="kn">import</span> <span class="n">ConfigStore</span><span class="p">,</span> <span class="n">ConfigReader</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ini_filepath</span> <span class="o">=</span> <span class="s1">&#39;config_store_test.ini&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">ini_filepath</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">ini_filepath</span><span class="p">)</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">ini_filepath</span><span class="p">)</span>  <span class="c1"># File doesn&#39;t exist</span>
+<span class="go">False</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span> <span class="o">=</span> <span class="n">ConfigStore</span><span class="p">(</span><span class="n">ini_filepath</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>  <span class="c1"># There&#39;s always a default (by default empty)</span>
+<span class="go">[&#39;DEFAULT&#39;]</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">ini_filepath</span><span class="p">)</span>  <span class="c1"># But the file still doesn&#39;t exist (the DEFAULT is virtual)</span>
+<span class="go">False</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Now let&#39;s make a config</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span><span class="p">[</span><span class="s1">&#39;nothing&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;special&#39;</span><span class="p">:</span> <span class="s1">&#39;about&#39;</span><span class="p">,</span> <span class="s1">&#39;number&#39;</span><span class="p">:</span> <span class="mi">42</span><span class="p">}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+<span class="go">[&#39;DEFAULT&#39;, &#39;nothing&#39;]</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">ini_filepath</span><span class="p">)</span>  <span class="c1"># But NOW the file exists (ConfigStore will automatically write to file)</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span><span class="p">[</span><span class="s1">&#39;add&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;more&#39;</span><span class="p">:</span> <span class="s1">&#39;sections&#39;</span><span class="p">}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+<span class="go">[&#39;DEFAULT&#39;, &#39;nothing&#39;, &#39;add&#39;]</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># and yes, that config can now be read</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">config_reader</span> <span class="o">=</span> <span class="n">ConfigReader</span><span class="p">(</span><span class="n">ini_filepath</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">list</span><span class="p">(</span><span class="n">config_reader</span><span class="p">)</span>
+<span class="go">[&#39;DEFAULT&#39;, &#39;nothing&#39;, &#39;add&#39;]</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">config_reader</span><span class="p">[</span><span class="s1">&#39;nothing&#39;</span><span class="p">]</span>
+<span class="go">&lt;Section: nothing&gt;</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">dict</span><span class="p">(</span><span class="n">config_reader</span><span class="p">[</span><span class="s1">&#39;nothing&#39;</span><span class="p">])</span>  <span class="c1"># note that 42 is now a string (that&#39;s the ini format for you!)</span>
+<span class="go">{&#39;special&#39;: &#39;about&#39;, &#39;number&#39;: &#39;42&#39;}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">dict</span><span class="p">(</span><span class="n">config_reader</span><span class="p">[</span><span class="s1">&#39;DEFAULT&#39;</span><span class="p">])</span>  <span class="c1"># and DEFAULT is empty</span>
+<span class="go">{}</span>
+</pre></div>
+</div>
+<p>You can delete sections
+&gt;&gt;&gt; del s[‘add’]</p>
+<p>But you’ll need to refresh your reader to see the effect.
+&gt;&gt;&gt; list(config_reader)
+[‘DEFAULT’, ‘nothing’, ‘add’]
+&gt;&gt;&gt; config_reader = ConfigReader(ini_filepath)
+&gt;&gt;&gt; list(config_reader)
+[‘DEFAULT’, ‘nothing’]</p>
+<p>You can use <cite>update</cite> to write several sections at the same time.
+Note that existing sections will be completely overwritten.
+&gt;&gt;&gt; s.update({‘nothing’: {‘like’: ‘you’}, ‘new_section’: {‘a’: ‘b’, ‘c’: ‘d’}})
+&gt;&gt;&gt; ConfigReader(ini_filepath).to_dict()
+{‘DEFAULT’: {}, ‘nothing’: {‘like’: ‘you’}, ‘new_section’: {‘a’: ‘b’, ‘c’: ‘d’}}</p>
+<p><strong>Warning: On the other hand, updating a section will not persist the updates</strong></p>
+<p>Updates are automatically persisted at the top level, as shown in the example above.
+This means you can change a section entirely, but partial updates of a section
+will not be persisted.</p>
+<p>You’ll see the updated section in the store.
+&gt;&gt;&gt; s[‘nothing’].update({‘something’: ‘else’})
+&gt;&gt;&gt; dict(s[‘nothing’])
+{‘like’: ‘you’, ‘something’: ‘else’}</p>
+<p>But it’s not automatically persisted
+&gt;&gt;&gt; dict(ConfigReader(ini_filepath)[‘nothing’])
+{‘like’: ‘you’}</p>
+<p>… unless you ask for it explicitly
+&gt;&gt;&gt; s.persist()
+&gt;&gt;&gt; dict(ConfigReader(ini_filepath)[‘nothing’])
+{‘like’: ‘you’, ‘something’: ‘else’}</p>
+<p># TODO: Could make section updates auto-persistent by wrapping configparser.SectionProxy</p>
+<p>For your convenience, the ConfigStore is also a context manager, that will,
+you guessed, persist stuff when (and only when) you exit it.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ConfigReader</span><span class="p">(</span><span class="n">ini_filepath</span><span class="p">)</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+<span class="go">{&#39;DEFAULT&#39;: {}, &#39;nothing&#39;: {&#39;like&#39;: &#39;you&#39;, &#39;something&#39;: &#39;else&#39;}, &#39;new_section&#39;: {&#39;a&#39;: &#39;b&#39;, &#39;c&#39;: &#39;d&#39;}}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">ConfigStore</span><span class="p">(</span><span class="n">ini_filepath</span><span class="p">)</span> <span class="k">as</span> <span class="n">s</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="k">del</span> <span class="n">s</span><span class="p">[</span><span class="s1">&#39;new_section&#39;</span><span class="p">]</span>  <span class="c1"># that&#39;s usually immediately persisted. This time, it&#39;ll wait to be</span>
+<span class="gp">... </span>    <span class="k">del</span> <span class="n">s</span><span class="p">[</span><span class="s1">&#39;nothing&#39;</span><span class="p">][</span><span class="s1">&#39;something&#39;</span><span class="p">]</span>  <span class="c1"># delete the something field of nothing section</span>
+<span class="gp">... </span>    <span class="n">s</span><span class="p">[</span><span class="s1">&#39;nothing&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;like&#39;</span><span class="p">:</span> <span class="s1">&#39;that&#39;</span><span class="p">,</span> <span class="s1">&#39;ever&#39;</span><span class="p">:</span> <span class="s1">&#39;happened&#39;</span><span class="p">})</span>  <span class="c1"># update &#39;like&#39; config and add an &#39;ever&#39; one</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ConfigReader</span><span class="p">(</span><span class="n">ini_filepath</span><span class="p">)</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+<span class="go">{&#39;DEFAULT&#39;: {}, &#39;nothing&#39;: {&#39;like&#39;: &#39;that&#39;, &#39;ever&#39;: &#39;happened&#39;}}</span>
+</pre></div>
+</div>
+<dl class="py class">
+<dt id="py2store.slib.s_configparser.ConfigStore.BasicInterpolation">
+<em class="property">class </em><code class="sig-name descname">BasicInterpolation</code><a class="headerlink" href="#py2store.slib.s_configparser.ConfigStore.BasicInterpolation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Interpolation as implemented in the classic ConfigParser.</p>
+<p>The option values can contain format strings which refer to other values in
+the same section, or values in the special default section.</p>
+<p>For example:</p>
+<blockquote>
+<div><p>something: %(dir)s/whatever</p>
+</div></blockquote>
+<p>would resolve the “%(dir)s” to the value of dir.  All reference
+expansions are done late, on demand. If a user needs to use a bare % in
+a configuration file, she can escape it by writing %%. Other % usage
+is considered a user error and raises <a href="#id1"><span class="problematic" id="id2">`</span></a>InterpolationSyntaxError’.</p>
+<dl class="py method">
+<dt id="py2store.slib.s_configparser.ConfigStore.BasicInterpolation.before_get">
+<code class="sig-name descname">before_get</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">parser</span></em>, <em class="sig-param"><span class="n">section</span></em>, <em class="sig-param"><span class="n">option</span></em>, <em class="sig-param"><span class="n">value</span></em>, <em class="sig-param"><span class="n">defaults</span></em><span class="sig-paren">)</span><a class="headerlink" href="#py2store.slib.s_configparser.ConfigStore.BasicInterpolation.before_get" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="py2store.slib.s_configparser.ConfigStore.BasicInterpolation.before_set">
+<code class="sig-name descname">before_set</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">parser</span></em>, <em class="sig-param"><span class="n">section</span></em>, <em class="sig-param"><span class="n">option</span></em>, <em class="sig-param"><span class="n">value</span></em><span class="sig-paren">)</span><a class="headerlink" href="#py2store.slib.s_configparser.ConfigStore.BasicInterpolation.before_set" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="py2store.slib.s_configparser.ConfigStore.ExtendedInterpolation">
+<em class="property">class </em><code class="sig-name descname">ExtendedInterpolation</code><a class="headerlink" href="#py2store.slib.s_configparser.ConfigStore.ExtendedInterpolation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Advanced variant of interpolation, supports the syntax used by
+<a href="#id3"><span class="problematic" id="id4">`</span></a>zc.buildout’. Enables interpolation between sections.</p>
+<dl class="py method">
+<dt id="py2store.slib.s_configparser.ConfigStore.ExtendedInterpolation.before_get">
+<code class="sig-name descname">before_get</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">parser</span></em>, <em class="sig-param"><span class="n">section</span></em>, <em class="sig-param"><span class="n">option</span></em>, <em class="sig-param"><span class="n">value</span></em>, <em class="sig-param"><span class="n">defaults</span></em><span class="sig-paren">)</span><a class="headerlink" href="#py2store.slib.s_configparser.ConfigStore.ExtendedInterpolation.before_get" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="py2store.slib.s_configparser.ConfigStore.ExtendedInterpolation.before_set">
+<code class="sig-name descname">before_set</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">parser</span></em>, <em class="sig-param"><span class="n">section</span></em>, <em class="sig-param"><span class="n">option</span></em>, <em class="sig-param"><span class="n">value</span></em><span class="sig-paren">)</span><a class="headerlink" href="#py2store.slib.s_configparser.ConfigStore.ExtendedInterpolation.before_set" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py method">
+<dt id="py2store.slib.s_configparser.ConfigStore.persist">
+<code class="sig-name descname">persist</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/py2store/slib/s_configparser.html#ConfigStore.persist"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.slib.s_configparser.ConfigStore.persist" title="Permalink to this definition">¶</a></dt>
+<dd><p>Persists the data (if not in a context manager).
+Persists means to call</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt id="py2store.slib.s_configparser.postprocess_ini_section_items">
+<code class="sig-prename descclassname">py2store.slib.s_configparser.</code><code class="sig-name descname">postprocess_ini_section_items</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">items</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>Mapping<span class="p">, </span>Iterable<span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; Generator<a class="reference internal" href="../../../_modules/py2store/slib/s_configparser.html#postprocess_ini_section_items"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.slib.s_configparser.postprocess_ini_section_items" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transform newline-separated string values into actual list of strings (assuming that intent)</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">section_from_ini</span> <span class="o">=</span> <span class="p">{</span>
+<span class="gp">... </span>    <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;aspyre&#39;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="s1">&#39;keywords&#39;</span><span class="p">:</span> <span class="s1">&#39;</span><span class="se">\n\t</span><span class="s1">documentation</span><span class="se">\n\t</span><span class="s1">packaging</span><span class="se">\n\t</span><span class="s1">publishing&#39;</span>
+<span class="gp">... </span><span class="p">}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">section_for_python</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">postprocess_ini_section_items</span><span class="p">(</span><span class="n">section_from_ini</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">section_for_python</span>
+<span class="go">{&#39;name&#39;: &#39;aspyre&#39;, &#39;keywords&#39;: [&#39;documentation&#39;, &#39;packaging&#39;, &#39;publishing&#39;]}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt id="py2store.slib.s_configparser.preprocess_ini_section_items">
+<code class="sig-prename descclassname">py2store.slib.s_configparser.</code><code class="sig-name descname">preprocess_ini_section_items</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">items</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>Mapping<span class="p">, </span>Iterable<span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; Generator<a class="reference internal" href="../../../_modules/py2store/slib/s_configparser.html#preprocess_ini_section_items"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.slib.s_configparser.preprocess_ini_section_items" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transform list values into newline-separated strings, in view of writing the value to a ini formatted section
+&gt;&gt;&gt; section = {
+…     ‘name’: ‘aspyre’,
+…     ‘keywords’: [‘documentation’, ‘packaging’, ‘publishing’]
+… }
+&gt;&gt;&gt; for_ini = dict(preprocess_ini_section_items(section))
+&gt;&gt;&gt; print(‘keywords =’ + for_ini[‘keywords’])  # doctest: +NORMALIZE_WHITESPACE
+keywords =</p>
+<blockquote>
+<div><p>documentation
+packaging
+publishing</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt id="py2store.slib.s_configparser.super_and_persist">
+<code class="sig-prename descclassname">py2store.slib.s_configparser.</code><code class="sig-name descname">super_and_persist</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">super_cls</span></em>, <em class="sig-param"><span class="n">method_name</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/py2store/slib/s_configparser.html#super_and_persist"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.slib.s_configparser.super_and_persist" title="Permalink to this definition">¶</a></dt>
+<dd><p>To be able to do this:
+<code class="docutils literal notranslate"><span class="pre">`</span>
+<span class="pre">__setitem__</span> <span class="pre">=</span> <span class="pre">super_and_persist(ConfigParser,</span> <span class="pre">'__setitem__')</span>
+<span class="pre">__delitem__</span> <span class="pre">=</span> <span class="pre">super_and_persist(ConfigParser,</span> <span class="pre">'__delitem__')</span>
+<span class="pre">`</span></code>
+in your class definition block.</p>
+<p>I thought I needed to wrap more method this way, but as it turns out, I might not,
+so I prefer open code.</p>
+</dd></dl>
+
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">py2store</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html">py2store.filesys</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.misc">py2store.misc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.mixins">py2store.mixins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.test.util">py2store.test.util</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-test-quick">py2store.test.quick</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.test">py2store.test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-test-simple">py2store.test.simple</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-test-scrap">py2store.test.scrap</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.util">py2store.util</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-ext-docx">py2store.ext.docx</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext.gitlab">py2store.ext.gitlab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-ext-hdf">py2store.ext.hdf</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext">py2store.ext</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-ext-matlab">py2store.ext.matlab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext.kaggle">py2store.ext.kaggle</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-ext-module-imports">py2store.ext.module_imports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext.audio">py2store.ext.audio</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-ext-github">py2store.ext.github</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext.dataframes">py2store.ext.dataframes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.access">py2store.access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.__init__">py2store.__init__</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores.s3_store">py2store.stores.s3_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores.delegation_stores">py2store.stores.delegation_stores</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores.sql_w_sqlalchemy">py2store.stores.sql_w_sqlalchemy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-stores-arangodb-store">py2store.stores.arangodb_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-stores-dropbox-store">py2store.stores.dropbox_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores.local_store">py2store.stores.local_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores">py2store.stores</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-stores-couchdb-store">py2store.stores.couchdb_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores.mongo_store">py2store.stores.mongo_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.core">py2store.core</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.uri_utils">py2store.utils.uri_utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.explicit">py2store.utils.explicit</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.timeseries_caching">py2store.utils.timeseries_caching</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-utils-attr-dict-py-attr-dict">py2store.utils.attr_dict.py.attr_dict</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-utils-attr-dict-py">py2store.utils.attr_dict.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.cumul_aggreg_write">py2store.utils.cumul_aggreg_write</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils">py2store.utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.cache_descriptors">py2store.utils.cache_descriptors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.appendable">py2store.utils.appendable</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.affine_conversion">py2store.utils.affine_conversion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.signatures">py2store.utils.signatures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.sliceable">py2store.utils.sliceable</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.mappify">py2store.utils.mappify</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.glom">py2store.utils.glom</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-sql-w-odbc">py2store.persisters.sql_w_odbc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.dynamodb_w_boto3">py2store.persisters.dynamodb_w_boto3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-couchdb-w-couchdb">py2store.persisters.couchdb_w_couchdb</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.ftp_persister">py2store.persisters.ftp_persister</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.dropbox_w_urllib">py2store.persisters.dropbox_w_urllib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters._google_drive_in_progress">py2store.persisters._google_drive_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-dropbox-w-dropbox">py2store.persisters.dropbox_w_dropbox</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-redis-w-redis">py2store.persisters.redis_w_redis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.sql_w_sqlalchemy">py2store.persisters.sql_w_sqlalchemy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.new_s3">py2store.persisters.new_s3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters">py2store.persisters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.dropbox_w_requests">py2store.persisters.dropbox_w_requests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.w_aiofile">py2store.persisters.w_aiofile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.local_files">py2store.persisters.local_files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-arangodb-w-pyarango">py2store.persisters.arangodb_w_pyarango</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters._cassandra_in_progress">py2store.persisters._cassandra_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters._couchdb_in_progress">py2store.persisters._couchdb_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.s3_w_boto3">py2store.persisters.s3_w_boto3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-postgres-w-psycopg2-in-progress">py2store.persisters._postgres_w_psycopg2_in_progress</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-ssh-persister">py2store.persisters.ssh_persister</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.mongo_w_pymongo">py2store.persisters.mongo_w_pymongo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-googledrive-w-pydrive">py2store.persisters.googledrive_w_pydrive</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.sources">py2store.sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.dig">py2store.dig</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers.pickled">py2store.serializers.pickled</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers.jsonization">py2store.serializers.jsonization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers">py2store.serializers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers.sequential">py2store.serializers.sequential</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers.regular_panel_data">py2store.serializers.regular_panel_data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers.audio">py2store.serializers.audio</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.caching">py2store.caching</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.scrap">py2store.scrap</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.scrap.new_gen_local">py2store.scrap.new_gen_local</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.examples.write_caches">py2store.examples.write_caches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.examples">py2store.examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.examples.python_code_stats">py2store.examples.python_code_stats</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.examples.kv_walking">py2store.examples.kv_walking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.my">py2store.my</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.my.grabbers">py2store.my.grabbers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.trans">py2store.trans</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.key_mappers.str_utils">py2store.key_mappers.str_utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.key_mappers.tuples">py2store.key_mappers.tuples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.key_mappers.paths">py2store.key_mappers.paths</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.key_mappers.naming">py2store.key_mappers.naming</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.key_mappers">py2store.key_mappers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.errors">py2store.errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.slib.s_configparser">py2store.slib.s_configparser</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.slib">py2store.slib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.slib.s_zipfile">py2store.slib.s_zipfile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.base">py2store.base</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-selectors-mg-selectors">py2store.selectors.mg_selectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-selectors-mongoquery">py2store.selectors.mongoquery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-selectors">py2store.selectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.parse_format">py2store.parse_format</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../../../_sources/module_docs/py2store/slib/s_configparser.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
