@@ -262,7 +262,7 @@
         <span class="k">try</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">zip_reader</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">zip_reader_kwargs</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">FileNotFoundError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s2">&quot;FileNotFoundError: &quot;</span> <span class="o">+</span> <span class="n">e</span><span class="p">)</span></div>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;FileNotFoundError: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="ZipFilesReaderAndBytesWriter"><a class="viewcode-back" href="../../../test.html#py2store.slib.s_zipfile.ZipFilesReaderAndBytesWriter">[docs]</a><span class="k">class</span> <span class="nc">ZipFilesReaderAndBytesWriter</span><span class="p">(</span><span class="n">ZipFilesReader</span><span class="p">):</span>
