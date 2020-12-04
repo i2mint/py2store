@@ -352,7 +352,7 @@ class Store(KvPersister):
 
     _max_repr_size = None
 
-    _errors_that_trigger_missing = (KeyError,)
+    _errors_that_trigger_missing = (KeyError, FileNotFoundError)
 
     wrap = classmethod(cls_wrap)
 

@@ -227,7 +227,7 @@ class ZipFilesReader(FileCollection, KvReader):
         try:
             return self.zip_reader(k, **self.zip_reader_kwargs)
         except FileNotFoundError as e:
-            raise KeyError("FileNotFoundError: " + e)
+            raise KeyError(f"FileNotFoundError: {e}")
 
 
 class ZipFilesReaderAndBytesWriter(ZipFilesReader):
