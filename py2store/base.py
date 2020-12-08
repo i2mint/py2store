@@ -352,7 +352,7 @@ class Store(KvPersister):
 
     _max_repr_size = None
 
-    _errors_that_trigger_missing = (KeyError, FileNotFoundError)
+    _errors_that_trigger_missing = (KeyError, )  # another option: (KeyError, FileNotFoundError)
 
     wrap = classmethod(cls_wrap)
 
@@ -371,7 +371,7 @@ class Store(KvPersister):
         try:
             data = self.store[_id]
         except self._errors_that_trigger_missing:
-            return self.__missing__(k)
+            data = self.__missing__(k)
         return self._obj_of_data(data)
 
     def __missing__(self, k):
