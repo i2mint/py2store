@@ -29,7 +29,8 @@ class FolderNotFoundError(NoSuchKeyError):
 # File system navigation: Utils
 
 
-def ensure_slash_suffix(path):
+def ensure_slash_suffix(path: str):
+    """Add a file separation (/ or \) at the end of path str, if not already present."""
     if not path.endswith(file_sep):
         return path + file_sep
     else:
