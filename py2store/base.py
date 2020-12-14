@@ -352,7 +352,7 @@ class Store(KvPersister):
 
     _max_repr_size = None
 
-    _errors_that_trigger_missing = (KeyError, )  # another option: (KeyError, FileNotFoundError)
+    _errors_that_trigger_missing = (KeyError,)  # another option: (KeyError, FileNotFoundError)
 
     wrap = classmethod(cls_wrap)
 
@@ -662,15 +662,18 @@ class Stream:
     ...
     >>> stream = MyStream(src)
     >>>
-    >>> assert list(stream) == [['a', 'b', 'c'], ['1', '2', '3'], ['4', '5', '6']]
-    >>> assert stream.readlines() == []  # readlines should do the same as list(stream)
+    >>> list(stream)
+    [['a', 'b', 'c'], ['1', '2', '3'], ['4', '5', '6']]
     >>> stream.seek(0)  # oh!... but we consumed the stream already, so let's go back to the beginning
     0
-    >>> assert stream.readlines() == [['a', 'b', 'c'], ['1', '2', '3'], ['4', '5', '6']]  # same as list(stream)
+    >>> list(stream)
+    [['a', 'b', 'c'], ['1', '2', '3'], ['4', '5', '6']]
     >>> stream.seek(0)  # reverse again
     0
-    >>> assert stream.readline() == ['a', 'b', 'c']
-    >>> assert stream.readline() == ['1', '2', '3']
+    >>> next(stream)
+    ['a', 'b', 'c']
+    >>> next(stream)
+    ['1', '2', '3']
 
     Let's add a filter! There's two kinds you can use.
     One that is applied to the line before the data is transformed by _obj_of_data,
@@ -691,13 +694,16 @@ class Stream:
     >>>
     >>> s = MyFilteredStream(src)
     >>>
-    >>> assert list(s) == [['1', '2', '3'], ['4', '5', '6']]
+    >>> list(s)
+    [['1', '2', '3'], ['4', '5', '6']]
     >>> s.seek(0)
     0
-    >>> assert s.readlines() == [['1', '2', '3'], ['4', '5', '6']]  # same as list(stream)
+    >>> list(s)
+    [['1', '2', '3'], ['4', '5', '6']]
     >>> s.seek(0)
     0
-    >>> assert s.readline() == ['1', '2', '3']
+    >>> next(s)
+    ['1', '2', '3']
 
     Recipes:
     - _pre_iter: involving itertools.islice to skip header lines
@@ -747,15 +753,4 @@ class Stream:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         return self.stream.__exit__(exc_type, exc_val, exc_tb)  # TODO: Should we have a _post_proc? Uses?
-
-    # def readlines(self):
-    #     # TODO: Should we use self.stream.readlines() instead? Is readlines expected to be aligned with __iter__?
-    #     return list(self)
-    #
-    # def readline(self):
-    #     # TODO: Should we use self.stream.readline() instead? Is readline expected to be aligned with __iter__?
-    #     return next(iter(self))
-
-    # def read(self):
-    #     yield from (self._obj_of_data(k) for k in self.stream)
 ########################################################################################################################
