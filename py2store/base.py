@@ -640,16 +640,10 @@ class stream_util:
         instance.seek(0)
 
 
-# TODO: What's the abstract class for Streams. IOBase doesn't seem to work?
-# TODO: Two filters. Might just be able to use one, using sentinels
-
 class Stream:
     """A layer-able version of the stream interface
 
         __iter__    calls: _obj_of_data(map)
-        readlines   calls: _obj_of_data(though iter)
-        readline    calls: _obj_of_data
-
 
     >>> from io import StringIO
     >>>
@@ -734,6 +728,9 @@ class Stream:
         #                       self._pre_iter(self.stream)))
 
     # _wrapped_methods = {'__iter__'}
+
+    def __next__(self):  # TODO: Pros and cons of having a __next__?
+        return next(iter(self))
 
     def __getattr__(self, attr):
         """Delegate method to wrapped store if not part of wrapper store methods"""
