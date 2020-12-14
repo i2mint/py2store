@@ -277,6 +277,7 @@ class FileStringReader(FileBytesReader):
 
 
 class FileStringPersister(FileBytesPersister):
+    _read_open_kwargs = dict(FileBytesReader._read_open_kwargs, mode="rt")
     _write_open_kwargs = dict(FileBytesPersister._write_open_kwargs, mode="wt")
 
 

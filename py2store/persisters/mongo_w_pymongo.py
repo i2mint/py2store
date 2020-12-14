@@ -67,6 +67,13 @@ class MongoCollectionReader(KvReader):
     def __len__(self):
         return self._mgc.count_documents({})
 
+    def __contains__(self, k):
+        cursor = self._mgc.find(k, projection={'_id': False})
+        r = next(cursor, False)
+        if r is not False:
+            return True
+
+
     def __length_hint__(self):
         return self._mgc.estimated_document_count()
 
@@ -117,7 +124,7 @@ class MongoCollectionPersister(MongoCollectionReader):
     """
 
     def __setitem__(self, k, v):
-        return self._mgc.insert_one(dict(k, **v))
+        return self._mgc.insert_one(dict(v, **k))
 
     def __delitem__(self, k):
         if len(k) > 0:

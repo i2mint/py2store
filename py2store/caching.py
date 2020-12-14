@@ -145,6 +145,9 @@ def mk_cached_store(
     return CachedStore
 
 
+cache_vals = mk_cached_store  # alias proposed for better name
+
+
 @store_decorator
 def mk_sourced_store(
         store=None,
