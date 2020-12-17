@@ -229,7 +229,7 @@ no_such_item = NoSuchItem()
 def cls_wrap(cls, obj):
     if isinstance(obj, type):
 
-        @wraps(cls, updated=())
+        @wraps(obj, updated=())
         class Wrap(cls):
             @wraps(obj.__init__)
             def __init__(self, *args, **kwargs):
@@ -361,6 +361,9 @@ class Store(KvPersister):
     def __getattr__(self, attr):
         """Delegate method to wrapped store if not part of wrapper store methods"""
         return getattr(self.store, attr)
+
+    def __dir__(self):
+        return list(set(self.__dir__()).union(self.store.__dir__()))  # to forward dir to delegated store as well
 
     def __hash__(self):
         return self.store.__hash__()
