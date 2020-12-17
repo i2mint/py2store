@@ -228,6 +228,8 @@ no_such_item = NoSuchItem()
 
 def cls_wrap(cls, obj):
     if isinstance(obj, type):
+
+        @wraps(cls, updated=())
         class Wrap(cls):
             @wraps(obj.__init__)
             def __init__(self, *args, **kwargs):

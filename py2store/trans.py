@@ -284,6 +284,7 @@ def get_class_name(cls, dflt_name=None):
 
 def store_wrap(obj):
     if isinstance(obj, type):
+        @wraps(type(obj), updated=())  # added this: test
         class StoreWrap(Store):
             @wraps(obj.__init__)
             def __init__(self, *args, **kwargs):
@@ -293,6 +294,7 @@ def store_wrap(obj):
         return StoreWrap
     else:
         return Store(obj)
+
 
 
 # # Older version, kept around for awhile, for review:
