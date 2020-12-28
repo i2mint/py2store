@@ -1263,7 +1263,7 @@ def _define_keys_values_and_items_according_to_iter(cls):
 
     if hasattr(cls, "items"):
         def items(self):
-            ItemsView((k, self[k]) for k in self)
+            return ItemsView((k, self[k]) for k in self)
 
         cls.items = items
 
