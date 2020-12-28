@@ -1251,19 +1251,22 @@ self_names = frozenset(["self"])
 def _define_keys_values_and_items_according_to_iter(cls):
     if hasattr(cls, "keys"):
         def keys(self):
-            return KeysView(self.__iter__())  # TODO: Should it be iter(self)?
+            # yield from self.__iter__()  # TODO: Should it be iter(self)?
+            return KeysView(self)
 
         cls.keys = keys
 
     if hasattr(cls, "values"):
         def values(self):
-            return ValuesView(self[k] for k in self)
+            # yield from (self[k] for k in self)
+            return ValuesView(self)
 
         cls.values = values
 
     if hasattr(cls, "items"):
         def items(self):
-            return ItemsView((k, self[k]) for k in self)
+            # yield from ((k, self[k]) for k in self)
+            return ItemsView(self)
 
         cls.items = items
 
