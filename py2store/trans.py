@@ -6,7 +6,7 @@ from py2store.base import Store, KvReader, AttrNames
 from py2store.util import lazyprop, num_of_args, attrs_of, wraps
 from py2store.utils.signatures import Sig, KO
 from warnings import warn
-from collections.abc import Iterable
+from collections.abc import Iterable, KeysView, ValuesView, ItemsView
 
 
 ########################################################################################################################
@@ -294,7 +294,6 @@ def store_wrap(obj):
         return StoreWrap
     else:
         return Store(obj)
-
 
 
 # # Older version, kept around for awhile, for review:
@@ -1252,19 +1251,19 @@ self_names = frozenset(["self"])
 def _define_keys_values_and_items_according_to_iter(cls):
     if hasattr(cls, "keys"):
         def keys(self):
-            yield from self.__iter__()  # TODO: Should it be iter(self)?
+            return KeysView(self.__iter__())  # TODO: Should it be iter(self)?
 
         cls.keys = keys
 
     if hasattr(cls, "values"):
         def values(self):
-            yield from (self[k] for k in self)
+            return ValuesView(self[k] for k in self)
 
         cls.values = values
 
     if hasattr(cls, "items"):
         def items(self):
-            yield from ((k, self[k]) for k in self)
+            ItemsView((k, self[k]) for k in self)
 
         cls.items = items
 
