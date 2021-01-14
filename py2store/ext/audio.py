@@ -1,3 +1,7 @@
+from warnings import warn
+
+warn(f"This module has moved to https://github.com/otosense/hear (pip installable)", DeprecationWarning)
+
 from io import BytesIO
 from py2store.stores.local_store import LocalBinaryStore
 from py2store.trans import add_wrapper_method
