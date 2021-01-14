@@ -260,6 +260,27 @@ class ZipOfWavs(FilesOfZip):
     pass
 
 
+@WfSrSerializationTrans.wrapper()
+class WfSrOfZipOfWavs(ZipOfWavs):
+    """A KvReader that provides the (wf, sr) pairs of the .wav files in a zip file"""
+    pass
+
+
+def _length_and_sr_of_wavs(z):
+    """A dataframe containing information about the wavfiles of the files in the wfsr store
+    Note: Don't depend on this yet -- it's in motion.
+    """
+    import pandas as pd
+    def gen():
+        for k, (wf, sr) in z.items():
+            yield {'file': k, 'n_samples': len(wf), 'sr': sr}
+
+    df = pd.DataFrame(list(gen()))
+    df = df.set_index('file')
+    df['duration_s'] = df['n_samples'] / df['sr']
+    return df
+
+
 from py2store.stores.local_store import MakeMissingDirsStoreMixin
 import os
 
