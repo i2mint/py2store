@@ -1,6 +1,10 @@
 from warnings import warn
 
-warn(f"This module has moved to https://github.com/otosense/hear (pip installable)", DeprecationWarning)
+warn(f"This module has moved to https://github.com/otosense/hear. You can also do `pip install hear`. "
+     f"Note that a copy of the original py2store.ext.audio will be kept in "
+     f"https://github.com/otosense/hear/blob/master/hear/scrap/old_py2store_ext_audio.py "
+     f"for awhile, for those who need it.",
+     DeprecationWarning)
 
 from io import BytesIO
 from py2store.stores.local_store import LocalBinaryStore
