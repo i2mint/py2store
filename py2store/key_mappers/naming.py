@@ -1142,6 +1142,7 @@ def _get_method_for_str_to_key_type(keymap, key_type):
     )
 
 
+# TODO: Make this into a proper store decorator
 def mk_store_from_path_format_store_cls(
         store,
         subpath="",
@@ -1168,7 +1169,7 @@ def mk_store_from_path_format_store_cls(
 
     Example:
     ```
-    # Get a (sessiono,bt) indexed LocalJsonStore
+    # Get a (session, bt) indexed LocalJsonStore
     s = mk_store_from_path_format_store_cls(LocalJsonStore,
                                                    os.path.join(root_dir, 'd'),
                                                    subpath='{session}/d/{bt}',
@@ -1204,3 +1205,32 @@ def mk_store_from_path_format_store_cls(
 mk_tupled_store_from_path_format_store_cls = (
     mk_store_from_path_format_store_cls
 )
+
+from string import Formatter
+
+
+# TODO: Make .vformat (therefore .format) work with args and kwargs
+# TODO: Make it not blow up and conserve spec (e.g. the 1.2f of {foo:1.2f}) when not specified
+class PartialFormatter(Formatter):
+    """
+    >>> partial_formatter = PartialFormatter()
+    >>> str_template = 'foo:{foo} bar={bar} a={a} b={b:0.02f} c={c}'
+    >>> partial_formatter.format(str_template, bar="BAR", b=34)
+    'foo:{foo} bar=BAR a={a} b=34.00 c={c}'
+    """
+
+    def get_value(self, key, args, kwargs):
+        try:
+            return super().get_value(key, args, kwargs)
+        except KeyError:
+            return '{' + key + '}'
+
+    def format_fields_set(self, s):
+        return {x[1] for x in self.parse(s) if x[1]}
+
+    def format_with_non_none_vals(self, format_string, **mapping):
+        mapping = {k: v for k, v in mapping.items() if v is not None}
+        return self.vformat(format_string, (), mapping)
+
+
+partial_formatter = PartialFormatter()
