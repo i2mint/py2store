@@ -239,6 +239,9 @@ class ZipFilesReaderAndBytesWriter(ZipFilesReader):
             fp.write(v)
 
 
+ZipFileReader = ZipFilesReader  # back-compatibility alias
+
+
 # TODO: Add easy connection to ExplicitKeymapReader and other path trans and cache useful for the folder of zips context
 class FlatZipFilesReader(ZipFilesReader):
     """Read the union of the contents of multiple zip files.
@@ -276,7 +279,20 @@ class FlatZipFilesReader(ZipFilesReader):
         return self._zip_readers[zip_relpath][path_in_zip]
 
 
-ZipFileReader = ZipFilesReader  # back-compatibility alias
+def mk_flatzips_store(dir_of_zips, zip_pair_path_preproc=sorted,
+                      mk_store=FlatZipFilesReader, **extra_mk_store_kwargs):
+    """A store so that you can work with a folder that has a bunch of zip files,
+    as if they've all been extracted in the same folder.
+    Note that `zip_pair_path_preproc` can be used to control how to resolve key conflicts
+    (i.e. when you get two different zip files that have a same path in their contents).
+    The last path encountered by `zip_pair_path_preproc(zip_path_pairs)` is the one that will be used, so
+    one should make `zip_pair_path_preproc` act accordingly.
+    """
+    from py2store.utils.explicit import ExplicitKeymapReader
+
+    z = mk_store(dir_of_zips, **extra_mk_store_kwargs)
+    path_to_pair = {pair[1]: pair for pair in zip_pair_path_preproc(z)}
+    return ExplicitKeymapReader(z, id_of_key=path_to_pair)
 
 
 class FilesOfZip(ZipReader):
