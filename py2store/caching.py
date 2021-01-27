@@ -1,3 +1,5 @@
+"""Tools to add caching layers to stores."""
+
 from functools import wraps, partial
 from typing import Iterable, Union, Callable, Hashable, Any
 
