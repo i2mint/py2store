@@ -5,7 +5,7 @@
   * [Changing where and how things are stored](#changing-where-and-how-things-are-stored)
   * [Adapters: When the learning curve is in the way of learning](#adapters--when-the-learning-curve-is-in-the-way-of-learning)
   * [Thinking about storage later, if ever](#thinking-about-storage-later--if-ever)
-- [remove data access entropy](#remove-data-access-entropy)
+- [Remove data access entropy](#remove-data-access-entropy)
   * [Get a key-value view of files](#get-a-key-value-view-of-files)
     + [LocalBinaryStore: A base store for local files](#localbinarystore--a-base-store-for-local-files)
     + [key filtering](#key-filtering)
