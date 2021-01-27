@@ -5,7 +5,7 @@
   * [Changing where and how things are stored](#changing-where-and-how-things-are-stored)
   * [Adapters: When the learning curve is in the way of learning](#adapters--when-the-learning-curve-is-in-the-way-of-learning)
   * [Thinking about storage later, if ever](#thinking-about-storage-later--if-ever)
-- [remove (much of the) data access entropy](#remove--much-of-the--data-access-entropy)
+- [remove data access entropy](#remove-data-access-entropy)
   * [Get a key-value view of files](#get-a-key-value-view-of-files)
     + [LocalBinaryStore: A base store for local files](#localbinarystore--a-base-store-for-local-files)
     + [key filtering](#key-filtering)
@@ -152,7 +152,7 @@ But when the time comes to optimize, I shouldn't have to change my code, but ins
 DAO does things. What I need is py2store.
 
 
-# remove (much of the) data access entropy
+# Remove data access entropy
 
 Data comes from many different sources, organization, and formats. 
 
