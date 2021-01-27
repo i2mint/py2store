@@ -1,5 +1,5 @@
 import os
-from py2store.util import ModuleNotFoundIgnore
+from contextlib import suppress
 
 file_sep = os.path.sep
 
@@ -116,20 +116,36 @@ from py2store.key_mappers.paths import mk_relative_path_store
 
 ###### Optionals... ##############################################################################
 
-with ModuleNotFoundIgnore():
+ignore_if_module_not_found = suppress(ModuleNotFoundError)
+
+with ignore_if_module_not_found:
     from py2store.access import myconfigs
-with ModuleNotFoundIgnore():
+
+with ignore_if_module_not_found:
     from py2store.access import mystores
 
-with ModuleNotFoundIgnore():
+with ignore_if_module_not_found:
     from py2store.stores.s3_store import (
         S3BinaryStore,
         S3TextStore,
         S3PickleStore,
     )
-with ModuleNotFoundIgnore():
+with ignore_if_module_not_found:
     from py2store.stores.mongo_store import (
         MongoStore,
         MongoTupleKeyStore,
         MongoAnyKeyStore,
+    )
+
+with ignore_if_module_not_found:
+    from py2store.persisters.sql_w_sqlalchemy import (
+        SqlDbReader,
+        SqlTableRowsCollection,
+        SqlTableRowsSequence,
+        SqlDbCollection,
+        SQLAlchemyPersister
+    )
+    from py2store.stores.sql_w_sqlalchemy import (
+        SQLAlchemyStore,
+        SQLAlchemyTupleStore,
     )

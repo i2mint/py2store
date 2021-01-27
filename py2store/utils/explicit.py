@@ -88,14 +88,15 @@ class ExplicitKeys(Collection):
 
     __slots__ = ("_keys_cache",)
 
-    # def __init__(self, key_collection: CollectionType):
-    #     assert isinstance(key_collection, CollectionType), (
-    #         "key_collection must be a collections.abc.Collection, i.e. have a __len__, __contains__, and __len__."
-    #         "The key_collection you gave me was a {}".format(
-    #             type(key_collection)
-    #         )
-    #     )
-    #     self._key_collection = key_collection
+    def __init__(self, key_collection: CollectionType):  # don't remove this init: Don't. Need for _keys_cache init
+        assert isinstance(key_collection, CollectionType), (
+            "key_collection must be a collections.abc.Collection, i.e. have a __len__, __contains__, and __len__."
+            "The key_collection you gave me was a {}".format(
+                type(key_collection)
+            )
+        )
+        # self._key_collection = key_collection
+        self._keys_cache = key_collection
 
     def __iter__(self):
         yield from self._keys_cache

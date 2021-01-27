@@ -1,3 +1,5 @@
+"""Tools to add caching layers to stores."""
+
 from functools import wraps, partial
 from typing import Iterable, Union, Callable, Hashable, Any
 
@@ -143,6 +145,9 @@ def mk_cached_store(
             return super().__getitem__(k)
 
     return CachedStore
+
+
+cache_vals = mk_cached_store  # alias proposed for better name
 
 
 @store_decorator

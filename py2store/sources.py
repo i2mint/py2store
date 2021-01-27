@@ -109,7 +109,8 @@ class ObjReader(KvReader):
 # class NestedObjReader(ObjReader):
 #     def __init__(self, obj, src_to_key, key_filt=None, ):
 
-# Pattern:
+# Pattern: Recursive navigation
+# Note: Moved dev to independent package called "guide"
 @cached_keys(keys_cache=set, name="Attrs")
 class Attrs(ObjReader):
     def __init__(self, obj, key_filt=not_underscore_prefixed):

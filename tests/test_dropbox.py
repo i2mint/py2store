@@ -1,6 +1,6 @@
 from os import environ
 from uuid import uuid4
-from tests.base_test import BasePersisterTest
+from .base_test import BasePersisterTest
 from py2store.util import ModuleNotFoundWarning
 
 with ModuleNotFoundWarning(

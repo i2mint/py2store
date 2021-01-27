@@ -29,7 +29,8 @@ class FolderNotFoundError(NoSuchKeyError):
 # File system navigation: Utils
 
 
-def ensure_slash_suffix(path):
+def ensure_slash_suffix(path: str):
+    """Add a file separation (/ or \) at the end of path str, if not already present."""
     if not path.endswith(file_sep):
         return path + file_sep
     else:
@@ -418,8 +419,8 @@ class FileReader(KvReader):
         self._rootdir_length = len(self.rootdir)
         # TODO: Look into alternatives for the raison d'etre of _new_node and _class_name
         # (They are there, because using self.__class__ directly goes to super)
-        self._new_node = self.__class__
-        self._class_name = self.__class__.__name__
+        self._new_node = type(self)
+        self._class_name = type(self).__name__
 
     def _extended_prefix(self, new_prefix):
         return os.path.join(self.rootdir, new_prefix)

@@ -7,12 +7,61 @@ from py2store.key_mappers.naming import (
     mk_pattern_from_template_and_format_dict,
 )
 from py2store.key_mappers.paths import mk_relative_path_store
-from py2store.persisters.local_files import (
-    inf,
-    ensure_slash_suffix,
-    iter_filepaths_in_folder_recursively,
-    iter_dirpaths_in_folder_recursively,
-)
+
+file_sep = os.path.sep
+inf = float("infinity")
+
+
+def ensure_slash_suffix(path: str):
+    """Add a file separation (/ or \) at the end of path str, if not already present."""
+    if not path.endswith(file_sep):
+        return path + file_sep
+    else:
+        return path
+
+
+def paths_in_dir(rootdir, include_hidden=False):
+    for name in os.listdir(rootdir):
+        if include_hidden or not name.startswith('.'):  # TODO: is dot a platform independent marker for hidden file?
+            filepath = os.path.join(rootdir, name)
+            if os.path.isdir(filepath):
+                yield ensure_slash_suffix(filepath)
+            else:
+                yield filepath
+
+
+def iter_filepaths_in_folder_recursively(
+        root_folder, max_levels=None, _current_level=0, include_hidden=False
+):
+    """Recursively generates filepaths of folder (and subfolders, etc.) up to a given level"""
+    if max_levels is None:
+        max_levels = inf
+    for full_path in paths_in_dir(root_folder, include_hidden):
+        if os.path.isdir(full_path):
+            if _current_level < max_levels:
+                for entry in iter_filepaths_in_folder_recursively(
+                        full_path, max_levels, _current_level + 1, include_hidden
+                ):
+                    yield entry
+        else:
+            if os.path.isfile(full_path):
+                yield full_path
+
+
+def iter_dirpaths_in_folder_recursively(
+        root_folder, max_levels=None, _current_level=0, include_hidden=False
+):
+    """Recursively generates dirpaths of folder (and subfolders, etc.) up to a given level"""
+    if max_levels is None:
+        max_levels = inf
+    for full_path in paths_in_dir(root_folder, include_hidden):
+        if os.path.isdir(full_path):
+            yield full_path
+            if _current_level < max_levels:
+                for entry in iter_dirpaths_in_folder_recursively(
+                        full_path, max_levels, _current_level + 1, include_hidden
+                ):
+                    yield entry
 
 
 def mk_tmp_py2store_dir(dirname=""):
@@ -60,7 +109,7 @@ class FileSysCollection(Collection):
     # rootdir = None  # mentioning here so that the attribute is seen as an attribute before instantiation.
 
     def __init__(
-            self, rootdir, subpath="", pattern_for_field=None, max_levels=None
+            self, rootdir, subpath="", pattern_for_field=None, max_levels=None, include_hidden=False
     ):
         if max_levels is None:
             max_levels = inf
@@ -75,6 +124,7 @@ class FileSysCollection(Collection):
             os.path.join(rootdir, subpath), pattern_for_field
         )
         self._max_levels = max_levels
+        self.include_hidden = include_hidden
 
     def is_valid_key(self, k):
         return bool(self._key_pattern.match(k))
@@ -94,7 +144,7 @@ class DirCollection(FileSysCollection):
         yield from filter(
             self.is_valid_key,
             iter_dirpaths_in_folder_recursively(
-                self.rootdir, max_levels=self._max_levels
+                self.rootdir, max_levels=self._max_levels, include_hidden=self.include_hidden
             ),
         )
 
@@ -118,7 +168,7 @@ class FileCollection(FileSysCollection):
         yield from filter(
             self.is_valid_key,
             iter_filepaths_in_folder_recursively(
-                self.rootdir, max_levels=self._max_levels
+                self.rootdir, max_levels=self._max_levels, include_hidden=self.include_hidden
             ),
         )
 
@@ -227,6 +277,7 @@ class FileStringReader(FileBytesReader):
 
 
 class FileStringPersister(FileBytesPersister):
+    _read_open_kwargs = dict(FileBytesReader._read_open_kwargs, mode="rt")
     _write_open_kwargs = dict(FileBytesPersister._write_open_kwargs, mode="wt")
 
 

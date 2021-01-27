@@ -116,7 +116,9 @@ class ModuleImports(ModuleImportsBase):
 import pkgutil
 import builtins
 
-builtin_pkg_names = {x.name for x in pkgutil.iter_modules() if not x.ispkg}
+builtin_module_names = {x.name for x in pkgutil.iter_modules()}
+builtin_pkg_names = {x.name for x in pkgutil.iter_modules() if x.ispkg}
+builtin_non_pkg_names = {x.name for x in pkgutil.iter_modules() if not x.ispkg}
 builtin_obj_names = {x.lower() for x in dir(builtins)}
 
 py_reserved_words = {
@@ -125,7 +127,11 @@ py_reserved_words = {
     'try', 'while', 'with', 'yield'
 }
 
-builtin_names = {'builtins'} | builtin_pkg_names | builtin_obj_names | py_reserved_words
+# TODO: Still let's through some known builtings, so listing here:
+builtin_names_are_still_not_caught = {'time', 'sys', 'itertools'}
+
+builtin_names = ({'builtins'} | builtin_module_names | builtin_obj_names
+                 | py_reserved_words | builtin_names_are_still_not_caught)
 
 standard_lib_dir = os.path.dirname(os.__file__)
 

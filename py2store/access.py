@@ -26,6 +26,7 @@ import os
 import importlib
 from warnings import warn
 from functools import reduce
+from operator import getitem
 from py2store.util import str_to_var_str
 from py2store.sources import DictAttr
 
@@ -214,6 +215,8 @@ try:
 
             @OverWritesNotAllowedMixin.wrap
             class MyConfigs(MiscStoreMixin, LocalBinaryStore):
+                key_sep = ':'
+
                 @wraps(LocalBinaryStore)
                 def __init__(self, *args, **kwargs):
                     LocalBinaryStore.__init__(self, *args, **kwargs)
@@ -243,7 +246,10 @@ try:
 
                 def __getitem__(self, k):
                     try:
-                        return super().__getitem__(k)
+                        if self.key_sep not in k:
+                            return super().__getitem__(k)
+                        else:
+                            return reduce(getitem, k.split(self.key_sep), self)
                     except KeyError:
                         raise KeyError(f"The '{k}' key wasn't found. "
                                        f"What this probably is, is that you need "
@@ -270,6 +276,7 @@ try:
                         "do it another way (like manually)."
                     )
 
+
             myconfigs = MyConfigs(myconfigs_dirpath)
             myconfigs.dirpath = myconfigs_dirpath
         else:
@@ -280,6 +287,7 @@ try:
                 mkdir {myconfigs_dirpath}
             """
             )
+
 
         class MyStores(KvStore):
             func_loader = staticmethod(dflt_func_loader)

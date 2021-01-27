@@ -228,6 +228,8 @@ no_such_item = NoSuchItem()
 
 def cls_wrap(cls, obj):
     if isinstance(obj, type):
+
+        @wraps(obj, updated=())
         class Wrap(cls):
             @wraps(obj.__init__)
             def __init__(self, *args, **kwargs):
@@ -352,13 +354,16 @@ class Store(KvPersister):
 
     _max_repr_size = None
 
-    _errors_that_trigger_missing = (KeyError, FileNotFoundError)
+    _errors_that_trigger_missing = (KeyError,)  # another option: (KeyError, FileNotFoundError)
 
     wrap = classmethod(cls_wrap)
 
     def __getattr__(self, attr):
         """Delegate method to wrapped store if not part of wrapper store methods"""
         return getattr(self.store, attr)
+
+    def __dir__(self):
+        return list(set(dir(self.__class__)).union(self.store.__dir__()))  # to forward dir to delegated stream as well
 
     def __hash__(self):
         return self.store.__hash__()
@@ -371,7 +376,7 @@ class Store(KvPersister):
         try:
             data = self.store[_id]
         except self._errors_that_trigger_missing:
-            return self.__missing__(k)
+            data = self.__missing__(k)
         return self._obj_of_data(data)
 
     def __missing__(self, k):
@@ -640,16 +645,10 @@ class stream_util:
         instance.seek(0)
 
 
-# TODO: What's the abstract class for Streams. IOBase doesn't seem to work?
-# TODO: Two filters. Might just be able to use one, using sentinels
-
 class Stream:
     """A layer-able version of the stream interface
 
         __iter__    calls: _obj_of_data(map)
-        readlines   calls: _obj_of_data(though iter)
-        readline    calls: _obj_of_data
-
 
     >>> from io import StringIO
     >>>
@@ -668,15 +667,18 @@ class Stream:
     ...
     >>> stream = MyStream(src)
     >>>
-    >>> assert list(stream) == [['a', 'b', 'c'], ['1', '2', '3'], ['4', '5', '6']]
-    >>> assert stream.readlines() == []  # readlines should do the same as list(stream)
+    >>> list(stream)
+    [['a', 'b', 'c'], ['1', '2', '3'], ['4', '5', '6']]
     >>> stream.seek(0)  # oh!... but we consumed the stream already, so let's go back to the beginning
     0
-    >>> assert stream.readlines() == [['a', 'b', 'c'], ['1', '2', '3'], ['4', '5', '6']]  # same as list(stream)
+    >>> list(stream)
+    [['a', 'b', 'c'], ['1', '2', '3'], ['4', '5', '6']]
     >>> stream.seek(0)  # reverse again
     0
-    >>> assert stream.readline() == ['a', 'b', 'c']
-    >>> assert stream.readline() == ['1', '2', '3']
+    >>> next(stream)
+    ['a', 'b', 'c']
+    >>> next(stream)
+    ['1', '2', '3']
 
     Let's add a filter! There's two kinds you can use.
     One that is applied to the line before the data is transformed by _obj_of_data,
@@ -697,13 +699,16 @@ class Stream:
     >>>
     >>> s = MyFilteredStream(src)
     >>>
-    >>> assert list(s) == [['1', '2', '3'], ['4', '5', '6']]
+    >>> list(s)
+    [['1', '2', '3'], ['4', '5', '6']]
     >>> s.seek(0)
     0
-    >>> assert s.readlines() == [['1', '2', '3'], ['4', '5', '6']]  # same as list(stream)
+    >>> list(s)
+    [['1', '2', '3'], ['4', '5', '6']]
     >>> s.seek(0)
     0
-    >>> assert s.readline() == ['1', '2', '3']
+    >>> next(s)
+    ['1', '2', '3']
 
     Recipes:
     - _pre_iter: involving itertools.islice to skip header lines
@@ -735,6 +740,9 @@ class Stream:
 
     # _wrapped_methods = {'__iter__'}
 
+    def __next__(self):  # TODO: Pros and cons of having a __next__?
+        return next(iter(self))
+
     def __getattr__(self, attr):
         """Delegate method to wrapped store if not part of wrapper store methods"""
         return getattr(self.stream, attr)
@@ -750,15 +758,4 @@ class Stream:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         return self.stream.__exit__(exc_type, exc_val, exc_tb)  # TODO: Should we have a _post_proc? Uses?
-
-    # def readlines(self):
-    #     # TODO: Should we use self.stream.readlines() instead? Is readlines expected to be aligned with __iter__?
-    #     return list(self)
-    #
-    # def readline(self):
-    #     # TODO: Should we use self.stream.readline() instead? Is readline expected to be aligned with __iter__?
-    #     return next(iter(self))
-
-    # def read(self):
-    #     yield from (self._obj_of_data(k) for k in self.stream)
 ########################################################################################################################

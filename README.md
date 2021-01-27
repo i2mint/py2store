@@ -1,28 +1,45 @@
-   * [py2store](#py2store)
-   * [Quickstart](#quickstart)
-   * [Use cases](#use-cases)
-      * [Interfacing reads](#interfacing-reads)
-      * [Changing where and how things are stored](#changing-where-and-how-things-are-stored)
-      * [Adapters: When the learning curve is in the way of learning](#adapters-when-the-learning-curve-is-in-the-way-of-learning)
-      * [Thinking about storage later, if ever](#thinking-about-storage-later-if-ever)
-   * [More examples](#more-examples)
-      * [Looks like a dict](#looks-like-a-dict)
-      * [Converting keys: Relative paths and absolute paths](#converting-keys-relative-paths-and-absolute-paths)
-      * [Serialization/Deserialization](#serializationdeserialization)
-      * [A pickle store](#a-pickle-store)
-      * [But how do you change the persister?](#but-how-do-you-change-the-persister)
-      * [Talk your own CRUD dialect](#talk-your-own-crud-dialect)
-      * [Transforming keys](#transforming-keys)
-   * [How it works](#how-it-works)
-   * [A few persisters you can use](#a-few-persisters-you-can-use)
-      * [Local Files](#local-files)
-      * [MongoDB](#mongodb)
-      * [S3, SQL, Zips, Dropbox](#s3-sql-zips-dropbox)
-   * [Philosophical FAQs](#philosophical-faqs)
-      * [Is a store an ORM? A DAO?](#is-a-store-an-orm-a-dao)
-      * [Should storage transform the data?](#should-storage-transform-the-data)
-   * [Some links](#some-links)
-   
+- [py2store](#py2store)
+- [Quick peek](#quick-peek)
+- [Use cases](#use-cases)
+  * [Interfacing reads](#interfacing-reads)
+  * [Changing where and how things are stored](#changing-where-and-how-things-are-stored)
+  * [Adapters: When the learning curve is in the way of learning](#adapters--when-the-learning-curve-is-in-the-way-of-learning)
+  * [Thinking about storage later, if ever](#thinking-about-storage-later--if-ever)
+- [py2store: remove (much of the) data access entropy](#py2store--remove--much-of-the--data-access-entropy)
+  * [Get a key-value view of files](#get-a-key-value-view-of-files)
+    + [LocalBinaryStore: A base store for local files](#localbinarystore--a-base-store-for-local-files)
+    + [key filtering](#key-filtering)
+    + [value transformation (a.k.a. serialization and deserialization)](#value-transformation--aka-serialization-and-deserialization-)
+    + [key transformation](#key-transformation)
+    + [caching](#caching)
+    + [Aggregating these transformations to be able to apply them to other situations (DRY!)](#aggregating-these-transformations-to-be-able-to-apply-them-to-other-situations--dry--)
+  * [Other key-value views and tools](#other-key-value-views-and-tools)
+  * [Graze](#graze)
+    + [Example using baby names data](#example-using-baby-names-data)
+    + [Example using emoji image urls data](#example-using-emoji-image-urls-data)
+    + [A little py2store exercise: A store to get image objects of emojis](#a-little-py2store-exercise--a-store-to-get-image-objects-of-emojis)
+  * [Grub](#grub)
+    + [search your code](#search-your-code)
+    + [search jokes (and download them automatically](#search-jokes--and-download-them-automatically)
+- [More examples](#more-examples)
+  * [Looks like a dict](#looks-like-a-dict)
+  * [Converting keys: Relative paths and absolute paths](#converting-keys--relative-paths-and-absolute-paths)
+  * [Serialization/Deserialization](#serialization-deserialization)
+  * [A pickle store](#a-pickle-store)
+  * [But how do you change the persister?](#but-how-do-you-change-the-persister-)
+  * [Talk your own CRUD dialect](#talk-your-own-crud-dialect)
+  * [Transforming keys](#transforming-keys)
+- [How it works](#how-it-works)
+- [A few persisters you can use](#a-few-persisters-you-can-use)
+  * [Local Files](#local-files)
+  * [MongoDB](#mongodb)
+  * [S3, SQL, Zips, Dropbox](#s3--sql--zips--dropbox)
+- [Philosophical FAQs](#philosophical-faqs)
+  * [Is a store an ORM? A DAO?](#is-a-store-an-orm--a-dao-)
+  * [Should storage transform the data?](#should-storage-transform-the-data-)
+- [Some links](#some-links)
+
+<small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
 
 # py2store
 Storage CRUD how and where you want it.
@@ -33,18 +50,24 @@ with configuration or physical particularities out of the way.
 Also, being able to change these particularities without having to change the business-logic code. 
 
 If you're not a "read from top to bottom" kinda person, here are some tips: 
-[Quickstart](#quickstart) will show you a simple example of how it looks and feels. 
-[Use cases](#use-cases) will give you an idea of how py2store can be useful to you, if at all, 
-and [How it works](#how-it-works) will give you a sense of how it works.
+[Quick peek](#quick-peek) will show you a simple example of how it looks and feels. 
+[Use cases](#use-cases) will give you an idea of how py2store can be useful to you, if at all. 
+
+The section with the best bang for the buck is probably 
+[py2store: remove (much of the) data access entropy](#py2store--remove--much-of-the--data-access-entropy). 
+It will give you simple (but real) examples of how to use `py2store` tooling 
+to bend your interface with data to your will. 
+
+[How it works](#how-it-works) will give you a sense of how it works.
 [More examples](#more-examples) will give you a taste of how you can adapt the three main aspects of 
 storage (persistence, serialization, and indexing) to your needs.
 
-# Quickstart
-
 Install it (e.g. `pip install py2store`).
 
+# Quick peek
+
 Think of type of storage you want to use and just go ahead, like you're using a dict.
-Here's an example for local storage (you must you string keys only here). 
+Here's an example for local storage (you must you string keys only here).
 
 ```
 >>> from py2store import QuickStore
@@ -127,6 +150,857 @@ So instead, I'd like to just get on with the business logic and write my program
 So what I need is an easy way to get some minimal storage functionality. 
 But when the time comes to optimize, I shouldn't have to change my code, but instead just change the way my 
 DAO does things. What I need is py2store.
+
+
+# py2store: remove (much of the) data access entropy
+
+Data comes from many different sources, organization, and formats. 
+
+Data is needed in many different contexts, which comes with its own natural data organization and formats. 
+
+In between both: A entropic mess of ad-hoc connections and annoying time-consuming and error prone boilerplate. 
+
+`py2store` (and it's now many extensions) is there to mitigate this. 
+
+The design gods say SOC, DRY, SOLID* and such. That's good design, yes. But it can take more work to achieve these principles. 
+We'd like to make it _easier_ to do it right than do it wrong.
+
+_(*) Separation (Of) Concerns, Don't Repeat Yourself, https://en.wikipedia.org/wiki/SOLID))_
+
+We need to determine what are the most common operations we want to do on data, and decide on a common way to express these operations, no matter what the implementation details are. 
+- get/read some data
+- set/write some data
+- list/see what data we have
+- filter
+- cache
+...
+
+Looking at this, we see that the base operations for complex data systems such as data bases and file systems overlap significantly with the base operations on python (or any programming language) objects. 
+
+So we'll reflect this in our choice of a common "language" for these operations. For examples, once projected to a `py2store` object, iterating over the contents of a data base, or over files, or over the elements of a python (iterable) object should look the same, in code. Achieving this, we achieve SOC, but also set ourselves up for tooling that can assume this consistency, therefore be DRY, and many of the SOLID principles of design.
+
+Also mentionable: So far, `py2store` core tools are all pure python -- no dependencies on anything else. 
+
+Now, when you want to specialize a store (say talk to data bases, web services, acquire special formats (audio, etc.)), then you'll need to pull in a few helpful packages. But the core tooling is pure.
+
+## Get a key-value view of files
+
+Let's get an object that gives you access to local files as if they were a dictionary (a `Mapping`). 
+
+### LocalBinaryStore: A base store for local files
+
+
+```python
+import os
+import py2store
+rootdir = os.path.dirname(py2store.__file__)
+rootdir
+```
+
+
+
+
+    '/Users/Thor.Whalen/Dropbox/dev/p3/proj/i/py2store/py2store'
+
+
+
+
+```python
+from py2store import LocalBinaryStore
+
+s = LocalBinaryStore(rootdir)
+len(s)
+```
+
+
+
+
+    213
+
+
+
+
+```python
+list(s)[:10]
+```
+
+
+
+
+    ['filesys.py',
+     'misc.py',
+     'mixins.py',
+     'test/trans_test.py',
+     'test/quick_test.py',
+     'test/util.py',
+     'test/__init__.py',
+     'test/__pycache__/simple_test.cpython-38.pyc',
+     'test/__pycache__/__init__.cpython-38.pyc',
+     'test/__pycache__/quick_test.cpython-38.pyc']
+
+
+
+
+```python
+v = s['filesys.py']
+type(v), len(v)
+```
+
+
+
+
+    (bytes, 9470)
+
+
+
+And really, it's an actual `Mapping`, so you can interact with it as you would with a `dict`. 
+
+
+```python
+len(s)
+s.items()
+s.keys()
+s.values()
+'filesys.py' in s
+```
+
+
+
+
+    True
+
+
+
+In fact more, it's a subclass of `collections.abc.MutableMapping`, so can write data to a key by doing this:
+
+```python
+s[key] = data
+```
+
+and delete a key by doing
+
+```python
+del s[key]
+```
+
+(We're not demoing this here because we don't want you to write stuff in py2store files, which we're using as a demo folder.)
+
+Also, note that by default `py2store` "persisters" (as these mutable mappings are called) have their `clear()` method removed to avoid mistakingly deleting a whole data base or file system. 
+
+### key filtering
+
+Say you only want `.py` files...
+
+
+```python
+from py2store import filt_iter
+
+s = filt_iter(s, filt=lambda k: k.endswith('.py'))
+len(s)
+```
+
+
+
+
+    102
+
+
+
+What's the value of a key?
+
+
+```python
+k = 'filesys.py'
+v = s[k]
+print(f"{type(v)=}, {len(v)=}")
+```
+
+    type(v)=<class 'bytes'>, len(v)=9470
+
+
+### value transformation (a.k.a. serialization and deserialization)
+
+For `.py` files, it makes sense to get data as text, not bytes. 
+So let's tell our reader/store that's what we want...
+
+
+```python
+from py2store import wrap_kvs
+
+s = wrap_kvs(s, obj_of_data=lambda v: v.decode())
+
+v = s[k]  # let's get the value of that key again
+print(f"{type(v)=}, {len(v)=}")  # and see what v is like now...
+```
+
+    type(v)=<class 'str'>, len(v)=9470
+
+
+
+```python
+print(v[:300])
+```
+
+    import os
+    from os import stat as os_stat
+    from functools import wraps
+    
+    from py2store.base import Collection, KvReader, KvPersister
+    from py2store.key_mappers.naming import (
+        mk_pattern_from_template_and_format_dict,
+    )
+    from py2store.key_mappers.paths import mk_relative_path_store
+    
+    file_sep = os.pat
+
+
+### key transformation
+
+That was "value transformation" (in many some cases, known as "(de)serialization"). 
+
+And yes, if you were interested in transforming data on writes (a.k.a. serialization), you can specify that too.
+
+Often it's useful to transform keys too. Our current keys betray that a file system is under the hood; We have extensions (`.py`) and file separators. 
+That's not pure `SOC`. 
+
+No problem, let's transform keys too, using tuples instead...
+
+
+```python
+s = wrap_kvs(s, 
+             key_of_id=lambda _id: tuple(_id[:-len('.py')].split(os.path.sep)),
+             id_of_key=lambda k: k + '.py' if isinstance(k, str) else os.path.sep.join(k) + '.py'
+            )
+list(s)[:10]
+```
+
+
+
+
+    [('filesys',),
+     ('misc',),
+     ('mixins',),
+     ('test', 'trans_test'),
+     ('test', 'quick_test'),
+     ('test', 'util'),
+     ('test', '__init__'),
+     ('test', 'local_files_test'),
+     ('test', 'simple_test'),
+     ('test', 'scrap')]
+
+
+
+Note that we made it so that when there's only one element, you can specify as string itself: both `s['filesys']` or `s[('filesys',)]` are valid
+
+
+```python
+print(s['filesys'][:300])
+```
+
+    import os
+    from os import stat as os_stat
+    from functools import wraps
+    
+    from py2store.base import Collection, KvReader, KvPersister
+    from py2store.key_mappers.naming import (
+        mk_pattern_from_template_and_format_dict,
+    )
+    from py2store.key_mappers.paths import mk_relative_path_store
+    
+    file_sep = os.pat
+
+
+### caching
+
+As of now, every time you iterate over keys, you ask the file system to list files, then filter them (to get only `.py` files). 
+
+That's not a big deal for a few hundred files, but if you're dealing with lots of files you'll feel the slow-down (and your file system will feel it too). 
+
+If you're not deleting or creating files in the root folder often (or don't care about freshness), your simplest solution is to cache the keys.
+
+The simplest would be to do this:
+    
+```python
+from py2store import cached_keys
+s = cached_keys(s)
+```
+
+Only, you won't really see the difference if we just do that (unless your rootdir has many many files). 
+
+But `cached_keys` (as the other functions we've introduced above) has more too it, and we'll demo that here so you can actually observe a difference. 
+
+`cached_keys` has a (keyword-only) argument called `keys_cache` that specifies what to cache the keys into (more specifically, what function to call on the first key iteration (when and if it happens)). The default is `keys_cache`. But say we wanted to always get our keys in sorted order. 
+
+Well then...
+
+
+```python
+from py2store import cached_keys
+
+s = cached_keys(s, keys_cache=sorted)
+list(s)[:10]
+```
+
+
+
+
+    [('__init__',),
+     ('access',),
+     ('appendable',),
+     ('base',),
+     ('caching',),
+     ('core',),
+     ('dig',),
+     ('errors',),
+     ('examples', '__init__'),
+     ('examples', 'code_navig')]
+
+
+
+Note that there's a lot more too caching. We'll just mention two useful things to remember here:
+
+- You can use `keys_cache` to specify a "precomputed/explicit" collection of keys to use in the store. This allows you to have full flexibility on defining sub-sets of stores.
+
+- Here we talked about caching keys, but caching values is arguably more important. If it takes a long time to fetch remote data, you want to cache it locally. Further, if loading data from local storage to RAM is creating lag, you can cache in RAM. And you can do all this easily (and separate from the concern of both source and cache stores) using tools you an find in `py2store.caching`. 
+
+### Aggregating these transformations to be able to apply them to other situations (DRY!)
+
+
+```python
+from lined import Line  # Line just makes a function by composing/chaining several functions
+from py2store import LocalBinaryStore, filt_iter, wrap_kvs, cached_keys
+
+key_filter_wrapper = filt_iter(filt=lambda k: k.endswith('.py'))
+
+key_and_value_wrapper = wrap_kvs(
+    obj_of_data=lambda v: v.decode(),
+    key_of_id=lambda _id: tuple(_id[:-len('.py')].split(os.path.sep)),
+    id_of_key=lambda k: k + '.py' if isinstance(k, str) else os.path.sep.join(k) + '.py'
+)
+
+caching_wrapper = cached_keys(keys_cache=sorted)
+
+# my_cls_wrapper is basically the pipeline: input -> key_filter_wrapper -> key_and_value_wrapper -> caching_wrapper
+my_cls_wrapper = Line(key_filter_wrapper, key_and_value_wrapper, caching_wrapper)  
+
+@my_cls_wrapper
+class PyFilesReader(LocalBinaryStore):
+    """Access to local .py files"""
+
+    
+s = PyFilesReader(rootdir)
+len(s)
+```
+
+
+
+
+    102
+
+
+
+
+```python
+list(s)[:10]
+```
+
+
+
+
+    [('__init__',),
+     ('access',),
+     ('appendable',),
+     ('base',),
+     ('caching',),
+     ('core',),
+     ('dig',),
+     ('errors',),
+     ('examples', '__init__'),
+     ('examples', 'code_navig')]
+
+
+
+
+```python
+print(s['caching'][:300])
+```
+
+    """Tools to add caching layers to stores."""
+    
+    from functools import wraps, partial
+    from typing import Iterable, Union, Callable, Hashable, Any
+    
+    from py2store.trans import store_decorator
+    
+    
+    ###############################################################################################################
+
+
+## Other key-value views and tools
+
+Now that you've seen a few tools (key/value transformation, filtering and caching) you can use to change one mapping to another, what about getting a mapping (i.e. "`dict`-like") view of a data source in the first place? 
+
+If you're advanced, you can just make your own by sub-classing `KvReader` or `KvPersister`, and adding the required `__iter__` and `__getitem__` methods (as well as `__setitem__` and `__delitem__` for `KvPersister`, if you want to be able to write/delete data too). 
+
+But we (and others) are offer an ever growing slew of mapping views of all kinds of data sources. 
+
+Here are a few you can check out:
+
+The classics (data bases and storage systems):
+
+```python
+from py2store import (
+    S3BinaryStore,  # to talk to AWS S3  (uses boto)
+    MongoStore,  # to talk to mongoDB (uses pymongo)
+    SQLAlchemyStore,  # to talk to sql (uses alchemy)
+```
+
+To access configs and customized store specifications:
+
+```python
+from py2store import (
+    myconfigs,
+    mystores
+)
+```
+
+To access contents of zip files:    
+    
+```python
+from py2store import (
+    FilesOfZip, 
+    FlatZipFilesReader,   
+)
+```
+
+To customize the format you want your data in (depending on the context... like a file extension):
+
+```python
+from py2store.misc import (
+    get_obj,
+    MiscReaderMixin,
+    MiscStoreMixin,
+    MiscGetterAndSetter,
+    
+)
+```
+
+To define string, tuple, or dict formats for keys, and move between them:
+
+```python
+from py2store.key_mappers.naming import StrTupleDict
+```
+
+But probably the best way to learn the way of `py2store` is to see how easily powerful functionalities can be made with it.
+
+We'll demo a few of these now.
+
+## Graze
+
+[graze](https://github.com/thorwhalen/graze)'s jingle is _"Cache the internet"_. 
+
+That's (sort of) what it does. 
+
+Graze is a mapping that uses urls as keys, pulling content from the internet and caching to local files. 
+
+Quite simply:
+
+```python
+from graze import Graze
+g = Graze()
+list(g)  # lists the urls you already have locally
+del g[url]  # deletes that local file you have cached
+b = g[url]  # gets the contents of the url (taken locally if there, or downloading from the internet (and caching locally) if not. 
+```
+
+Main use case: Include the data acquisition code in your usage code. 
+
+Suppose you want to write some code that uses some data. You need that data to run the analyses. What do you do? 
+- write some instructions on where and how to get the data, where to put it in the file system, and/or what config file or environment variable to tinker with to tell it where that data is, or...
+- use graze
+
+Since it's implemented as a mapping, you can easily transform it to do all kinds of things (namely, using [py2store tools](https://github.com/i2mint/py2store)). Things like
+- getting your content in a more ready-to-use object than bytes, or
+- putting an expiry date on some cached items, so that it will automatically re-fresh the data
+
+The [original code](https://github.com/thorwhalen/graze/blob/ed8b6d4b5334996f91c508dfe6049d2243fa6740/graze/__init__.py) 
+of Graze was effectively 57 lines (47 without imports). [Check it out](https://github.com/thorwhalen/graze/blob/ed8b6d4b5334996f91c508dfe6049d2243fa6740/graze/__init__.py). That's because it it had to do is:
+- define url data fetching as `internet[url]`
+- define a local files (py2)store
+- connect both through caching logic
+- do some key mapping to get from url to local path and visa-versa
+
+And all those things are made easy with [py2store](https://github.com/i2mint/py2store).
+
+
+```python
+from graze import Graze
+
+g = Graze()  # uses a default directory to store stuff, but is customizable
+len(g)  # how many grazed files do we have?
+```
+
+
+
+
+    52
+
+
+
+
+```python
+sorted(g)[:3]  # first (in sorted order) 3 keys
+```
+
+
+
+
+    ['http://www.ssa.gov/oact/babynames/state/namesbystate.zip',
+     'https://api.nasdaq.com/api/ipo/calendar?date=2020-12',
+     'https://en.wikipedia.org/wiki/List_of_chemical_elements']
+
+
+
+### Example using baby names data
+
+
+```python
+from io import BytesIO
+import pandas as pd
+from py2store import FilesOfZip
+
+# getting the raw data
+url = 'http://www.ssa.gov/oact/babynames/state/namesbystate.zip'  # this specifies both where to get the data from, and where to put it locally!
+b = g[url]
+print(f"b is an array of {len(b)} {type(b)} of a zip. We'll give these to FilesOfZip to be able to read them")
+
+# formatting it to be useful
+z = FilesOfZip(b)
+print(f"First 4 file names in the zip: {list(z)[:4]}")
+v = z['AK.TXT']  # bytes of that (zipped) file
+df = pd.read_csv(BytesIO(v), header=None)
+df.columns = ['state', 'gender', 'year', 'name', 'number']
+df
+```
+
+    b is an array of 22148032 <class 'bytes'> of a zip. We'll give these to FilesOfZip to be able to read them
+    First 4 file names in the zip: ['AK.TXT', 'AL.TXT', 'AR.TXT', 'AZ.TXT']
+
+
+
+
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>state</th>
+      <th>gender</th>
+      <th>year</th>
+      <th>name</th>
+      <th>number</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>AK</td>
+      <td>F</td>
+      <td>1910</td>
+      <td>Mary</td>
+      <td>14</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>AK</td>
+      <td>F</td>
+      <td>1910</td>
+      <td>Annie</td>
+      <td>12</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>AK</td>
+      <td>F</td>
+      <td>1910</td>
+      <td>Anna</td>
+      <td>10</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>AK</td>
+      <td>F</td>
+      <td>1910</td>
+      <td>Margaret</td>
+      <td>8</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>AK</td>
+      <td>F</td>
+      <td>1910</td>
+      <td>Helen</td>
+      <td>7</td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <th>28957</th>
+      <td>AK</td>
+      <td>M</td>
+      <td>2019</td>
+      <td>Patrick</td>
+      <td>5</td>
+    </tr>
+    <tr>
+      <th>28958</th>
+      <td>AK</td>
+      <td>M</td>
+      <td>2019</td>
+      <td>Ronin</td>
+      <td>5</td>
+    </tr>
+    <tr>
+      <th>28959</th>
+      <td>AK</td>
+      <td>M</td>
+      <td>2019</td>
+      <td>Sterling</td>
+      <td>5</td>
+    </tr>
+    <tr>
+      <th>28960</th>
+      <td>AK</td>
+      <td>M</td>
+      <td>2019</td>
+      <td>Titus</td>
+      <td>5</td>
+    </tr>
+    <tr>
+      <th>28961</th>
+      <td>AK</td>
+      <td>M</td>
+      <td>2019</td>
+      <td>Tucker</td>
+      <td>5</td>
+    </tr>
+  </tbody>
+</table>
+<p>28962 rows × 5 columns</p>
+</div>
+
+
+
+### Example using emoji image urls data
+
+
+```python
+url = 'https://raw.githubusercontent.com/thorwhalen/my_sources/master/github_emojis.json'
+if url in g:  # if we've cached this already
+    del g[url]  # remove it from cache
+assert url not in g
+```
+
+
+```python
+import json
+d = json.loads(g[url].decode())
+len(d)
+```
+
+
+
+
+    1510
+
+
+
+
+```python
+list(d)[330:340]
+```
+
+
+
+
+    ['couple_with_heart_woman_man',
+     'couple_with_heart_woman_woman',
+     'couplekiss_man_man',
+     'couplekiss_man_woman',
+     'couplekiss_woman_woman',
+     'cow',
+     'cow2',
+     'cowboy_hat_face',
+     'crab',
+     'crayon']
+
+
+
+
+```python
+d['cow']
+```
+
+
+
+
+    'https://github.githubassets.com/images/icons/emoji/unicode/1f42e.png?v8'
+
+
+
+### A little py2store exercise: A store to get image objects of emojis
+
+As a demo of py2store, let's make a store that allows you to get (displayable) image objects of emojis, taking care of downloading and caching 
+the name:url information for you.
+
+
+```python
+from functools import cached_property
+import json
+
+from py2store import KvReader
+from graze import graze
+
+class EmojiUrls(KvReader):
+    """A store of emoji urls. Will automatically download and cache emoji (name, url) map to a local file when first used."""
+    data_source_url = 'https://raw.githubusercontent.com/thorwhalen/my_sources/master/github_emojis.json'
+    
+    @cached_property
+    def data(self):
+        b = graze(self.data_source_url)  # does the same thing as Graze()[url]
+        return json.loads(b.decode())
+        
+    def __iter__(self):
+        yield from self.data
+        
+    def __getitem__(self, k):
+        return self.data[k]
+        
+    # note, normally you would define an explicit __len__ and __contains__ to make these more efficient
+
+emojis = EmojiUrls()
+len(emojis), emojis['cow']
+```
+
+
+
+
+    (1510,
+     'https://github.githubassets.com/images/icons/emoji/unicode/1f42e.png?v8')
+
+
+
+
+```python
+from IPython.display import Image
+import requests
+from py2store import wrap_kvs, add_ipython_key_completions
+
+@add_ipython_key_completions  # this enables tab-completion of keys in jupyter notebooks
+@wrap_kvs(obj_of_data=lambda url: Image(requests.get(url).content))
+class EmojiImages(EmojiUrls):
+    """An emoji reader returning Image objects (displayable in jupyter notebooks)"""
+    
+    
+emojis = EmojiImages()
+len(emojis)
+```
+
+
+
+
+    1510
+
+
+
+
+```python
+emojis['cow']
+```
+
+    
+![png](https://github.githubassets.com/images/icons/emoji/unicode/1f42e.png?v8)
+    
+
+## Grub
+
+Quick and easy search engine of anything (that can be expressed as a key-value store of text).
+
+### search your code
+
+```python
+# Make a store to search in (only requirements is that it provide text values)
+import os
+import py2store
+rootdir = os.path.dirname(py2store.__file__)
+store_to_search = LocalBinaryStore(os.path.join(rootdir) + '{}.py')  # The '{}.py' is a short-hand of LocalBinaryStore to filter for .py files only
+
+# make a search object for that store
+from grub import SearchStore
+search = SearchStore(store_to_search)
+```
+
+
+```python
+search('cache key-value pairs')
+```
+
+    array(['py2store/caching.py', 'py2store/utils/cumul_aggreg_write.py',
+           'py2store/trans.py', 'py2store/examples/write_caches.py',
+           'py2store/utils/cache_descriptors.py',
+           'py2store/utils/explicit.py',
+           'py2store/persisters/arangodb_w_pyarango.py',
+           'py2store/persisters/dynamodb_w_boto3.py',
+           'py2store/stores/delegation_stores.py', 'py2store/util.py'],
+          dtype=object)
+### search jokes (and download them automatically
+
+Some code that acquires and locally caches a joke data, makes a mapping view of it (here just a `dict` in memory), and builds a search engine to find jokes. All that, in a few lines.
+
+
+```python
+import json
+from graze import graze
+from grub import SearchStore
+
+# reddit jokes (194553 at the time of writing this)
+jokes_url = 'https://raw.githubusercontent.com/taivop/joke-dataset/master/reddit_jokes.json'
+raw_data = json.loads(graze(jokes_url).decode())
+joke_store = {x['id']: f"{x['title']}\n--> {x['body']}\n(score: {x['score']})" for x in raw_data}
+search_joke = SearchStore(joke_store)
+```
+
+
+```python
+results_idx = search_joke('searching for something funny')
+print(joke_store[results_idx[0]])  # top joke (not by score, but by relevance to search terms)
+```
+
+    want to hear me say something funny?
+    --> well alright then...."something funny" there
+    (score: 0)
+
+
 
 # More examples
 

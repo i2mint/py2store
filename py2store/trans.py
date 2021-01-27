@@ -6,7 +6,7 @@ from py2store.base import Store, KvReader, AttrNames
 from py2store.util import lazyprop, num_of_args, attrs_of, wraps
 from py2store.utils.signatures import Sig, KO
 from warnings import warn
-from collections.abc import Iterable
+from collections.abc import Iterable, KeysView, ValuesView, ItemsView
 
 
 ########################################################################################################################
@@ -284,6 +284,7 @@ def get_class_name(cls, dflt_name=None):
 
 def store_wrap(obj):
     if isinstance(obj, type):
+        @wraps(type(obj), updated=())  # added this: test
         class StoreWrap(Store):
             @wraps(obj.__init__)
             def __init__(self, *args, **kwargs):
@@ -1250,19 +1251,22 @@ self_names = frozenset(["self"])
 def _define_keys_values_and_items_according_to_iter(cls):
     if hasattr(cls, "keys"):
         def keys(self):
-            yield from self.__iter__()  # TODO: Should it be iter(self)?
+            # yield from self.__iter__()  # TODO: Should it be iter(self)?
+            return KeysView(self)
 
         cls.keys = keys
 
     if hasattr(cls, "values"):
         def values(self):
-            yield from (self[k] for k in self)
+            # yield from (self[k] for k in self)
+            return ValuesView(self)
 
         cls.values = values
 
     if hasattr(cls, "items"):
         def items(self):
-            yield from ((k, self[k]) for k in self)
+            # yield from ((k, self[k]) for k in self)
+            return ItemsView(self)
 
         cls.items = items
 

@@ -1,4 +1,4 @@
-from tests.base_test import (
+from .base_test import (
     BaseStoreTest,
     BasePersisterTest,
     BaseKeyTupleStoreTest,
