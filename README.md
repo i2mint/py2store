@@ -5,7 +5,7 @@
   * [Changing where and how things are stored](#changing-where-and-how-things-are-stored)
   * [Adapters: When the learning curve is in the way of learning](#adapters--when-the-learning-curve-is-in-the-way-of-learning)
   * [Thinking about storage later, if ever](#thinking-about-storage-later--if-ever)
-- [py2store: remove (much of the) data access entropy](#py2store--remove--much-of-the--data-access-entropy)
+- [remove (much of the) data access entropy](#remove--much-of-the--data-access-entropy)
   * [Get a key-value view of files](#get-a-key-value-view-of-files)
     + [LocalBinaryStore: A base store for local files](#localbinarystore--a-base-store-for-local-files)
     + [key filtering](#key-filtering)
@@ -54,7 +54,7 @@ If you're not a "read from top to bottom" kinda person, here are some tips:
 [Use cases](#use-cases) will give you an idea of how py2store can be useful to you, if at all. 
 
 The section with the best bang for the buck is probably 
-[py2store: remove (much of the) data access entropy](#py2store--remove--much-of-the--data-access-entropy). 
+[remove (much of the) data access entropy](#remove--much-of-the--data-access-entropy). 
 It will give you simple (but real) examples of how to use `py2store` tooling 
 to bend your interface with data to your will. 
 
