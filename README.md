@@ -69,7 +69,7 @@ Install it (e.g. `pip install py2store`).
 Think of type of storage you want to use and just go ahead, like you're using a dict.
 Here's an example for local storage (you must you string keys only here).
 
-```
+```pydocstring
 >>> from py2store import QuickStore
 >>>
 >>> store = QuickStore()  # will print what (tmp) rootdir it is choosing
