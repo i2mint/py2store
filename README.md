@@ -152,7 +152,7 @@ But when the time comes to optimize, I shouldn't have to change my code, but ins
 DAO does things. What I need is py2store.
 
 
-# py2store: remove (much of the) data access entropy
+# remove (much of the) data access entropy
 
 Data comes from many different sources, organization, and formats. 
 
