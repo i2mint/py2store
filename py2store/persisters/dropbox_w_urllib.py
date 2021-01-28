@@ -1,3 +1,4 @@
+"""Dropbox read access with mapping interface -- using only builtins"""
 import os
 import zipfile
 import tempfile
