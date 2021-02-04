@@ -5,7 +5,7 @@ import csv
 import gzip
 from io import StringIO, BytesIO
 
-from py2store import LocalBinaryStore
+from py2store.stores.local_store import LocalBinaryStore
 from py2store.slib.s_zipfile import FilesOfZip
 from py2store.slib.s_configparser import ConfigReader, ConfigStore
 from py2store.util import imdict

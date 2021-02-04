@@ -104,6 +104,25 @@ def _path_to_module_str(path, root_path):
     return ".".join(path_parts)
 
 
+def get_objs(root, k):
+    name = _path_to_module_str(k, root)
+    module_store = Attrs.module_from_path(
+        k, key_filt=lambda x: not x.startswith("__"), name=name
+    )
+
+    def obj_filt(
+            obj,
+    ):  # to make sure we only analyze objects defined in module itself, not imported
+        obj_module = getattr(obj, "__module__", None)
+        if obj_module:
+            return obj_module == name
+
+    objs = list(
+        filter(obj_filt, (vv._source for vv in module_store.values()))
+    )
+    return objs
+
+
 def modules_info_gen(root, filepath_filt=only_py_ext, on_error=DFLT_ON_ERROR):
     """
     Yields statistics (as dicts) of modules under the root module or directory of a python package.
@@ -128,11 +147,11 @@ def modules_info_gen(root, filepath_filt=only_py_ext, on_error=DFLT_ON_ERROR):
 
     pycode = PyCodeReader(root)
 
-    for k, code_str in pycode.items():
+    for filepath, code_str in pycode.items():
         try:
-            name = _path_to_module_str(k, root)
+            name = _path_to_module_str(filepath, root)
             module_store = Attrs.module_from_path(
-                k, key_filt=lambda x: not x.startswith("__"), name=name
+                filepath, key_filt=lambda x: not x.startswith("__"), name=name
             )
 
             def obj_filt(
@@ -145,38 +164,42 @@ def modules_info_gen(root, filepath_filt=only_py_ext, on_error=DFLT_ON_ERROR):
             objs = list(
                 filter(obj_filt, (vv._source for vv in module_store.values()))
             )
-            yield {
-                "filepath": k,
-                "lines": len(lines(code_str)),
-                "empty_lines": sum(
-                    bool(empty_line.match(line)) for line in lines(code_str)
-                ),
-                "comment_lines": sum(
-                    bool(comment_line_p.match(line))
-                    for line in lines(code_str)
-                ),
-                "docs_lines": sum(
-                    len(lines(obj.__doc__ or "")) for obj in objs
-                ),
-                "function_lines": sum(
-                    _num_lines_of_function_code(obj)
-                    for obj in objs
-                    if isinstance(obj, FunctionType)
-                ),
-                "num_of_functions": sum(
-                    isinstance(obj, FunctionType) for obj in objs
-                ),
-                "num_of_classes": sum(isinstance(obj, type) for obj in objs),
-            }
+            yield method_name(code_str, filepath, objs)
         except Exception as e:
             if on_error == "print":
-                print(f"Problem with {k}: {str(e)[:50]}\n")
+                print(f"Problem with {filepath}: {str(e)[:50]}\n")
             elif on_error == "ignore":
                 pass
             elif on_error == "yield":
-                yield {"filepath": k, "error": e}
+                yield {"filepath": filepath, "error": e}
             else:
                 raise
+
+
+def method_name(code_str, filepath, objs):
+    return {
+        "filepath": filepath,
+        "lines": len(lines(code_str)),
+        "empty_lines": sum(
+            bool(empty_line.match(line)) for line in lines(code_str)
+        ),
+        "comment_lines": sum(
+            bool(comment_line_p.match(line))
+            for line in lines(code_str)
+        ),
+        "docs_lines": sum(
+            len(lines(obj.__doc__ or "")) for obj in objs
+        ),
+        "function_lines": sum(
+            _num_lines_of_function_code(obj)
+            for obj in objs
+            if isinstance(obj, FunctionType)
+        ),
+        "num_of_functions": sum(
+            isinstance(obj, FunctionType) for obj in objs
+        ),
+        "num_of_classes": sum(isinstance(obj, type) for obj in objs),
+    }
 
 
 def modules_info_df(

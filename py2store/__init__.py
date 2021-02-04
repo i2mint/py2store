@@ -41,6 +41,7 @@ from py2store.base import (
 )
 
 from py2store.persisters.local_files import FileReader
+from py2store.my.grabbers import ipython_display_val_trans
 
 from py2store.stores.local_store import (
     LocalStore,
