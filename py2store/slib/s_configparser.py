@@ -1,4 +1,4 @@
-from configparser import ConfigParser
+from configparser import ConfigParser, NoSectionError
 from configparser import BasicInterpolation, ExtendedInterpolation
 from functools import wraps
 from io import BytesIO, StringIO
@@ -242,6 +242,13 @@ class ConfigStore(ConfigParserStore):
             section: dict(section_contents)
             for section, section_contents in self.items()
         }
+
+    def get(self, k, default=None):
+        """Needed because the Store.get didn't catch the NoSectionError"""
+        try:
+            return self[k]
+        except KeyError:
+            return default
 
     def persist(self):
         """Persists the data (if not in a context manager).

@@ -237,16 +237,6 @@ try:
                         return self[k]
                     except KeyError:
                         return default
-                    # v = super().get(k, None)
-                    # if v is None:
-                    #     from warnings import warn
-                    #
-                    #     warn(
-                    #         f"""You don't have the config file I'm expecting, so you'll have to enter it manually.
-                    #     I'm expecting this filepath:\n\t {os.path.join(self.dirpath, k)}
-                    #     """
-                    #     )
-                    # return v
 
                 def __getitem__(self, k):
                     try:
