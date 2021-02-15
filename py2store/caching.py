@@ -1,9 +1,23 @@
 """Tools to add caching layers to stores."""
 
+import os
 from functools import wraps, partial
 from typing import Iterable, Union, Callable, Hashable, Any
+from inspect import signature
 
 from py2store.trans import store_decorator
+
+
+def is_a_cache(obj):
+    return all(map(partial(hasattr, obj), ('__contains__', '__getitem__', '__setitem__')))
+
+
+def get_cache(cache):
+    """Convenience function to get a cache (whether it's already an instance, or needs to be validated)"""
+    if is_a_cache(cache):
+        return cache
+    elif callable(cache) and len(signature(cache).parameters) == 0:
+        return cache()  # consider it to be a cache factory, and call to make factory
 
 
 ########################################################################################################################
@@ -621,3 +635,62 @@ def mk_write_cached_store(
             return self._w_cache.clear()
 
     return WriteCachedStore
+
+
+# Experimental #########################################################################################################
+
+def _mk_cache_method_local_path_key(method, args, kwargs, ext='.p', path_sep=os.path.sep):
+    """"""
+    return (
+            method.__module__ + path_sep +
+            method.__qualname__ + path_sep +
+            (
+                    ",".join(map(str, args))
+                    + ",".join(f"{k}={v}" for k, v in kwargs.items())
+                    + ext
+            )
+    )
+
+
+class HashableMixin:
+    def __hash__(self):
+        return id(self)
+
+
+class HashableDict(HashableMixin, dict):
+    """Just a dict, but hashable"""
+
+
+# NOTE: cache uses (func, args, kwargs). Don't want to make more complex with a bind cast to (func, kwargs) only
+def cache_func_outputs(cache=HashableDict):
+    cache = get_cache(cache)
+
+    def cache_method_decorator(func):
+        @wraps(func)
+        def _func(*args, **kwargs):
+            k = (func, args, HashableDict(kwargs))
+            if k not in cache:
+                val = func(*args, **kwargs)
+                cache[k] = val  # cache it
+                return val
+            else:
+                return cache[k]
+
+        return _func
+
+    return cache_method_decorator
+
+# from py2store import StrTupleDict
+#
+# def process_fak(module, qualname, args, kwargs):
+# #     func, args, kwargs = map(fak_dict.get, ('func', 'args', 'kwargs'))
+#     return {
+#         'module': module,
+#         'qualname': qualname,
+#         'args': ",".join(map(str, args)),
+#         'kwargs': ",".join(f"{k}={v}" for k, v in kwargs.items())
+#     }
+#
+# t = StrTupleDict(os.path.join("{module}", "{qualname}", "{args},{kwargs}.p"), process_kwargs=process_fak)
+#
+# t.tuple_to_str((StrTupleDict.__module__, StrTupleDict.__qualname__, (1, 'one'), {'mode': 'lydian'}))
