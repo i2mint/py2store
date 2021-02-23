@@ -1,17 +1,20 @@
-from py2store.base import KvReader, Persister
-from py2store.util import ModuleNotFoundErrorNiceMessage
 from functools import wraps
+from typing import Callable, Mapping, Optional, Iterable
+
+from py2store.base import KvReader, KvPersister
+from py2store.util import ModuleNotFoundErrorNiceMessage
 
 with ModuleNotFoundErrorNiceMessage():
     from pymongo import MongoClient
+    from pymongo.collection import Collection
 
 
-class MongoCollectionReader(KvReader):
-    """
-
-    """
-
-    def __init__(self, mgc=None, key_fields=("_id",), data_fields=None):
+class MongoCollectionReaderBase(KvReader):
+    def __init__(self,
+                 mgc: Optional[Collection] = None,
+                 key_fields=("_id",),
+                 data_fields: Optional[Iterable] = None,
+                 filt: Optional[dict] = None):
         if mgc is None:
             mgc = _mk_dflt_mgc()
         self._mgc = mgc
@@ -34,14 +37,19 @@ class MongoCollectionReader(KvReader):
         self._data_fields = data_fields
         self._key_fields = key_fields
 
+        if filt is None:
+            filt = {}
+        self._filt = filt
+
     @classmethod
     def from_params(
             cls,
-            db_name="py2store",
-            collection_name="test",
-            key_fields=("_id",),
-            data_fields=None,
-            mongo_client=None,
+            db_name: str = "py2store",
+            collection_name: str = "test",
+            key_fields: Iterable = ("_id",),
+            data_fields: Optional[Iterable] = None,
+            filt: Optional[dict] = None,
+            mongo_client: Optional[dict] = None,
     ):
         if mongo_client is None:
             mongo_client = MongoClient()
@@ -52,35 +60,69 @@ class MongoCollectionReader(KvReader):
             mgc=mongo_client[db_name][collection_name],
             key_fields=key_fields,
             data_fields=data_fields,
+            filt=filt,
         )
 
+    def _filtered_key(self, k):
+        return dict(k, **self._filt)
+
     def __getitem__(self, k):
-        doc = self._mgc.find_one(k, projection=self._data_fields)
+        assert isinstance(k, Mapping), \
+            f"k (key) must be a mapping (typically a dictionary). Were:\n\tk={k}"
+        return self._mgc.find(filter=self._filtered_key(k), projection=self._data_fields)
+
+    def __iter__(self):
+        yield from self._mgc.find(filter=self._filt, projection=self._key_projection)
+
+    def __len__(self):
+        return self._mgc.count_documents(self._filt)
+
+    def __contains__(self, k):
+        cursor = self._mgc.find(filter=self._filtered_key(k), projection={'_id': False})
+        r = next(cursor, False)
+        if r is not False:
+            return True
+
+    def items(self):
+        for doc in self._mgc.find(filter=self._filt, projection=dict(self._key_projection, **self._data_fields)):
+            key = {k: doc.pop(k) for k in self._key_fields}
+            yield key, doc
+
+    def values(self):
+        yield from self._mgc.find(filter=self._filt, projection=self._data_fields)
+
+    def keys(self):
+        yield from self._mgc.find(filter=self._filt, projection=self._key_projection)
+
+    def __length_hint__(self):  # TODO: Proper/common/canonical use of __length_hint__?
+        """Estimates the TOTAL number of documents in the collection (NOT filtered by any filt)."""
+        return self._mgc.estimated_document_count()
+
+
+class MongoCollectionReader(MongoCollectionReaderBase):
+    """
+
+    """
+
+    def __getitem__(self, k):
+        cursor = super().__getitem__(k)
+        doc = next(cursor, None)
         if doc is not None:
             return doc
         else:
             raise KeyError(f"No document found for query: {k}")
 
-    def __iter__(self):
-        yield from self._mgc.find(projection=self._key_projection)
 
-    def __len__(self):
-        return self._mgc.count_documents({})
-
-    def __contains__(self, k):
-        cursor = self._mgc.find(k, projection={'_id': False})
-        r = next(cursor, False)
-        if r is not False:
-            return True
-
-
-    def __length_hint__(self):
-        return self._mgc.estimated_document_count()
+class GetitemAsQueryCursorMixin:
+    def __getitem__(self, k):
+        assert isinstance(k, Mapping), \
+            f"k (key) must be a mapping (typically a dictionary). Were:\n\tk={k}"
+        return self._mgc.find(filter=self._filtered_key(k), projection=self._data_fields)
 
 
 class MongoCollectionPersister(MongoCollectionReader):
     """
-    >>> s = MongoPersister()  # just use defaults
+    >>> s = MongoCollectionPersister()  # just use defaults
     >>> for _id in s:  # deleting all docs in tmp
     ...     del s[_id]
     >>> k = {'_id': 'foo'}
@@ -109,7 +151,7 @@ class MongoCollectionPersister(MongoCollectionReader):
     0
     >>>
     >>> # Making a persister whose keys are 2-dimensional and values are 3-dimensional
-    >>> s = MongoPersister(db_name='py2store', collection_name='tmp',
+    >>> s = MongoCollectionPersister.from_params(db_name='py2store', collection_name='tmp',
     ...                     key_fields=('first', 'last'), data_fields=('yob', 'proj', 'bdfl'))
     >>> for _id in s:  # deleting all docs in tmp
     ...     del s[_id]
@@ -124,11 +166,13 @@ class MongoCollectionPersister(MongoCollectionReader):
     """
 
     def __setitem__(self, k, v):
-        return self._mgc.insert_one(dict(v, **k))
+        assert isinstance(k, Mapping) and isinstance(v, Mapping), \
+            f"k (key) and v (value) must both be mappings (often dictionaries). Were:\n\tk={k}\n\tv={v}"
+        return self._mgc.insert_one(dict(v, **self._filtered_key(k)))
 
     def __delitem__(self, k):
         if len(k) > 0:
-            return self._mgc.delete_one(k)
+            return self._mgc.delete_one(self._filtered_key(k))
         else:
             raise KeyError(f"You can't removed that key: {k}")
 
@@ -159,10 +203,21 @@ class MongoDbReader(KvReader):
     def __init__(
             self,
             db_name="py2store",
-            collection_store_cls=MongoCollectionReader,
+            mk_collection_store=MongoCollectionReader,
             mongo_client=None,
             **mongo_client_kwargs,
     ):
+        """Base Mongo Db Reader. Keys are collection names and values are collection store instances.
+
+        :param db_name: Name of db
+        :param mk_collection_store: Function that is called on a key (collection name) to make the
+            collection store instance.
+            Use mk_collection_store to define what kind of collection stores you want to make.
+            Will be called with only one unnamed argument; the collection name.
+            Use custom classes here, and/or partials (curried functions) thereof, to fix any parameters you want to fix.
+        :param mongo_client: MongoClient instance, kwargs to make it (MongoClient(**kwargs)), or callable to make it
+        :param mongo_client_kwargs: **kwargs to make a MongoClient, that is used if mongo_client is callable
+        """
         if mongo_client is None:
             self._mongo_client = MongoClient(**mongo_client_kwargs)
         elif isinstance(mongo_client, dict):
@@ -171,7 +226,7 @@ class MongoDbReader(KvReader):
             self._mongo_client = mongo_client
         self._db_name = db_name
         self.db = self._mongo_client[db_name]
-        self.collection_store_cls = collection_store_cls
+        self.collection_store_cls = mk_collection_store
 
     def __iter__(self):
         yield from self.db.list_collection_names()
@@ -184,7 +239,7 @@ def _mk_dflt_mgc():
     return MongoClient()["py2store"]["test"]
 
 
-class OldMongoPersister(Persister):
+class OldMongoPersister(KvPersister):
     """
     A basic mongo persister.
     Note that the mongo persister is designed not to overwrite the value of a key if the key already exists.

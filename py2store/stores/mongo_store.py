@@ -1,6 +1,6 @@
 from functools import wraps
 
-from py2store.persisters.mongo_w_pymongo import OldMongoPersister
+from py2store.persisters.mongo_w_pymongo import OldMongoPersister, MongoCollectionPersister
 
 from py2store.base import Store
 from py2store.util import lazyprop
@@ -13,16 +13,26 @@ class MongoStore(Store):
         super().__init__(persister)
 
 
+# class MongoStore(Store):
+#     @wraps(MongoCollectionPersister.__init__)
+#     def __init__(self, *args, **kwargs):
+#         persister = MongoCollectionPersister(*args, **kwargs)
+#         super().__init__(persister)
+#
+#     from_params = MongoCollectionPersister.from_params
+
+
 class MongoTupleKeyStore(MongoStore):
     """
     MongoStore using tuple keys.
 
     >>> s = MongoTupleKeyStore(db_name='py2store_tests', collection_name='tmp', key_fields=('_id', 'user'))
-    >>> for k in s: del s[k]
+    >>> _ = s._mgc.remove({})
     >>> k = (1234, 'user')
     >>> v = {'name': 'bob', 'age': 42}
     >>> if k in s:  # deleting all docs in tmp
-    ...     del s[k]
+    ...     if k in s:
+    ...         del s[k]
     >>> assert (k in s) == False  # see that key is not in store (and testing __contains__)
     >>> orig_length = len(s)
     >>> s[k] = v
