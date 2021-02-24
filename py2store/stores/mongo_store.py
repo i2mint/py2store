@@ -1,3 +1,7 @@
+from warnings import warn
+
+warn("Mongo persisters and stores have been moved to the mongodol project.")
+
 from functools import wraps
 
 from py2store.persisters.mongo_w_pymongo import OldMongoPersister, MongoCollectionPersister

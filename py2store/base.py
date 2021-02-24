@@ -626,10 +626,6 @@ class KeyValidationABC(metaclass=ABCMeta):
 
 ########################################################################################################################
 # Streams
-from io import IOBase
-
-
-#
 
 class stream_util:
     def always_true(*args, **kwargs):

@@ -356,7 +356,11 @@ def _has_unbound_self(func):
     0
     >>>
     """
-    params = signature(func).parameters
+    try:
+        params = signature(func).parameters
+    except ValueError:
+        # If there was a problem getting the signature, assume it's a signature-less builtin (so not a bound method)
+        return False
     if len(params) == 0:
         # no argument, so we can't be wrapping anything!!!
         raise ValueError(
@@ -366,6 +370,7 @@ def _has_unbound_self(func):
         return True
     else:
         return False
+
 
 
 def transparent_key_method(self, k):

@@ -1,3 +1,7 @@
+from warnings import warn
+
+warn("Mongo persisters and stores have been moved to the mongodol project.")
+
 from functools import wraps
 from typing import Callable, Mapping, Optional, Iterable
 
@@ -17,6 +21,9 @@ class MongoCollectionReaderBase(KvReader):
                  filt: Optional[dict] = None):
         if mgc is None:
             mgc = _mk_dflt_mgc()
+        elif hasattr(mgc, '_mgc') and isinstance(mgc._mgc, Collection):
+            mgc = mgc._mgc
+
         self._mgc = mgc
         if isinstance(key_fields, str):
             key_fields = (key_fields,)
@@ -68,7 +75,7 @@ class MongoCollectionReaderBase(KvReader):
 
     def __getitem__(self, k):
         assert isinstance(k, Mapping), \
-            f"k (key) must be a mapping (typically a dictionary). Were:\n\tk={k}"
+            f"k (key) must be a mapping (typically a dictionary). Was:\n\tk={k}"
         return self._mgc.find(filter=self._filtered_key(k), projection=self._data_fields)
 
     def __iter__(self):
@@ -101,7 +108,7 @@ class MongoCollectionReaderBase(KvReader):
 
 class MongoCollectionReader(MongoCollectionReaderBase):
     """
-
+    A mongo collection (kv-)reader where s[key] is the first key-matching value found.
     """
 
     def __getitem__(self, k):
@@ -111,13 +118,6 @@ class MongoCollectionReader(MongoCollectionReaderBase):
             return doc
         else:
             raise KeyError(f"No document found for query: {k}")
-
-
-class GetitemAsQueryCursorMixin:
-    def __getitem__(self, k):
-        assert isinstance(k, Mapping), \
-            f"k (key) must be a mapping (typically a dictionary). Were:\n\tk={k}"
-        return self._mgc.find(filter=self._filtered_key(k), projection=self._data_fields)
 
 
 class MongoCollectionPersister(MongoCollectionReader):
@@ -176,13 +176,22 @@ class MongoCollectionPersister(MongoCollectionReader):
         else:
             raise KeyError(f"You can't removed that key: {k}")
 
-
-class MongoAppendablePersister(MongoCollectionPersister):
     def append(self, v):
         return self._mgc.insert_one(v)
 
     def extend(self, items):
         return self._mgc.insert_many(items)
+
+
+# class MongoAppendablePersister(MongoCollectionPersister):
+#     """MongoCollectionPersister endowed with an append and an extend that will write any dict (doc) to the collection
+#     (as is, with no key-value validation)"""
+#
+#     def append(self, v):
+#         return self._mgc.insert_one(v)
+#
+#     def extend(self, items):
+#         return self._mgc.insert_many(items)
 
 
 class MongoClientReader(KvReader):
@@ -203,7 +212,7 @@ class MongoDbReader(KvReader):
     def __init__(
             self,
             db_name="py2store",
-            mk_collection_store=MongoCollectionReader,
+            mk_collection_store=MongoCollectionReaderBase,
             mongo_client=None,
             **mongo_client_kwargs,
     ):
