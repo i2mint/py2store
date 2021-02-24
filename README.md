@@ -551,8 +551,9 @@ The classics (data bases and storage systems):
 ```python
 from py2store import (
     S3BinaryStore,  # to talk to AWS S3  (uses boto)
-    MongoStore,  # to talk to mongoDB (uses pymongo)
     SQLAlchemyStore,  # to talk to sql (uses alchemy)
+)
+# from py2store.stores.mongo_store import MongoStore  # moved to mongodol
 ```
 
 To access configs and customized store specifications:
@@ -1433,8 +1434,11 @@ specify what fields should be considered as keys, and what fields should be cons
 By default, the `_id` field (the only field ensured by default to contain unique values) is the single key field, and 
 all other fields are considered to be data fields.
 
+Note: py2store mongo tools have now been moved to the mongodol project. Import from there.
+Requires `pymongo`.
+
 ```python
-from py2store.stores.mongo_store import MongoStore
+from mongodol.stores import MongoStore  # Note: project moved to mongodol now
 # The following makes a default MongoStore, the default pymongo.MongoClient settings, 
 # and db_name='py2store', collection_name='test', key_fields=('_id',)
 store = MongoStore()
@@ -1446,7 +1450,7 @@ The key schema is fixed, so you should be able to just specify the tuple of valu
 And you can, with MongoTupleKeyStore
 
 ```python
-from py2store.stores.mongo_store import MongoTupleKeyStore
+from mongodol.stores import MongoTupleKeyStore  # Note: project moved to mongodol now
 store = MongoTupleKeyStore(key_fields=('_id', 'name'))
 basic_test(store, k=(1234, 'bob'), v={'age': 42, 'gender': 'unspecified'})
 ```
