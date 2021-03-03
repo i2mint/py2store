@@ -1250,7 +1250,7 @@ def filt_iter(
 ########################################################################################################################
 # Wrapping keys and values
 
-self_names = frozenset(["self"])
+self_names = frozenset(["self", "store"])
 
 
 def _define_keys_values_and_items_according_to_iter(cls):
