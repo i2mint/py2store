@@ -383,18 +383,24 @@ class Store(KvPersister):
         raise KeyError(k)
 
     def get(self, k: Key, default=None) -> Val:
-        if hasattr(self.store, "get"):  # if store has a get method, use it
-            _id = self._id_of_key(k)
-            data = self.store.get(_id, no_such_item)
-            if data is not no_such_item:
-                return self._obj_of_data(data)
-            else:
-                return default
-        else:  # if not, do the get function otherwise
-            if k in self:
-                return self._obj_of_data(self[k])
-            else:
-                return default
+        try:
+            return self[k]
+        except KeyError:
+            return default
+
+    # def get(self, k: Key, default=None) -> Val:
+    #     if hasattr(self.store, "get"):  # if store has a get method, use it
+    #         _id = self._id_of_key(k)
+    #         data = self.store.get(_id, no_such_item)
+    #         if data is not no_such_item:
+    #             return self._obj_of_data(data)
+    #         else:
+    #             return default
+    #     else:  # if not, do the get function otherwise
+    #         if k in self:
+    #             return self._obj_of_data(self[k])
+    #         else:
+    #             return default
 
     # def update(self, other=(), /, **kwds):
     #     """

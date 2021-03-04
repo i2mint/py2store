@@ -372,7 +372,6 @@ def _has_unbound_self(func):
         return False
 
 
-
 def transparent_key_method(self, k):
     return k
 

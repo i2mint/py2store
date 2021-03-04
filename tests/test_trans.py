@@ -1,3 +1,4 @@
+import pytest
 from py2store.trans import wrap_kvs
 
 
@@ -216,3 +217,19 @@ def test_wrap_kvs():
 
     d["foo.pkl"] = obj  # 'save' obj as pickle
     assert d["foo.pkl"] == obj
+
+
+def test_postget_with_get():
+    from py2store import wrap_kvs
+
+    @wrap_kvs(postget=lambda k, v: k + v)
+    class D(dict):
+        pass
+
+    d = D({1: 2, 3: 4})
+    assert d[1] == 3
+    assert d[3] == 7
+
+    assert d.get(1) == d[1]
+    assert d.get(3) == d[3]
+    assert d.get(2, "not there") == "not there"
