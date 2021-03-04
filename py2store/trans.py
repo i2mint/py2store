@@ -238,7 +238,7 @@ def store_decorator(func):
 
         return r
 
-    _func_wrapping_store_in_cls_if_not_type.func = func
+    _func_wrapping_store_in_cls_if_not_type.func = func  # TODO: look for usages, and if not, use __wrapped__
 
     # @wraps(func)
     wrapper_sig = Sig(func).merge_with_sig(
