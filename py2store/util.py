@@ -3,7 +3,7 @@ import shutil
 import re
 from collections import namedtuple, defaultdict
 from warnings import warn
-from typing import Any, Hashable, Callable, Iterable, Optional
+from typing import Any, Hashable, Callable, Iterable, Optional, Union
 from functools import update_wrapper as _update_wrapper
 from functools import wraps as _wraps
 from functools import partialmethod, partial, WRAPPER_ASSIGNMENTS
@@ -390,16 +390,22 @@ def regroupby(items, *key_funcs, **named_key_funcs):
         }
 
 
+Groups = dict
+GroupKey = Hashable
 GroupItems = Iterable[Item]
+GroupReleaseCond = Union[
+    Callable[[GroupKey, GroupItems], bool],
+    Callable[[Groups, GroupKey, GroupItems], bool]
+]
 from inspect import signature
 
 
 def igroupby(
         items: Iterable[Item],
-        key: Callable[[Item], Hashable],
+        key: Callable[[Item], GroupKey],
         val: Optional[Callable[[Item], Any]] = None,
         group_factory: Callable[[], GroupItems] = list,
-        group_release_cond: Callable[[Any, Any], bool] = lambda k, v: False,
+        group_release_cond: GroupReleaseCond = lambda k, v: False,
         release_remainding=True,
         append_to_group_items: Callable[[GroupItems, Item], Any] = list.append
 ) -> dict:
@@ -481,10 +487,14 @@ def igroupby(
     assert callable(group_release_cond), (
         "group_release_cond should be callable (filter boolean function) or False. "
         f"Was {group_release_cond}")
-    assert len(signature(group_release_cond).parameters) == 2, (
-        "group_release_cond should take two inputs: The group_key and the group_items.\n"
+    n_group_release_cond_args = len(signature(group_release_cond).parameters)
+    assert n_group_release_cond_args in {2, 3}, (
+        "group_release_cond should take two or three inputs:\n"
+        " - (group_key, group_items), or\n"
+        " - (groups, group_key, group_items)"
         f"The arguments of the function you gave me are: {signature(group_release_cond)}"
     )
+
     for item in items:
         group_key = key(item)
         group_items = groups[group_key]
@@ -492,9 +502,14 @@ def igroupby(
             append_to_group_items(group_items, item)
         else:
             append_to_group_items(group_items, val(item))
-        if group_release_cond(group_key, group_items):
-            yield group_key, group_items
-            del groups[group_key]
+        if n_group_release_cond_args == 2:
+            if group_release_cond(group_key, group_items):
+                yield group_key, group_items
+                del groups[group_key]
+        else:
+            if group_release_cond(groups, group_key, group_items):
+                yield group_key, group_items
+                del groups[group_key]
 
     if release_remainding:
         for group_key, group_items in groups.items():
