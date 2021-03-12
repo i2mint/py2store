@@ -12,6 +12,63 @@ from collections.abc import Iterable, KeysView, ValuesView, ItemsView
 ########################################################################################################################
 # Internal Utils
 
+def double_up_as_factory(decorator_func):
+    """Repurpose a decorator both as it's original form, and as a decorator factory.
+    That is, from a decorator that is defined do ``wrapped_func = decorator(func, **params)``,
+    make it also be able to do ``wrapped_func = decorator(**params)(func)``.
+
+    Note: You'll only be able to do this if all but the first argument are keyword-only,
+    and the first argument (the function to decorate) has a default of ``None`` (this is for your own good).
+    This is validated before making the "double up as factory" decorator.
+
+    >>> @double_up_as_factory
+    ... def decorator(func=None, *, multiplier=2):
+    ...     def _func(x):
+    ...         return func(x) * multiplier
+    ...     return _func
+    ...
+    >>> def foo(x):
+    ...     return x + 1
+    ...
+    >>> foo(2)
+    3
+    >>> wrapped_foo = decorator(foo, multiplier=10)
+    >>> wrapped_foo(2)
+    30
+    >>>
+    >>> multiply_by_3 = decorator(multiplier=3)
+    >>> wrapped_foo = multiply_by_3(foo)
+    >>> wrapped_foo(2)
+    9
+    >>>
+    >>> @decorator(multiplier=3)
+    ... def foo(x):
+    ...     return x + 1
+    ...
+    >>> foo(2)
+    9
+    """
+
+    def validate_decorator_func(decorator_func):
+        first_param, *other_params = signature(decorator_func).parameters.values()
+        assert first_param.default is None, \
+            f"First argument of the decorator function needs to default to None. Was {first_param.default}"
+        assert all(p.kind == p.KEYWORD_ONLY for p in other_params), \
+            f"All arguments (besides the first) need to be keyword-only"
+        return True
+
+    validate_decorator_func(decorator_func)
+
+    @wraps(decorator_func)
+    def _double_up_as_factory(wrapped=None, **kwargs):
+        if wrapped is None:  # then we want a factory
+            return partial(decorator_func, **kwargs)
+        else:
+            return decorator_func(wrapped, **kwargs)
+
+    return _double_up_as_factory
+
+
 def _all_but_first_arg_are_keyword_only(func):
     """
     >>> def foo(a, *, b, c=2): ...
@@ -246,6 +303,7 @@ def store_decorator(func):
         ch_to_all_pk=False
     )
 
+    # TODO: Re-use double_up_as_factory here
     @wrapper_sig
     def wrapper(store=None, **kwargs):
         if store is None:  # then we want a factory
@@ -2217,6 +2275,43 @@ def insert_load_dump_aliases(store, delete=None, list=None, count=None):
         store.dump = types.MethodType(dump, store)
 
     return store
+
+
+from typing import TypeVar, Any, Callable
+
+FuncInput = TypeVar('FuncInput')
+FuncOutput = TypeVar('FuncOutput')
+
+
+@double_up_as_factory
+def condition_function_call(func: Callable[[FuncInput], FuncOutput] = None,
+                            *,
+                            condition: Callable[[FuncInput], bool],
+                            callback_if_condition_not_met: Callable[[FuncInput], Any]
+                            ):
+    @wraps(func)
+    def wrapped_func(*args, **kwargs):
+        if condition(*args, **kwargs):
+            return func(*args, **kwargs)
+        else:
+            return callback_if_condition_not_met(*args, **kwargs)
+
+    return wrapped_func
+
+
+from typing import Callable, MutableMapping, Any
+
+Key = Any
+Val = Any
+SetitemCondition = Callable[[MutableMapping, Key, Val], bool]
+
+
+@store_decorator
+def only_allow_writes_that_obey_condition(*,
+                                          write_condition: SetitemCondition,
+                                          msg='Write arguments did not match condition.'):
+    def _only_allow_writes_that_obey_condition(store: MutableMapping):
+        pass
 
 
 ########## To be deprecated ############################################################################################

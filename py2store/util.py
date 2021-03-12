@@ -397,6 +397,7 @@ GroupReleaseCond = Union[
     Callable[[GroupKey, GroupItems], bool],
     Callable[[Groups, GroupKey, GroupItems], bool]
 ]
+
 from inspect import signature
 
 
@@ -407,7 +408,8 @@ def igroupby(
         group_factory: Callable[[], GroupItems] = list,
         group_release_cond: GroupReleaseCond = lambda k, v: False,
         release_remainding=True,
-        append_to_group_items: Callable[[GroupItems, Item], Any] = list.append
+        append_to_group_items: Callable[[GroupItems, Item], Any] = list.append,
+        grouper_mapping=defaultdict
 ) -> dict:
     """The generator version of py2store groupby.
     Groups items according to group keys updated from those items through the given (item_to_)key function,
@@ -482,7 +484,7 @@ def igroupby(
     ...         == {'stopwords': ['the', 'in', 'a'], 'words': ['fox', 'is', 'box']})
 
     """
-    groups = defaultdict(group_factory)
+    groups = grouper_mapping(group_factory)
 
     assert callable(group_release_cond), (
         "group_release_cond should be callable (filter boolean function) or False. "
@@ -495,21 +497,19 @@ def igroupby(
         f"The arguments of the function you gave me are: {signature(group_release_cond)}"
     )
 
+    if val is None:
+        _append_to_group_items = append_to_group_items
+    else:
+        _append_to_group_items = lambda group_items, item: (group_items, val(item))
+
     for item in items:
         group_key = key(item)
         group_items = groups[group_key]
-        if val is None:
-            append_to_group_items(group_items, item)
-        else:
-            append_to_group_items(group_items, val(item))
-        if n_group_release_cond_args == 2:
-            if group_release_cond(group_key, group_items):
-                yield group_key, group_items
-                del groups[group_key]
-        else:
-            if group_release_cond(groups, group_key, group_items):
-                yield group_key, group_items
-                del groups[group_key]
+        _append_to_group_items(group_items, item)
+
+        if group_release_cond(group_key, group_items):
+            yield group_key, group_items
+            del groups[group_key]
 
     if release_remainding:
         for group_key, group_items in groups.items():
