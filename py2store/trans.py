@@ -1727,6 +1727,9 @@ def wrap_kvs(
             ):
                 _wrap_ingoing(store_cls, method_name, data_of_obj)
 
+            # TODO: postget and preset uses num_of_args. Not robust:
+            #  Should only count args with no defaults or partial won't be able to be used to make postget/preset funcs
+            # TODO: Extract postget and preset patterns?
             if postget is not None:
                 if num_of_args(postget) < 2:
                     raise ValueError(
