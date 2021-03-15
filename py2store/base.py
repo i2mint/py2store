@@ -30,8 +30,6 @@ from typing import Any, Iterable, Tuple
 
 from py2store.util import wraps
 
-# from functools import wraps
-
 Key = Any
 Val = Any
 Id = Any
@@ -387,6 +385,33 @@ class Store(KvPersister):
             return self[k]
         except KeyError:
             return default
+
+    def keys(self):
+        method_name = 'keys'
+        r = getattr(super(), method_name)()
+        if hasattr(self.store, '_wrap_for_method'):
+            wrap = self.store._wrap_for_method.get(method_name, None)
+            if wrap:
+                return wrap(r)
+        return r
+
+    def values(self):
+        method_name = 'values'
+        r = getattr(super(), method_name)()
+        if hasattr(self.store, '_wrap_for_method'):
+            wrap = self.store._wrap_for_method.get(method_name, None)
+            if wrap:
+                return wrap(r)
+        return r
+
+    def items(self):
+        method_name = 'items'
+        r = getattr(super(), method_name)()
+        if hasattr(self.store, '_wrap_for_method'):
+            wrap = self.store._wrap_for_method.get(method_name, None)
+            if wrap:
+                return wrap(r)
+        return r
 
     # def get(self, k: Key, default=None) -> Val:
     #     if hasattr(self.store, "get"):  # if store has a get method, use it
