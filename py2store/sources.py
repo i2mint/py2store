@@ -62,7 +62,8 @@ def _kv_spec_to_func(kv_spec: KvSpec) -> Callable:
 
 class SequenceKvReader(KvReader):
     """
-
+    A KvReader that sources itself in an iterable of elements from which keys and values will be extracted and
+    grouped by key.
 
     >>> docs = [{'_id': 0, 's': 'a', 'n': 1},
     ...  {'_id': 1, 's': 'b', 'n': 2},
@@ -157,6 +158,19 @@ class SequenceKvReader(KvReader):
             val: KvSpec = None,
             val_postproc=list
     ):
+        """Make a SequenceKvReader instance,
+
+        :param sequence: The iterable to source the keys and values from.
+        :param key: Specification of how to extract a key from an iterable element.
+            If None, will use integer keys from key, val = enumerate(iterable).
+            key can be a callable, a str or int, or an iterable of strs and ints.
+        :param val: Specification of how to extract a value from an iterable element.
+            If None, will use the element as is, as the value.
+            val can be a callable, a str or int, or an iterable of strs and ints.
+        :param val_postproc: Function to apply to the iterable of vals.
+            Default is ``list``, which will have the effect of values being lists of all vals matching a key.
+            Another popular choice is ``next`` which will have the effect of values being the first matched to the key
+        """
         self.sequence = sequence
         if key is not None:
             self.key = _kv_spec_to_func(key)
