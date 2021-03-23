@@ -327,11 +327,13 @@ def groupby(
         key: The function that computes a key from an item. Needs to return a hashable.
         val: An optional function that computes a val from an item. If not given, the item itself will be taken.
         group_factory: The function to make new (empty) group objects and accumulate group items.
-            group_items = group_collector() will be called to make a new empty group collection
+            group_items = group_factory() will be called to make a new empty group collection
             group_items.append(x) will be called to add x to that collection
             The default is `list`
 
     Returns: A dict of {group_key: items_in_that_group, ...}
+
+    See Also: regroupby, itertools.groupby, and py2store.source.SequenceKvReader
 
     >>> groupby(range(11), key=lambda x: x % 3)
     {0: [0, 3, 6, 9], 1: [1, 4, 7, 10], 2: [2, 5, 8]}
@@ -363,6 +365,8 @@ def regroupby(items, *key_funcs, **named_key_funcs):
 
     Note: The named_key_funcs argument names don't have any external effect.
         They just give a name to the key function, for code reading clarity purposes.
+
+    See Also: groupby, itertools.groupby, and py2store.source.SequenceKvReader
 
     >>> # group by how big the number is, then by it's mod 3 value
     >>> # note that named_key_funcs argument names doesn't have any external effect (but give a name to the function)
