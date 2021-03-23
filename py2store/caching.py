@@ -2,7 +2,7 @@
 
 import os
 from functools import wraps, partial
-from typing import Iterable, Union, Callable, Hashable, Any
+from typing import Iterable, Callable
 from inspect import signature
 
 from py2store.trans import store_decorator
@@ -148,15 +148,23 @@ def mk_cached_store(
     {'a': 1, 'b': 2, 'd': 4}
     """
 
-    cache = _mk_cache_instance(cache, assert_attrs=('__getitem__', '__setitem__'))
+    # cache = _mk_cache_instance(cache, assert_attrs=('__getitem__', '__setitem__'))
     assert isinstance(store, type), f"store should be a type, was a {type(store)}: {store}"
 
     class CachedStore(store):
-        _cache = cache
+        @wraps(store)
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self._cache = _mk_cache_instance(cache, assert_attrs=('__getitem__', '__contains__', '__setitem__'))
+            # self.__getitem__ = mk_memoizer(self._cache)(self.__getitem__)
 
-        @mk_memoizer(cache)
         def __getitem__(self, k):
-            return super().__getitem__(k)
+            if k not in self._cache:
+                val = super().__getitem__(k)
+                self._cache[k] = val  # cache it
+                return val
+            else:
+                return self._cache[k]
 
     return CachedStore
 
