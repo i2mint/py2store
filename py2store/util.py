@@ -7,32 +7,80 @@ from typing import Any, Hashable, Callable, Iterable, Optional, Union
 from functools import update_wrapper as _update_wrapper
 from functools import wraps as _wraps
 from functools import partialmethod, partial, WRAPPER_ASSIGNMENTS
+from types import MethodType
 
 # monkey patching WRAPPER_ASSIGNMENTS to get "proper" wrapping (adding defaults and kwdefaults
-
-#
-#
-# wrapper_assignments = (
-#     '__module__', '__name__', '__qualname__', '__doc__',
-#     '__annotations__', '__defaults__', '__kwdefaults__')
-
 wrapper_assignments = (*WRAPPER_ASSIGNMENTS, '__defaults__', '__kwdefaults__')
 
 update_wrapper = partial(_update_wrapper, assigned=wrapper_assignments)
 wraps = partial(_wraps, assigned=wrapper_assignments)
 
 
-# update_wrapper = functools.update_wrapper
-# update_wrapper.__defaults__ = (functools.WRAPPER_ASSIGNMENTS, functools.WRAPPER_UPDATES)
+def inject_method(obj, method_function, method_name=None):
+    """
+    method_function could be:
+        * a function
+        * a {method_name: function, ...} dict (for multiple injections)
+        * a list of functions or (function, method_name) pairs
+    """
+    if method_name is None:
+        method_name = method_function.__name__
+    assert callable(method_function), f"method_function (the second argument) is supposed to be a callable!"
+    assert isinstance(method_name, str), f"method_name (the third argument) is supposed to be a string!"
+    if not isinstance(obj, type):
+        method_function = MethodType(method_function, obj)
+    setattr(obj, method_name, method_function)
+    return obj
 
-# wraps = functools.wraps
-# wraps.__defaults__ = (functools.WRAPPER_ASSIGNMENTS, functools.WRAPPER_UPDATES)
+
+def _disabled_clear_method(self):
+    """The clear method is disabled to make dangerous difficult.
+    You don't want to delete your whole DB
+    If you really want to delete all your data, you can do so by doing something like this:
+        ```
+        for k in self:
+            del self[k]
+        ```
+
+    or (in some cases)
+
+        ```
+        for k in self:
+            try:
+                del self[k]
+            except KeyError:
+                pass
+        ```
+    """
+    raise NotImplementedError(f"Instance of {type(self)}: {self.clear.__doc__}")
 
 
-# @_wraps(_wraps)
-# def wraps(wrapped, *args, **kwargs):
-#     _wrapped = _wraps(wrapped, *args, **kwargs)
-#     for attr
+# to be able to check if clear is disabled (see ensure_clear_method function for example):
+_disabled_clear_method.disabled = True
+
+
+def has_enabled_clear_method(store):
+    """Returns True iff obj has a clear method that is enabled (i.e. not disabled)"""
+    return hasattr(store, 'clear') and not getattr(store.clear, 'disabled', False)
+
+
+def _delete_keys_one_by_one(self):
+    """clear the entire store (delete all keys)"""
+    for k in self:
+        del self[k]
+
+
+def _delete_keys_one_by_one_with_keyerror_supressed(self):
+    """clear the entire store (delete all keys), ignoring KeyErrors"""
+    for k in self:
+        try:
+            del self[k]
+        except KeyError:
+            pass
+
+
+_delete_keys_one_by_one.disabled = False
+_delete_keys_one_by_one_with_keyerror_supressed.disabled = False
 
 
 def partialclass(cls, *args, **kwargs):

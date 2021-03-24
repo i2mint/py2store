@@ -2286,11 +2286,24 @@ FuncInput = TypeVar('FuncInput')
 FuncOutput = TypeVar('FuncOutput')
 
 
+def constant_output(return_val=None, *args, **kwargs):
+    """Function that returns a constant value no matter what the inputs are.
+    Is meant to be used with functools.partial to create custom versions.
+
+    >>> from functools import partial
+    >>> always_true = partial(constant_output, True)
+    >>> always_true('regardless', 'of', the='input', will='return True')
+    True
+
+    """
+    return return_val
+
+
 @double_up_as_factory
 def condition_function_call(func: Callable[[FuncInput], FuncOutput] = None,
                             *,
-                            condition: Callable[[FuncInput], bool],
-                            callback_if_condition_not_met: Callable[[FuncInput], Any]
+                            condition: Callable[[FuncInput], bool] = partial(constant_output, True),
+                            callback_if_condition_not_met: Callable[[FuncInput], Any] = partial(constant_output, None)
                             ):
     @wraps(func)
     def wrapped_func(*args, **kwargs):
@@ -2308,13 +2321,23 @@ Key = Any
 Val = Any
 SetitemCondition = Callable[[MutableMapping, Key, Val], bool]
 
+# @store_decorator
+# def only_allow_writes_that_obey_condition(*,
+#                                           write_condition: SetitemCondition,
+#                                           msg='Write arguments did not match condition.'):
+#     def _only_allow_writes_that_obey_condition(store: MutableMapping):
+#         pass
 
-@store_decorator
-def only_allow_writes_that_obey_condition(*,
-                                          write_condition: SetitemCondition,
-                                          msg='Write arguments did not match condition.'):
-    def _only_allow_writes_that_obey_condition(store: MutableMapping):
-        pass
+
+from py2store.util import has_enabled_clear_method, inject_method, _delete_keys_one_by_one
+
+
+@double_up_as_factory
+def ensure_clear_method(store=None, *, clear_method=_delete_keys_one_by_one):
+    """If obj doesn't have an enabled clear method, will add one (a slow one that runs through keys and deletes them"""
+    if not has_enabled_clear_method(store):
+        inject_method(store, clear_method, 'clear')
+    return store
 
 
 ########## To be deprecated ############################################################################################

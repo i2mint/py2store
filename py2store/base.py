@@ -28,7 +28,7 @@ from collections.abc import Collection as CollectionABC
 from collections.abc import Mapping, MutableMapping
 from typing import Any, Iterable, Tuple
 
-from py2store.util import wraps
+from py2store.util import wraps, _disabled_clear_method
 
 Key = Any
 Val = Any
@@ -178,19 +178,7 @@ class KvPersister(KvReader, MutableMapping):
 
     """
 
-    def clear(self):
-        """The clear method is disabled to make dangerous difficult.
-        You don't want to delete your whole DB
-        If you really want to delete all your data, you can do so by doing something like this:
-            ```
-            for k in self:
-                try:
-                    del self[k]
-                except KeyError:
-                    pass
-            ```
-        """
-        raise NotImplementedError(__doc__)
+    clear = _disabled_clear_method
 
     # # TODO: Tests and documentation demos needed.
     # def popitem(self):

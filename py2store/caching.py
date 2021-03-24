@@ -513,8 +513,12 @@ def flush_on_exit(cls):
     return new_cls
 
 
+from py2store.util import has_enabled_clear_method
+
+
+@store_decorator
 def mk_write_cached_store(
-        store,
+        store=None,
         *,
         w_cache=dict,
         flush_cache_condition=None
@@ -607,6 +611,12 @@ def mk_write_cached_store(
 
     w_cache = _mk_cache_instance(w_cache, ('clear', '__setitem__', 'items'))
 
+    if not has_enabled_clear_method(w_cache):
+        raise TypeError("""w_cache needs to have an enabled clear method to be able to act as a write cache.
+        You can wrap w_cache in py2store.trans.ensure_clear_method to inject a clear method, 
+        but BE WARNED: mk_write_cached_store will immediately delete all contents of `w_cache`!
+        So don't give it your filesystem or important DB to delete!
+        """)
     w_cache.clear()  # assure the cache is empty, by emptying it.
 
     @flush_on_exit
