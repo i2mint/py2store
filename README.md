@@ -1467,6 +1467,55 @@ ZipReader (and other related stores) talks to one or several files, giving you t
 Dropbox will give you access to dropbox files through the same dict-like interface.
 
 
+# Miscellenous
+
+## Caching
+
+There's some basic caching capabilities in py2store. 
+Basic, but covers a lot of use cases. 
+But if you want to bring your own caching tools, you might be able to use them here too. 
+
+For example, the very popular `cachetools` uses a ``dict`` as it's default cache store, but you can 
+specify any mutable mapping (that takes tuples as keys!). 
+
+Say you want to use local files as your cache. Try something like this:
+
+```python
+from cachetools import cached # there's also LRUCache, TTLCache...
+from py2store import QuickPickleStore, wrap_kvs
+
+def tuple_to_str(k: tuple, sep: str=os.path.sep) -> str:
+    return sep.join(k)
+    if isinstance(k, tuple):
+        return os.path.sep.join(k)
+    else:
+        return k
+    
+def str_to_tuple(k: str, sep: str=os.path.sep) -> tuple:
+    return k.split(sep)
+
+@wrap_kvs(id_of_key=tuple_to_str, key_of_id=str_to_tuple)
+class TupledQuickPickleStore(QuickPickleStore):
+    """A local pickle store with tuple keys (to work well with cachetools)"""
+    
+
+local_files_cache = TupledQuickPickleStore()  # no rootdir? Fine, will choose a local file
+
+@cached(cache=local_files_cache)
+def hello(x='world'):
+    return f"hello {x}!"
+```
+
+```pydocstring
+>>> hello('QT')
+>>> import pickle
+>>> # Let's now verify that we actually have a file with such content
+>>> with open(os.path.join(local_files_cache._prefix, 'QT'), 'rb') as fp:
+...     file_contents = pickle.load(fp)
+>>> assert file_contents == 'hello QT!'
+```
+
+
 # Philosophical FAQs
 
 ## Is a store an ORM? A DAO?
