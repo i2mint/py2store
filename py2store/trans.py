@@ -47,6 +47,23 @@ def double_up_as_factory(decorator_func):
     ...
     >>> foo(2)
     9
+
+    Note that to be able to use double_up_as_factory, your first argument (the object to be wrapped) needs to default
+    to None and be the only argument that is not keyword-only (i.e. all other arguments need to be keyword only).
+
+    >>> @double_up_as_factory
+    ... def decorator_2(func, *, multiplier=2):
+    ...     '''Should not be able to be transformed with double_up_as_factory'''
+    Traceback (most recent call last):
+      ...
+    AssertionError: First argument of the decorator function needs to default to None. Was <class 'inspect._empty'>
+    >>> @double_up_as_factory
+    ... def decorator_3(func=None, multiplier=2):
+    ...     '''Should not be able to be transformed with double_up_as_factory'''
+    Traceback (most recent call last):
+      ...
+    AssertionError: All arguments (besides the first) need to be keyword-only
+
     """
 
     def validate_decorator_func(decorator_func):
@@ -83,6 +100,7 @@ def _all_but_first_arg_are_keyword_only(func):
     return all(kind == Parameter.KEYWORD_ONLY for kind in kinds)
 
 
+# TODO: Separate the wrapper_assignments injection (and possibly make these not show up at the interface?)
 # FIXME: doctest line numbers not shown correctly when wrapped by store_decorator!
 def store_decorator(func):
     """Helper to make store decorators.
@@ -796,26 +814,6 @@ def cached_keys(
         )
         # assert keys_cache == iter_to_container
 
-    # if store is None:
-    #     return partial(
-    #         cached_keys,
-    #         keys_cache=keys_cache,
-    #         cache_update_method=cache_update_method,
-    #         name=name,
-    #         __module__=__module__,
-    #     )
-    # elif not isinstance(store, type):  # then consider it to be an instance
-    #     store_instance = store
-    #     WrapperStore = cached_keys(
-    #         Store,
-    #         keys_cache=keys_cache,
-    #         cache_update_method=cache_update_method,
-    #         name=name,
-    #         __module__=__module__,
-    #     )
-    #     return WrapperStore(store_instance)
-    # else:
-    # store_cls = store
     assert isinstance(store, type), f"store_cls must be a type, was a {type(store)}: {store}"
 
     # name = name or 'IterCached' + get_class_name(store_cls)
@@ -2084,7 +2082,8 @@ _method_name_for = {
 }
 
 
-def add_path_get(store=None, name=None, path_type: type = tuple):
+@store_decorator
+def add_path_get(store=None, *, name=None, path_type: type = tuple):
     """
     Make nested stores accessible through key paths.
 
@@ -2093,19 +2092,29 @@ def add_path_get(store=None, name=None, path_type: type = tuple):
     whose values are bytes of the zipped files (and you can go on... whose (json) values are...).
 
     Well, you can access any node of this nested tree of stores like this:
+
     ```
         MyStore[key_1][key_2][key_3]
     ```
+
     And that's fine. But maybe you'd like to do it this way instead:
+
     ```
         MyStore[key_1, key_2, key_3]
     ```
+
     Or like this:
 
+    ```
         MyStore['key_1/key_2/key_3']
+    ```
+
     Or this:
 
+    ```
         MyStore['key_1.key_2.key_3']
+    ```
+
     You get the point. This is what `add_path_get` is meant for.
 
     Args:
@@ -2151,34 +2160,26 @@ def add_path_get(store=None, name=None, path_type: type = tuple):
     >>> s = SS({'a': {'b': {'c': 42}}})
     >>> assert s['a'] == {'b': {'c': 42}}; assert s['a.b'] == s['a']['b']; assert s['a.b.c'] == s['a']['b']['c']
     """
-    if store is None:
-        return partial(add_path_get, name=name, path_type=path_type)
-    elif not isinstance(store, type):  # then consider it to be an instance
-        store_instance = store
-        WrapperStore = add_path_get(Store, name=name, path_type=path_type)
+    name = name or store.__qualname__ + "WithPathGet"
 
-        return WrapperStore(store_instance)
-    else:  # it's a class we're wrapping
-        name = name or store.__qualname__ + "WithPathGet"
+    # TODO: This is not the best way to handle this. Investigate another way. ######################
+    global_names = set(globals()).union(locals())
+    if name in global_names:
+        raise NameError("That name is already in use")
+    # TODO: ########################################################################################
 
-        # TODO: This is not the best way to handle this. Investigate another way. ######################
-        global_names = set(globals()).union(locals())
-        if name in global_names:
-            raise NameError("That name is already in use")
-        # TODO: ########################################################################################
+    store_cls = kv_wrap_persister_cls(store, name=name)
+    store_cls._path_type = path_type
 
-        store_cls = kv_wrap_persister_cls(store, name=name)
-        store_cls._path_type = path_type
+    def __getitem__(self, k):
+        if isinstance(k, self._path_type):
+            return reduce(lambda store, key: store[key], k, self)
+        else:
+            return super(store_cls, self).__getitem__(k)
 
-        def __getitem__(self, k):
-            if isinstance(k, self._path_type):
-                return reduce(lambda store, key: store[key], k, self)
-            else:
-                return super(store_cls, self).__getitem__(k)
+    store_cls.__getitem__ = __getitem__
 
-        store_cls.__getitem__ = __getitem__
-
-        return store_cls
+    return store_cls
 
 
 def _insert_alias(store, method_name, alias=None):
@@ -2186,8 +2187,9 @@ def _insert_alias(store, method_name, alias=None):
         setattr(store, alias, getattr(store, method_name))
 
 
+@store_decorator
 def insert_aliases(
-        store, *, write=None, read=None, delete=None, list=None, count=None
+        store=None, *, write=None, read=None, delete=None, list=None, count=None
 ):
     """Insert method aliases of CRUD operations of a store (class or instance).
     If store is a class, you'll get a copy of the class with those methods added.
@@ -2241,6 +2243,7 @@ def insert_aliases(
     >>> s.num_of_items()
     2
     """
+
     if isinstance(store, type):
         store = type(store.__qualname__, (store,), {})
     for alias, method_name in _method_name_for.items():
@@ -2248,7 +2251,8 @@ def insert_aliases(
     return store
 
 
-def insert_load_dump_aliases(store, delete=None, list=None, count=None):
+@store_decorator
+def insert_load_dump_aliases(store=None, *, delete=None, list=None, count=None):
     """Insert load and dump methods, with familiar dump(obj, location) signature.
 
     Args:
