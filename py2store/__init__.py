@@ -132,12 +132,12 @@ with ignore_if_module_not_found:
         S3PickleStore,
     )
 
-# with ignore_if_module_not_found:
-#     from py2store.stores.mongo_store import (
-#         MongoStore,
-#         MongoTupleKeyStore,
-#         MongoAnyKeyStore,
-#     )
+with ignore_if_module_not_found:
+    from mongodol.stores import (
+        MongoStore,
+        MongoTupleKeyStore,
+        MongoAnyKeyStore,
+    )
 
 with ignore_if_module_not_found:
     from py2store.persisters.sql_w_sqlalchemy import (
