@@ -103,6 +103,29 @@ it will use a tmp directory it will create (the first time you try to store some
 It will create any directories that need to be created to satisfy any/key/that/contains/slashes.
 Of course, everything is configurable.
 
+# A list of stores for various uses
+
+`py2store` provides tools to create the dict-like interface to data you need. 
+If you want to just use existing interfaces, build on it, or find examples of how to make such 
+interfaces, check out the ever-growing list of `py2store`-using projects:
+
+- [mongodol](https://github.com/i2mint/mongodol): For MongoDB
+- [hear](https://github.com/otosense/hear): Read/write audio data flexibly. 
+- [tabled](https://github.com/i2mint/tabled): Data as `pandas.DataFrame` from various sources
+- [msword](https://pypi.org/project/msword/): Simple mapping view to docx (Word Doc) elements
+- [sshdol](https://github.com/i2mint/sshdol): Remote (ssh) files access
+- [haggle](https://github.com/otosense/haggle): Easily search, download, and use kaggle datasets.
+- [pyckup](https://github.com/i2mint/pyckup): Grab data simply and define protocols for others to do the same.
+- [hubcap](https://pypi.org/project/hubcap/): Dict-like interface to github.
+- [graze](https://github.com/thorwhalen/graze): Cache the internet.
+- [grub](https://github.com/thorwhalen/grub): A ridiculously simple search engine maker. 
+
+Just for fun projects:
+- [cult](https://github.com/thorwhalen/cult): Religious texts search engine. 18mn application of `grub`.
+- [laugh](https://github.com/thorwhalen/laugh): A (py2store-based) joke finder.
+
+
+
 # Use cases
 
 ## Interfacing reads

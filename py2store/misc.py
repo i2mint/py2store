@@ -3,7 +3,7 @@ import json
 import pickle
 import csv
 import gzip
-from io import StringIO, BytesIO
+from io import StringIO
 
 from py2store.stores.local_store import LocalBinaryStore
 from py2store.slib.s_zipfile import FilesOfZip
@@ -145,7 +145,7 @@ class MiscReaderMixin:
 
 
 try:
-    from py2store.persisters.dropbox_w_urllib import bytes_from_dropbox
+    from py2store.examples.dropbox_w_urllib import bytes_from_dropbox
 except Exception:
     _dropbox_as_special_case = False
 else:
