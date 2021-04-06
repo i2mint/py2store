@@ -655,6 +655,37 @@ def mk_write_cached_store(
     return WriteCachedStore
 
 
+from collections import ChainMap, deque
+
+
+class WriteBackChainMap(ChainMap):
+    max_key_search_depth = 0
+
+    def __getitem__(self, key):
+        q = deque([])
+        for mapping in self.maps:
+            try:
+                v = mapping[key]  # can't use 'key in mapping' with defaultdict
+                for d in q:
+                    d[key] = v
+                return v
+            except KeyError:
+                q.append(mapping)
+        return self.__missing__(key)
+
+    def __len__(self):
+        return len(set().union(*self.maps[:self.max_key_search_depth]))  # reuses stored hash values if possible
+
+    def __iter__(self):
+        d = {}
+        for mapping in reversed(self.maps[:self.max_key_search_depth]):
+            d.update(dict.fromkeys(mapping))  # reuses stored hash values if possible
+        return iter(d)
+
+    def __contains__(self, key):
+        return any(key in m for m in self.maps[:self.max_key_search_depth])
+
+
 # Experimental #########################################################################################################
 
 def _mk_cache_method_local_path_key(method, args, kwargs, ext='.p', path_sep=os.path.sep):
