@@ -2020,6 +2020,7 @@ def mk_wrapper(wrap_cls):
     return wrapper
 
 
+@double_up_as_factory
 def add_wrapper_method(wrap_cls=None, *, method_name="wrapper"):
     """Decorator that adds a wrapper method (itself a decorator) to a wrapping class
     Clear?
@@ -2051,11 +2052,8 @@ def add_wrapper_method(wrap_cls=None, *, method_name="wrapper"):
     >>> assert s['bar'] == 42
     >>> assert str(s) == "{'foo/bar': 42}"  # reveals that actually, behind the scenes, there's a "foo/" prefix
     """
-    if wrap_cls is None:
-        return partial(add_wrapper_method, method_name=method_name)
-    else:
-        setattr(wrap_cls, method_name, mk_wrapper(wrap_cls))
-        return wrap_cls
+    setattr(wrap_cls, method_name, mk_wrapper(wrap_cls))
+    return wrap_cls
 
 
 ########################################################################################################################
