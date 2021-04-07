@@ -41,6 +41,7 @@ from py2store.base import (
 )
 
 from py2store.persisters.local_files import FileReader
+from py2store.my.grabbers import ipython_display_val_trans
 
 from py2store.stores.local_store import (
     LocalStore,
@@ -92,6 +93,7 @@ from py2store.access import (
     user_defaults,
 )
 from py2store.caching import (
+    WriteBackChainMap,
     mk_cached_store,
     store_cached,
     store_cached_with_single_key,
@@ -130,8 +132,9 @@ with ignore_if_module_not_found:
         S3TextStore,
         S3PickleStore,
     )
+
 with ignore_if_module_not_found:
-    from py2store.stores.mongo_store import (
+    from mongodol.stores import (
         MongoStore,
         MongoTupleKeyStore,
         MongoAnyKeyStore,

@@ -1,6 +1,7 @@
-from py2store import get_obj
 from functools import wraps
 from io import BytesIO, StringIO
+
+from py2store.misc import get_obj
 
 
 def mk_grabber(*, key_trans=None, val_trans=None):

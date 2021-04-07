@@ -3,7 +3,7 @@ import shutil
 
 import pytest
 
-from py2store.persisters.dropbox_w_urllib import (
+from py2store.examples.dropbox_w_urllib import (
     DropboxFolderCopyReader,
     DropboxFileCopyReader,
 )

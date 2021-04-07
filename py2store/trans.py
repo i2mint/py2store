@@ -12,6 +12,80 @@ from collections.abc import Iterable, KeysView, ValuesView, ItemsView
 ########################################################################################################################
 # Internal Utils
 
+def double_up_as_factory(decorator_func):
+    """Repurpose a decorator both as it's original form, and as a decorator factory.
+    That is, from a decorator that is defined do ``wrapped_func = decorator(func, **params)``,
+    make it also be able to do ``wrapped_func = decorator(**params)(func)``.
+
+    Note: You'll only be able to do this if all but the first argument are keyword-only,
+    and the first argument (the function to decorate) has a default of ``None`` (this is for your own good).
+    This is validated before making the "double up as factory" decorator.
+
+    >>> @double_up_as_factory
+    ... def decorator(func=None, *, multiplier=2):
+    ...     def _func(x):
+    ...         return func(x) * multiplier
+    ...     return _func
+    ...
+    >>> def foo(x):
+    ...     return x + 1
+    ...
+    >>> foo(2)
+    3
+    >>> wrapped_foo = decorator(foo, multiplier=10)
+    >>> wrapped_foo(2)
+    30
+    >>>
+    >>> multiply_by_3 = decorator(multiplier=3)
+    >>> wrapped_foo = multiply_by_3(foo)
+    >>> wrapped_foo(2)
+    9
+    >>>
+    >>> @decorator(multiplier=3)
+    ... def foo(x):
+    ...     return x + 1
+    ...
+    >>> foo(2)
+    9
+
+    Note that to be able to use double_up_as_factory, your first argument (the object to be wrapped) needs to default
+    to None and be the only argument that is not keyword-only (i.e. all other arguments need to be keyword only).
+
+    >>> @double_up_as_factory
+    ... def decorator_2(func, *, multiplier=2):
+    ...     '''Should not be able to be transformed with double_up_as_factory'''
+    Traceback (most recent call last):
+      ...
+    AssertionError: First argument of the decorator function needs to default to None. Was <class 'inspect._empty'>
+    >>> @double_up_as_factory
+    ... def decorator_3(func=None, multiplier=2):
+    ...     '''Should not be able to be transformed with double_up_as_factory'''
+    Traceback (most recent call last):
+      ...
+    AssertionError: All arguments (besides the first) need to be keyword-only
+
+    """
+
+    def validate_decorator_func(decorator_func):
+        first_param, *other_params = signature(decorator_func).parameters.values()
+        assert first_param.default is None, \
+            f"First argument of the decorator function needs to default to None. Was {first_param.default}"
+        assert all(p.kind == p.KEYWORD_ONLY for p in other_params), \
+            f"All arguments (besides the first) need to be keyword-only"
+        return True
+
+    validate_decorator_func(decorator_func)
+
+    @wraps(decorator_func)
+    def _double_up_as_factory(wrapped=None, **kwargs):
+        if wrapped is None:  # then we want a factory
+            return partial(decorator_func, **kwargs)
+        else:
+            return decorator_func(wrapped, **kwargs)
+
+    return _double_up_as_factory
+
+
 def _all_but_first_arg_are_keyword_only(func):
     """
     >>> def foo(a, *, b, c=2): ...
@@ -26,6 +100,7 @@ def _all_but_first_arg_are_keyword_only(func):
     return all(kind == Parameter.KEYWORD_ONLY for kind in kinds)
 
 
+# TODO: Separate the wrapper_assignments injection (and possibly make these not show up at the interface?)
 # FIXME: doctest line numbers not shown correctly when wrapped by store_decorator!
 def store_decorator(func):
     """Helper to make store decorators.
@@ -238,7 +313,7 @@ def store_decorator(func):
 
         return r
 
-    _func_wrapping_store_in_cls_if_not_type.func = func
+    _func_wrapping_store_in_cls_if_not_type.func = func  # TODO: look for usages, and if not, use __wrapped__
 
     # @wraps(func)
     wrapper_sig = Sig(func).merge_with_sig(
@@ -246,6 +321,7 @@ def store_decorator(func):
         ch_to_all_pk=False
     )
 
+    # TODO: Re-use double_up_as_factory here
     @wrapper_sig
     def wrapper(store=None, **kwargs):
         if store is None:  # then we want a factory
@@ -356,7 +432,11 @@ def _has_unbound_self(func):
     0
     >>>
     """
-    params = signature(func).parameters
+    try:
+        params = signature(func).parameters
+    except ValueError:
+        # If there was a problem getting the signature, assume it's a signature-less builtin (so not a bound method)
+        return False
     if len(params) == 0:
         # no argument, so we can't be wrapping anything!!!
         raise ValueError(
@@ -734,26 +814,6 @@ def cached_keys(
         )
         # assert keys_cache == iter_to_container
 
-    # if store is None:
-    #     return partial(
-    #         cached_keys,
-    #         keys_cache=keys_cache,
-    #         cache_update_method=cache_update_method,
-    #         name=name,
-    #         __module__=__module__,
-    #     )
-    # elif not isinstance(store, type):  # then consider it to be an instance
-    #     store_instance = store
-    #     WrapperStore = cached_keys(
-    #         Store,
-    #         keys_cache=keys_cache,
-    #         cache_update_method=cache_update_method,
-    #         name=name,
-    #         __module__=__module__,
-    #     )
-    #     return WrapperStore(store_instance)
-    # else:
-    # store_cls = store
     assert isinstance(store, type), f"store_cls must be a type, was a {type(store)}: {store}"
 
     # name = name or 'IterCached' + get_class_name(store_cls)
@@ -1245,7 +1305,7 @@ def filt_iter(
 ########################################################################################################################
 # Wrapping keys and values
 
-self_names = frozenset(["self"])
+self_names = frozenset(["self", "store"])
 
 
 def _define_keys_values_and_items_according_to_iter(cls):
@@ -1363,6 +1423,11 @@ def kv_wrap_persister_cls(persister_cls, name=None):
 
     cls = type(name, (Store,), {})
 
+    # TODO: Investigate sanity and alternatives (cls = type(name, (Store, persister_cls), {}) leads to MRO problems)
+    for attr in set(dir(persister_cls)) - set(dir(Store)):
+        persister_cls_attribute = getattr(persister_cls, attr)
+        setattr(cls, attr, persister_cls_attribute)  # copy the attribute over to cls
+
     if hasattr(persister_cls, '__doc__'):
         cls.__doc__ = persister_cls.__doc__
 
@@ -1469,10 +1534,11 @@ def _wrap_ingoing(
         setattr(store_cls, wrapped_method, new_method)
 
 
+@store_decorator
 def wrap_kvs(
         store=None,
-        name=None,
         *,
+        name=None,
         key_of_id=None,
         id_of_key=None,
         obj_of_data=None,
@@ -1532,7 +1598,7 @@ def wrap_kvs(
     >>> def data_of_obj(obj):
     ...     return obj + 100
     >>>
-    >>> A = wrap_kvs(dict, 'A',
+    >>> A = wrap_kvs(dict, name='A',
     ...             key_of_id=key_of_id, id_of_key=id_of_key, obj_of_data=obj_of_data, data_of_obj=data_of_obj)
     >>> a = A()
     >>> a['KEY'] = 1
@@ -1550,7 +1616,7 @@ def wrap_kvs(
     [('KEY', 3)]
     >>>
     >>> # And now this: Showing how to condition the value transform (like obj_of_data), but conditioned on key.
-    >>> B = wrap_kvs(dict, 'B', postget=lambda k, v: f'upper {v}' if k[0].isupper() else f'lower {v}')
+    >>> B = wrap_kvs(dict, name='B', postget=lambda k, v: f'upper {v}' if k[0].isupper() else f'lower {v}')
     >>> b = B()
     >>> b['BIG'] = 'letters'
     >>> b['small'] = 'text'
@@ -1616,106 +1682,91 @@ def wrap_kvs(
 
     # TODO: Add tests for outcoming_key_methods etc.
     """
-    all_but_first_kwargs = dict(
-        name=name,
-        key_of_id=key_of_id,
-        id_of_key=id_of_key,
-        obj_of_data=obj_of_data,
-        data_of_obj=data_of_obj,
-        preset=preset,
-        postget=postget,
-        __module__=__module__,
-        outcoming_key_methods=outcoming_key_methods,
-        outcoming_value_methods=outcoming_value_methods,
-        ingoing_key_methods=ingoing_key_methods,
-        ingoing_value_methods=ingoing_value_methods, )
+    name = name or store.__qualname__ + "Wrapped"
 
-    if store is None:
-        return partial(wrap_kvs, **all_but_first_kwargs)
-    elif not isinstance(store, type):  # then consider it to be an instance
-        store_instance = store
-        WrapperStore = wrap_kvs(Store, **all_but_first_kwargs)
-        return WrapperStore(store_instance)
-    else:  # it's a class we're wrapping
-        name = name or store.__qualname__ + "Wrapped"
+    # TODO: This is not the best way to handle this. Investigate another way. ######################
+    global_names = set(globals()).union(locals())
+    if name in global_names:
+        raise NameError("That name is already in use")
+    # TODO: ########################################################################################
 
-        # TODO: This is not the best way to handle this. Investigate another way. ######################
-        global_names = set(globals()).union(locals())
-        if name in global_names:
-            raise NameError("That name is already in use")
-        # TODO: ########################################################################################
+    store_cls = kv_wrap_persister_cls(store, name=name)  # experiment
+    store_cls._cls_trans = None
 
-        store_cls = kv_wrap_persister_cls(store, name=name)  # experiment
-        store_cls._cls_trans = None
+    # store_cls = type(name, (store,), {})
+    # store_cls._cls_trans = None
 
-        def cls_trans(store_cls: type):
-            for method_name in {"_key_of_id"} | ensure_set(outcoming_key_methods):
-                _wrap_outcoming(store_cls, method_name, key_of_id)
+    def cls_trans(store_cls: type):
+        for method_name in {"_key_of_id"} | ensure_set(outcoming_key_methods):
+            _wrap_outcoming(store_cls, method_name, key_of_id)
 
-            for method_name in {"_obj_of_data"} | ensure_set(
-                    outcoming_value_methods
-            ):
-                _wrap_outcoming(store_cls, method_name, obj_of_data)
+        for method_name in {"_obj_of_data"} | ensure_set(
+                outcoming_value_methods
+        ):
+            _wrap_outcoming(store_cls, method_name, obj_of_data)
 
-            for method_name in {"_id_of_key"} | ensure_set(ingoing_key_methods):
-                _wrap_ingoing(store_cls, method_name, id_of_key)
+        for method_name in {"_id_of_key"} | ensure_set(ingoing_key_methods):
+            _wrap_ingoing(store_cls, method_name, id_of_key)
 
-            for method_name in {"_data_of_obj"} | ensure_set(
-                    ingoing_value_methods
-            ):
-                _wrap_ingoing(store_cls, method_name, data_of_obj)
+        for method_name in {"_data_of_obj"} | ensure_set(
+                ingoing_value_methods
+        ):
+            _wrap_ingoing(store_cls, method_name, data_of_obj)
 
-            if postget is not None:
-                if num_of_args(postget) < 2:
-                    raise ValueError(
-                        "A postget function needs to have (key, value) or (self, key, value) arguments"
+        # TODO: postget and preset uses num_of_args. Not robust:
+        #  Should only count args with no defaults or partial won't be able to be used to make postget/preset funcs
+        # TODO: Extract postget and preset patterns?
+        if postget is not None:
+            if num_of_args(postget) < 2:
+                raise ValueError(
+                    "A postget function needs to have (key, value) or (self, key, value) arguments"
+                )
+
+            if not _has_unbound_self(postget):
+
+                def __getitem__(self, k):
+                    return postget(k, super(store_cls, self).__getitem__(k))
+
+            else:
+
+                def __getitem__(self, k):
+                    return postget(
+                        self, k, super(store_cls, self).__getitem__(k)
                     )
 
-                if not _has_unbound_self(postget):
+            store_cls.__getitem__ = __getitem__
 
-                    def __getitem__(self, k):
-                        return postget(k, super(store_cls, self).__getitem__(k))
+        if preset is not None:
+            if num_of_args(preset) < 2:
+                raise ValueError(
+                    "A preset function needs to have (key, value) or (self, key, value) arguments"
+                )
 
-                else:
+            if not _has_unbound_self(preset):
 
-                    def __getitem__(self, k):
-                        return postget(
-                            self, k, super(store_cls, self).__getitem__(k)
-                        )
+                def __setitem__(self, k, v):
+                    return super(store_cls, self).__setitem__(k, preset(k, v))
 
-                store_cls.__getitem__ = __getitem__
+            else:
 
-            if preset is not None:
-                if num_of_args(preset) < 2:
-                    raise ValueError(
-                        "A preset function needs to have (key, value) or (self, key, value) arguments"
+                def __setitem__(self, k, v):
+                    return super(store_cls, self).__setitem__(
+                        k, preset(self, k, v)
                     )
 
-                if not _has_unbound_self(preset):
+            store_cls.__setitem__ = __setitem__
 
-                    def __setitem__(self, k, v):
-                        return super(store_cls, self).__setitem__(k, preset(k, v))
+        if __module__ is not None:
+            store_cls.__module__ = __module__
 
-                else:
+        # add an attribute containing the cls_trans.
+        # This is is both for debugging and introspection use,
+        # as well as if we need to pass on the transformation in a recursive situation
+        store_cls._cls_trans = cls_trans
 
-                    def __setitem__(self, k, v):
-                        return super(store_cls, self).__setitem__(
-                            k, preset(self, k, v)
-                        )
+        return store_cls
 
-                store_cls.__setitem__ = __setitem__
-
-            if __module__ is not None:
-                store_cls.__module__ = __module__
-
-            # add an attribute containing the cls_trans.
-            # This is is both for debugging and introspection use,
-            # as well as if we need to pass on the transformation in a recursive situation
-            store_cls._cls_trans = cls_trans
-
-            return store_cls
-
-        return cls_trans(store_cls)
+    return cls_trans(store_cls)
 
 
 def _kv_wrap_outcoming_keys(trans_func):
@@ -1747,7 +1798,7 @@ def _kv_wrap_outcoming_keys(trans_func):
                 or getattr(o, "__qualname__", getattr(o.__class__, "__qualname__"))
                 + "_kr"
         )
-        return wrap_kvs(o, name, key_of_id=trans_func)
+        return wrap_kvs(o, name=name, key_of_id=trans_func)
 
     return wrapper
 
@@ -1784,7 +1835,7 @@ def _kv_wrap_ingoing_keys(trans_func):
                 or getattr(o, "__qualname__", getattr(o.__class__, "__qualname__"))
                 + "_kw"
         )
-        return wrap_kvs(o, name, id_of_key=trans_func)
+        return wrap_kvs(o, name=name, id_of_key=trans_func)
 
     return wrapper
 
@@ -1815,7 +1866,7 @@ def _kv_wrap_outcoming_vals(trans_func):
                 or getattr(o, "__qualname__", getattr(o.__class__, "__qualname__"))
                 + "_vr"
         )
-        return wrap_kvs(o, name, obj_of_data=trans_func)
+        return wrap_kvs(o, name=name, obj_of_data=trans_func)
 
     return wrapper
 
@@ -1846,7 +1897,7 @@ def _kv_wrap_ingoing_vals(trans_func):
                 or getattr(o, "__qualname__", getattr(o.__class__, "__qualname__"))
                 + "_vw"
         )
-        return wrap_kvs(o, name, data_of_obj=trans_func)
+        return wrap_kvs(o, name=name, data_of_obj=trans_func)
 
     return wrapper
 
@@ -1858,7 +1909,7 @@ def _ingoing_vals_wrt_to_keys(trans_func):
                 or getattr(o, "__qualname__", getattr(o.__class__, "__qualname__"))
                 + "_vwk"
         )
-        return wrap_kvs(o, name, preset=trans_func)
+        return wrap_kvs(o, name=name, preset=trans_func)
 
     return wrapper
 
@@ -1870,7 +1921,7 @@ def _outcoming_vals_wrt_to_keys(trans_func):
                 or getattr(o, "__qualname__", getattr(o.__class__, "__qualname__"))
                 + "_vrk"
         )
-        return wrap_kvs(o, name, postget=trans_func)
+        return wrap_kvs(o, name=name, postget=trans_func)
 
     return wrapper
 
@@ -1908,7 +1959,7 @@ def kv_wrap(trans_obj):
         )
         return wrap_kvs(
             o,
-            name,
+            name=name,
             key_of_id=key_of_id,
             id_of_key=id_of_key,
             obj_of_data=obj_of_data,
@@ -1969,6 +2020,7 @@ def mk_wrapper(wrap_cls):
     return wrapper
 
 
+@double_up_as_factory
 def add_wrapper_method(wrap_cls=None, *, method_name="wrapper"):
     """Decorator that adds a wrapper method (itself a decorator) to a wrapping class
     Clear?
@@ -2000,11 +2052,8 @@ def add_wrapper_method(wrap_cls=None, *, method_name="wrapper"):
     >>> assert s['bar'] == 42
     >>> assert str(s) == "{'foo/bar': 42}"  # reveals that actually, behind the scenes, there's a "foo/" prefix
     """
-    if wrap_cls is None:
-        return partial(add_wrapper_method, method_name=method_name)
-    else:
-        setattr(wrap_cls, method_name, mk_wrapper(wrap_cls))
-        return wrap_cls
+    setattr(wrap_cls, method_name, mk_wrapper(wrap_cls))
+    return wrap_cls
 
 
 ########################################################################################################################
@@ -2019,7 +2068,8 @@ _method_name_for = {
 }
 
 
-def add_path_get(store=None, name=None, path_type: type = tuple):
+@store_decorator
+def add_path_get(store=None, *, name=None, path_type: type = tuple):
     """
     Make nested stores accessible through key paths.
 
@@ -2028,19 +2078,29 @@ def add_path_get(store=None, name=None, path_type: type = tuple):
     whose values are bytes of the zipped files (and you can go on... whose (json) values are...).
 
     Well, you can access any node of this nested tree of stores like this:
+
     ```
         MyStore[key_1][key_2][key_3]
     ```
+
     And that's fine. But maybe you'd like to do it this way instead:
+
     ```
         MyStore[key_1, key_2, key_3]
     ```
+
     Or like this:
 
+    ```
         MyStore['key_1/key_2/key_3']
+    ```
+
     Or this:
 
+    ```
         MyStore['key_1.key_2.key_3']
+    ```
+
     You get the point. This is what `add_path_get` is meant for.
 
     Args:
@@ -2086,34 +2146,26 @@ def add_path_get(store=None, name=None, path_type: type = tuple):
     >>> s = SS({'a': {'b': {'c': 42}}})
     >>> assert s['a'] == {'b': {'c': 42}}; assert s['a.b'] == s['a']['b']; assert s['a.b.c'] == s['a']['b']['c']
     """
-    if store is None:
-        return partial(add_path_get, name=name, path_type=path_type)
-    elif not isinstance(store, type):  # then consider it to be an instance
-        store_instance = store
-        WrapperStore = add_path_get(Store, name=name, path_type=path_type)
+    name = name or store.__qualname__ + "WithPathGet"
 
-        return WrapperStore(store_instance)
-    else:  # it's a class we're wrapping
-        name = name or store.__qualname__ + "WithPathGet"
+    # TODO: This is not the best way to handle this. Investigate another way. ######################
+    global_names = set(globals()).union(locals())
+    if name in global_names:
+        raise NameError("That name is already in use")
+    # TODO: ########################################################################################
 
-        # TODO: This is not the best way to handle this. Investigate another way. ######################
-        global_names = set(globals()).union(locals())
-        if name in global_names:
-            raise NameError("That name is already in use")
-        # TODO: ########################################################################################
+    store_cls = kv_wrap_persister_cls(store, name=name)
+    store_cls._path_type = path_type
 
-        store_cls = kv_wrap_persister_cls(store, name=name)
-        store_cls._path_type = path_type
+    def __getitem__(self, k):
+        if isinstance(k, self._path_type):
+            return reduce(lambda store, key: store[key], k, self)
+        else:
+            return super(store_cls, self).__getitem__(k)
 
-        def __getitem__(self, k):
-            if isinstance(k, self._path_type):
-                return reduce(lambda store, key: store[key], k, self)
-            else:
-                return super(store_cls, self).__getitem__(k)
+    store_cls.__getitem__ = __getitem__
 
-        store_cls.__getitem__ = __getitem__
-
-        return store_cls
+    return store_cls
 
 
 def _insert_alias(store, method_name, alias=None):
@@ -2121,8 +2173,9 @@ def _insert_alias(store, method_name, alias=None):
         setattr(store, alias, getattr(store, method_name))
 
 
+@store_decorator
 def insert_aliases(
-        store, *, write=None, read=None, delete=None, list=None, count=None
+        store=None, *, write=None, read=None, delete=None, list=None, count=None
 ):
     """Insert method aliases of CRUD operations of a store (class or instance).
     If store is a class, you'll get a copy of the class with those methods added.
@@ -2176,6 +2229,7 @@ def insert_aliases(
     >>> s.num_of_items()
     2
     """
+
     if isinstance(store, type):
         store = type(store.__qualname__, (store,), {})
     for alias, method_name in _method_name_for.items():
@@ -2183,7 +2237,8 @@ def insert_aliases(
     return store
 
 
-def insert_load_dump_aliases(store, delete=None, list=None, count=None):
+@store_decorator
+def insert_load_dump_aliases(store=None, *, delete=None, list=None, count=None):
     """Insert load and dump methods, with familiar dump(obj, location) signature.
 
     Args:
@@ -2212,6 +2267,66 @@ def insert_load_dump_aliases(store, delete=None, list=None, count=None):
     else:
         store.dump = types.MethodType(dump, store)
 
+    return store
+
+
+from typing import TypeVar, Any, Callable
+
+FuncInput = TypeVar('FuncInput')
+FuncOutput = TypeVar('FuncOutput')
+
+
+def constant_output(return_val=None, *args, **kwargs):
+    """Function that returns a constant value no matter what the inputs are.
+    Is meant to be used with functools.partial to create custom versions.
+
+    >>> from functools import partial
+    >>> always_true = partial(constant_output, True)
+    >>> always_true('regardless', 'of', the='input', will='return True')
+    True
+
+    """
+    return return_val
+
+
+@double_up_as_factory
+def condition_function_call(func: Callable[[FuncInput], FuncOutput] = None,
+                            *,
+                            condition: Callable[[FuncInput], bool] = partial(constant_output, True),
+                            callback_if_condition_not_met: Callable[[FuncInput], Any] = partial(constant_output, None)
+                            ):
+    @wraps(func)
+    def wrapped_func(*args, **kwargs):
+        if condition(*args, **kwargs):
+            return func(*args, **kwargs)
+        else:
+            return callback_if_condition_not_met(*args, **kwargs)
+
+    return wrapped_func
+
+
+from typing import Callable, MutableMapping, Any
+
+Key = Any
+Val = Any
+SetitemCondition = Callable[[MutableMapping, Key, Val], bool]
+
+# @store_decorator
+# def only_allow_writes_that_obey_condition(*,
+#                                           write_condition: SetitemCondition,
+#                                           msg='Write arguments did not match condition.'):
+#     def _only_allow_writes_that_obey_condition(store: MutableMapping):
+#         pass
+
+
+from py2store.util import has_enabled_clear_method, inject_method, _delete_keys_one_by_one
+
+
+@double_up_as_factory
+def ensure_clear_method(store=None, *, clear_method=_delete_keys_one_by_one):
+    """If obj doesn't have an enabled clear method, will add one (a slow one that runs through keys and deletes them"""
+    if not has_enabled_clear_method(store):
+        inject_method(store, clear_method, 'clear')
     return store
 
 

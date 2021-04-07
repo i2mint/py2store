@@ -26,11 +26,14 @@ the storage methods themselves.
 
 from collections.abc import Collection as CollectionABC
 from collections.abc import Mapping, MutableMapping
+from collections import (
+    KeysView as BaseKeysView,
+    ValuesView as BaseValuesView,
+    ItemsView as BaseItemsView,
+)
 from typing import Any, Iterable, Tuple
 
-from py2store.util import wraps
-
-# from functools import wraps
+from py2store.util import wraps, _disabled_clear_method
 
 Key = Any
 Val = Any
@@ -180,19 +183,7 @@ class KvPersister(KvReader, MutableMapping):
 
     """
 
-    def clear(self):
-        """The clear method is disabled to make dangerous difficult.
-        You don't want to delete your whole DB
-        If you really want to delete all your data, you can do so by doing something like this:
-            ```
-            for k in self:
-                try:
-                    del self[k]
-                except KeyError:
-                    pass
-            ```
-        """
-        raise NotImplementedError(__doc__)
+    clear = _disabled_clear_method
 
     # # TODO: Tests and documentation demos needed.
     # def popitem(self):
@@ -352,6 +343,21 @@ class Store(KvPersister):
     _data_of_obj = static_identity_method
     _obj_of_data = static_identity_method
 
+    KeysView = BaseKeysView
+    ValuesView = BaseValuesView
+    ItemsView = BaseItemsView
+
+    def keys(self):
+        # each of these methods use the factory method on self,
+        # here that's self.KeysView(), and expect it to take specific arguments.
+        return self.KeysView(self)
+
+    def values(self):
+        return self.ValuesView(self)
+
+    def items(self):
+        return self.ItemsView(self)
+
     _max_repr_size = None
 
     _errors_that_trigger_missing = (KeyError,)  # another option: (KeyError, FileNotFoundError)
@@ -383,28 +389,10 @@ class Store(KvPersister):
         raise KeyError(k)
 
     def get(self, k: Key, default=None) -> Val:
-        if hasattr(self.store, "get"):  # if store has a get method, use it
-            _id = self._id_of_key(k)
-            data = self.store.get(_id, no_such_item)
-            if data is not no_such_item:
-                return self._obj_of_data(data)
-            else:
-                return default
-        else:  # if not, do the get function otherwise
-            if k in self:
-                return self._obj_of_data(self[k])
-            else:
-                return default
-
-    # def update(self, other=(), /, **kwds):
-    #     """
-    #     update(self, other=(), /, **kwds)
-    # D.update([E, ]**F) -> None.  Update D from mapping/iterable E and F.
-    # If E present and has a .keys() method, does:     for k in E: D[k] = E[k]
-    # If E present and lacks .keys() method, does:     for (k, v) in E: D[k] = v
-    # In either case, this is followed by: for k, v in F.items(): D[k] = v
-    #     :return:
-    #     """
+        try:
+            return self[k]
+        except KeyError:
+            return default
 
     # Explore ####################################################################
     def __iter__(self) -> KeyIter:
@@ -626,10 +614,6 @@ class KeyValidationABC(metaclass=ABCMeta):
 
 ########################################################################################################################
 # Streams
-from io import IOBase
-
-
-#
 
 class stream_util:
     def always_true(*args, **kwargs):

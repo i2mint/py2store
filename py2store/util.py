@@ -3,28 +3,84 @@ import shutil
 import re
 from collections import namedtuple, defaultdict
 from warnings import warn
-from typing import Any, Hashable, Callable, Iterable, Optional
-# from functools import update_wrapper as _update_wrapper
-# from functools import wraps as _wraps
-from functools import partialmethod
-import functools
+from typing import Any, Hashable, Callable, Iterable, Optional, Union
+from functools import update_wrapper as _update_wrapper
+from functools import wraps as _wraps
+from functools import partialmethod, partial, WRAPPER_ASSIGNMENTS
+from types import MethodType
 
 # monkey patching WRAPPER_ASSIGNMENTS to get "proper" wrapping (adding defaults and kwdefaults
+wrapper_assignments = (*WRAPPER_ASSIGNMENTS, '__defaults__', '__kwdefaults__')
 
-wrapper_assignments = (
-    '__module__', '__name__', '__qualname__', '__doc__',
-    '__annotations__', '__defaults__', '__kwdefaults__')
-
-update_wrapper = functools.update_wrapper
-update_wrapper.__defaults__ = (functools.WRAPPER_ASSIGNMENTS, functools.WRAPPER_UPDATES)
-wraps = functools.wraps
-wraps.__defaults__ = (functools.WRAPPER_ASSIGNMENTS, functools.WRAPPER_UPDATES)
+update_wrapper = partial(_update_wrapper, assigned=wrapper_assignments)
+wraps = partial(_wraps, assigned=wrapper_assignments)
 
 
-# @_wraps(_wraps)
-# def wraps(wrapped, *args, **kwargs):
-#     _wrapped = _wraps(wrapped, *args, **kwargs)
-#     for attr
+def inject_method(obj, method_function, method_name=None):
+    """
+    method_function could be:
+        * a function
+        * a {method_name: function, ...} dict (for multiple injections)
+        * a list of functions or (function, method_name) pairs
+    """
+    if method_name is None:
+        method_name = method_function.__name__
+    assert callable(method_function), f"method_function (the second argument) is supposed to be a callable!"
+    assert isinstance(method_name, str), f"method_name (the third argument) is supposed to be a string!"
+    if not isinstance(obj, type):
+        method_function = MethodType(method_function, obj)
+    setattr(obj, method_name, method_function)
+    return obj
+
+
+def _disabled_clear_method(self):
+    """The clear method is disabled to make dangerous difficult.
+    You don't want to delete your whole DB
+    If you really want to delete all your data, you can do so by doing something like this:
+        ```
+        for k in self:
+            del self[k]
+        ```
+
+    or (in some cases)
+
+        ```
+        for k in self:
+            try:
+                del self[k]
+            except KeyError:
+                pass
+        ```
+    """
+    raise NotImplementedError(f"Instance of {type(self)}: {self.clear.__doc__}")
+
+
+# to be able to check if clear is disabled (see ensure_clear_method function for example):
+_disabled_clear_method.disabled = True
+
+
+def has_enabled_clear_method(store):
+    """Returns True iff obj has a clear method that is enabled (i.e. not disabled)"""
+    return hasattr(store, 'clear') and not getattr(store.clear, 'disabled', False)
+
+
+def _delete_keys_one_by_one(self):
+    """clear the entire store (delete all keys)"""
+    for k in self:
+        del self[k]
+
+
+def _delete_keys_one_by_one_with_keyerror_supressed(self):
+    """clear the entire store (delete all keys), ignoring KeyErrors"""
+    for k in self:
+        try:
+            del self[k]
+        except KeyError:
+            pass
+
+
+_delete_keys_one_by_one.disabled = False
+_delete_keys_one_by_one_with_keyerror_supressed.disabled = False
 
 
 def partialclass(cls, *args, **kwargs):
@@ -319,11 +375,13 @@ def groupby(
         key: The function that computes a key from an item. Needs to return a hashable.
         val: An optional function that computes a val from an item. If not given, the item itself will be taken.
         group_factory: The function to make new (empty) group objects and accumulate group items.
-            group_items = group_collector() will be called to make a new empty group collection
+            group_items = group_factory() will be called to make a new empty group collection
             group_items.append(x) will be called to add x to that collection
             The default is `list`
 
     Returns: A dict of {group_key: items_in_that_group, ...}
+
+    See Also: regroupby, itertools.groupby, and py2store.source.SequenceKvReader
 
     >>> groupby(range(11), key=lambda x: x % 3)
     {0: [0, 3, 6, 9], 1: [1, 4, 7, 10], 2: [2, 5, 8]}
@@ -356,6 +414,8 @@ def regroupby(items, *key_funcs, **named_key_funcs):
     Note: The named_key_funcs argument names don't have any external effect.
         They just give a name to the key function, for code reading clarity purposes.
 
+    See Also: groupby, itertools.groupby, and py2store.source.SequenceKvReader
+
     >>> # group by how big the number is, then by it's mod 3 value
     >>> # note that named_key_funcs argument names doesn't have any external effect (but give a name to the function)
     >>> regroupby([1, 2, 3, 4, 5, 6, 7], lambda x: 'big' if x > 5 else 'small', mod3=lambda x: x % 3)
@@ -382,18 +442,26 @@ def regroupby(items, *key_funcs, **named_key_funcs):
         }
 
 
+Groups = dict
+GroupKey = Hashable
 GroupItems = Iterable[Item]
+GroupReleaseCond = Union[
+    Callable[[GroupKey, GroupItems], bool],
+    Callable[[Groups, GroupKey, GroupItems], bool]
+]
+
 from inspect import signature
 
 
 def igroupby(
         items: Iterable[Item],
-        key: Callable[[Item], Hashable],
+        key: Callable[[Item], GroupKey],
         val: Optional[Callable[[Item], Any]] = None,
         group_factory: Callable[[], GroupItems] = list,
-        group_release_cond: Callable[[Any, Any], bool] = lambda k, v: False,
+        group_release_cond: GroupReleaseCond = lambda k, v: False,
         release_remainding=True,
-        append_to_group_items: Callable[[GroupItems, Item], Any] = list.append
+        append_to_group_items: Callable[[GroupItems, Item], Any] = list.append,
+        grouper_mapping=defaultdict
 ) -> dict:
     """The generator version of py2store groupby.
     Groups items according to group keys updated from those items through the given (item_to_)key function,
@@ -468,22 +536,29 @@ def igroupby(
     ...         == {'stopwords': ['the', 'in', 'a'], 'words': ['fox', 'is', 'box']})
 
     """
-    groups = defaultdict(group_factory)
+    groups = grouper_mapping(group_factory)
 
     assert callable(group_release_cond), (
         "group_release_cond should be callable (filter boolean function) or False. "
         f"Was {group_release_cond}")
-    assert len(signature(group_release_cond).parameters) == 2, (
-        "group_release_cond should take two inputs: The group_key and the group_items.\n"
+    n_group_release_cond_args = len(signature(group_release_cond).parameters)
+    assert n_group_release_cond_args in {2, 3}, (
+        "group_release_cond should take two or three inputs:\n"
+        " - (group_key, group_items), or\n"
+        " - (groups, group_key, group_items)"
         f"The arguments of the function you gave me are: {signature(group_release_cond)}"
     )
+
+    if val is None:
+        _append_to_group_items = append_to_group_items
+    else:
+        _append_to_group_items = lambda group_items, item: (group_items, val(item))
+
     for item in items:
         group_key = key(item)
         group_items = groups[group_key]
-        if val is None:
-            append_to_group_items(group_items, item)
-        else:
-            append_to_group_items(group_items, val(item))
+        _append_to_group_items(group_items, item)
+
         if group_release_cond(group_key, group_items):
             yield group_key, group_items
             del groups[group_key]

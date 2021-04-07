@@ -14,7 +14,7 @@ class GoogleDrivePersister(Persister):
 
     **** Authentication ***
     Drive API requires OAuth2.0 for authentication.
-    1. Go to APIs Console and make your own project.
+    1. Go to APIs Console (https://console.cloud.google.com/cloud-resource-manager) and make your own project.
     2. Search for ‘Google Drive API’, select the entry, and click ‘Enable’.
     3. Select ‘Credentials’ from the left menu, click ‘Create Credentials’, select ‘OAuth client ID’.
     4. Now, the product name and consent screen need to be set -> click ‘Configure consent screen’ and follow the instructions.

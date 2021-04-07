@@ -43,10 +43,12 @@ def _test_ops_on_store(store):
         assert set(s.items()).issuperset(
             {("_foo", "bar"), ("_hello", "world")}
         )
-    # if hasattr(s, 'get'):
-    #     assert s.get('_hello') == 'world'
-    #     assert s.get('_non_existing_key_', 'some default') == 'some default'
-    #     assert s.get('_non_existing_key_', None) is None
+    if hasattr(s, 'get'):
+        for k in s:
+            assert s.get(k) == s[k]
+        assert s.get('_hello') == 'world'
+        assert s.get('_non_existing_key_', 'some default') == 'some default'
+        assert s.get('_non_existing_key_', None) is None
     if hasattr(s, "setdefault"):
         assert s.setdefault("_hello", "this_will_never_be_used") == "world"
         assert s.setdefault("_non_existing_key_", "this_will") == "this_will"

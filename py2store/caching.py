@@ -1,9 +1,23 @@
 """Tools to add caching layers to stores."""
 
+import os
 from functools import wraps, partial
-from typing import Iterable, Union, Callable, Hashable, Any
+from typing import Iterable, Callable
+from inspect import signature
 
 from py2store.trans import store_decorator
+
+
+def is_a_cache(obj):
+    return all(map(partial(hasattr, obj), ('__contains__', '__getitem__', '__setitem__')))
+
+
+def get_cache(cache):
+    """Convenience function to get a cache (whether it's already an instance, or needs to be validated)"""
+    if is_a_cache(cache):
+        return cache
+    elif callable(cache) and len(signature(cache).parameters) == 0:
+        return cache()  # consider it to be a cache factory, and call to make factory
 
 
 ########################################################################################################################
@@ -134,15 +148,23 @@ def mk_cached_store(
     {'a': 1, 'b': 2, 'd': 4}
     """
 
-    cache = _mk_cache_instance(cache, assert_attrs=('__getitem__', '__setitem__'))
+    # cache = _mk_cache_instance(cache, assert_attrs=('__getitem__', '__setitem__'))
     assert isinstance(store, type), f"store should be a type, was a {type(store)}: {store}"
 
     class CachedStore(store):
-        _cache = cache
+        @wraps(store)
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self._cache = _mk_cache_instance(cache, assert_attrs=('__getitem__', '__contains__', '__setitem__'))
+            # self.__getitem__ = mk_memoizer(self._cache)(self.__getitem__)
 
-        @mk_memoizer(cache)
         def __getitem__(self, k):
-            return super().__getitem__(k)
+            if k not in self._cache:
+                val = super().__getitem__(k)
+                self._cache[k] = val  # cache it
+                return val
+            else:
+                return self._cache[k]
 
     return CachedStore
 
@@ -491,8 +513,12 @@ def flush_on_exit(cls):
     return new_cls
 
 
+from py2store.util import has_enabled_clear_method
+
+
+@store_decorator
 def mk_write_cached_store(
-        store,
+        store=None,
         *,
         w_cache=dict,
         flush_cache_condition=None
@@ -585,6 +611,12 @@ def mk_write_cached_store(
 
     w_cache = _mk_cache_instance(w_cache, ('clear', '__setitem__', 'items'))
 
+    if not has_enabled_clear_method(w_cache):
+        raise TypeError("""w_cache needs to have an enabled clear method to be able to act as a write cache.
+        You can wrap w_cache in py2store.trans.ensure_clear_method to inject a clear method, 
+        but BE WARNED: mk_write_cached_store will immediately delete all contents of `w_cache`!
+        So don't give it your filesystem or important DB to delete!
+        """)
     w_cache.clear()  # assure the cache is empty, by emptying it.
 
     @flush_on_exit
@@ -621,3 +653,93 @@ def mk_write_cached_store(
             return self._w_cache.clear()
 
     return WriteCachedStore
+
+
+from collections import ChainMap, deque
+
+
+class WriteBackChainMap(ChainMap):
+    max_key_search_depth = 1
+
+    def __getitem__(self, key):
+        q = deque([])
+        for mapping in self.maps:
+            try:
+                v = mapping[key]  # can't use 'key in mapping' with defaultdict
+                for d in q:
+                    d[key] = v
+                return v
+            except KeyError:
+                q.append(mapping)
+        return self.__missing__(key)
+
+    def __len__(self):
+        return len(set().union(*self.maps[:self.max_key_search_depth]))  # reuses stored hash values if possible
+
+    def __iter__(self):
+        d = {}
+        for mapping in reversed(self.maps[:self.max_key_search_depth]):
+            d.update(dict.fromkeys(mapping))  # reuses stored hash values if possible
+        return iter(d)
+
+    def __contains__(self, key):
+        return any(key in m for m in self.maps[:self.max_key_search_depth])
+
+
+# Experimental #########################################################################################################
+
+def _mk_cache_method_local_path_key(method, args, kwargs, ext='.p', path_sep=os.path.sep):
+    """"""
+    return (
+            method.__module__ + path_sep +
+            method.__qualname__ + path_sep +
+            (
+                    ",".join(map(str, args))
+                    + ",".join(f"{k}={v}" for k, v in kwargs.items())
+                    + ext
+            )
+    )
+
+
+class HashableMixin:
+    def __hash__(self):
+        return id(self)
+
+
+class HashableDict(HashableMixin, dict):
+    """Just a dict, but hashable"""
+
+
+# NOTE: cache uses (func, args, kwargs). Don't want to make more complex with a bind cast to (func, kwargs) only
+def cache_func_outputs(cache=HashableDict):
+    cache = get_cache(cache)
+
+    def cache_method_decorator(func):
+        @wraps(func)
+        def _func(*args, **kwargs):
+            k = (func, args, HashableDict(kwargs))
+            if k not in cache:
+                val = func(*args, **kwargs)
+                cache[k] = val  # cache it
+                return val
+            else:
+                return cache[k]
+
+        return _func
+
+    return cache_method_decorator
+
+# from py2store import StrTupleDict
+#
+# def process_fak(module, qualname, args, kwargs):
+# #     func, args, kwargs = map(fak_dict.get, ('func', 'args', 'kwargs'))
+#     return {
+#         'module': module,
+#         'qualname': qualname,
+#         'args': ",".join(map(str, args)),
+#         'kwargs': ",".join(f"{k}={v}" for k, v in kwargs.items())
+#     }
+#
+# t = StrTupleDict(os.path.join("{module}", "{qualname}", "{args},{kwargs}.p"), process_kwargs=process_fak)
+#
+# t.tuple_to_str((StrTupleDict.__module__, StrTupleDict.__qualname__, (1, 'one'), {'mode': 'lydian'}))

@@ -103,6 +103,29 @@ it will use a tmp directory it will create (the first time you try to store some
 It will create any directories that need to be created to satisfy any/key/that/contains/slashes.
 Of course, everything is configurable.
 
+# A list of stores for various uses
+
+`py2store` provides tools to create the dict-like interface to data you need. 
+If you want to just use existing interfaces, build on it, or find examples of how to make such 
+interfaces, check out the ever-growing list of `py2store`-using projects:
+
+- [mongodol](https://github.com/i2mint/mongodol): For MongoDB
+- [hear](https://github.com/otosense/hear): Read/write audio data flexibly. 
+- [tabled](https://github.com/i2mint/tabled): Data as `pandas.DataFrame` from various sources
+- [msword](https://pypi.org/project/msword/): Simple mapping view to docx (Word Doc) elements
+- [sshdol](https://github.com/i2mint/sshdol): Remote (ssh) files access
+- [haggle](https://github.com/otosense/haggle): Easily search, download, and use kaggle datasets.
+- [pyckup](https://github.com/i2mint/pyckup): Grab data simply and define protocols for others to do the same.
+- [hubcap](https://pypi.org/project/hubcap/): Dict-like interface to github.
+- [graze](https://github.com/thorwhalen/graze): Cache the internet.
+- [grub](https://github.com/thorwhalen/grub): A ridiculously simple search engine maker. 
+
+Just for fun projects:
+- [cult](https://github.com/thorwhalen/cult): Religious texts search engine. 18mn application of `grub`.
+- [laugh](https://github.com/thorwhalen/laugh): A (py2store-based) joke finder.
+
+
+
 # Use cases
 
 ## Interfacing reads
@@ -551,8 +574,9 @@ The classics (data bases and storage systems):
 ```python
 from py2store import (
     S3BinaryStore,  # to talk to AWS S3  (uses boto)
-    MongoStore,  # to talk to mongoDB (uses pymongo)
     SQLAlchemyStore,  # to talk to sql (uses alchemy)
+)
+# from py2store.stores.mongo_store import MongoStore  # moved to mongodol
 ```
 
 To access configs and customized store specifications:
@@ -980,7 +1004,7 @@ Some code that acquires and locally caches a joke data, makes a mapping view of 
 
 ```python
 import json
-from graze import graze
+from graze.base import graze
 from grub import SearchStore
 
 # reddit jokes (194553 at the time of writing this)
@@ -1433,8 +1457,11 @@ specify what fields should be considered as keys, and what fields should be cons
 By default, the `_id` field (the only field ensured by default to contain unique values) is the single key field, and 
 all other fields are considered to be data fields.
 
+Note: py2store mongo tools have now been moved to the mongodol project. Import from there.
+Requires `pymongo`.
+
 ```python
-from py2store.stores.mongo_store import MongoStore
+from mongodol.stores import MongoStore  # Note: project moved to mongodol now
 # The following makes a default MongoStore, the default pymongo.MongoClient settings, 
 # and db_name='py2store', collection_name='test', key_fields=('_id',)
 store = MongoStore()
@@ -1446,7 +1473,7 @@ The key schema is fixed, so you should be able to just specify the tuple of valu
 And you can, with MongoTupleKeyStore
 
 ```python
-from py2store.stores.mongo_store import MongoTupleKeyStore
+from mongodol.stores import MongoTupleKeyStore  # Note: project moved to mongodol now
 store = MongoTupleKeyStore(key_fields=('_id', 'name'))
 basic_test(store, k=(1234, 'bob'), v={'age': 42, 'gender': 'unspecified'})
 ```
@@ -1461,6 +1488,55 @@ SQL give you read and write access to SQL DBs and tables.
 ZipReader (and other related stores) talks to one or several files, giving you the ability to operate as if the zips were uncompressed. 
 
 Dropbox will give you access to dropbox files through the same dict-like interface.
+
+
+# Miscellenous
+
+## Caching
+
+There's some basic caching capabilities in py2store. 
+Basic, but covers a lot of use cases. 
+But if you want to bring your own caching tools, you might be able to use them here too. 
+
+For example, the very popular `cachetools` uses a ``dict`` as it's default cache store, but you can 
+specify any mutable mapping (that takes tuples as keys!). 
+
+Say you want to use local files as your cache. Try something like this:
+
+```python
+from cachetools import cached # there's also LRUCache, TTLCache...
+from py2store import QuickPickleStore, wrap_kvs
+
+def tuple_to_str(k: tuple, sep: str=os.path.sep) -> str:
+    return sep.join(k)
+    if isinstance(k, tuple):
+        return os.path.sep.join(k)
+    else:
+        return k
+    
+def str_to_tuple(k: str, sep: str=os.path.sep) -> tuple:
+    return k.split(sep)
+
+@wrap_kvs(id_of_key=tuple_to_str, key_of_id=str_to_tuple)
+class TupledQuickPickleStore(QuickPickleStore):
+    """A local pickle store with tuple keys (to work well with cachetools)"""
+    
+
+local_files_cache = TupledQuickPickleStore()  # no rootdir? Fine, will choose a local file
+
+@cached(cache=local_files_cache)
+def hello(x='world'):
+    return f"hello {x}!"
+```
+
+```pydocstring
+>>> hello('QT')
+>>> import pickle
+>>> # Let's now verify that we actually have a file with such content
+>>> with open(os.path.join(local_files_cache._prefix, 'QT'), 'rb') as fp:
+...     file_contents = pickle.load(fp)
+>>> assert file_contents == 'hello QT!'
+```
 
 
 # Philosophical FAQs
