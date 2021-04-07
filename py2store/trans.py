@@ -2,13 +2,13 @@ from functools import wraps, partial, reduce
 import types
 from inspect import signature, Parameter
 from typing import Union, Iterable, Optional, Collection, Callable
+from warnings import warn
+from collections.abc import Iterable, KeysView, ValuesView, ItemsView
 
-from errors import SetattrNotAllowed
+from py2store.errors import SetattrNotAllowed
 from py2store.base import Store, KvReader, AttrNames
 from py2store.util import lazyprop, num_of_args, attrs_of, wraps
 from py2store.utils.signatures import Sig, KO
-from warnings import warn
-from collections.abc import Iterable, KeysView, ValuesView, ItemsView
 
 
 ########################################################################################################################
