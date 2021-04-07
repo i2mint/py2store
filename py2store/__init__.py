@@ -93,6 +93,7 @@ from py2store.access import (
     user_defaults,
 )
 from py2store.caching import (
+    WriteBackChainMap,
     mk_cached_store,
     store_cached,
     store_cached_with_single_key,

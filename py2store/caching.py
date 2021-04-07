@@ -659,7 +659,7 @@ from collections import ChainMap, deque
 
 
 class WriteBackChainMap(ChainMap):
-    max_key_search_depth = 0
+    max_key_search_depth = 1
 
     def __getitem__(self, key):
         q = deque([])
