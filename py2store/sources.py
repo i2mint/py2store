@@ -12,15 +12,16 @@ from py2store.caching import mk_cached_store
 from py2store.util import copy_attrs
 from py2store.utils.signatures import Sig
 
-ignore_if_module_not_found = suppress(ModuleNotFoundError)
 
-with ignore_if_module_not_found:
-    # To install: pip install mongodol
-    from mongodol.stores import (
-        MongoStore,
-        MongoTupleKeyStore,
-        MongoAnyKeyStore,
-    )
+# ignore_if_module_not_found = suppress(ModuleNotFoundError)
+#
+# with ignore_if_module_not_found:
+#     # To install: pip install mongodol
+#     from mongodol.stores import (
+#         MongoStore,
+#         MongoTupleKeyStore,
+#         MongoAnyKeyStore,
+#     )
 
 
 def identity_func(x):
