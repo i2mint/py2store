@@ -61,7 +61,10 @@ _disabled_clear_method.disabled = True
 
 def has_enabled_clear_method(store):
     """Returns True iff obj has a clear method that is enabled (i.e. not disabled)"""
-    return hasattr(store, 'clear') and not getattr(store.clear, 'disabled', False)
+    return (hasattr(store, 'clear')  # has a clear method...
+            and (not hasattr(store.clear, 'disabled')  # that doesn't have a disabled attribute
+                 or not store.clear.disabled)  # ... or if it does, than it must not be == True
+            )
 
 
 def _delete_keys_one_by_one(self):

@@ -299,7 +299,8 @@ def store_decorator(func):
 
         if not isinstance(store, type):
             store_instance = store
-            WrapperStore = func(Store, **kwargs)
+            StoreWrap = type('StoreWrap', (Store,), {})  # a copy of Store, so Store isn't transformed directly
+            WrapperStore = func(StoreWrap, **kwargs)
             r = WrapperStore(store_instance)
         else:
             assert _all_but_first_arg_are_keyword_only(func), (
