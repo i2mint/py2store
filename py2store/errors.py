@@ -112,37 +112,57 @@ def _assert_condition(condition, err_msg="", err_cls=AssertionError):
         raise err_cls(err_msg)
 
 
-class KeyValidationError(ValueError):
-    """Error to raise when a key is not valid"""
+class NotValid(ValueError, TypeError):
+    """To use to indicate when an object doesn't fit expected properties"""
 
-    pass
+
+class KeyValidationError(NotValid):
+    """Error to raise when a key is not valid"""
 
 
 class NoSuchKeyError(KeyError):
-    pass
+    """When a requested key doesn't exist"""
 
 
-class OperationNotAllowed(NotImplementedError):
-    pass
+class NotAllowed(Exception):
+    """To use to indicate that something is not allowed"""
+
+
+class OperationNotAllowed(NotAllowed, NotImplementedError):
+    """When a given operation is not allowed (through being disabled, conditioned, or just implemented)"""
 
 
 class ReadsNotAllowed(OperationNotAllowed):
-    pass
+    """Read OperationNotAllowed"""
 
 
 class WritesNotAllowed(OperationNotAllowed):
-    pass
+    """Write OperationNotAllowed"""
 
 
 class DeletionsNotAllowed(OperationNotAllowed):
-    pass
+    """Delete OperationNotAllowed"""
 
 
 class IterationNotAllowed(OperationNotAllowed):
-    pass
+    """Iteration OperationNotAllowed"""
 
 
 class OverWritesNotAllowedError(OperationNotAllowed):
     """Error to raise when a key is not valid"""
 
-    pass
+
+class AlreadyExists(ValueError):
+    """To use if an object already exists (and shouldn't; for example, to protect overwrites)"""
+
+
+class MethodNameAlreadyExists(AlreadyExists):
+    """To use when a method name already exists (and shouldn't)"""
+
+
+class MethodFuncNotValid(NotValid):
+    """Use when method function is not valid"""
+
+
+class SetattrNotAllowed(NotAllowed):
+    """An attribute was requested to be set, but some conditions didn't apply"""

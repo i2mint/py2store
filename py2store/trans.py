@@ -1,7 +1,9 @@
 from functools import wraps, partial, reduce
 import types
 from inspect import signature, Parameter
-from typing import Union, Iterable, Optional, Collection
+from typing import Union, Iterable, Optional, Collection, Callable
+
+from errors import SetattrNotAllowed
 from py2store.base import Store, KvReader, AttrNames
 from py2store.util import lazyprop, num_of_args, attrs_of, wraps
 from py2store.utils.signatures import Sig, KO
@@ -2322,12 +2324,40 @@ SetitemCondition = Callable[[MutableMapping, Key, Val], bool]
 
 from py2store.util import has_enabled_clear_method, inject_method, _delete_keys_one_by_one
 
+InjectionValidator = Callable[[type, Callable], bool]
+
 
 @double_up_as_factory
 def ensure_clear_method(store=None, *, clear_method=_delete_keys_one_by_one):
     """If obj doesn't have an enabled clear method, will add one (a slow one that runs through keys and deletes them"""
     if not has_enabled_clear_method(store):
         inject_method(store, clear_method, 'clear')
+    return store
+
+
+@store_decorator
+def add_store_method(
+        store: type,
+        *,
+        method_func,
+        method_name=None,
+        validator: Optional[InjectionValidator] = None
+):
+    """Add methods to store classes or instances
+
+    :param store: A store type or instance
+    :param method_func: The function of the method to be added
+    :param method_name: The name of the store attribute this function should be written to
+    :param validator: An optional validator. If not None, ``validator(store, method_func)`` will be called.
+        If it doesn't return True, a ``SetattrNotAllowed`` will be raised.
+        Note that ``validator`` can also raise its own exception.
+    :return: A store with the added (or modified) method
+    """
+    method_name = method_name or method_func.__name__
+    if validator is not None:
+        if not validator(store, method_func):
+            raise SetattrNotAllowed(f"Method is not allowed to be set (according to {validator}): {method_func}")
+    setattr(store, method_name, method_func)
     return store
 
 

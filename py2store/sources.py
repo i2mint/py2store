@@ -4,12 +4,23 @@ This module contains key-value views of disparate sources.
 from typing import Mapping, Iterable, Optional, Callable, Union
 from operator import itemgetter
 from itertools import groupby as itertools_groupby
+from contextlib import suppress
 
 from py2store.base import KvReader, KvPersister
 from py2store.trans import cached_keys
 from py2store.caching import mk_cached_store
 from py2store.util import copy_attrs
 from py2store.utils.signatures import Sig
+
+ignore_if_module_not_found = suppress(ModuleNotFoundError)
+
+with ignore_if_module_not_found:
+    # To install: pip install mongodol
+    from mongodol.stores import (
+        MongoStore,
+        MongoTupleKeyStore,
+        MongoAnyKeyStore,
+    )
 
 
 def identity_func(x):
