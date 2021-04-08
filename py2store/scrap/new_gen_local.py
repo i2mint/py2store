@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 import os
-from py2store.key_mappers.naming import StrTupleDict
+from py2store.naming import StrTupleDict
 from py2store.key_mappers.str_utils import is_manual_format_string
 
 pjoin = os.path.join

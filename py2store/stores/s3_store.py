@@ -2,7 +2,7 @@ import pickle
 from py2store.base import Store
 from py2store.util import ModuleNotFoundErrorNiceMessage
 from py2store.persisters.s3_w_boto3 import S3BucketPersister
-from py2store.key_mappers.paths import mk_relative_path_store
+from py2store.paths import mk_relative_path_store
 
 with ModuleNotFoundErrorNiceMessage():
     from botocore.client import Config

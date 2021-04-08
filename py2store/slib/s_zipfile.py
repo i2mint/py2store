@@ -321,7 +321,7 @@ class FileStreamsOfZip(FilesOfZip):
         return self.zip_file.open(k, **self.open_kws)
 
 
-from py2store.key_mappers.paths import mk_relative_path_store
+from py2store.paths import mk_relative_path_store
 from py2store.util import partialclass
 
 ZipFileStreamsReader = mk_relative_path_store(

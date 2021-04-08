@@ -1,10 +1,10 @@
-import doctest
-import py2store.test.util
-import py2store.test.simple_test
-
-
-t = doctest.testmod(py2store.test.simple_test)
-print(f"failed={t.failed} attempted={t.attempted}")
+# import doctest
+# import py2store.test.util
+# import py2store.test.simple_test
+#
+#
+# t = doctest.testmod(py2store.test.simple_test)
+# print(f"failed={t.failed} attempted={t.attempted}")
 
 # def load_tests(loader, tests, ignore):
 #     tests.addTests(doctest.DocTestSuite(py2store.test.util))

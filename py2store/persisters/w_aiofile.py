@@ -2,7 +2,7 @@ import asyncio
 import os
 
 from py2store.base import KvReader, KvPersister
-from py2store.key_mappers.paths import mk_relative_path_store
+from py2store.paths import mk_relative_path_store
 from py2store.filesys import (
     FileCollection,
     validate_key_and_raise_key_error_on_exception,

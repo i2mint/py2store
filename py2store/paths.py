@@ -1,4 +1,4 @@
-"""Forwards to dol.core:
+"""Forwards to dol.paths:
 
 Tools to add append-functionality to key-val stores. The main function is
     `appendable_store_cls = add_append_functionality_to_store_cls(store_cls, item2kv, ...)`
@@ -9,6 +9,6 @@ See add_append_functionality_to_store_cls docs for examples.
 
 """
 
-from dol.core import *
+from dol.paths import *
 
     

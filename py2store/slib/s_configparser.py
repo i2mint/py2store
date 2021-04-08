@@ -5,7 +5,7 @@ from io import BytesIO, StringIO
 
 from py2store.trans import kv_wrap_persister_cls
 
-# from py2store.utils.signatures import Sig
+# from py2store.signatures import Sig
 
 _test_config_str = """[Simple Values]
 key=value

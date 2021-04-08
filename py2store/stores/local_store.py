@@ -3,7 +3,7 @@ from functools import wraps
 
 from py2store.base import Store, Persister
 from py2store.core import PrefixRelativizationMixin, PrefixRelativization
-from py2store.key_mappers.paths import mk_relative_path_store
+from py2store.paths import mk_relative_path_store
 from py2store.serializers.pickled import mk_pickle_rw_funcs
 from py2store.persisters.local_files import (
     PathFormatPersister,
