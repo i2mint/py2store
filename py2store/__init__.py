@@ -113,8 +113,8 @@ from py2store.slib.s_zipfile import (
     FlatZipFilesReader,
 )
 
-from py2store.key_mappers.naming import StrTupleDict
-from py2store.key_mappers.paths import mk_relative_path_store
+from py2store.naming import StrTupleDict
+from py2store.paths import mk_relative_path_store
 
 ###### Optionals... ##############################################################################
 
@@ -133,12 +133,13 @@ with ignore_if_module_not_found:
         S3PickleStore,
     )
 
-with ignore_if_module_not_found:
-    from mongodol.stores import (
-        MongoStore,
-        MongoTupleKeyStore,
-        MongoAnyKeyStore,
-    )
+# If you want it, import from mongodol (pip installable) directly
+# with ignore_if_module_not_found:
+#     from mongodol.stores import (
+#         MongoStore,
+#         MongoTupleKeyStore,
+#         MongoAnyKeyStore,
+#     )
 
 with ignore_if_module_not_found:
     from py2store.persisters.sql_w_sqlalchemy import (

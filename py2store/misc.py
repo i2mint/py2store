@@ -1,3 +1,6 @@
+"""Functions to read from and write to misc sources
+"""
+
 import os
 import json
 import pickle
@@ -56,7 +59,6 @@ dflt_outgoing_val_trans_for_key = {
     ".gzip": gzip.compress,
     '.ini': lambda v: ConfigStore(v, interpolation=ConfigReader.ExtendedInterpolation()),
 }
-
 
 synset_of_ext = {".ini": {".cnf", ".conf", ".config"}, '.gzip': [".gz"]}
 for _user_this, _for_these_extensions in synset_of_ext.items():

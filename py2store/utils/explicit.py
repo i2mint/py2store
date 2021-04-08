@@ -5,7 +5,7 @@ from typing import Collection as CollectionType
 from py2store import Store
 from py2store.base import Collection, KvReader
 from py2store.trans import kv_wrap
-from py2store.key_mappers.paths import PrefixRelativizationMixin
+from py2store.paths import PrefixRelativizationMixin
 from py2store.util import max_common_prefix
 
 

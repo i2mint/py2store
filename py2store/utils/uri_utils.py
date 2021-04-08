@@ -42,7 +42,7 @@ def build_uri(
 
 
 import string
-from py2store.utils.signatures import set_signature_of_func
+from py2store.signatures import set_signature_of_func
 
 str_formatter = string.Formatter()
 
