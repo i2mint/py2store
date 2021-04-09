@@ -183,17 +183,13 @@ class PathFormat:
 
         if "{" not in path_format:
             rootdir = ensure_slash_suffix(path_format)
-            # if the path_format is equal to the _prefix (i.e. there's no {} formatting)
-            # ... append a formatting element so that the matcher can match all subfiles.
-            path_pattern = path_format + "{}"
         else:
             rootdir = ensure_slash_suffix(
                 os.path.dirname(re.match("[^\{]*", path_format).group(0))
             )
-            path_pattern = path_format
 
         self._prefix = rootdir
-        self._path_match_re = match_re_for_fstring(path_pattern)
+        self._path_match_re = path_match_regex_from_path_format(path_format)
 
         def _key_filt(k):
             return bool(self._path_match_re.match(k))
