@@ -117,8 +117,8 @@ from py2store.naming import StrTupleDict
 from py2store.paths import mk_relative_path_store
 
 ###### Optionals... ##############################################################################
-
-ignore_if_module_not_found = suppress(ModuleNotFoundError)
+# TODO: Look into sanity of suppressing both import and module errors
+ignore_if_module_not_found = suppress(ModuleNotFoundError, ImportError)
 
 with ignore_if_module_not_found:
     from py2store.access import myconfigs
