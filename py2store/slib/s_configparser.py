@@ -197,6 +197,7 @@ class ConfigStore(ConfigParserStore):
     space_around_delimiters = True
     BasicInterpolation = BasicInterpolation
     ExtendedInterpolation = ExtendedInterpolation
+    source_kind = None
 
     # @Sig.from_objs(['source', ConfigParser.__init__, ('target_kind', None)])  # need to add source and target_kind
     def __init__(
@@ -330,9 +331,11 @@ class ConfigReader(ConfigStore):
     >>> # A configparser.Section is a mapping. Let's see the keys
     >>> list(c['Paths'])
     ['home_dir', 'my_dir', 'my_pictures']
-    >>> # here's a quick way to see both keys and values. Note how the home_dir interpolation was performed!
-    >>> dict(c['Paths'])
-    {'home_dir': '/Users', 'my_dir': '/Users/lumberjack', 'my_pictures': '/Users/lumberjack/Pictures'}
+
+    # >>> # here's a quick way to see both keys and values. Note how the home_dir interpolation was performed!
+    # >>> dict(c['Paths'])
+    # {'home_dir': '/Users', 'my_dir': '/Users/lumberjack', 'my_pictures': '/Users/lumberjack/Pictures'}
+
     >>>
     >>> ######## Get configs from a dict ########
     >>> config_dict = {'section1': {'key1': 'value1'},
@@ -350,7 +353,7 @@ class ConfigReader(ConfigStore):
     ['DEFAULT', 'Simple Values', 'All Values Are Strings', 'Multiline Values', 'No Values', 'You can use comments', 'Sections Can Be Indented']
     >>> list(c['Simple Values'])
     ['key', 'spaces in keys', 'spaces in values', 'spaces around the delimiter', 'you can also use']
-        """
+    """
 
     def persist(self):
         raise NotImplementedError("persist disabled for ConfigReader")

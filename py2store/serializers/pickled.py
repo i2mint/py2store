@@ -42,7 +42,7 @@ def mk_marshal_rw_funcs(
     """Generates a reader and writer using marshal. That is, a pair of parametrized loads and dumps
 
     >>> read, write = mk_marshal_rw_funcs()
-    >>> d = {'a': 'simple', 'and': {'a': b'more', 'complex': [1, 2.2, dict]}}
+    >>> d = {'a': 'simple', 'and': {'a': b'more', 'complex': [1, 2.2]}}
     >>> serialized_d = write(d)
     >>> deserialized_d = read(serialized_d)
     >>> assert d == deserialized_d

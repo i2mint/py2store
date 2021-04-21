@@ -218,11 +218,11 @@ class ExplicitKeyMap:
         >>> km = ExplicitKeyMap(key_of_id={'a': 1, 'b': 2, 'c': 2})
         Traceback (most recent call last):
           ...
-        AssertionError: The values of key_of_id are not unique, so the mapping is not invertible
+        AssertionError: The values of inv_mapping are not unique, so the mapping is not invertible
         >>> km = ExplicitKeyMap(key_of_id={'a': 1, 'b': 2}, id_of_key={1: 'a', 2: 'oh no!!!!'})
         Traceback (most recent call last):
           ...
-        AssertionError: id_of_key and key_of_id_map are not inverse of each other!
+        AssertionError: mapping and inv_mapping are not inverse of each other!
         """
         id_of_key, key_of_id = invertible_maps(id_of_key, key_of_id)
         self.key_of_id_map = key_of_id

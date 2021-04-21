@@ -1,5 +1,7 @@
 from functools import wraps, partial
 
+NoKeyWasWrittenToYet = type("NoKeyWasWrittenToYet", (), {})()
+
 
 def remember_last_key_written_to(
         cls=None, *, only_if_new_key=False, name=None, same_name_as_class=False
@@ -44,8 +46,7 @@ def remember_last_key_written_to(
     >>>
     >>> SSS = remember_last_key_written_to(dict, only_if_new_key=True)
     >>> sss = SSS()
-    >>> sss._last_key_written_to
-    None
+    >>> assert sss._last_key_written_to is None
     >>> sss['hi'] = 'there'
     >>> sss._last_key_written_to
     'hi'

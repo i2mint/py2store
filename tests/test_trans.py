@@ -43,7 +43,6 @@ def test_wrap_kvs():
 
     A = wrap_kvs(
         dict,
-        "A",
         key_of_id=key_of_id,
         id_of_key=id_of_key,
         obj_of_data=obj_of_data,
@@ -69,7 +68,7 @@ def test_wrap_kvs():
 
     A = wrap_kvs(
         dict,
-        "A",
+        name="A",  # if you need to rely on a name
         key_of_id=T.key_of_id,
         id_of_key=T.id_of_key,
         obj_of_data=T.obj_of_data,
@@ -101,7 +100,6 @@ def test_wrap_kvs():
     t = T(100)
     A = wrap_kvs(
         dict,
-        "A",
         key_of_id=t.key_of_id,
         id_of_key=t.id_of_key,
         obj_of_data=t.obj_of_data,
@@ -113,7 +111,6 @@ def test_wrap_kvs():
     t = T(50)
     A = wrap_kvs(
         dict,
-        "A",
         key_of_id=t.key_of_id,
         id_of_key=t.id_of_key,
         obj_of_data=t.obj_of_data,
@@ -125,7 +122,6 @@ def test_wrap_kvs():
     ###################### Test postget ####################
     B = wrap_kvs(
         dict,
-        "B",
         postget=lambda k, v: f"upper {v}" if k[0].isupper() else f"lower {v}",
     )
 

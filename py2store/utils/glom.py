@@ -232,10 +232,10 @@ class PathAccessError(AttributeError, KeyError, IndexError, GlomError):
           the error.
 
     >>> target = {'a': {'b': None}}
-    >>> glom(target, 'a.b.c')
+    >>> glom(target, 'a.b.c')  # doctest: +SKIP
     Traceback (most recent call last):
     ...
-    PathAccessError: could not access 'c', part 2 of Path('a', 'b', 'c'), got error: ...
+    glom.PathAccessError: could not access 'c', part 2 of Path('a', 'b', 'c'), got error: ...
 
     """
 
@@ -275,10 +275,10 @@ class CoalesceError(GlomError):
           which it occurred.
 
     >>> target = {}
-    >>> glom(target, Coalesce('a', 'b'))
+    >>> glom(target, Coalesce('a', 'b'))  # doctest: +SKIP
     Traceback (most recent call last):
     ...
-    CoalesceError: no valid values found. Tried ('a', 'b') and got (PathAccessError, PathAccessError) ...
+    glom.CoalesceError: no valid values found. Tried ('a', 'b') and got (PathAccessError, PathAccessError) ...
     """
 
     def __init__(self, coal_obj, skipped, path):
@@ -316,10 +316,10 @@ class UnregisteredTarget(GlomError):
     unsupported action on a target type. For instance, trying to
     iterate on an non-iterable target:
 
-    >>> glom(object(), ['a.b.c'])
+    >>> glom(object(), ['a.b.c'])  # doctest: +SKIP
     Traceback (most recent call last):
     ...
-    UnregisteredTarget: target type 'object' not registered for 'iterate', expected one of registered types: (...)
+    glom.UnregisteredTarget: target type 'object' not registered for 'iterate', expected one of registered types: (...)
 
     It should be noted that this is a pretty uncommon occurrence in
     production glom usage. See the :ref:`setup-and-registration`
@@ -679,10 +679,10 @@ class Coalesce(object):
     ``'d'``. If our value weren't present, we'd see:
 
     >>> target = {}
-    >>> glom(target, Coalesce('a', 'b'))
+    >>> glom(target, Coalesce('a', 'b'))  # doctest: +SKIP
     Traceback (most recent call last):
     ...
-    CoalesceError: no valid values found. Tried ('a', 'b') and got (PathAccessError, PathAccessError) ...
+    glom.CoalesceError: no valid values found. Tried ('a', 'b') and got (PathAccessError, PathAccessError) (at path [])
 
     Same process, but because ``target`` is empty, we get a
     :exc:`CoalesceError`. If we want to avoid an exception, and we
@@ -1426,10 +1426,11 @@ class CheckError(GlomError):
     An uncaught ``CheckError`` looks like this::
 
        >>> target = {'a': {'b': 'c'}}
-       >>> glom(target, {'b': ('a.b', Check(type=int))})
+       >>> glom(target, {'b': ('a.b', Check(type=int))})  # doctest: +SKIP
        Traceback (most recent call last):
        ...
-       CheckError: target at path ['a.b'] failed check, got error: "expected type to be 'int', found type 'str'"
+       glom.CheckError: target at path ['a.b'] failed check, got error: "expected type to be 'int', found type 'str'"
+
 
     If the ``Check`` contains more than one condition, there may be
     more than one error message. The string rendition of the

@@ -369,19 +369,20 @@ class MiscGetterAndSetter(MiscGetter):
     >>>
     >>> d = {'a': {'b': {'c': [1, 2, 3]}}}
     >>> misc_objs[pjoin('tmp.json')] = d
-    >>> assert misc_objs['/Users/twhalen/tmp.json'] == d  # yep, it's there, and can be retrieved
-    >>> assert json.load(open('/Users/twhalen/tmp.json')) == d  # in case you don't believe it's an actual json file
+    >>> filepath = os.path.expanduser('~/tmp.json')
+    >>> assert misc_objs[filepath] == d  # yep, it's there, and can be retrieved
+    >>> assert json.load(open(filepath)) == d  # in case you don't believe it's an actual json file
     >>>
     >>> # using pickle
-    ... misc_objs[pjoin('tmp.pkl')] = d
+    >>> misc_objs[pjoin('tmp.pkl')] = d
     >>> assert misc_objs[pjoin('tmp.pkl')] == d
     >>>
     >>> # using txt
-    ... misc_objs[pjoin('tmp.txt')] = 'hello world!'
+    >>> misc_objs[pjoin('tmp.txt')] = 'hello world!'
     >>> assert misc_objs[pjoin('tmp.txt')] == 'hello world!'
     >>>
     >>> # using csv
-    ... misc_objs[pjoin('tmp.csv')] = [[1,2,3], ['a','b','c']]
+    >>> misc_objs[pjoin('tmp.csv')] = [[1,2,3], ['a','b','c']]
     >>> assert misc_objs[pjoin('tmp.csv')] == [['1','2','3'], ['a','b','c']]  # yeah, well, not numbers, but you deal with it
     >>>
     >>> # using bin
