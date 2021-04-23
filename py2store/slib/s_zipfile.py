@@ -44,7 +44,7 @@ def take_everything(fileinfo):
 
 
 class ZipReader(KvReader):
-    """A KvReader to read the contents of a zip file.
+    r"""A KvReader to read the contents of a zip file.
     Provides a KV perspective of https://docs.python.org/3/library/zipfile.html
 
     ``ZipReader`` has two value categories: Directories and Files.
@@ -211,7 +211,7 @@ class ZipFilesReader(FileCollection, KvReader):
     def __init__(
             self,
             rootdir,
-            subpath=".+\.zip",
+            subpath=r".+\.zip",
             pattern_for_field=None,
             max_levels=0,
             zip_reader=ZipReader,

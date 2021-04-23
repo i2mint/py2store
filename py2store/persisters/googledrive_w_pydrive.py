@@ -1,4 +1,6 @@
 """Forwards to pydrivedol
 """
+from contextlib import suppress
 
-from pydrivedol import *
+with suppress(ModuleNotFoundError):
+    from pydrivedol import *
