@@ -1,10 +1,9 @@
 """ Selectors that use the mongo-query interface """
 
 from typing import Iterator
+from contextlib import suppress
 
-from py2store.util import ModuleNotFoundErrorNiceMessage
-
-with ModuleNotFoundErrorNiceMessage():
+with suppress(ModuleNotFoundError, ImportError):
     # TODO: pandas only used for pd.isnull and in tests -- free this from import?
     import pandas as pd
     from py2store.utils.mongoquery import Query
@@ -146,7 +145,6 @@ with ModuleNotFoundErrorNiceMessage():
 
     ########################################################################################################################
     # Other versions of MgDfSelector that are more amenable to generalization...
-
 
     class MgDfSelector2(Selector):
         """
