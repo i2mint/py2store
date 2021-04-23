@@ -1,3 +1,6 @@
+"""
+define stores (and functions) so they give you data as you want it, depending on the extension
+"""
 from functools import wraps
 from io import BytesIO, StringIO
 

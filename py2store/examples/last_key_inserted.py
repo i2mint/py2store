@@ -1,4 +1,9 @@
+"""
+showing how to add the knowledge of the 'last key inserted' to stores
+"""
 from functools import wraps, partial
+
+NoKeyWasWrittenToYet = type("NoKeyWasWrittenToYet", (), {})()
 
 
 def remember_last_key_written_to(
@@ -44,8 +49,7 @@ def remember_last_key_written_to(
     >>>
     >>> SSS = remember_last_key_written_to(dict, only_if_new_key=True)
     >>> sss = SSS()
-    >>> sss._last_key_written_to
-    None
+    >>> assert sss._last_key_written_to is None
     >>> sss['hi'] = 'there'
     >>> sss._last_key_written_to
     'hi'

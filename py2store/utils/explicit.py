@@ -1,6 +1,8 @@
+'''
+utils to make stores based on a the input data itself
+'''
 from collections.abc import Mapping
-from typing import Callable
-from typing import Collection as CollectionType
+from typing import Callable, Collection as CollectionType
 
 from py2store import Store
 from py2store.base import Collection, KvReader
@@ -43,10 +45,12 @@ class ObjReader:
     ...         return fp.read()
     >>> pr = ObjReader(_obj_of_key=read_file)
     >>> file_where_this_code_is = __file__  # it should be THIS file you're reading right now!
-    >>> print(pr[file_where_this_code_is][:100])  # print the first 100 characters of this file
+    >>> print(pr[file_where_this_code_is][:155])  # print the first 100 characters of this file
+    '''
+    utils to make stores based on a the input data itself
+    '''
     from collections.abc import Mapping
-    from typing import Callable
-    from typing import Collection as Col
+    from typing import Callable, Collection as CollectionType
     """
 
     def __init__(self, _obj_of_key: Callable):
@@ -218,11 +222,11 @@ class ExplicitKeyMap:
         >>> km = ExplicitKeyMap(key_of_id={'a': 1, 'b': 2, 'c': 2})
         Traceback (most recent call last):
           ...
-        AssertionError: The values of key_of_id are not unique, so the mapping is not invertible
+        AssertionError: The values of inv_mapping are not unique, so the mapping is not invertible
         >>> km = ExplicitKeyMap(key_of_id={'a': 1, 'b': 2}, id_of_key={1: 'a', 2: 'oh no!!!!'})
         Traceback (most recent call last):
           ...
-        AssertionError: id_of_key and key_of_id_map are not inverse of each other!
+        AssertionError: mapping and inv_mapping are not inverse of each other!
         """
         id_of_key, key_of_id = invertible_maps(id_of_key, key_of_id)
         self.key_of_id_map = key_of_id

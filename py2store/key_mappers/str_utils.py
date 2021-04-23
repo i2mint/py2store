@@ -1,3 +1,6 @@
+"""
+utils from strings
+"""
 import string
 
 dflt_formatter = string.Formatter()
@@ -257,7 +260,7 @@ def is_automatic_format_params(format_params):
     """
     assert not isinstance(
         format_params, str
-    ), "format_params can't be a string (perhaps you meant is_automatic_format_string?)"
+    ), "format_params can't be a string (perhaps you meant to use is_automatic_format_string?)"
     return all((x is None) for x in format_params)
 
 
@@ -308,16 +311,13 @@ def args_and_kwargs_indices(format_string):
     >>> format_string = '{0} (no 1) {2}, {see} this, {0} is a duplicate (appeared before) and {name} is string-named'
     >>> assert args_and_kwargs_indices(format_string) == ({0, 2}, {'name', 'see'})
     >>> format_string = 'This is a format string with only automatic field specification: {}, {}, {} etc.'
-    >>> args_and_kwargs_indices(format_string)
-    (None, None)
+    >>> assert args_and_kwargs_indices(format_string) == (set(), set())
     """
-    if is_hybrid_format_params(format_string):
+    if is_hybrid_format_string(format_string):
         raise no_hybrid_format_error
     d = {True: set(), False: set()}
     for x in format_params_in_str_format(format_string):
-        d[isinstance(x, int)].add(x)
+        if x is not None:
+            d[isinstance(x, int)].add(x)
     args_keys, kwargs_keys = d[True], d[False]
-    if args_keys is not None:
-        return args_keys, kwargs_keys
-    else:
-        return None, None
+    return args_keys, kwargs_keys

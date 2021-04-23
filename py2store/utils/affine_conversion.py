@@ -1,3 +1,6 @@
+"""
+utils to carry out affine transformations (of indices)
+"""
 class AffineConverter(object):
     """
     Getting a callable that will perform an affine conversion.

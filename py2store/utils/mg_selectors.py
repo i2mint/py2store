@@ -71,10 +71,8 @@ class MgDfSelector(Selector):
     >>> df_selector_2 = MgDfSelector(json.loads(json_str))
     >>> len(df_selector_2)
     6
-    >>> next(iter(df_selector))
-    {'bt': 0, 'tag': 'small', 'tt': 5}
-    >>> next(iter(df_selector_2))
-    {'bt': 0, 'tag': 'small', 'tt': 5}
+    >>> assert next(iter(df_selector)) == {'bt': 0, 'tag': 'small', 'tt': 5}
+    >>> assert next(iter(df_selector_2)) == {'bt': 0, 'tag': 'small', 'tt': 5}
     """
 
     def __init__(self, _df):
@@ -117,14 +115,17 @@ class MgDfSelector(Selector):
         >>> selection = selector.select({"tag": {"$eq": 'small'}})
         >>> len(selection)
         3
-        >>> _print_docs(selection)
-        {'bt': 0, 'tag': 'small', 'tt': 5}
-        {'bt': 10, 'tag': 'small', 'tt': 15}
-        {'bt': 20, 'tag': 'small', 'tt': 25}
+        >>> assert list(selection) == [
+        ...     {'bt': 0, 'tag': 'small', 'tt': 5},
+        ...     {'bt': 10, 'tag': 'small', 'tt': 15},
+        ...     {'bt': 20, 'tag': 'small', 'tt': 25}
+        ... ]
         >>> selection = selector.select({'bt': {"$gte": 20}, 'tt': {"$lt": 45}})
-        >>> _print_docs(selection)
-        {'bt': 20, 'tag': 'small', 'tt': 25}
-        {'bt': 30, 'tag': 'big', 'tt': 35}
+        >>> assert list(selection) == [
+        ...     {'bt': 20, 'tag': 'small', 'tt': 25},
+        ...     {'bt': 30, 'tag': 'big', 'tt': 35}
+        ... ]
+
         """
         selector_file_func = Query(selector).match
         lidx = list(map(selector_file_func, self._df.to_dict(orient="rows")))
@@ -165,14 +166,17 @@ class MgDfSelector2(Selector):
     >>> selection = selector.select({"tag": {"$eq": 'small'}})
     >>> len(selection)
     3
-    >>> _print_docs(selection)
-    {'bt': 0, 'tag': 'small', 'tt': 5}
-    {'bt': 10, 'tag': 'small', 'tt': 15}
-    {'bt': 20, 'tag': 'small', 'tt': 25}
+    >>> assert list(selection) == [
+    ...     {'bt': 0, 'tag': 'small', 'tt': 5},
+    ...     {'bt': 10, 'tag': 'small', 'tt': 15},
+    ...     {'bt': 20, 'tag': 'small', 'tt': 25}
+    ... ]
     >>> selection = selector.select({'bt': {"$gte": 20}, 'tt': {"$lt": 45}})
-    >>> _print_docs(selection)
-    {'bt': 20, 'tag': 'small', 'tt': 25}
-    {'bt': 30, 'tag': 'big', 'tt': 35}
+    >>> assert list(selection) == [
+    ...     {'bt': 20, 'tag': 'small', 'tt': 25},
+    ...     {'bt': 30, 'tag': 'big', 'tt': 35}
+    ... ]
+
     """
 
     def __init__(self, _docs, _filt=None):
@@ -186,7 +190,7 @@ class MgDfSelector2(Selector):
 
     def select(self, selector) -> Selector:
         selector_file_func = Query(selector).match
-        lidx = list(map(selector_file_func, self._docs.to_dict(orient="rows")))
+        lidx = list(map(selector_file_func, self._docs.to_dict(orient="records")))
         return self.__class__(self._docs[lidx])
 
 
@@ -233,14 +237,17 @@ class LidxSelectorDf(LidxSelector):
     >>> selection = selector.select({"tag": {"$eq": 'small'}})
     >>> len(selection)
     3
-    >>> _print_docs(selection)
-    {'bt': 0, 'tag': 'small', 'tt': 5}
-    {'bt': 10, 'tag': 'small', 'tt': 15}
-    {'bt': 20, 'tag': 'small', 'tt': 25}
+    >>> assert list(selection) == [
+    ...     {'bt': 0, 'tag': 'small', 'tt': 5},
+    ...     {'bt': 10, 'tag': 'small', 'tt': 15},
+    ...     {'bt': 20, 'tag': 'small', 'tt': 25}
+    ... ]
     >>> selection = selector.select({'bt': {"$gte": 20}, 'tt': {"$lt": 45}})
-    >>> _print_docs(selection)
-    {'bt': 20, 'tag': 'small', 'tt': 25}
-    {'bt': 30, 'tag': 'big', 'tt': 35}
+    >>> assert list(selection) == [
+    ...     {'bt': 20, 'tag': 'small', 'tt': 25},
+    ...     {'bt': 30, 'tag': 'big', 'tt': 35}
+    ... ]
+
     """
 
     def __len__(self):
@@ -250,7 +257,7 @@ class LidxSelectorDf(LidxSelector):
         return (d.to_dict() for r, d in self._docs.iterrows())
 
     def to_dict(self):
-        return self._docs.to_dict(orient="rows")
+        return self._docs.to_dict(orient="records")
 
     def _selector_func(self, selector):
         return Query(selector).match

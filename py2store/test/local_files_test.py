@@ -1,3 +1,6 @@
+"""
+testing local files functionality
+"""
 from py2store import FileReader
 from py2store.test import minifs_dirpath, minifs_join
 

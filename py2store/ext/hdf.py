@@ -1,3 +1,6 @@
+"""
+a data object layer for HDF files
+"""
 from io import BytesIO
 from h5py import File
 from h5py.h5r import get_name

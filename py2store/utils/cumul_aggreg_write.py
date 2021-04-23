@@ -1,3 +1,6 @@
+"""
+utils for bulk writing -- accumulate, aggregate and write when some condition is met
+"""
 import itertools
 import time
 from collections import defaultdict
