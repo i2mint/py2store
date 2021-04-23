@@ -45,10 +45,7 @@ class ObjReader:
     ...         return fp.read()
     >>> pr = ObjReader(_obj_of_key=read_file)
     >>> file_where_this_code_is = __file__  # it should be THIS file you're reading right now!
-    >>> print(pr[file_where_this_code_is][:155])  # print the first 100 characters of this file
-    '''
-    utils to make stores based on a the input data itself
-    '''
+    >>> print(pr[file_where_this_code_is][62:155])  # print some characters of this file
     from collections.abc import Mapping
     from typing import Callable, Collection as CollectionType
     """
