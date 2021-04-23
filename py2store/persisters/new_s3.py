@@ -1,5 +1,7 @@
 """Forwards to s3dol.new_s3
 
 """
+from contextlib import suppress
 
-from s3dol.new_s3 import *
+with suppress(ModuleNotFoundError):
+    from s3dol.new_s3 import *

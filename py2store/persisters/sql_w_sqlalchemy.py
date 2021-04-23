@@ -1,5 +1,7 @@
 """Forwards to sqldol
 
 """
+from contextlib import suppress
 
-from sqldol import *
+with suppress(ModuleNotFoundError):
+    from sqldol import *

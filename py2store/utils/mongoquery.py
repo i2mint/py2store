@@ -9,7 +9,8 @@ MongoDB Query Language queries.
 
 import re
 from collections.abc import Sequence, Mapping
-from six import string_types
+
+string_types = (str,)
 
 
 class QueryError(Exception):

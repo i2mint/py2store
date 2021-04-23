@@ -1,4 +1,7 @@
 """Forwards to redisdol
 """
 
-from redisdol import *
+from contextlib import suppress
+
+with suppress(ModuleNotFoundError):
+    from redisdol import *

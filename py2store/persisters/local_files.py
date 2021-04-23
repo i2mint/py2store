@@ -7,12 +7,12 @@ from glob import iglob
 from pathlib import Path
 from itertools import takewhile
 
-from py2store.errors import NoSuchKeyError
+from dol.errors import NoSuchKeyError
+from dol.base import KeyValidationABC, KvReader
+from dol.mixins import FilteredKeysMixin, IterBasedSizedMixin
 
-from py2store.base import KeyValidationABC
-from py2store.mixins import FilteredKeysMixin, IterBasedSizedMixin
 from py2store.parse_format import match_re_for_fstring
-from py2store.base import KvReader
+
 
 # # TODO: These imports are for back compatibility and should be removed at some point
 # from py2store.slib.zipfile import ZipReader, ZipFileReader, ZipFilesReader, FilesOfZip
@@ -33,7 +33,7 @@ class FolderNotFoundError(NoSuchKeyError):
 
 
 def ensure_slash_suffix(path: str):
-    """Add a file separation (/ or \) at the end of path str, if not already present."""
+    r"""Add a file separation (/ or \) at the end of path str, if not already present."""
     if not path.endswith(file_sep):
         return path + file_sep
     else:
@@ -188,7 +188,7 @@ class PathFormat:
             rootdir = ensure_slash_suffix(path_format)
         else:
             rootdir = ensure_slash_suffix(
-                os.path.dirname(re.match("[^\{]*", path_format).group(0))
+                os.path.dirname(re.match(r"[^{]*", path_format).group(0))
             )
 
         self._prefix = rootdir
