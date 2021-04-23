@@ -8,25 +8,25 @@ def test_wrap_kvs():
 
         ######### Test that id_of_key works (all outgoing keys are lower cased) #########
         val = 1
-        a["KEY"] = val
+        a['KEY'] = val
         # repr is just the base class (dict) repr, so shows "inside" the store (lower case keys and +100)
         assert str(a) == f"{{'key': {val + offset}}}"
 
         val = 2
-        a["key"] = val
+        a['key'] = val
         # repr is just the base class (dict) repr, so shows "inside" the store (lower case keys and +100)
         assert str(a) == f"{{'key': {val + offset}}}"
 
         val = 3
-        a["kEy"] = val
+        a['kEy'] = val
         # repr is just the base class (dict) repr, so shows "inside" the store (lower case keys and +100)
         assert str(a) == f"{{'key': {val + offset}}}"
 
         ######### from the point of view of the interface the keys are all upper case #########
-        assert list(a) == ["KEY"]
+        assert list(a) == ['KEY']
 
         assert list(a.items()) == [
-            ("KEY", val)
+            ('KEY', val)
         ]  # and the values are those we put there.
 
     def key_of_id(_id):
@@ -68,7 +68,7 @@ def test_wrap_kvs():
 
     A = wrap_kvs(
         dict,
-        name="A",  # if you need to rely on a name
+        name='A',  # if you need to rely on a name
         key_of_id=T.key_of_id,
         id_of_key=T.id_of_key,
         obj_of_data=T.obj_of_data,
@@ -87,7 +87,7 @@ def test_wrap_kvs():
 
         @staticmethod
         def id_of_key(
-                self, k
+            self, k
         ):  # decoy! It's a static method, but first argument is called "self"
             return k.lower()
 
@@ -122,27 +122,27 @@ def test_wrap_kvs():
     ###################### Test postget ####################
     B = wrap_kvs(
         dict,
-        postget=lambda k, v: f"upper {v}" if k[0].isupper() else f"lower {v}",
+        postget=lambda k, v: f'upper {v}' if k[0].isupper() else f'lower {v}',
     )
 
     b = B()
 
-    b["BIG"] = "letters"
+    b['BIG'] = 'letters'
 
-    b["small"] = "text"
+    b['small'] = 'text'
 
     assert list(b.items()) == [
-        ("BIG", "upper letters"),
-        ("small", "lower text"),
+        ('BIG', 'upper letters'),
+        ('small', 'lower text'),
     ]
 
-    to_csv = lambda LoL: "\\n".join(
-        map(",".join, map(lambda L: (x for x in L), LoL))
+    to_csv = lambda LoL: '\\n'.join(
+        map(','.join, map(lambda L: (x for x in L), LoL))
     )
 
-    from_csv = lambda csv: list(map(lambda x: x.split(","), csv.split("\\n")))
+    from_csv = lambda csv: list(map(lambda x: x.split(','), csv.split('\\n')))
 
-    LoL = [["a", "b", "c"], ["d", "e", "f"]]
+    LoL = [['a', 'b', 'c'], ['d', 'e', 'f']]
 
     assert from_csv(to_csv(LoL)) == LoL
 
@@ -151,68 +151,68 @@ def test_wrap_kvs():
     import json, pickle
 
     def preset(k, v):
-        if k.endswith(".csv"):
+        if k.endswith('.csv'):
             return to_csv(v)
-        elif k.endswith(".json"):
+        elif k.endswith('.json'):
             return json.dumps(v)
-        elif k.endswith(".pkl"):
+        elif k.endswith('.pkl'):
             return pickle.dumps(v)
         else:
             return v  # as is
 
     def postget(k, v):
-        if k.endswith(".csv"):
+        if k.endswith('.csv'):
             return from_csv(v)
-        elif k.endswith(".json"):
+        elif k.endswith('.json'):
             return json.loads(v)
-        elif k.endswith(".pkl"):
+        elif k.endswith('.pkl'):
             return pickle.loads(v)
         else:
             return v  # as is
 
     mydict = wrap_kvs(dict, preset=preset, postget=postget)
 
-    obj = [["a", "b", "c"], ["d", "e", "f"]]
+    obj = [['a', 'b', 'c'], ['d', 'e', 'f']]
 
     d = mydict()
 
-    d["foo.csv"] = obj  # store the object as csv
+    d['foo.csv'] = obj  # store the object as csv
 
     # the str of a dict by-passes the transformations, so we see the data in the "raw" format it is stored in.
-    assert str(d) == str({"foo.csv": "a,b,c\\nd,e,f"})
+    assert str(d) == str({'foo.csv': 'a,b,c\\nd,e,f'})
     # but if we actually ask for the data, it deserializes to our original object
-    assert d["foo.csv"] == [["a", "b", "c"], ["d", "e", "f"]]
+    assert d['foo.csv'] == [['a', 'b', 'c'], ['d', 'e', 'f']]
 
-    d["bar.json"] = obj  # store the object as json
+    d['bar.json'] = obj  # store the object as json
     assert str(d) == str(
         {
-            "foo.csv": "a,b,c\\nd,e,f",
-            "bar.json": '[["a", "b", "c"], ["d", "e", "f"]]',
+            'foo.csv': 'a,b,c\\nd,e,f',
+            'bar.json': '[["a", "b", "c"], ["d", "e", "f"]]',
         }
     )
 
-    assert d["bar.json"] == [["a", "b", "c"], ["d", "e", "f"]]
+    assert d['bar.json'] == [['a', 'b', 'c'], ['d', 'e', 'f']]
 
-    d["bar.json"] = {
-        "a": 1,
-        "b": [1, 2],
-        "c": "normal json",
+    d['bar.json'] = {
+        'a': 1,
+        'b': [1, 2],
+        'c': 'normal json',
     }  # let's write a normal json instead.
     assert str(d) == str(
         {
-            "foo.csv": "a,b,c\\nd,e,f",
-            "bar.json": '{"a": 1, "b": [1, 2], "c": "normal json"}',
+            'foo.csv': 'a,b,c\\nd,e,f',
+            'bar.json': '{"a": 1, "b": [1, 2], "c": "normal json"}',
         }
     )
 
     assert len(d) == 2
-    del d["foo.csv"]
+    del d['foo.csv']
     assert len(d) == 1
-    del d["bar.json"]
+    del d['bar.json']
     assert len(d) == 0
 
-    d["foo.pkl"] = obj  # 'save' obj as pickle
-    assert d["foo.pkl"] == obj
+    d['foo.pkl'] = obj  # 'save' obj as pickle
+    assert d['foo.pkl'] == obj
 
 
 def test_postget_with_get():
@@ -228,4 +228,4 @@ def test_postget_with_get():
 
     assert d.get(1) == d[1]
     assert d.get(3) == d[3]
-    assert d.get(2, "not there") == "not there"
+    assert d.get(2, 'not there') == 'not there'

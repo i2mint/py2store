@@ -15,7 +15,7 @@ class DropboxFolderCopyReader(KvReader):
         self.path = path
 
         os.makedirs(self.path, exist_ok=True)
-        self._zip_filepath = os.path.join(self.path, "shared_folder.zip")
+        self._zip_filepath = os.path.join(self.path, 'shared_folder.zip')
 
         self._files = []
         self._get_folder()
@@ -23,13 +23,13 @@ class DropboxFolderCopyReader(KvReader):
     def __getitem__(self, rel_path):
         real_path = os.path.join(self.path, rel_path)
         try:
-            with open(real_path, "r") as f:
+            with open(real_path, 'r') as f:
                 return f.read()
         except FileNotFoundError:
             raise KeyError(f"Key doesn't exist: {rel_path}")
 
     def __iter__(self):
-        yield from sorted(path for path in self._files if not path == "/")
+        yield from sorted(path for path in self._files if not path == '/')
 
     def __contains__(self, rel_path):
         return rel_path in self._files
@@ -40,7 +40,7 @@ class DropboxFolderCopyReader(KvReader):
         os.remove(self._zip_filepath)
 
     def _unzip(self):
-        with zipfile.ZipFile(self._zip_filepath, "r") as zip_ref:
+        with zipfile.ZipFile(self._zip_filepath, 'r') as zip_ref:
             zip_ref.extractall(self.path)
             self._files = zip_ref.namelist()
 
@@ -51,7 +51,7 @@ class DropboxFileCopyReader(KvReader):
         self.path = path or self._get_filename_from_url()
 
         download_from_dropbox(self.url, self.path)
-        self.file = open(self.path, "r")
+        self.file = open(self.path, 'r')
 
     def __getitem__(self, index):
         self.file.seek(0)
@@ -82,22 +82,22 @@ class DropboxFileCopyReader(KvReader):
 
     def _get_filename_from_url(self):
         # 'https:...txt?dl=0&smth=else' -> 'https:...txt'
-        url_w_no_params = self.url.split("?", 1)[0]
+        url_w_no_params = self.url.split('?', 1)[0]
 
         # 'https://www.dropbox.com/.../my_file.txt' -> 'my_file.txt'
-        last_part_of_urls_path = url_w_no_params.rsplit("/", 1)[-1]
+        last_part_of_urls_path = url_w_no_params.rsplit('/', 1)[-1]
         return last_part_of_urls_path
 
 
-DFLT_USER_AGENT = "Wget/1.16 (linux-gnu)"
+DFLT_USER_AGENT = 'Wget/1.16 (linux-gnu)'
 
 
 def download_from_dropbox(
-        url, file, chk_size=1024, user_agent=DFLT_USER_AGENT
+    url, file, chk_size=1024, user_agent=DFLT_USER_AGENT
 ):
     def iter_content_and_copy_to(file):
         req = urllib.request.Request(url)
-        req.add_header("user-agent", user_agent)
+        req.add_header('user-agent', user_agent)
         with urllib.request.urlopen(req) as response:
             while True:
                 chk = response.read(chk_size)
@@ -109,7 +109,7 @@ def download_from_dropbox(
     if not isinstance(file, str):
         iter_content_and_copy_to(file)
     else:
-        with open(file, "wb") as _target_file:
+        with open(file, 'wb') as _target_file:
             iter_content_and_copy_to(_target_file)
 
 
@@ -122,6 +122,7 @@ def bytes_from_dropbox(url, chk_size=1024, user_agent=DFLT_USER_AGENT):
         )
         file.seek(0)
         return file.read()
+
 
 # DFLT_USER_AGENT = 'Wget/1.16 (linux-gnu)'
 # def download_from_dropbox(url, file, as_zip=False, chunk_size=1024, user_agent=DFLT_USER_AGENT):

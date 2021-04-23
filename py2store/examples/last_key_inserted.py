@@ -3,11 +3,11 @@ showing how to add the knowledge of the 'last key inserted' to stores
 """
 from functools import wraps, partial
 
-NoKeyWasWrittenToYet = type("NoKeyWasWrittenToYet", (), {})()
+NoKeyWasWrittenToYet = type('NoKeyWasWrittenToYet', (), {})()
 
 
 def remember_last_key_written_to(
-        cls=None, *, only_if_new_key=False, name=None, same_name_as_class=False
+    cls=None, *, only_if_new_key=False, name=None, same_name_as_class=False
 ):
     """A decorator to get a class that remembers the last key that was written to.
     Note that this is the last key that THIS STORE wrote to, not the last key that was

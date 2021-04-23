@@ -27,4 +27,3 @@ the storage methods themselves.
 """
 
 from dol.base import *
-

@@ -25,13 +25,7 @@ def ihead(store, n=1):
         return [item for i, item in enumerate(store) if i < n]
 
 
-from py2store.util import (
-    lazyprop,
-    partialclass,
-    groupby,
-    regroupby,
-    igroupby
-)
+from py2store.util import lazyprop, partialclass, groupby, regroupby, igroupby
 
 from py2store.base import (
     Collection,
@@ -105,9 +99,7 @@ from py2store.caching import (
     mk_write_cached_store,
 )
 
-from py2store.appendable import (
-    appendable
-)
+from py2store.appendable import appendable
 
 from py2store.slib.s_zipfile import (
     ZipReader,
@@ -150,7 +142,7 @@ with ignore_if_module_not_found:
         SqlTableRowsCollection,
         SqlTableRowsSequence,
         SqlDbCollection,
-        SQLAlchemyPersister
+        SQLAlchemyPersister,
     )
     from py2store.stores.sql_w_sqlalchemy import (
         SQLAlchemyStore,

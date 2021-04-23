@@ -2,4 +2,7 @@
 
 from warnings import warn
 
-warn("Moved to independent package: tabled (pip install tabled)", DeprecationWarning)
+warn(
+    'Moved to independent package: tabled (pip install tabled)',
+    DeprecationWarning,
+)

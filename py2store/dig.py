@@ -5,5 +5,3 @@ Layers introspection
 """
 
 from dol.dig import *
-
-    

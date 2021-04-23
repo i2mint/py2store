@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>py2store.test.util &#8212; py2store 0.0.7 documentation</title>
+    <title>py2store.test.util &#8212; py2store 0.0.8 documentation</title>
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css" />
@@ -33,7 +33,10 @@
           <div class="body" role="main">
             
   <h1>Source code for py2store.test.util</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">os</span>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">utils for testing</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">random</span>
 <span class="kn">import</span> <span class="nn">string</span>
 <span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">reduce</span>
@@ -54,7 +57,7 @@
 
 <span class="n">lower_case_letters</span> <span class="o">=</span> <span class="n">string</span><span class="o">.</span><span class="n">ascii_lowercase</span>
 <span class="n">alphanumeric</span> <span class="o">=</span> <span class="n">string</span><span class="o">.</span><span class="n">digits</span> <span class="o">+</span> <span class="n">lower_case_letters</span>
-<span class="n">non_alphanumeric</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">string</span><span class="o">.</span><span class="n">printable</span><span class="p">)</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">alphanumeric</span><span class="p">))</span>
+<span class="n">non_alphanumeric</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">string</span><span class="o">.</span><span class="n">printable</span><span class="p">)</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">alphanumeric</span><span class="p">))</span>
 
 
 <div class="viewcode-block" id="random_word"><a class="viewcode-back" href="../../../test.html#py2store.test.util.random_word">[docs]</a><span class="k">def</span> <span class="nf">random_word</span><span class="p">(</span><span class="n">length</span><span class="p">,</span> <span class="n">alphabet</span><span class="p">,</span> <span class="n">concat_func</span><span class="o">=</span><span class="n">add</span><span class="p">):</span>
@@ -95,11 +98,11 @@
 <div class="viewcode-block" id="random_string"><a class="viewcode-back" href="../../../test.html#py2store.test.util.random_string">[docs]</a><span class="k">def</span> <span class="nf">random_string</span><span class="p">(</span><span class="n">length</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span> <span class="n">alphabet</span><span class="o">=</span><span class="n">lower_case_letters</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Same as random_word, but it optimized for strings</span>
 <span class="sd">    (5-10% faster for words of length 7, 25-30% faster for words of size 1000)&quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">alphabet</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">length</span><span class="p">))</span></div>
+    <span class="k">return</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">alphabet</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">length</span><span class="p">))</span></div>
 
 
 <div class="viewcode-block" id="random_word_gen"><a class="viewcode-back" href="../../../test.html#py2store.test.util.random_word_gen">[docs]</a><span class="k">def</span> <span class="nf">random_word_gen</span><span class="p">(</span>
-        <span class="n">word_size_range</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span> <span class="n">alphabet</span><span class="o">=</span><span class="n">lower_case_letters</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">100</span>
+    <span class="n">word_size_range</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span> <span class="n">alphabet</span><span class="o">=</span><span class="n">lower_case_letters</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">100</span>
 <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Random string generator</span>
 <span class="sd">    Args:</span>
@@ -121,10 +124,10 @@
 
 
 <div class="viewcode-block" id="random_tuple_gen"><a class="viewcode-back" href="../../../test.html#py2store.test.util.random_tuple_gen">[docs]</a><span class="k">def</span> <span class="nf">random_tuple_gen</span><span class="p">(</span>
-        <span class="n">tuple_length</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
-        <span class="n">word_size_range</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>
-        <span class="n">alphabet</span><span class="o">=</span><span class="n">lower_case_letters</span><span class="p">,</span>
-        <span class="n">n</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
+    <span class="n">tuple_length</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+    <span class="n">word_size_range</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>
+    <span class="n">alphabet</span><span class="o">=</span><span class="n">lower_case_letters</span><span class="p">,</span>
+    <span class="n">n</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
 <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Random tuple (of strings) generator</span>
 
@@ -142,10 +145,10 @@
 
 
 <div class="viewcode-block" id="random_dict_gen"><a class="viewcode-back" href="../../../test.html#py2store.test.util.random_dict_gen">[docs]</a><span class="k">def</span> <span class="nf">random_dict_gen</span><span class="p">(</span>
-        <span class="n">fields</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">),</span>
-        <span class="n">word_size_range</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>
-        <span class="n">alphabet</span><span class="o">=</span><span class="n">lower_case_letters</span><span class="p">,</span>
-        <span class="n">n</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
+    <span class="n">fields</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">),</span>
+    <span class="n">word_size_range</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>
+    <span class="n">alphabet</span><span class="o">=</span><span class="n">lower_case_letters</span><span class="p">,</span>
+    <span class="n">n</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
 <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Random dict (of strings) generator</span>
 
@@ -166,10 +169,10 @@
 
 
 <div class="viewcode-block" id="random_formatted_str_gen"><a class="viewcode-back" href="../../../test.html#py2store.test.util.random_formatted_str_gen">[docs]</a><span class="k">def</span> <span class="nf">random_formatted_str_gen</span><span class="p">(</span>
-        <span class="n">format_string</span><span class="o">=</span><span class="s2">&quot;root/</span><span class="si">{}</span><span class="s2">/</span><span class="si">{}</span><span class="s2">_</span><span class="si">{}</span><span class="s2">.test&quot;</span><span class="p">,</span>
-        <span class="n">word_size_range</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>
-        <span class="n">alphabet</span><span class="o">=</span><span class="n">lower_case_letters</span><span class="p">,</span>
-        <span class="n">n</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+    <span class="n">format_string</span><span class="o">=</span><span class="s1">&#39;root/</span><span class="si">{}</span><span class="s1">/</span><span class="si">{}</span><span class="s1">_</span><span class="si">{}</span><span class="s1">.test&#39;</span><span class="p">,</span>
+    <span class="n">word_size_range</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>
+    <span class="n">alphabet</span><span class="o">=</span><span class="n">lower_case_letters</span><span class="p">,</span>
+    <span class="n">n</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
 <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Random formatted string generator</span>
 
@@ -221,33 +224,33 @@
 
 <span class="k">def</span> <span class="nf">extract_s3_access_info</span><span class="p">(</span><span class="n">access_dict</span><span class="p">):</span>
     <span class="k">return</span> <span class="p">{</span>
-        <span class="s2">&quot;bucket_name&quot;</span><span class="p">:</span> <span class="n">access_dict</span><span class="p">[</span><span class="s2">&quot;bucket&quot;</span><span class="p">],</span>
-        <span class="s2">&quot;aws_access_key_id&quot;</span><span class="p">:</span> <span class="n">access_dict</span><span class="p">[</span><span class="s2">&quot;access&quot;</span><span class="p">],</span>
-        <span class="s2">&quot;aws_secret_access_key&quot;</span><span class="p">:</span> <span class="n">access_dict</span><span class="p">[</span><span class="s2">&quot;secret&quot;</span><span class="p">],</span>
+        <span class="s1">&#39;bucket_name&#39;</span><span class="p">:</span> <span class="n">access_dict</span><span class="p">[</span><span class="s1">&#39;bucket&#39;</span><span class="p">],</span>
+        <span class="s1">&#39;aws_access_key_id&#39;</span><span class="p">:</span> <span class="n">access_dict</span><span class="p">[</span><span class="s1">&#39;access&#39;</span><span class="p">],</span>
+        <span class="s1">&#39;aws_secret_access_key&#39;</span><span class="p">:</span> <span class="n">access_dict</span><span class="p">[</span><span class="s1">&#39;secret&#39;</span><span class="p">],</span>
     <span class="p">}</span>
 
 
-<span class="k">def</span> <span class="nf">_s3_env_var_name</span><span class="p">(</span><span class="n">kind</span><span class="p">,</span> <span class="n">perm</span><span class="o">=</span><span class="s2">&quot;RO&quot;</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">_s3_env_var_name</span><span class="p">(</span><span class="n">kind</span><span class="p">,</span> <span class="n">perm</span><span class="o">=</span><span class="s1">&#39;RO&#39;</span><span class="p">):</span>
     <span class="n">kind</span> <span class="o">=</span> <span class="n">kind</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
     <span class="n">perm</span> <span class="o">=</span> <span class="n">perm</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
     <span class="k">assert</span> <span class="n">kind</span> <span class="ow">in</span> <span class="p">{</span>
-        <span class="s2">&quot;BUCKET&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;ACCESS&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;SECRET&quot;</span><span class="p">,</span>
+        <span class="s1">&#39;BUCKET&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;ACCESS&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;SECRET&#39;</span><span class="p">,</span>
     <span class="p">},</span> <span class="s2">&quot;kind should be in {&#39;BUCKET&#39;, &#39;ACCESS&#39;, &#39;SECRET&#39;}&quot;</span>
-    <span class="k">assert</span> <span class="n">perm</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;RW&quot;</span><span class="p">,</span> <span class="s2">&quot;RO&quot;</span><span class="p">},</span> <span class="s2">&quot;perm should be in {&#39;RW&#39;, &#39;RO&#39;}&quot;</span>
-    <span class="k">return</span> <span class="s2">&quot;S3_TEST_</span><span class="si">{kind}</span><span class="s2">_</span><span class="si">{perm}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="n">kind</span><span class="p">,</span> <span class="n">perm</span><span class="o">=</span><span class="n">perm</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">perm</span> <span class="ow">in</span> <span class="p">{</span><span class="s1">&#39;RW&#39;</span><span class="p">,</span> <span class="s1">&#39;RO&#39;</span><span class="p">},</span> <span class="s2">&quot;perm should be in {&#39;RW&#39;, &#39;RO&#39;}&quot;</span>
+    <span class="k">return</span> <span class="s1">&#39;S3_TEST_</span><span class="si">{kind}</span><span class="s1">_</span><span class="si">{perm}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="n">kind</span><span class="p">,</span> <span class="n">perm</span><span class="o">=</span><span class="n">perm</span><span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">get_s3_test_access_info_from_env_vars</span><span class="p">(</span><span class="n">perm</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">perm</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">get_s3_test_access_info_from_env_vars</span><span class="p">(</span><span class="n">perm</span><span class="o">=</span><span class="s2">&quot;RO&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">get_s3_test_access_info_from_env_vars</span><span class="p">(</span><span class="n">perm</span><span class="o">=</span><span class="s1">&#39;RO&#39;</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">LookupError</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">get_s3_test_access_info_from_env_vars</span><span class="p">(</span><span class="n">perm</span><span class="o">=</span><span class="s2">&quot;RW&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">get_s3_test_access_info_from_env_vars</span><span class="p">(</span><span class="n">perm</span><span class="o">=</span><span class="s1">&#39;RW&#39;</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">access_keys</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
-        <span class="k">for</span> <span class="n">kind</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;BUCKET&quot;</span><span class="p">,</span> <span class="s2">&quot;ACCESS&quot;</span><span class="p">,</span> <span class="s2">&quot;SECRET&quot;</span><span class="p">}:</span>
+        <span class="k">for</span> <span class="n">kind</span> <span class="ow">in</span> <span class="p">{</span><span class="s1">&#39;BUCKET&#39;</span><span class="p">,</span> <span class="s1">&#39;ACCESS&#39;</span><span class="p">,</span> <span class="s1">&#39;SECRET&#39;</span><span class="p">}:</span>
             <span class="n">k</span> <span class="o">=</span> <span class="n">_s3_env_var_name</span><span class="p">(</span><span class="n">kind</span><span class="p">,</span> <span class="n">perm</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">LookupError</span><span class="p">(</span>
@@ -274,107 +277,86 @@
 
 
 <h3>Navigation</h3>
-<p class="caption"><span class="caption-text">Contents:</span></p>
+<p><span class="caption-text">Contents:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html">py2store.filesys</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.misc">py2store.misc</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.mixins">py2store.mixins</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.test.util">py2store.test.util</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-test-quick">py2store.test.quick</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.test">py2store.test</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-test-simple">py2store.test.simple</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-test-scrap">py2store.test.scrap</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.util">py2store.util</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-ext-docx">py2store.ext.docx</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext.gitlab">py2store.ext.gitlab</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-ext-hdf">py2store.ext.hdf</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext">py2store.ext</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-ext-matlab">py2store.ext.matlab</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext.kaggle">py2store.ext.kaggle</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-ext-module-imports">py2store.ext.module_imports</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext.audio">py2store.ext.audio</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-ext-github">py2store.ext.github</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext.dataframes">py2store.ext.dataframes</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.access">py2store.access</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.__init__">py2store.__init__</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores.s3_store">py2store.stores.s3_store</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores.delegation_stores">py2store.stores.delegation_stores</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores.sql_w_sqlalchemy">py2store.stores.sql_w_sqlalchemy</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-stores-arangodb-store">py2store.stores.arangodb_store</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-stores-dropbox-store">py2store.stores.dropbox_store</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores.local_store">py2store.stores.local_store</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores">py2store.stores</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-stores-couchdb-store">py2store.stores.couchdb_store</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores.mongo_store">py2store.stores.mongo_store</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.core">py2store.core</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.uri_utils">py2store.utils.uri_utils</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.explicit">py2store.utils.explicit</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.timeseries_caching">py2store.utils.timeseries_caching</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-utils-attr-dict-py-attr-dict">py2store.utils.attr_dict.py.attr_dict</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-utils-attr-dict-py">py2store.utils.attr_dict.py</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.cumul_aggreg_write">py2store.utils.cumul_aggreg_write</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils">py2store.utils</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.cache_descriptors">py2store.utils.cache_descriptors</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.appendable">py2store.utils.appendable</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.affine_conversion">py2store.utils.affine_conversion</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.signatures">py2store.utils.signatures</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.sliceable">py2store.utils.sliceable</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.mappify">py2store.utils.mappify</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.glom">py2store.utils.glom</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-sql-w-odbc">py2store.persisters.sql_w_odbc</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.dynamodb_w_boto3">py2store.persisters.dynamodb_w_boto3</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-couchdb-w-couchdb">py2store.persisters.couchdb_w_couchdb</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.ftp_persister">py2store.persisters.ftp_persister</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.dropbox_w_urllib">py2store.persisters.dropbox_w_urllib</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters._google_drive_in_progress">py2store.persisters._google_drive_in_progress</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-dropbox-w-dropbox">py2store.persisters.dropbox_w_dropbox</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-redis-w-redis">py2store.persisters.redis_w_redis</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.sql_w_sqlalchemy">py2store.persisters.sql_w_sqlalchemy</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.new_s3">py2store.persisters.new_s3</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters">py2store.persisters</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.dropbox_w_requests">py2store.persisters.dropbox_w_requests</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.w_aiofile">py2store.persisters.w_aiofile</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.local_files">py2store.persisters.local_files</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-arangodb-w-pyarango">py2store.persisters.arangodb_w_pyarango</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters._cassandra_in_progress">py2store.persisters._cassandra_in_progress</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters._couchdb_in_progress">py2store.persisters._couchdb_in_progress</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.s3_w_boto3">py2store.persisters.s3_w_boto3</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-postgres-w-psycopg2-in-progress">py2store.persisters._postgres_w_psycopg2_in_progress</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-ssh-persister">py2store.persisters.ssh_persister</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.mongo_w_pymongo">py2store.persisters.mongo_w_pymongo</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-googledrive-w-pydrive">py2store.persisters.googledrive_w_pydrive</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.sources">py2store.sources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.dig">py2store.dig</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers.pickled">py2store.serializers.pickled</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers.jsonization">py2store.serializers.jsonization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers">py2store.serializers</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers.sequential">py2store.serializers.sequential</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers.regular_panel_data">py2store.serializers.regular_panel_data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers.audio">py2store.serializers.audio</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.caching">py2store.caching</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.scrap">py2store.scrap</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.scrap.new_gen_local">py2store.scrap.new_gen_local</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.examples.write_caches">py2store.examples.write_caches</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.examples">py2store.examples</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.examples.python_code_stats">py2store.examples.python_code_stats</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.examples.kv_walking">py2store.examples.kv_walking</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.my">py2store.my</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.my.grabbers">py2store.my.grabbers</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.trans">py2store.trans</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.key_mappers.str_utils">py2store.key_mappers.str_utils</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.key_mappers.tuples">py2store.key_mappers.tuples</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.key_mappers.paths">py2store.key_mappers.paths</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.key_mappers.naming">py2store.key_mappers.naming</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.key_mappers">py2store.key_mappers</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.errors">py2store.errors</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.slib.s_configparser">py2store.slib.s_configparser</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.slib">py2store.slib</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.slib.s_zipfile">py2store.slib.s_zipfile</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.base">py2store.base</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-selectors-mg-selectors">py2store.selectors.mg_selectors</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-selectors-mongoquery">py2store.selectors.mongoquery</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-selectors">py2store.selectors</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.parse_format">py2store.parse_format</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store.html">py2store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/access.html">py2store.access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/appendable.html">py2store.appendable</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/base.html">py2store.base</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/caching.html">py2store.caching</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/core.html">py2store.core</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/dig.html">py2store.dig</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/errors.html">py2store.errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/examples.html">py2store.examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/examples/dropbox_w_urllib.html">py2store.examples.dropbox_w_urllib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/examples/kv_walking.html">py2store.examples.kv_walking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/examples/last_key_inserted.html">py2store.examples.last_key_inserted</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/examples/python_code_stats.html">py2store.examples.python_code_stats</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/examples/write_caches.html">py2store.examples.write_caches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/ext.html">py2store.ext</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/ext/dataframes.html">py2store.ext.dataframes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/ext/docx.html">py2store.ext.docx</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/ext/github.html">py2store.ext.github</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/ext/gitlab.html">py2store.ext.gitlab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/ext/hdf.html">py2store.ext.hdf</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/ext/matlab.html">py2store.ext.matlab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/ext/wordnet.html">py2store.ext.wordnet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/filesys.html">py2store.filesys</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/key_mappers.html">py2store.key_mappers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/key_mappers/naming.html">py2store.key_mappers.naming</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/key_mappers/paths.html">py2store.key_mappers.paths</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/key_mappers/str_utils.html">py2store.key_mappers.str_utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/key_mappers/tuples.html">py2store.key_mappers.tuples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/misc.html">py2store.misc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/mixins.html">py2store.mixins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/my.html">py2store.my</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/my/grabbers.html">py2store.my.grabbers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/naming.html">py2store.naming</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/parse_format.html">py2store.parse_format</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/paths.html">py2store.paths</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/persisters.html">py2store.persisters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/persisters/dropbox_w_dropbox.html">py2store.persisters.dropbox_w_dropbox</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/persisters/googledrive_w_pydrive.html">py2store.persisters.googledrive_w_pydrive</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/persisters/local_files.html">py2store.persisters.local_files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/persisters/new_s3.html">py2store.persisters.new_s3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/persisters/redis_w_redis.html">py2store.persisters.redis_w_redis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/persisters/s3_w_boto3.html">py2store.persisters.s3_w_boto3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/persisters/sql_w_sqlalchemy.html">py2store.persisters.sql_w_sqlalchemy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/persisters/w_aiofile.html">py2store.persisters.w_aiofile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/serializers.html">py2store.serializers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/serializers/pickled.html">py2store.serializers.pickled</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/signatures.html">py2store.signatures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/slib.html">py2store.slib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/slib/s_configparser.html">py2store.slib.s_configparser</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/slib/s_zipfile.html">py2store.slib.s_zipfile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/sources.html">py2store.sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/stores.html">py2store.stores</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/stores/dropbox_store.html">py2store.stores.dropbox_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/stores/local_store.html">py2store.stores.local_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/stores/s3_store.html">py2store.stores.s3_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/stores/sql_w_sqlalchemy.html">py2store.stores.sql_w_sqlalchemy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/test.html">py2store.test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/test/local_files_test.html">py2store.test.local_files_test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/test/quick_test.html">py2store.test.quick_test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/test/scrap.html">py2store.test.scrap</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/test/util.html">py2store.test.util</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/trans.html">py2store.trans</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/util.html">py2store.util</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/utils.html">py2store.utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/utils/affine_conversion.html">py2store.utils.affine_conversion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/utils/appendable.html">py2store.utils.appendable</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/utils/attr_dict.html">py2store.utils.attr_dict</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/utils/cache_descriptors.html">py2store.utils.cache_descriptors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/utils/cumul_aggreg_write.html">py2store.utils.cumul_aggreg_write</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/utils/explicit.html">py2store.utils.explicit</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/utils/glom.html">py2store.utils.glom</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/utils/mappify.html">py2store.utils.mappify</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/utils/mg_selectors.html">py2store.utils.mg_selectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/utils/mongoquery.html">py2store.utils.mongoquery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/utils/signatures.html">py2store.utils.signatures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/utils/sliceable.html">py2store.utils.sliceable</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/utils/timeseries_caching.html">py2store.utils.timeseries_caching</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/utils/uri_utils.html">py2store.utils.uri_utils</a></li>
 </ul>
 
 <div class="relations">
@@ -411,7 +393,7 @@
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2020.
+      &copy;NO COPYRIGHT.
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 3.3.1</a>

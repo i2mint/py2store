@@ -36,11 +36,11 @@ class AttrMap:
             if not isinstance(key, str) or not str.isidentifier(key):
                 identifiers.append(key)
             elif iskeyword(key):
-                key += "_"
+                key += '_'
             self.__data[key] = value
         if identifiers:
             warn(
-                f"{len(identifiers)} keys were not identifiers. Namely:\n{identifiers}"
+                f'{len(identifiers)} keys were not identifiers. Namely:\n{identifiers}'
             )
 
     def __getattr__(self, name):
@@ -59,7 +59,7 @@ class AttrMap:
         return s
 
     def __repr__(self):
-        return f"{self.__class__.__name__}({self.__data})"
+        return f'{self.__class__.__name__}({self.__data})'
 
 
 def special_dir(self):
@@ -68,8 +68,8 @@ def special_dir(self):
     s.update(
         filter(
             lambda k: isinstance(k, str)
-                      and str.isidentifier(k)
-                      and not iskeyword(k),
+            and str.isidentifier(k)
+            and not iskeyword(k),
             self,
         )
     )
@@ -91,7 +91,7 @@ def attr_wrap(cls, name=None):
     >>> assert 'class' not in dir(t)
     """
     return type(
-        name or f"Attr{cls.__name__}",
+        name or f'Attr{cls.__name__}',
         (cls,),
-        {"__getattr__": cls.__getitem__, "__dir__": special_dir},
+        {'__getattr__': cls.__getitem__, '__dir__': special_dir},
     )

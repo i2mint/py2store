@@ -5,6 +5,4 @@ Error objects and utils
 """
 
 from dol.errors import *
-from dol.errors import (
-    _assert_condition
-)
+from dol.errors import _assert_condition

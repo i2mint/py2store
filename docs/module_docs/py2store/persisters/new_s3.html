@@ -4,8 +4,9 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>py2store.persisters.new_s3 &#8212; py2store 0.0.7 documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>py2store.persisters.new_s3 &#8212; py2store 0.0.8 documentation</title>
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css" />
@@ -16,6 +17,8 @@
     <script src="../../../_static/language_data.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="py2store.persisters.redis_w_redis" href="redis_w_redis.html" />
+    <link rel="prev" title="py2store.persisters.local_files" href="local_files.html" />
    
   <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
   
@@ -32,116 +35,10 @@
 
           <div class="body" role="main">
             
-  <div class="section" id="module-py2store.persisters.new_s3">
+  <section id="module-py2store.persisters.new_s3">
 <span id="py2store-persisters-new-s3"></span><h1>py2store.persisters.new_s3<a class="headerlink" href="#module-py2store.persisters.new_s3" title="Permalink to this headline">¶</a></h1>
-<dl class="py exception">
-<dt id="py2store.persisters.new_s3.GetItemForKeyError">
-<em class="property">exception </em><code class="sig-prename descclassname">py2store.persisters.new_s3.</code><code class="sig-name descname">GetItemForKeyError</code><a class="reference internal" href="../../../_modules/py2store/persisters/new_s3.html#GetItemForKeyError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.persisters.new_s3.GetItemForKeyError" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py exception">
-<dt id="py2store.persisters.new_s3.KeyNotValidError">
-<em class="property">exception </em><code class="sig-prename descclassname">py2store.persisters.new_s3.</code><code class="sig-name descname">KeyNotValidError</code><a class="reference internal" href="../../../_modules/py2store/persisters/new_s3.html#KeyNotValidError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.persisters.new_s3.KeyNotValidError" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py exception">
-<dt id="py2store.persisters.new_s3.NoSuchKeyError">
-<em class="property">exception </em><code class="sig-prename descclassname">py2store.persisters.new_s3.</code><code class="sig-name descname">NoSuchKeyError</code><a class="reference internal" href="../../../_modules/py2store/persisters/new_s3.html#NoSuchKeyError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.persisters.new_s3.NoSuchKeyError" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py class">
-<dt id="py2store.persisters.new_s3.S3BaseReader">
-<em class="property">class </em><code class="sig-prename descclassname">py2store.persisters.new_s3.</code><code class="sig-name descname">S3BaseReader</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">client</span><span class="p">:</span> <span class="n">botocore.client.BaseClient</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/py2store/persisters/new_s3.html#S3BaseReader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.persisters.new_s3.S3BaseReader" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py class">
-<dt id="py2store.persisters.new_s3.S3BucketBasePersister">
-<em class="property">class </em><code class="sig-prename descclassname">py2store.persisters.new_s3.</code><code class="sig-name descname">S3BucketBasePersister</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">client</span><span class="p">:</span> <span class="n">botocore.client.BaseClient</span></em>, <em class="sig-param"><span class="n">bucket</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">prefix</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">''</span></em>, <em class="sig-param"><span class="n">with_files</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">True</span></em>, <em class="sig-param"><span class="n">with_directories</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">True</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/py2store/persisters/new_s3.html#S3BucketBasePersister"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.persisters.new_s3.S3BucketBasePersister" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py class">
-<dt id="py2store.persisters.new_s3.S3BucketBaseReader">
-<em class="property">class </em><code class="sig-prename descclassname">py2store.persisters.new_s3.</code><code class="sig-name descname">S3BucketBaseReader</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">client</span><span class="p">:</span> <span class="n">botocore.client.BaseClient</span></em>, <em class="sig-param"><span class="n">bucket</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">prefix</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">''</span></em>, <em class="sig-param"><span class="n">with_files</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">True</span></em>, <em class="sig-param"><span class="n">with_directories</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">True</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/py2store/persisters/new_s3.html#S3BucketBaseReader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.persisters.new_s3.S3BucketBaseReader" title="Permalink to this definition">¶</a></dt>
-<dd><p>Base bucket reader. Keys are strings, values are http responses (dicts).</p>
-<p>To get the actual contents from the response <cite>v</cite> you can do <cite>v[‘Body’].read()</cite>, or more sophisticated-ly:
-<a href="#id1"><span class="problematic" id="id2">``</span></a>`
-if v[‘ResponseMetadata’][‘HTTPStatusCode’] == 200:</p>
-<blockquote>
-<div><p>return v[‘Body’].read()</p>
-</div></blockquote>
-<dl class="simple">
-<dt>else:</dt><dd><p>raise RuntimeError(f”HttpError (code {v[‘ResponseMetadata’][‘HTTPStatusCode’]})”)</p>
-</dd>
-</dl>
-<p><a href="#id3"><span class="problematic" id="id4">``</span></a><a href="#id5"><span class="problematic" id="id6">`</span></a></p>
-<p>But know that <cite>body = v[‘Body’]</cite> is a <cite>botocore.response.StreamingBody</cite> instance, and as such, you have not
-only the <cite>body.read(amt=None)</cite> but also
-- <cite>body.iter_chunks(chunk_size=1024)</cite> that may be useful for large binary data, or
-- <cite>body.iter_lines(chunk_size=1024)</cite> that may be useful for large text data.</p>
-<p>S3BucketBaseReader is really meant to be wrapped and/or subclassed into interfaces that do that for you.</p>
-<p>Example use:
-<code class="docutils literal notranslate"><span class="pre">`</span>
-<span class="pre">client_kwargs</span> <span class="pre">=</span> <span class="pre">get_configs()</span>&#160; <span class="pre">#</span> <span class="pre">get</span> <span class="pre">(at</span> <span class="pre">least)</span> <span class="pre">aws_access_key_id</span> <span class="pre">and</span> <span class="pre">aws_secret_access_key</span>
-<span class="pre">r</span> <span class="pre">=</span> <span class="pre">S3BucketBaseReader(S3BucketBaseReader.mk_client(**resources_kwargs),</span> <span class="pre">bucket='bucket_name',</span> <span class="pre">prefix='my_stuff/')</span>
-<span class="pre">list(r)</span>&#160; <span class="pre">#</span> <span class="pre">will</span> <span class="pre">list</span> <span class="pre">file</span> <span class="pre">and</span> <span class="pre">folder</span> <span class="pre">names</span>
-<span class="pre">r['my_stuff/music/']</span>&#160; <span class="pre">#</span> <span class="pre">will</span> <span class="pre">give</span> <span class="pre">you</span> <span class="pre">another</span> <span class="pre">S3BucketBaseReader</span> <span class="pre">for</span> <span class="pre">that</span> <span class="pre">&quot;subfolder&quot;</span>
-<span class="pre">r['my_stuff/music/with_meaning.mp3']</span>&#160; <span class="pre">#</span> <span class="pre">will</span> <span class="pre">give</span> <span class="pre">you</span> <span class="pre">the</span> <span class="pre">response</span> <span class="pre">object</span> <span class="pre">for</span> <span class="pre">the</span> <span class="pre">contents</span> <span class="pre">of</span> <span class="pre">the</span> <span class="pre">file</span>
-<span class="pre">`</span></code></p>
-</dd></dl>
-
-<dl class="py class">
-<dt id="py2store.persisters.new_s3.S3BucketPersister">
-<em class="property">class </em><code class="sig-prename descclassname">py2store.persisters.new_s3.</code><code class="sig-name descname">S3BucketPersister</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">client</span><span class="p">:</span> <span class="n">botocore.client.BaseClient</span></em>, <em class="sig-param"><span class="n">bucket</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">prefix</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">''</span></em>, <em class="sig-param"><span class="n">with_files</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">True</span></em>, <em class="sig-param"><span class="n">with_directories</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">True</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/py2store/persisters/new_s3.html#S3BucketPersister"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.persisters.new_s3.S3BucketPersister" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py class">
-<dt id="py2store.persisters.new_s3.S3BucketReader">
-<em class="property">class </em><code class="sig-prename descclassname">py2store.persisters.new_s3.</code><code class="sig-name descname">S3BucketReader</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">client</span><span class="p">:</span> <span class="n">botocore.client.BaseClient</span></em>, <em class="sig-param"><span class="n">bucket</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">prefix</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">''</span></em>, <em class="sig-param"><span class="n">with_files</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">True</span></em>, <em class="sig-param"><span class="n">with_directories</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">True</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/py2store/persisters/new_s3.html#S3BucketReader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.persisters.new_s3.S3BucketReader" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py class">
-<dt id="py2store.persisters.new_s3.S3Collection">
-<em class="property">class </em><code class="sig-prename descclassname">py2store.persisters.new_s3.</code><code class="sig-name descname">S3Collection</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">client</span><span class="p">:</span> <span class="n">botocore.client.BaseClient</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/py2store/persisters/new_s3.html#S3Collection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.persisters.new_s3.S3Collection" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py exception">
-<dt id="py2store.persisters.new_s3.S3HttpError">
-<em class="property">exception </em><code class="sig-prename descclassname">py2store.persisters.new_s3.</code><code class="sig-name descname">S3HttpError</code><a class="reference internal" href="../../../_modules/py2store/persisters/new_s3.html#S3HttpError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.persisters.new_s3.S3HttpError" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py exception">
-<dt id="py2store.persisters.new_s3.S3KeyError">
-<em class="property">exception </em><code class="sig-prename descclassname">py2store.persisters.new_s3.</code><code class="sig-name descname">S3KeyError</code><a class="reference internal" href="../../../_modules/py2store/persisters/new_s3.html#S3KeyError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.persisters.new_s3.S3KeyError" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py exception">
-<dt id="py2store.persisters.new_s3.S3Not200StatusCodeError">
-<em class="property">exception </em><code class="sig-prename descclassname">py2store.persisters.new_s3.</code><code class="sig-name descname">S3Not200StatusCodeError</code><a class="reference internal" href="../../../_modules/py2store/persisters/new_s3.html#S3Not200StatusCodeError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.persisters.new_s3.S3Not200StatusCodeError" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py class">
-<dt id="py2store.persisters.new_s3.S3PickleStore">
-<em class="property">class </em><code class="sig-prename descclassname">py2store.persisters.new_s3.</code><code class="sig-name descname">S3PickleStore</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/py2store/persisters/new_s3.html#S3PickleStore"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.persisters.new_s3.S3PickleStore" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt id="py2store.persisters.new_s3.S3StringStore">
-<code class="sig-prename descclassname">py2store.persisters.new_s3.</code><code class="sig-name descname">S3StringStore</code><a class="headerlink" href="#py2store.persisters.new_s3.S3StringStore" title="Permalink to this definition">¶</a></dt>
-<dd><p>alias of <a class="reference internal" href="../../../test.html#py2store.persisters.new_s3.S3TextStore" title="py2store.persisters.new_s3.S3TextStore"><code class="xref py py-class docutils literal notranslate"><span class="pre">py2store.persisters.new_s3.S3TextStore</span></code></a></p>
-</dd></dl>
-
-<dl class="py class">
-<dt id="py2store.persisters.new_s3.S3TextStore">
-<em class="property">class </em><code class="sig-prename descclassname">py2store.persisters.new_s3.</code><code class="sig-name descname">S3TextStore</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/py2store/persisters/new_s3.html#S3TextStore"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.persisters.new_s3.S3TextStore" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt id="py2store.persisters.new_s3.ensure_client">
-<code class="sig-prename descclassname">py2store.persisters.new_s3.</code><code class="sig-name descname">ensure_client</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">candidate_client</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/py2store/persisters/new_s3.html#ensure_client"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.persisters.new_s3.ensure_client" title="Permalink to this definition">¶</a></dt>
-<dd><p>Ensure input is a BaseClient (either kwargs to make one, or already a BaseClient instance.</p>
-</dd></dl>
-
-</div>
+<p>Forwards to s3dol.new_s3</p>
+</section>
 
 
           </div>
@@ -160,113 +57,94 @@ only the <cite>body.read(amt=None)</cite> but also
 
 
 <h3>Navigation</h3>
-<p class="caption"><span class="caption-text">Contents:</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html">py2store.filesys</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.misc">py2store.misc</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.mixins">py2store.mixins</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.test.util">py2store.test.util</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-test-quick">py2store.test.quick</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.test">py2store.test</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-test-simple">py2store.test.simple</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-test-scrap">py2store.test.scrap</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.util">py2store.util</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-ext-docx">py2store.ext.docx</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext.gitlab">py2store.ext.gitlab</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-ext-hdf">py2store.ext.hdf</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext">py2store.ext</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-ext-matlab">py2store.ext.matlab</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext.kaggle">py2store.ext.kaggle</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-ext-module-imports">py2store.ext.module_imports</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext.audio">py2store.ext.audio</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-ext-github">py2store.ext.github</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext.dataframes">py2store.ext.dataframes</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.access">py2store.access</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.__init__">py2store.__init__</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores.s3_store">py2store.stores.s3_store</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores.delegation_stores">py2store.stores.delegation_stores</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores.sql_w_sqlalchemy">py2store.stores.sql_w_sqlalchemy</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-stores-arangodb-store">py2store.stores.arangodb_store</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-stores-dropbox-store">py2store.stores.dropbox_store</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores.local_store">py2store.stores.local_store</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores">py2store.stores</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-stores-couchdb-store">py2store.stores.couchdb_store</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores.mongo_store">py2store.stores.mongo_store</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.core">py2store.core</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.uri_utils">py2store.utils.uri_utils</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.explicit">py2store.utils.explicit</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.timeseries_caching">py2store.utils.timeseries_caching</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-utils-attr-dict-py-attr-dict">py2store.utils.attr_dict.py.attr_dict</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-utils-attr-dict-py">py2store.utils.attr_dict.py</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.cumul_aggreg_write">py2store.utils.cumul_aggreg_write</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils">py2store.utils</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.cache_descriptors">py2store.utils.cache_descriptors</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.appendable">py2store.utils.appendable</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.affine_conversion">py2store.utils.affine_conversion</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.signatures">py2store.utils.signatures</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.sliceable">py2store.utils.sliceable</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.mappify">py2store.utils.mappify</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.glom">py2store.utils.glom</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-sql-w-odbc">py2store.persisters.sql_w_odbc</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.dynamodb_w_boto3">py2store.persisters.dynamodb_w_boto3</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-couchdb-w-couchdb">py2store.persisters.couchdb_w_couchdb</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.ftp_persister">py2store.persisters.ftp_persister</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.dropbox_w_urllib">py2store.persisters.dropbox_w_urllib</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters._google_drive_in_progress">py2store.persisters._google_drive_in_progress</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-dropbox-w-dropbox">py2store.persisters.dropbox_w_dropbox</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-redis-w-redis">py2store.persisters.redis_w_redis</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.sql_w_sqlalchemy">py2store.persisters.sql_w_sqlalchemy</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.new_s3">py2store.persisters.new_s3</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters">py2store.persisters</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.dropbox_w_requests">py2store.persisters.dropbox_w_requests</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.w_aiofile">py2store.persisters.w_aiofile</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.local_files">py2store.persisters.local_files</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-arangodb-w-pyarango">py2store.persisters.arangodb_w_pyarango</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters._cassandra_in_progress">py2store.persisters._cassandra_in_progress</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters._couchdb_in_progress">py2store.persisters._couchdb_in_progress</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.s3_w_boto3">py2store.persisters.s3_w_boto3</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-postgres-w-psycopg2-in-progress">py2store.persisters._postgres_w_psycopg2_in_progress</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-ssh-persister">py2store.persisters.ssh_persister</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.mongo_w_pymongo">py2store.persisters.mongo_w_pymongo</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-googledrive-w-pydrive">py2store.persisters.googledrive_w_pydrive</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.sources">py2store.sources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.dig">py2store.dig</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers.pickled">py2store.serializers.pickled</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers.jsonization">py2store.serializers.jsonization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers">py2store.serializers</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers.sequential">py2store.serializers.sequential</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers.regular_panel_data">py2store.serializers.regular_panel_data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers.audio">py2store.serializers.audio</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.caching">py2store.caching</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.scrap">py2store.scrap</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.scrap.new_gen_local">py2store.scrap.new_gen_local</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.examples.write_caches">py2store.examples.write_caches</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.examples">py2store.examples</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.examples.python_code_stats">py2store.examples.python_code_stats</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.examples.kv_walking">py2store.examples.kv_walking</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.my">py2store.my</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.my.grabbers">py2store.my.grabbers</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.trans">py2store.trans</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.key_mappers.str_utils">py2store.key_mappers.str_utils</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.key_mappers.tuples">py2store.key_mappers.tuples</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.key_mappers.paths">py2store.key_mappers.paths</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.key_mappers.naming">py2store.key_mappers.naming</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.key_mappers">py2store.key_mappers</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.errors">py2store.errors</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.slib.s_configparser">py2store.slib.s_configparser</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.slib">py2store.slib</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.slib.s_zipfile">py2store.slib.s_zipfile</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.base">py2store.base</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-selectors-mg-selectors">py2store.selectors.mg_selectors</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-selectors-mongoquery">py2store.selectors.mongoquery</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-selectors">py2store.selectors</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.parse_format">py2store.parse_format</a></li>
+<p><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../py2store.html">py2store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../access.html">py2store.access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../appendable.html">py2store.appendable</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../base.html">py2store.base</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../caching.html">py2store.caching</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../core.html">py2store.core</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dig.html">py2store.dig</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../errors.html">py2store.errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples.html">py2store.examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/dropbox_w_urllib.html">py2store.examples.dropbox_w_urllib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/kv_walking.html">py2store.examples.kv_walking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/last_key_inserted.html">py2store.examples.last_key_inserted</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/python_code_stats.html">py2store.examples.python_code_stats</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/write_caches.html">py2store.examples.write_caches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ext.html">py2store.ext</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ext/dataframes.html">py2store.ext.dataframes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ext/docx.html">py2store.ext.docx</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ext/github.html">py2store.ext.github</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ext/gitlab.html">py2store.ext.gitlab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ext/hdf.html">py2store.ext.hdf</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ext/matlab.html">py2store.ext.matlab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ext/wordnet.html">py2store.ext.wordnet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../filesys.html">py2store.filesys</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../key_mappers.html">py2store.key_mappers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../key_mappers/naming.html">py2store.key_mappers.naming</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../key_mappers/paths.html">py2store.key_mappers.paths</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../key_mappers/str_utils.html">py2store.key_mappers.str_utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../key_mappers/tuples.html">py2store.key_mappers.tuples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../misc.html">py2store.misc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../mixins.html">py2store.mixins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../my.html">py2store.my</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../my/grabbers.html">py2store.my.grabbers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../naming.html">py2store.naming</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../parse_format.html">py2store.parse_format</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../paths.html">py2store.paths</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../persisters.html">py2store.persisters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dropbox_w_dropbox.html">py2store.persisters.dropbox_w_dropbox</a></li>
+<li class="toctree-l1"><a class="reference internal" href="googledrive_w_pydrive.html">py2store.persisters.googledrive_w_pydrive</a></li>
+<li class="toctree-l1"><a class="reference internal" href="local_files.html">py2store.persisters.local_files</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">py2store.persisters.new_s3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="redis_w_redis.html">py2store.persisters.redis_w_redis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="s3_w_boto3.html">py2store.persisters.s3_w_boto3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sql_w_sqlalchemy.html">py2store.persisters.sql_w_sqlalchemy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="w_aiofile.html">py2store.persisters.w_aiofile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../serializers.html">py2store.serializers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../serializers/pickled.html">py2store.serializers.pickled</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../signatures.html">py2store.signatures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../slib.html">py2store.slib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../slib/s_configparser.html">py2store.slib.s_configparser</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../slib/s_zipfile.html">py2store.slib.s_zipfile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../sources.html">py2store.sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../stores.html">py2store.stores</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../stores/dropbox_store.html">py2store.stores.dropbox_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../stores/local_store.html">py2store.stores.local_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../stores/s3_store.html">py2store.stores.s3_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../stores/sql_w_sqlalchemy.html">py2store.stores.sql_w_sqlalchemy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../test.html">py2store.test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../test/local_files_test.html">py2store.test.local_files_test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../test/quick_test.html">py2store.test.quick_test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../test/scrap.html">py2store.test.scrap</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../test/util.html">py2store.test.util</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../trans.html">py2store.trans</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../util.html">py2store.util</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../utils.html">py2store.utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../utils/affine_conversion.html">py2store.utils.affine_conversion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../utils/appendable.html">py2store.utils.appendable</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../utils/attr_dict.html">py2store.utils.attr_dict</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../utils/cache_descriptors.html">py2store.utils.cache_descriptors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../utils/cumul_aggreg_write.html">py2store.utils.cumul_aggreg_write</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../utils/explicit.html">py2store.utils.explicit</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../utils/glom.html">py2store.utils.glom</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../utils/mappify.html">py2store.utils.mappify</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../utils/mg_selectors.html">py2store.utils.mg_selectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../utils/mongoquery.html">py2store.utils.mongoquery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../utils/signatures.html">py2store.utils.signatures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../utils/sliceable.html">py2store.utils.sliceable</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../utils/timeseries_caching.html">py2store.utils.timeseries_caching</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../utils/uri_utils.html">py2store.utils.uri_utils</a></li>
 </ul>
 
 <div class="relations">
 <h3>Related Topics</h3>
 <ul>
   <li><a href="../../../index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="local_files.html" title="previous chapter">py2store.persisters.local_files</a></li>
+      <li>Next: <a href="redis_w_redis.html" title="next chapter">py2store.persisters.redis_w_redis</a></li>
   </ul></li>
 </ul>
 </div>
@@ -293,7 +171,7 @@ only the <cite>body.read(amt=None)</cite> but also
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2020.
+      &copy;NO COPYRIGHT.
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 3.3.1</a>

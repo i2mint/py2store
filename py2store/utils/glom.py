@@ -76,12 +76,12 @@ from collections import OrderedDict, ChainMap
 
 from py2store.util import format_invocation
 
-_AbstractIterableBase = ABCMeta("_AbstractIterableBase", (object,), {})
+_AbstractIterableBase = ABCMeta('_AbstractIterableBase', (object,), {})
 
 _type_type = type
 
 
-def make_sentinel(name="_MISSING", var_name=None):
+def make_sentinel(name='_MISSING', var_name=None):
     """Creates and returns a new **instance** of a new class, suitable for
     usage as a "sentinel", a kind of singleton often used to indicate
     a value is missing when ``None`` is a valid input.
@@ -120,7 +120,7 @@ def make_sentinel(name="_MISSING", var_name=None):
         def __repr__(self):
             if self.var_name:
                 return self.var_name
-            return "%s(%r)" % (self.__class__.__name__, self.name)
+            return '%s(%r)' % (self.__class__.__name__, self.name)
 
         if var_name:
 
@@ -148,9 +148,9 @@ def is_iterable(x):
     return isinstance(x, Iterable)
 
 
-_MISSING = make_sentinel("_MISSING")
-SKIP = make_sentinel("SKIP")
-SKIP.__doc__ = """
+_MISSING = make_sentinel('_MISSING')
+SKIP = make_sentinel('SKIP')
+SKIP.__doc__ = '''
 The ``SKIP`` singleton can be returned from a function or included
 via a :class:`~glom.Literal` to cancel assignment into the output
 object.
@@ -170,11 +170,11 @@ lists.
 
    SKIP was known as OMIT in versions 18.3.1 and prior. Versions 19+
    will remove the OMIT alias entirely.
-"""
+'''
 OMIT = SKIP  # backwards compat, remove in 19+
 
-STOP = make_sentinel("STOP")
-STOP.__doc__ = """
+STOP = make_sentinel('STOP')
+STOP.__doc__ = '''
 The ``STOP`` singleton can be used to halt iteration of a list or
 execution of a tuple of subspecs.
 
@@ -182,16 +182,16 @@ execution of a tuple of subspecs.
 >>> spec = [lambda x: x if x < 5 else STOP]
 >>> glom(target, spec)
 [0, 1, 2, 3, 4]
-"""
+'''
 
-LAST_CHILD_SCOPE = make_sentinel("LAST_CHILD_SCOPE")
-LAST_CHILD_SCOPE.__doc__ = """
+LAST_CHILD_SCOPE = make_sentinel('LAST_CHILD_SCOPE')
+LAST_CHILD_SCOPE.__doc__ = '''
 Marker that can be used by parents to keep track of the last child
 scope executed.  Useful for "lifting" results out of child scopes
 for scopes that want to chain the scopes of their children together
 similar to tuple.
-"""
-MODE = make_sentinel("MODE")
+'''
+MODE = make_sentinel('MODE')
 
 
 class GlomError(Exception):
@@ -246,10 +246,10 @@ class PathAccessError(AttributeError, KeyError, IndexError, GlomError):
 
     def __repr__(self):
         cn = self.__class__.__name__
-        return "%s(%r, %r, %r)" % (cn, self.exc, self.path, self.part_idx)
+        return '%s(%r, %r, %r)' % (cn, self.exc, self.path, self.part_idx)
 
     def __str__(self):
-        return "could not access %r, part %r of %r, got error: %r" % (
+        return 'could not access %r, part %r of %r, got error: %r' % (
             self.path.values()[self.part_idx],
             self.part_idx,
             self.path,
@@ -288,26 +288,26 @@ class CoalesceError(GlomError):
 
     def __repr__(self):
         cn = self.__class__.__name__
-        return "%s(%r, %r, %r)" % (cn, self.coal_obj, self.skipped, self.path)
+        return '%s(%r, %r, %r)' % (cn, self.coal_obj, self.skipped, self.path)
 
     def __str__(self):
         missed_specs = tuple(self.coal_obj.subspecs)
         skipped_vals = [
             v.__class__.__name__
             if isinstance(v, self.coal_obj.skip_exc)
-            else "<skipped %s>" % v.__class__.__name__
+            else '<skipped %s>' % v.__class__.__name__
             for v in self.skipped
         ]
-        msg = "no valid values found. Tried %r and got (%s)" % (
+        msg = 'no valid values found. Tried %r and got (%s)' % (
             missed_specs,
-            ", ".join(skipped_vals),
+            ', '.join(skipped_vals),
         )
         if self.coal_obj.skip is not _MISSING:
-            msg += ", skip set to %r" % (self.coal_obj.skip,)
+            msg += ', skip set to %r' % (self.coal_obj.skip,)
         if self.coal_obj.skip_exc is not GlomError:
-            msg += ", skip_exc set to %r" % (self.coal_obj.skip_exc,)
+            msg += ', skip_exc set to %r' % (self.coal_obj.skip_exc,)
         if self.path is not None:
-            msg += " (at path %r)" % (self.path,)
+            msg += ' (at path %r)' % (self.path,)
         return msg
 
 
@@ -345,7 +345,7 @@ class UnregisteredTarget(GlomError):
         cn = self.__class__.__name__
         # <type %r> is because Python 3 inexplicably changed the type
         # repr from <type *> to <class *>
-        return "%s(%r, <type %r>, %r, %r)" % (
+        return '%s(%r, <type %r>, %r, %r)' % (
             cn,
             self.op,
             self.target_type.__name__,
@@ -356,21 +356,21 @@ class UnregisteredTarget(GlomError):
     def __str__(self):
         if not self.type_map:
             return (
-                    "glom() called without registering any types for operation '%s'. see"
-                    " glom.register() or Glommer's constructor for details."
-                    % (self.op,)
+                "glom() called without registering any types for operation '%s'. see"
+                " glom.register() or Glommer's constructor for details."
+                % (self.op,)
             )
         reg_types = sorted([t.__name__ for t, h in self.type_map.items() if h])
         reg_types_str = (
-            "()" if not reg_types else ("(%s)" % ", ".join(reg_types))
+            '()' if not reg_types else ('(%s)' % ', '.join(reg_types))
         )
         msg = (
-                "target type %r not registered for '%s', expected one of"
-                " registered types: %s"
-                % (self.target_type.__name__, self.op, reg_types_str)
+            "target type %r not registered for '%s', expected one of"
+            ' registered types: %s'
+            % (self.target_type.__name__, self.op, reg_types_str)
         )
         if self.path:
-            msg += " (at %r)" % (self.path,)
+            msg += ' (at %r)' % (self.path,)
         return msg
 
 
@@ -421,7 +421,7 @@ class Path(object):
                 sub_parts = _T_PATHS[part]
                 if sub_parts[0] is not T:
                     raise ValueError(
-                        "path segment must be path from T, not %r"
+                        'path segment must be path from T, not %r'
                         % sub_parts[0]
                     )
                 i = 1
@@ -429,7 +429,7 @@ class Path(object):
                     path_t = _t_child(path_t, sub_parts[i], sub_parts[i + 1])
                     i += 2
             else:
-                path_t = _t_child(path_t, "P", part)
+                path_t = _t_child(path_t, 'P', part)
         self.path_t = path_t
 
     @classmethod
@@ -440,7 +440,7 @@ class Path(object):
         Path('a', 'b', 'c')
 
         """
-        return cls(*text.split("."))
+        return cls(*text.split('.'))
 
     def glomit(self, target, scope):
         # The entrypoint for the Path extension
@@ -487,7 +487,7 @@ class Path(object):
             other = other.path_t
         if not isinstance(other, TType):
             raise TypeError(
-                "can only check if Path starts with string, Path or T"
+                'can only check if Path starts with string, Path or T'
             )
         o_path = _T_PATHS[other]
         return _T_PATHS[self.path_t][: len(o_path)] == o_path
@@ -523,7 +523,7 @@ class Path(object):
             step = 1
             start = (i * 2) + 1 if i >= 0 else (i * 2) + len(cur_t_path)
             if start < 0 or start > len(cur_t_path):
-                raise IndexError("Path index out of range")
+                raise IndexError('Path index out of range')
             stop = (
                 ((i + 1) * 2) + 1
                 if i >= 0
@@ -548,7 +548,7 @@ def _format_path(t_path):
     while i < len(t_path):
         op, arg = t_path[i], t_path[i + 1]
         i += 2
-        if op == "P":
+        if op == 'P':
             if cur_t_path:
                 path_parts.append(cur_t_path)
                 cur_t_path = []
@@ -560,7 +560,7 @@ def _format_path(t_path):
         path_parts.append(cur_t_path)
 
     if path_parts or not cur_t_path:
-        return "Path(%s)" % ", ".join(
+        return 'Path(%s)' % ', '.join(
             [
                 _format_t(part) if type(part) is list else repr(part)
                 for part in path_parts
@@ -601,7 +601,7 @@ class Literal(object):
 
     def __repr__(self):
         cn = self.__class__.__name__
-        return "%s(%r)" % (cn, self.value)
+        return '%s(%r)' % (cn, self.value)
 
 
 class Spec(object):
@@ -634,8 +634,8 @@ class Spec(object):
 
     def glom(self, target, **kw):
         scope = dict(self.scope)
-        scope.update(kw.get("scope", {}))
-        kw["scope"] = ChainMap(scope)
+        scope.update(kw.get('scope', {}))
+        kw['scope'] = ChainMap(scope)
         glom_ = scope.get(glom, glom)
         return glom_(target, self.spec, **kw)
 
@@ -646,8 +646,8 @@ class Spec(object):
     def __repr__(self):
         cn = self.__class__.__name__
         if self.scope:
-            return "%s(%r, scope=%r)" % (cn, self.spec, self.scope)
-        return "%s(%r)" % (cn, self.spec)
+            return '%s(%r, scope=%r)' % (cn, self.spec, self.scope)
+        return '%s(%r)' % (cn, self.spec)
 
 
 class Coalesce(object):
@@ -717,13 +717,13 @@ class Coalesce(object):
     def __init__(self, *subspecs, **kwargs):
         self.subspecs = subspecs
         self._orig_kwargs = dict(kwargs)
-        self.default = kwargs.pop("default", _MISSING)
-        self.default_factory = kwargs.pop("default_factory", _MISSING)
+        self.default = kwargs.pop('default', _MISSING)
+        self.default_factory = kwargs.pop('default_factory', _MISSING)
         if self.default and self.default_factory:
             raise ValueError(
                 'expected one of "default" or "default_factory", not both'
             )
-        self.skip = kwargs.pop("skip", _MISSING)
+        self.skip = kwargs.pop('skip', _MISSING)
         if self.skip is _MISSING:
             self.skip_func = lambda v: False
         elif callable(self.skip):
@@ -732,10 +732,10 @@ class Coalesce(object):
             self.skip_func = lambda v: v in self.skip
         else:
             self.skip_func = lambda v: v == self.skip
-        self.skip_exc = kwargs.pop("skip_exc", GlomError)
+        self.skip_exc = kwargs.pop('skip_exc', GlomError)
         if kwargs:
             raise TypeError(
-                "unexpected keyword args: %r" % (sorted(kwargs.keys()),)
+                'unexpected keyword args: %r' % (sorted(kwargs.keys()),)
             )
 
     def glomit(self, target, scope):
@@ -813,27 +813,27 @@ class Inspect(object):
 
     def __init__(self, *a, **kw):
         self.wrapped = a[0] if a else Path()
-        self.recursive = kw.pop("recursive", False)
-        self.echo = kw.pop("echo", True)
-        breakpoint = kw.pop("breakpoint", False)
+        self.recursive = kw.pop('recursive', False)
+        self.echo = kw.pop('echo', True)
+        breakpoint = kw.pop('breakpoint', False)
         if breakpoint is True:
             breakpoint = pdb.set_trace
         if breakpoint and not callable(breakpoint):
             raise TypeError(
-                "breakpoint expected bool or callable, not: %r" % breakpoint
+                'breakpoint expected bool or callable, not: %r' % breakpoint
             )
         self.breakpoint = breakpoint
-        post_mortem = kw.pop("post_mortem", False)
+        post_mortem = kw.pop('post_mortem', False)
         if post_mortem is True:
             post_mortem = pdb.post_mortem
         if post_mortem and not callable(post_mortem):
             raise TypeError(
-                "post_mortem expected bool or callable, not: %r" % post_mortem
+                'post_mortem expected bool or callable, not: %r' % post_mortem
             )
         self.post_mortem = post_mortem
 
     def __repr__(self):
-        return "<INSPECT>"
+        return '<INSPECT>'
 
     def glomit(self, target, scope):
         # stash the real handler under Inspect,
@@ -846,9 +846,9 @@ class Inspect(object):
         if not self.recursive:
             scope[glom] = scope[Inspect]
         if self.echo:
-            print("---")
-            print("path:  ", scope[Path] + [spec])
-            print("target:", target)
+            print('---')
+            print('path:  ', scope[Path] + [spec])
+            print('target:', target)
         if self.breakpoint:
             self.breakpoint()
         try:
@@ -858,8 +858,8 @@ class Inspect(object):
                 self.post_mortem()
             raise
         if self.echo:
-            print("output:", ret)
-            print("---")
+            print('output:', ret)
+            print('---')
         return ret
 
 
@@ -906,8 +906,8 @@ class Call(object):
             func = T
         if not (callable(func) or isinstance(func, (Spec, TType))):
             raise TypeError(
-                "expected func to be a callable or T"
-                " expression, not: %r" % (func,)
+                'expected func to be a callable or T'
+                ' expression, not: %r' % (func,)
             )
         if args is None:
             args = ()
@@ -916,7 +916,7 @@ class Call(object):
         self.func, self.args, self.kwargs = func, args, kwargs
 
     def glomit(self, target, scope):
-        "run against the current target"
+        'run against the current target'
 
         def _eval(t):
             if type(t) in (Spec, TType):
@@ -935,7 +935,7 @@ class Call(object):
 
     def __repr__(self):
         cn = self.__class__.__name__
-        return "%s(%r, args=%r, kwargs=%r)" % (
+        return '%s(%r, args=%r, kwargs=%r)' % (
             cn,
             self.func,
             self.args,
@@ -950,7 +950,7 @@ def _is_spec(obj, strict=False):
     if strict:
         return type(obj) is Spec
     # TODO: revisit line below
-    return callable(getattr(obj, "glomit", None)) and not isinstance(
+    return callable(getattr(obj, 'glomit', None)) and not isinstance(
         obj, type
     )  # pragma: no cover
 
@@ -1002,8 +1002,8 @@ class Invoke(object):
     def __init__(self, func):
         if not callable(func) and not _is_spec(func, strict=True):
             raise TypeError(
-                "expected func to be a callable or Spec instance,"
-                " not: %r" % (func,)
+                'expected func to be a callable or Spec instance,'
+                ' not: %r' % (func,)
             )
         self.func = func
         self._args = ()
@@ -1049,7 +1049,7 @@ class Invoke(object):
         call returns a new spec.
         """
         ret = self.__class__(self.func)
-        ret._args = self._args + ("C", a, kw)
+        ret._args = self._args + ('C', a, kw)
         ret._cur_kwargs = dict(self._cur_kwargs)
         ret._cur_kwargs.update({k: kw for k, _ in kw.items()})
         return ret
@@ -1082,7 +1082,7 @@ class Invoke(object):
         call returns a new spec.
         """
         ret = self.__class__(self.func)
-        ret._args = self._args + ("S", a, kw)
+        ret._args = self._args + ('S', a, kw)
         ret._cur_kwargs = dict(self._cur_kwargs)
         ret._cur_kwargs.update({k: kw for k, _ in kw.items()})
         return ret
@@ -1110,29 +1110,29 @@ class Invoke(object):
         will be stacked in the order in which they are provided.
         """
         if args is None and kwargs is None:
-            raise TypeError("expected one or both of args/kwargs to be passed")
+            raise TypeError('expected one or both of args/kwargs to be passed')
         ret = self.__class__(self.func)
-        ret._args = self._args + ("*", args, kwargs)
+        ret._args = self._args + ('*', args, kwargs)
         ret._cur_kwargs = dict(self._cur_kwargs)
         return ret
 
     def __repr__(self):
         chunks = [self.__class__.__name__]
-        fname_map = {"C": "constants", "S": "specs", "*": "star"}
+        fname_map = {'C': 'constants', 'S': 'specs', '*': 'star'}
         if type(self.func) is Spec:
-            chunks.append(".specfunc({!r})".format(self.func.spec))
+            chunks.append('.specfunc({!r})'.format(self.func.spec))
         else:
-            chunks.append("({!r})".format(self.func))
+            chunks.append('({!r})'.format(self.func))
         for i in range(len(self._args) // 3):
-            op, args, kwargs = self._args[i * 3: i * 3 + 3]
+            op, args, kwargs = self._args[i * 3 : i * 3 + 3]
             fname = fname_map[op]
-            chunks.append(".{}(".format(fname))
-            if op in ("C", "S"):
+            chunks.append('.{}('.format(fname))
+            if op in ('C', 'S'):
                 chunks.append(
-                    ", ".join(
+                    ', '.join(
                         [repr(a) for a in args]
                         + [
-                            "{}={!r}".format(k, v)
+                            '{}={!r}'.format(k, v)
                             for k, v in kwargs.items()
                             if self._cur_kwargs[k] is kwargs
                         ]
@@ -1140,13 +1140,13 @@ class Invoke(object):
                 )
             else:
                 if args:
-                    chunks.append("args=" + repr(args))
+                    chunks.append('args=' + repr(args))
                 if args and kwargs:
-                    chunks.append(", ")
+                    chunks.append(', ')
                 if kwargs:
-                    chunks.append("kwargs=" + repr(kwargs))
-            chunks.append(")")
-        return "".join(chunks)
+                    chunks.append('kwargs=' + repr(kwargs))
+            chunks.append(')')
+        return ''.join(chunks)
 
     def glomit(self, target, scope):
         all_args = []
@@ -1160,8 +1160,8 @@ class Invoke(object):
         )
 
         for i in range(len(self._args) // 3):
-            op, args, kwargs = self._args[i * 3: i * 3 + 3]
-            if op == "C":
+            op, args, kwargs = self._args[i * 3 : i * 3 + 3]
+            if op == 'C':
                 all_args.extend(args)
                 all_kwargs.update(
                     {
@@ -1170,7 +1170,7 @@ class Invoke(object):
                         if self._cur_kwargs[k] is kwargs
                     }
                 )
-            elif op == "S":
+            elif op == 'S':
                 all_args.extend([recurse(arg) for arg in args])
                 all_kwargs.update(
                     {
@@ -1179,7 +1179,7 @@ class Invoke(object):
                         if self._cur_kwargs[k] is kwargs
                     }
                 )
-            elif op == "*":
+            elif op == '*':
                 if args is not None:
                     all_args.extend(recurse(args))
                 if kwargs is not None:
@@ -1255,18 +1255,18 @@ class TType(object):
 
     """
 
-    __slots__ = ("__weakref__",)
+    __slots__ = ('__weakref__',)
 
     def __getattr__(self, name):
-        if name.startswith("__"):
-            raise AttributeError("T instances reserve dunder attributes")
-        return _t_child(self, ".", name)
+        if name.startswith('__'):
+            raise AttributeError('T instances reserve dunder attributes')
+        return _t_child(self, '.', name)
 
     def __getitem__(self, item):
-        return _t_child(self, "[", item)
+        return _t_child(self, '[', item)
 
     def __call__(self, *args, **kwargs):
-        return _t_child(self, "(", (args, kwargs))
+        return _t_child(self, '(', (args, kwargs))
 
     def __repr__(self):
         t_path = _T_PATHS[self]
@@ -1274,10 +1274,10 @@ class TType(object):
 
     def __getstate__(self):
         t_path = _T_PATHS[self]
-        return tuple(("T" if t_path[0] is T else "S",) + t_path[1:])
+        return tuple(('T' if t_path[0] is T else 'S',) + t_path[1:])
 
     def __setstate__(self, state):
-        _T_PATHS[self] = (T if state[0] == "T" else S,) + state[1:]
+        _T_PATHS[self] = (T if state[0] == 'T' else S,) + state[1:]
 
 
 _T_PATHS = weakref.WeakKeyDictionary()
@@ -1297,33 +1297,33 @@ def _t_eval(target, _t, scope):
     elif t_path[0] is S:
         cur = scope
     else:
-        raise ValueError("TType instance with invalid root object")
+        raise ValueError('TType instance with invalid root object')
     while i < len(t_path):
         op, arg = t_path[i], t_path[i + 1]
         if type(arg) in (Spec, TType, Literal):
             arg = scope[glom](target, arg, scope)
-        if op == ".":
+        if op == '.':
             try:
                 cur = getattr(cur, arg)
             except AttributeError as e:
                 raise PathAccessError(e, Path(_t), i // 2)
-        elif op == "[":
+        elif op == '[':
             try:
                 cur = cur[arg]
             except (KeyError, IndexError, TypeError) as e:
                 raise PathAccessError(e, Path(_t), i // 2)
-        elif op == "P":
+        elif op == 'P':
             # Path type stuff (fuzzy match)
             get = scope[TargetRegistry].get_handler(
-                "get", cur, path=t_path[2: i + 2: 2]
+                'get', cur, path=t_path[2 : i + 2 : 2]
             )
             try:
                 cur = get(cur, arg)
             except Exception as e:
                 raise PathAccessError(e, Path(_t), i // 2)
-        elif op == "(":
+        elif op == '(':
             args, kwargs = arg
-            scope[Path] += t_path[2: i + 2: 2]
+            scope[Path] += t_path[2 : i + 2 : 2]
             cur = scope[glom](target, Call(cur, args, kwargs), scope)
             # call with target rather than cur,
             # because it is probably more intuitive
@@ -1339,26 +1339,26 @@ S = TType()  # like T, but means grab stuff from Scope, not Target
 
 _T_PATHS[T] = (T,)
 _T_PATHS[S] = (S,)
-UP = make_sentinel("UP")
-ROOT = make_sentinel("ROOT")
+UP = make_sentinel('UP')
+ROOT = make_sentinel('ROOT')
 
 
-def _format_invocation(name="", args=(), kwargs=None):  # pragma: no cover
+def _format_invocation(name='', args=(), kwargs=None):  # pragma: no cover
     # TODO: add to boltons
     kwargs = kwargs or {}
-    a_text = ", ".join([repr(a) for a in args])
+    a_text = ', '.join([repr(a) for a in args])
     if isinstance(kwargs, dict):
         kwarg_items = kwargs.items()
     else:
         kwarg_items = kwargs
-    kw_text = ", ".join(["%s=%r" % (k, v) for k, v in kwarg_items])
+    kw_text = ', '.join(['%s=%r' % (k, v) for k, v in kwarg_items])
 
     star_args_text = a_text
     if star_args_text and kw_text:
-        star_args_text += ", "
+        star_args_text += ', '
     star_args_text += kw_text
 
-    return "%s(%s)" % (name, star_args_text)
+    return '%s(%s)' % (name, star_args_text)
 
 
 class Let(object):
@@ -1373,7 +1373,7 @@ class Let(object):
 
     def __init__(self, **kw):
         if not kw:
-            raise TypeError("expected at least one keyword argument")
+            raise TypeError('expected at least one keyword argument')
         self._binding = kw
 
     def glomit(self, target, scope):
@@ -1396,27 +1396,27 @@ def _format_t(path, root=T):
             return kw
         return repr(kw)
 
-    prepr = ["T" if root is T else "S"]
+    prepr = ['T' if root is T else 'S']
     i = 0
     while i < len(path):
         op, arg = path[i], path[i + 1]
-        if op == ".":
-            prepr.append("." + arg)
-        elif op == "[":
-            prepr.append("[%r]" % (arg,))
-        elif op == "(":
+        if op == '.':
+            prepr.append('.' + arg)
+        elif op == '[':
+            prepr.append('[%r]' % (arg,))
+        elif op == '(':
             args, kwargs = arg
             prepr.append(
-                "(%s)"
-                % ", ".join(
+                '(%s)'
+                % ', '.join(
                     [repr(a) for a in args]
-                    + ["%s=%r" % (kwarg_fmt(k), v) for k, v in kwargs.items()]
+                    + ['%s=%r' % (kwarg_fmt(k), v) for k, v in kwargs.items()]
                 )
             )
-        elif op == "P":
+        elif op == 'P':
             return _format_path(path)
         i += 2
-    return "".join(prepr)
+    return ''.join(prepr)
 
 
 class CheckError(GlomError):
@@ -1455,20 +1455,20 @@ class CheckError(GlomError):
 
     def __repr__(self):
         cn = self.__class__.__name__
-        return "%s(%r, %r, %r)" % (cn, self.msgs, self.check_obj, self.path)
+        return '%s(%r, %r, %r)' % (cn, self.msgs, self.check_obj, self.path)
 
     def __str__(self):
-        msg = "target at path %s failed check," % self.path
+        msg = 'target at path %s failed check,' % self.path
         if self.check_obj.spec is not T:
-            msg += " subtarget at %r" % (self.check_obj.spec,)
+            msg += ' subtarget at %r' % (self.check_obj.spec,)
         if len(self.msgs) == 1:
-            msg += " got error: %r" % (self.msgs[0],)
+            msg += ' got error: %r' % (self.msgs[0],)
         else:
-            msg += " got %s errors: %r" % (len(self.msgs), self.msgs)
+            msg += ' got %s errors: %r' % (len(self.msgs), self.msgs)
         return msg
 
 
-RAISE = make_sentinel("RAISE")  # flag object for "raise on check failure"
+RAISE = make_sentinel('RAISE')  # flag object for "raise on check failure"
 
 
 class Check(object):
@@ -1507,7 +1507,7 @@ class Check(object):
     def __init__(self, spec=T, **kwargs):
         self.spec = spec
         self._orig_kwargs = dict(kwargs)
-        self.default = kwargs.pop("default", RAISE)
+        self.default = kwargs.pop('default', RAISE)
 
         def _get_arg_val(name, cond, func, val, can_be_empty=True):
             if val is _MISSING:
@@ -1516,13 +1516,13 @@ class Check(object):
                 val = (val,)
             elif not val and not can_be_empty:
                 raise ValueError(
-                    "expected %r argument to contain at least one value,"
-                    " not: %r" % (name, val)
+                    'expected %r argument to contain at least one value,'
+                    ' not: %r' % (name, val)
                 )
             for v in val:
                 if not func(v):
                     raise ValueError(
-                        "expected %r argument to be %s, not: %r"
+                        'expected %r argument to be %s, not: %r'
                         % (name, cond, v)
                     )
             return val
@@ -1533,26 +1533,26 @@ class Check(object):
         def truthy(val):
             return bool(val)
 
-        validate = kwargs.pop("validate", _MISSING if kwargs else truthy)
-        type_arg = kwargs.pop("type", _MISSING)
-        instance_of = kwargs.pop("instance_of", _MISSING)
-        equal_to = kwargs.pop("equal_to", _MISSING)
-        one_of = kwargs.pop("one_of", _MISSING)
+        validate = kwargs.pop('validate', _MISSING if kwargs else truthy)
+        type_arg = kwargs.pop('type', _MISSING)
+        instance_of = kwargs.pop('instance_of', _MISSING)
+        equal_to = kwargs.pop('equal_to', _MISSING)
+        one_of = kwargs.pop('one_of', _MISSING)
         if kwargs:
-            raise TypeError("unexpected keyword arguments: %r" % kwargs.keys())
+            raise TypeError('unexpected keyword arguments: %r' % kwargs.keys())
 
         self.validators = _get_arg_val(
-            "validate", "callable", callable, validate
+            'validate', 'callable', callable, validate
         )
         self.instance_of = _get_arg_val(
-            "instance_of",
-            "a type",
+            'instance_of',
+            'a type',
             lambda x: isinstance(x, type),
             instance_of,
             False,
         )
         self.types = _get_arg_val(
-            "type", "a type", lambda x: isinstance(x, type), type_arg, False
+            'type', 'a type', lambda x: isinstance(x, type), type_arg, False
         )
 
         if equal_to is not _MISSING:
@@ -1566,12 +1566,12 @@ class Check(object):
             if not is_iterable(one_of):
                 raise ValueError(
                     'expected "one_of" argument to be iterable'
-                    " , not: %r" % one_of
+                    ' , not: %r' % one_of
                 )
             if not one_of:
                 raise ValueError(
                     'expected "one_of" to contain at least'
-                    " one value, not: %r" % (one_of,)
+                    ' one value, not: %r' % (one_of,)
                 )
             self.vals = one_of
         else:
@@ -1579,7 +1579,7 @@ class Check(object):
         return
 
     class _ValidationError(Exception):
-        "for internal use inside of Check only"
+        'for internal use inside of Check only'
         pass
 
     def glomit(self, target, scope):
@@ -1591,7 +1591,7 @@ class Check(object):
             if self.default is not RAISE:
                 return self.default
             errs.append(
-                "expected type to be %r, found type %r"
+                'expected type to be %r, found type %r'
                 % (
                     self.types[0].__name__
                     if len(self.types) == 1
@@ -1605,11 +1605,11 @@ class Check(object):
                 return self.default
             if len(self.vals) == 1:
                 errs.append(
-                    "expected {}, found {}".format(self.vals[0], target)
+                    'expected {}, found {}'.format(self.vals[0], target)
                 )
             else:
                 errs.append(
-                    "expected one of {}, found {}".format(self.vals, target)
+                    'expected one of {}, found {}'.format(self.vals, target)
                 )
 
         if self.validators:
@@ -1619,14 +1619,14 @@ class Check(object):
                     if res is False:
                         raise self._ValidationError
                 except Exception as e:
-                    msg = "expected %r check to validate target" % getattr(
-                        validator, "__name__", None
-                    ) or ("#%s" % i)
+                    msg = 'expected %r check to validate target' % getattr(
+                        validator, '__name__', None
+                    ) or ('#%s' % i)
                     if type(e) is self._ValidationError:
                         if self.default is not RAISE:
                             return self.default
                     else:
-                        msg += " (got exception: %r)" % e
+                        msg += ' (got exception: %r)' % e
                     errs.append(msg)
 
         if self.instance_of and not isinstance(target, self.instance_of):
@@ -1636,7 +1636,7 @@ class Check(object):
             if self.default is not RAISE:
                 return self.default
             errs.append(
-                "expected instance of %r, found instance of %r"
+                'expected instance of %r, found instance of %r'
                 % (
                     self.instance_of[0].__name__
                     if len(self.instance_of) == 1
@@ -1676,8 +1676,8 @@ class Auto(object):
 
     def __repr__(self):
         cn = self.__class__.__name__
-        rpr = "" if self.spec is None else repr(self.spec)
-        return "%s(%s)" % (cn, rpr)
+        rpr = '' if self.spec is None else repr(self.spec)
+        return '%s(%s)' % (cn, rpr)
 
 
 class _AbstractIterable(_AbstractIterableBase):
@@ -1687,7 +1687,7 @@ class _AbstractIterable(_AbstractIterableBase):
     def __subclasshook__(cls, C):
         if C in (str, bytes):
             return False
-        return callable(getattr(C, "__iter__", None))
+        return callable(getattr(C, '__iter__', None))
 
 
 def _get_sequence_item(target, index):
@@ -1714,13 +1714,13 @@ def _handle_dict(target, spec, scope):
 def _handle_list(target, spec, scope):
     subspec = spec[0]
     iterate = scope[TargetRegistry].get_handler(
-        "iterate", target, path=scope[Path]
+        'iterate', target, path=scope[Path]
     )
     try:
         iterator = iterate(target)
     except Exception as e:
         raise TypeError(
-            "failed to iterate on instance of type %r at %r (got %r)"
+            'failed to iterate on instance of type %r at %r (got %r)'
             % (target.__class__.__name__, Path(*scope[Path]), e)
         )
     ret = []
@@ -1748,7 +1748,7 @@ def _handle_tuple(target, spec, scope):
         # this makes it so that specs in a tuple effectively nest.
         scope = scope[LAST_CHILD_SCOPE]
         if not isinstance(subspec, list):
-            scope[Path] += [getattr(subspec, "__name__", subspec)]
+            scope[Path] += [getattr(subspec, '__name__', subspec)]
     return res
 
 
@@ -1861,14 +1861,14 @@ class TargetRegistry(object):
     def register(self, target_type, **kwargs):
         if not isinstance(target_type, type):
             raise TypeError(
-                "register expected a type, not an instance: %r"
+                'register expected a type, not an instance: %r'
                 % (target_type,)
             )
-        exact = kwargs.pop("exact", None)
+        exact = kwargs.pop('exact', None)
         new_op_map = dict(kwargs)
 
         for op_name in sorted(
-                set(self._op_auto_map.keys()) | set(new_op_map.keys())
+            set(self._op_auto_map.keys()) | set(new_op_map.keys())
         ):
             cur_type_map = self._op_type_map.setdefault(op_name, OrderedDict())
 
@@ -1881,14 +1881,14 @@ class TargetRegistry(object):
                     handler = self._op_auto_map[op_name](target_type)
                 except Exception as e:
                     raise TypeError(
-                        "error while determining support for operation"
+                        'error while determining support for operation'
                         ' "%s" on target type: %s (got %r)'
                         % (op_name, target_type.__name__, e)
                     )
             if handler is not False and not callable(handler):
                 raise TypeError(
                     'expected handler for op "%s" to be'
-                    " callable or False, not: %r" % (op_name, handler)
+                    ' callable or False, not: %r' % (op_name, handler)
                 )
             new_op_map[op_name] = handler
 
@@ -1914,13 +1914,13 @@ class TargetRegistry(object):
         """
         if not isinstance(op_name, str):
             raise TypeError(
-                "expected op_name to be a text name, not: %r" % (op_name,)
+                'expected op_name to be a text name, not: %r' % (op_name,)
             )
         if auto_func is None:
             auto_func = lambda t: False
         elif not callable(auto_func):
             raise TypeError(
-                "expected auto_func to be callable, not: %r" % (auto_func,)
+                'expected auto_func to be callable, not: %r' % (auto_func,)
             )
 
         # determine support for any previously known types
@@ -1936,14 +1936,14 @@ class TargetRegistry(object):
                 handler = auto_func(t)
             except Exception as e:
                 raise TypeError(
-                    "error while determining support for operation"
+                    'error while determining support for operation'
                     ' "%s" on target type: %s (got %r)'
                     % (op_name, t.__name__, e)
                 )
             if handler is not False and not callable(handler):
                 raise TypeError(
                     'expected handler for op "%s" to be'
-                    " callable or False, not: %r" % (op_name, handler)
+                    ' callable or False, not: %r' % (op_name, handler)
                 )
             type_map[t] = handler
 
@@ -1959,12 +1959,12 @@ class TargetRegistry(object):
         def _get_iterable_handler(type_obj):
             return (
                 iter
-                if callable(getattr(type_obj, "__iter__", None))
+                if callable(getattr(type_obj, '__iter__', None))
                 else False
             )
 
-        self.register_op("iterate", _get_iterable_handler)
-        self.register_op("get", lambda _: getattr)
+        self.register_op('iterate', _get_iterable_handler)
+        self.register_op('get', lambda _: getattr)
 
 
 _DEFAULT_SCOPE = ChainMap({})
@@ -2026,21 +2026,21 @@ def glom(target, spec, **kwargs):
 
     """
     # TODO: check spec up front
-    default = kwargs.pop("default", None if "skip_exc" in kwargs else _MISSING)
-    skip_exc = kwargs.pop("skip_exc", () if default is _MISSING else GlomError)
+    default = kwargs.pop('default', None if 'skip_exc' in kwargs else _MISSING)
+    skip_exc = kwargs.pop('skip_exc', () if default is _MISSING else GlomError)
     scope = _DEFAULT_SCOPE.new_child(
         {
-            Path: kwargs.pop("path", []),
-            Inspect: kwargs.pop("inspector", None),
+            Path: kwargs.pop('path', []),
+            Inspect: kwargs.pop('inspector', None),
             MODE: _glom_auto,
         }
     )
     scope[UP] = scope
     scope[ROOT] = scope
     scope[T] = target
-    scope.update(kwargs.pop("scope", {}))
+    scope.update(kwargs.pop('scope', {}))
     if kwargs:
-        raise TypeError("unexpected keyword args: %r" % sorted(kwargs.keys()))
+        raise TypeError('unexpected keyword args: %r' % sorted(kwargs.keys()))
     try:
         ret = _glom(target, spec, scope)
     except skip_exc:
@@ -2060,7 +2060,7 @@ def _glom(target, spec, scope):
 
     if isinstance(spec, TType):  # must go first, due to callability
         return _t_eval(target, spec, scope)
-    elif callable(getattr(spec, "glomit", None)):
+    elif callable(getattr(spec, 'glomit', None)):
         return spec.glomit(target, scope)
 
     return scope[MODE](target, spec, scope)
@@ -2079,13 +2079,13 @@ def _glom_auto(target, spec, scope):
         return spec(target)
 
     raise TypeError(
-        "expected spec to be dict, list, tuple, callable, string,"
-        " or other Spec-like type, not: %r" % (spec,)
+        'expected spec to be dict, list, tuple, callable, string,'
+        ' or other Spec-like type, not: %r' % (spec,)
     )
 
 
 _DEFAULT_SCOPE.update(
-    {glom: _glom, TargetRegistry: TargetRegistry(register_default_types=True), }
+    {glom: _glom, TargetRegistry: TargetRegistry(register_default_types=True),}
 )
 
 
@@ -2155,8 +2155,8 @@ class Glommer(object):
     """
 
     def __init__(self, **kwargs):
-        register_default_types = kwargs.pop("register_default_types", True)
-        scope = kwargs.pop("scope", _DEFAULT_SCOPE)
+        register_default_types = kwargs.pop('register_default_types', True)
+        scope = kwargs.pop('scope', _DEFAULT_SCOPE)
 
         # this "freezes" the scope in at the time of construction
         self.scope = ChainMap(dict(scope))
@@ -2191,7 +2191,7 @@ class Glommer(object):
            methods instead.
 
         """
-        exact = kwargs.pop("exact", False)
+        exact = kwargs.pop('exact', False)
         self.scope[TargetRegistry].register(target_type, exact=exact, **kwargs)
         return
 
@@ -2231,8 +2231,8 @@ class Fill(object):
 
     def __repr__(self):
         cn = self.__class__.__name__
-        rpr = "" if self.spec is None else repr(self.spec)
-        return "%s(%s)" % (cn, rpr)
+        rpr = '' if self.spec is None else repr(self.spec)
+        return '%s(%s)' % (cn, rpr)
 
 
 def _fill(target, spec, scope):

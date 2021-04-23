@@ -5,4 +5,3 @@ Signature calculus
 """
 
 from dol.signatures import *
-

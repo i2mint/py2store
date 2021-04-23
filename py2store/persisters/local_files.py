@@ -18,10 +18,10 @@ from py2store.parse_format import match_re_for_fstring
 # from py2store.slib.zipfile import ZipReader, ZipFileReader, ZipFilesReader, FilesOfZip
 # from py2store.filesys import FileCollection, DirCollection
 
-DFLT_OPEN_MODE = ""
+DFLT_OPEN_MODE = ''
 
 file_sep = os.path.sep
-inf = float("infinity")
+inf = float('infinity')
 
 
 class FolderNotFoundError(NoSuchKeyError):
@@ -50,7 +50,7 @@ def pattern_filter(pattern):
 
 
 def paths_in_dir_with_slash_suffix_for_dirs(rootdir):
-    for f in iglob(ensure_slash_suffix(rootdir) + "*"):
+    for f in iglob(ensure_slash_suffix(rootdir) + '*'):
         if os.path.isdir(f):
             yield ensure_slash_suffix(f)
         else:
@@ -59,7 +59,7 @@ def paths_in_dir_with_slash_suffix_for_dirs(rootdir):
 
 def iter_relative_files_and_folder(root_folder):
     root_folder = ensure_slash_suffix(root_folder)
-    return map(lambda x: x.replace(root_folder, ""), iglob(root_folder + "*"))
+    return map(lambda x: x.replace(root_folder, ''), iglob(root_folder + '*'))
 
 
 def iter_filepaths_in_folder(root_folder):
@@ -70,19 +70,19 @@ def iter_filepaths_in_folder(root_folder):
 
 
 def paths_in_dir(rootdir):
-    return iglob(ensure_slash_suffix(rootdir) + "*")
+    return iglob(ensure_slash_suffix(rootdir) + '*')
 
 
 def filepaths_in_dir(rootdir):
-    return filter(os.path.isfile, iglob(ensure_slash_suffix(rootdir) + "*"))
+    return filter(os.path.isfile, iglob(ensure_slash_suffix(rootdir) + '*'))
 
 
 def dirpaths_in_dir(rootdir):
-    return filter(os.path.isdir, iglob(ensure_slash_suffix(rootdir) + "*"))
+    return filter(os.path.isdir, iglob(ensure_slash_suffix(rootdir) + '*'))
 
 
 def iter_filepaths_in_folder_recursively(
-        root_folder, max_levels=None, _current_level=0
+    root_folder, max_levels=None, _current_level=0
 ):
     if max_levels is None:
         max_levels = inf
@@ -90,7 +90,7 @@ def iter_filepaths_in_folder_recursively(
         if os.path.isdir(full_path):
             if _current_level < max_levels:
                 for entry in iter_filepaths_in_folder_recursively(
-                        full_path, max_levels, _current_level + 1
+                    full_path, max_levels, _current_level + 1
                 ):
                     yield entry
         else:
@@ -99,7 +99,7 @@ def iter_filepaths_in_folder_recursively(
 
 
 def iter_dirpaths_in_folder_recursively(
-        root_folder, max_levels=None, _current_level=0
+    root_folder, max_levels=None, _current_level=0
 ):
     if max_levels is None:
         max_levels = inf
@@ -108,7 +108,7 @@ def iter_dirpaths_in_folder_recursively(
             yield full_path
             if _current_level < max_levels:
                 for entry in iter_dirpaths_in_folder_recursively(
-                        full_path, max_levels, _current_level + 1
+                    full_path, max_levels, _current_level + 1
                 ):
                     yield entry
 
@@ -164,10 +164,10 @@ class PrefixedDirpathsRecursive(PrefixedFilepaths):
 
 
 def path_match_regex_from_path_format(path_format):
-    if "{" not in path_format:
+    if '{' not in path_format:
         # if the path_format is equal to the _prefix (i.e. there's no {} formatting)
         # ... append a formatting element so that the matcher can match all subfiles.
-        path_format = path_format + "{}"
+        path_format = path_format + '{}'
 
     return match_re_for_fstring(path_format)
 
@@ -184,11 +184,11 @@ class PathFormat:
             path_format  # not intended for use, but keeping in case, for now
         )
 
-        if "{" not in path_format:
+        if '{' not in path_format:
             rootdir = ensure_slash_suffix(path_format)
         else:
             rootdir = ensure_slash_suffix(
-                os.path.dirname(re.match(r"[^{]*", path_format).group(0))
+                os.path.dirname(re.match(r'[^{]*', path_format).group(0))
             )
 
         self._prefix = rootdir
@@ -208,7 +208,7 @@ def _is_not_dir(p):
 
 
 def first_non_existing_parent_dir(dirpath):
-    parent = ""
+    parent = ''
     for parent in takewhile(_is_not_dir, Path(dirpath).parents):
         pass
     return str(parent)
@@ -221,16 +221,19 @@ from functools import wraps
 from typing import Union, Callable
 
 
-def w_helpful_folder_not_found_error(*,
-                                     raise_error=KeyError,
-                                     extra_msg: Union[str, Callable] = "",
-                                     caught_errors=FileNotFoundError):
+def w_helpful_folder_not_found_error(
+    *,
+    raise_error=KeyError,
+    extra_msg: Union[str, Callable] = '',
+    caught_errors=FileNotFoundError,
+):
     if isinstance(extra_msg, str):
         extra_msg_str = extra_msg
 
         def extra_msg(*args, **kwargs):
             return extra_msg_str
-    assert callable(extra_msg), "extra_msg must be a callable or a string"
+
+    assert callable(extra_msg), 'extra_msg must be a callable or a string'
 
     def _helpful_folder_not_found_error(method):
         @wraps(method)
@@ -238,7 +241,9 @@ def w_helpful_folder_not_found_error(*,
             try:
                 return method(*args, **kwargs)
             except caught_errors as e:
-                msg = "{}: {}\n".format(type(e).__name__, e) + extra_msg(*args, **kwargs)
+                msg = '{}: {}\n'.format(type(e).__name__, e) + extra_msg(
+                    *args, **kwargs
+                )
                 raise raise_error(msg)
 
         return wrapped_method
@@ -247,12 +252,13 @@ def w_helpful_folder_not_found_error(*,
 
 
 def _store_does_not_create_dirs_msg(self, k, *args, **kwargs):
-    return ("The store you're using doesn't create directories for you. "
-            "You have to make the directories needed yourself manually, "
-            "or use a store that does that for you (example QuickStore). "
-            "This is the first directory that didn't exist:\n"
-            f"{first_non_existing_parent_dir(k)}"
-            )
+    return (
+        "The store you're using doesn't create directories for you. "
+        'You have to make the directories needed yourself manually, '
+        'or use a store that does that for you (example QuickStore). '
+        "This is the first directory that didn't exist:\n"
+        f'{first_non_existing_parent_dir(k)}'
+    )
 
 
 class LocalFileStreamGetter:
@@ -294,11 +300,11 @@ class LocalFileRWD:
     A class providing get, set and delete functionality using local files as the storage backend.
     """
 
-    def __init__(self, mode="", **open_kwargs):
-        assert mode in {"", "b", "t"}, "mode should be '', 'b', or 't'"
+    def __init__(self, mode='', **open_kwargs):
+        assert mode in {'', 'b', 't'}, "mode should be '', 'b', or 't'"
 
-        read_mode = open_kwargs.pop("read_mode", "r" + mode)
-        write_mode = open_kwargs.pop("write_mode", "w" + mode)
+        read_mode = open_kwargs.pop('read_mode', 'r' + mode)
+        write_mode = open_kwargs.pop('write_mode', 'w' + mode)
         self._open_kwargs_for_read = dict(open_kwargs, mode=read_mode)
         self._open_kwargs_for_write = dict(open_kwargs, mode=write_mode)
 
@@ -308,7 +314,10 @@ class LocalFileRWD:
             data = fp.read()
         return data
 
-    @w_helpful_folder_not_found_error(raise_error=FolderNotFoundError, extra_msg=_store_does_not_create_dirs_msg)
+    @w_helpful_folder_not_found_error(
+        raise_error=FolderNotFoundError,
+        extra_msg=_store_does_not_create_dirs_msg,
+    )
     def __setitem__(self, k, v):
         with open(k, **self._open_kwargs_for_write) as fp:
             fp.write(v)
@@ -337,20 +346,18 @@ class DirpathFormatKeys(
     PrefixedDirpathsRecursive,
     IterBasedSizedMixin,
 ):
-    def __init__(self,
-                 path_format: str,
-                 max_levels: int = inf):
+    def __init__(self, path_format: str, max_levels: int = inf):
         super().__init__(path_format)
         self._max_levels = max_levels
 
 
 class PathFormatPersister(FilepathFormatKeys, LocalFileRWD):
     def __init__(
-            self,
-            path_format,
-            max_levels: int = inf,
-            mode=DFLT_OPEN_MODE,
-            **open_kwargs,
+        self,
+        path_format,
+        max_levels: int = inf,
+        mode=DFLT_OPEN_MODE,
+        **open_kwargs,
     ):
         FilepathFormatKeys.__init__(self, path_format)
         LocalFileRWD.__init__(self, mode, **open_kwargs)
@@ -427,15 +434,18 @@ class FileReader(KvReader):
     # TODO: Possible optimization: Think if using cached keys makes more sense.
     def __contains__(self, k):
         return (
-                k.startswith(self.rootdir)  # prefix is rootdir
-                and os.path.exists(k)  # exists (as file or dir)
-                and (k.endswith(file_sep) or file_sep not in k[self._rootdir_length:])  # is a dir or a first-level file
+            k.startswith(self.rootdir)  # prefix is rootdir
+            and os.path.exists(k)  # exists (as file or dir)
+            and (
+                k.endswith(file_sep)
+                or file_sep not in k[self._rootdir_length :]
+            )  # is a dir or a first-level file
         )
 
     def __iter__(self):
         for path in map(
-                self._extended_prefix,  # (2) extend prefix with sub-path name
-                os.listdir(self.rootdir)  # (1) list file names under _prefix
+            self._extended_prefix,  # (2) extend prefix with sub-path name
+            os.listdir(self.rootdir),  # (1) list file names under _prefix
         ):
             if is_dir_path(path):
                 yield ensure_slash_suffix(path)
@@ -449,7 +459,9 @@ class FileReader(KvReader):
             elif is_file_path(k):
                 with open(k, 'rb') as fp:
                     return fp.read()
-        return self.__missing__(k)  # if you got this far, the key is missing (or malformed)
+        return self.__missing__(
+            k
+        )  # if you got this far, the key is missing (or malformed)
 
     def __missing__(self, k):
         raise NoSuchKeyError(

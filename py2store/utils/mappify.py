@@ -38,16 +38,16 @@ class Mappify(KvReader):
     """
 
     def __init__(
-            self,
-            target,
-            node_types=(dict,),
-            key_concat=lambda prefix, suffix: prefix + "." + suffix,
-            names_of_literals=(),
-            **kwargs
+        self,
+        target,
+        node_types=(dict,),
+        key_concat=lambda prefix, suffix: prefix + '.' + suffix,
+        names_of_literals=(),
+        **kwargs
     ):
         __doc__ = (
-                "A Mapping interface for glom. Fixes the target, and keys are considered as keys\n\n"
-                + str(glom.__doc__)
+            'A Mapping interface for glom. Fixes the target, and keys are considered as keys\n\n'
+            + str(glom.__doc__)
         )
         self._target = target
         self._node_types = node_types
@@ -120,16 +120,16 @@ class LeafMappify(Mappify):
                 yield k
 
 
-dot_str_key_iterator = lambda p: p.split(".")
+dot_str_key_iterator = lambda p: p.split('.')
 bracket_getter = lambda obj, k: obj[k]
 
 
 def simple_glom(
-        target,
-        spec,
-        node_types=(dict,),
-        key_iterator=dot_str_key_iterator,
-        item_getter=bracket_getter,
+    target,
+    spec,
+    node_types=(dict,),
+    key_iterator=dot_str_key_iterator,
+    item_getter=bracket_getter,
 ):
     for k in key_iterator(spec):
         print(k)

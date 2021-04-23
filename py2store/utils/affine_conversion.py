@@ -1,6 +1,8 @@
 """
 utils to carry out affine transformations (of indices)
 """
+
+
 class AffineConverter(object):
     """
     Getting a callable that will perform an affine conversion.
@@ -44,7 +46,7 @@ class AffineConverter(object):
 
 
 def get_affine_converter_and_inverse(
-        offset=0, scale=1, source_type_cast=None, target_type_cast=None
+    offset=0, scale=1, source_type_cast=None, target_type_cast=None
 ):
     """
     Getting two affine functions with given scale and offset, that are inverse of each other. Namely (for input val):

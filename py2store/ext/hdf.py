@@ -11,19 +11,17 @@ with suppress(ModuleNotFoundError):
     from h5py.h5r import get_name
     import numpy as np
 
-
     class HdfFileReader(KvReader):
         def __init__(self, src):
             if isinstance(src, bytes):
                 src = BytesIO(src)
-            self._src = File(src, "r")
+            self._src = File(src, 'r')
 
         def __iter__(self):
             return self._src.__iter__()
 
         def __getitem__(self, k):
             return HdfDatasetReader(self._src.__getitem__(k), self._src)
-
 
     class HdfDatasetReader(KvReader):
         def __init__(self, src, root=None):
@@ -35,7 +33,6 @@ with suppress(ModuleNotFoundError):
 
         def __getitem__(self, k):
             return HdfRefReader(self._src.__getitem__(k), self._root)
-
 
     class HdfRefReader(KvReader):
         def __init__(self, src, root):

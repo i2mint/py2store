@@ -12,10 +12,10 @@ rw_funcs_maker_for = dict()
 
 
 def mk_pickle_rw_funcs(
-        fix_imports=True,
-        protocol=None,
-        pickle_encoding="ASCII",
-        pickle_errors="strict",
+    fix_imports=True,
+    protocol=None,
+    pickle_encoding='ASCII',
+    pickle_errors='strict',
 ):
     """Generates a reader and writer using pickle. That is, a pair of parametrized loads and dumps
 
@@ -36,11 +36,11 @@ def mk_pickle_rw_funcs(
     )
 
 
-rw_funcs_maker_for["pickle"] = mk_pickle_rw_funcs
+rw_funcs_maker_for['pickle'] = mk_pickle_rw_funcs
 
 
 def mk_marshal_rw_funcs(
-        **kwargs,
+    **kwargs,
 ):  # TODO: Check actual arguments for marshal load and dump
     """Generates a reader and writer using marshal. That is, a pair of parametrized loads and dumps
 
@@ -53,7 +53,7 @@ def mk_marshal_rw_funcs(
     return (partial(marshal.loads, **kwargs), partial(marshal.dumps, **kwargs))
 
 
-rw_funcs_maker_for["marshal"] = mk_marshal_rw_funcs
+rw_funcs_maker_for['marshal'] = mk_marshal_rw_funcs
 
 ##### Extras (requiring some third-party packages ######################################################################
 
@@ -62,9 +62,8 @@ from py2store.util import ModuleNotFoundIgnore
 with ModuleNotFoundIgnore():
     import dill
 
-
     def mk_dill_rw_funcs(
-            ignore=None, protocol=None, byref=None, fmode=None, recurse=None
+        ignore=None, protocol=None, byref=None, fmode=None, recurse=None
     ):
         """Generates a reader and writer using dill. That is, a pair of parametrized loads and dumps
 
@@ -86,8 +85,7 @@ with ModuleNotFoundIgnore():
             ),
         )
 
-
-    rw_funcs_maker_for["dill"] = mk_dill_rw_funcs
+    rw_funcs_maker_for['dill'] = mk_dill_rw_funcs
 
 # class PickleMixin:
 #     """Local files store with pickle serialization"""

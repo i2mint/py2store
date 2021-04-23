@@ -1,0 +1,189 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>py2store.serializers &#8212; py2store 0.0.8 documentation</title>
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css" />
+    <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="py2store.serializers.pickled" href="serializers/pickled.html" />
+    <link rel="prev" title="py2store.persisters.w_aiofile" href="persisters/w_aiofile.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="module-py2store.serializers">
+<span id="py2store-serializers"></span><h1>py2store.serializers<a class="headerlink" href="#module-py2store.serializers" title="Permalink to this headline">¶</a></h1>
+<p>a package of serializers</p>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">py2store</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../py2store.html">py2store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="access.html">py2store.access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="appendable.html">py2store.appendable</a></li>
+<li class="toctree-l1"><a class="reference internal" href="base.html">py2store.base</a></li>
+<li class="toctree-l1"><a class="reference internal" href="caching.html">py2store.caching</a></li>
+<li class="toctree-l1"><a class="reference internal" href="core.html">py2store.core</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dig.html">py2store.dig</a></li>
+<li class="toctree-l1"><a class="reference internal" href="errors.html">py2store.errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">py2store.examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/dropbox_w_urllib.html">py2store.examples.dropbox_w_urllib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/kv_walking.html">py2store.examples.kv_walking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/last_key_inserted.html">py2store.examples.last_key_inserted</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/python_code_stats.html">py2store.examples.python_code_stats</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples/write_caches.html">py2store.examples.write_caches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ext.html">py2store.ext</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ext/dataframes.html">py2store.ext.dataframes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ext/docx.html">py2store.ext.docx</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ext/github.html">py2store.ext.github</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ext/gitlab.html">py2store.ext.gitlab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ext/hdf.html">py2store.ext.hdf</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ext/matlab.html">py2store.ext.matlab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ext/wordnet.html">py2store.ext.wordnet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="filesys.html">py2store.filesys</a></li>
+<li class="toctree-l1"><a class="reference internal" href="key_mappers.html">py2store.key_mappers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="key_mappers/naming.html">py2store.key_mappers.naming</a></li>
+<li class="toctree-l1"><a class="reference internal" href="key_mappers/paths.html">py2store.key_mappers.paths</a></li>
+<li class="toctree-l1"><a class="reference internal" href="key_mappers/str_utils.html">py2store.key_mappers.str_utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="key_mappers/tuples.html">py2store.key_mappers.tuples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="misc.html">py2store.misc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mixins.html">py2store.mixins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="my.html">py2store.my</a></li>
+<li class="toctree-l1"><a class="reference internal" href="my/grabbers.html">py2store.my.grabbers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="naming.html">py2store.naming</a></li>
+<li class="toctree-l1"><a class="reference internal" href="parse_format.html">py2store.parse_format</a></li>
+<li class="toctree-l1"><a class="reference internal" href="paths.html">py2store.paths</a></li>
+<li class="toctree-l1"><a class="reference internal" href="persisters.html">py2store.persisters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="persisters/dropbox_w_dropbox.html">py2store.persisters.dropbox_w_dropbox</a></li>
+<li class="toctree-l1"><a class="reference internal" href="persisters/googledrive_w_pydrive.html">py2store.persisters.googledrive_w_pydrive</a></li>
+<li class="toctree-l1"><a class="reference internal" href="persisters/local_files.html">py2store.persisters.local_files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="persisters/new_s3.html">py2store.persisters.new_s3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="persisters/redis_w_redis.html">py2store.persisters.redis_w_redis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="persisters/s3_w_boto3.html">py2store.persisters.s3_w_boto3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="persisters/sql_w_sqlalchemy.html">py2store.persisters.sql_w_sqlalchemy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="persisters/w_aiofile.html">py2store.persisters.w_aiofile</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">py2store.serializers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="serializers/pickled.html">py2store.serializers.pickled</a></li>
+<li class="toctree-l1"><a class="reference internal" href="signatures.html">py2store.signatures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="slib.html">py2store.slib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="slib/s_configparser.html">py2store.slib.s_configparser</a></li>
+<li class="toctree-l1"><a class="reference internal" href="slib/s_zipfile.html">py2store.slib.s_zipfile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sources.html">py2store.sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stores.html">py2store.stores</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stores/dropbox_store.html">py2store.stores.dropbox_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stores/local_store.html">py2store.stores.local_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stores/s3_store.html">py2store.stores.s3_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stores/sql_w_sqlalchemy.html">py2store.stores.sql_w_sqlalchemy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test.html">py2store.test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test/local_files_test.html">py2store.test.local_files_test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test/quick_test.html">py2store.test.quick_test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test/scrap.html">py2store.test.scrap</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test/util.html">py2store.test.util</a></li>
+<li class="toctree-l1"><a class="reference internal" href="trans.html">py2store.trans</a></li>
+<li class="toctree-l1"><a class="reference internal" href="util.html">py2store.util</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils.html">py2store.utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils/affine_conversion.html">py2store.utils.affine_conversion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils/appendable.html">py2store.utils.appendable</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils/attr_dict.html">py2store.utils.attr_dict</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils/cache_descriptors.html">py2store.utils.cache_descriptors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils/cumul_aggreg_write.html">py2store.utils.cumul_aggreg_write</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils/explicit.html">py2store.utils.explicit</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils/glom.html">py2store.utils.glom</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils/mappify.html">py2store.utils.mappify</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils/mg_selectors.html">py2store.utils.mg_selectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils/mongoquery.html">py2store.utils.mongoquery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils/signatures.html">py2store.utils.signatures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils/sliceable.html">py2store.utils.sliceable</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils/timeseries_caching.html">py2store.utils.timeseries_caching</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils/uri_utils.html">py2store.utils.uri_utils</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="persisters/w_aiofile.html" title="previous chapter">py2store.persisters.w_aiofile</a></li>
+      <li>Next: <a href="serializers/pickled.html" title="next chapter">py2store.serializers.pickled</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;NO COPYRIGHT.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../../_sources/module_docs/py2store/serializers.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

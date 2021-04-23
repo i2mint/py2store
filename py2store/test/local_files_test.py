@@ -13,7 +13,10 @@ def test_file_reader():
     # Now, we'll use mk_relative_path_store to make the tests more "natural"
     # (and test it's interaction with mk_relative_path_store)
     from py2store import mk_relative_path_store
-    s = mk_relative_path_store(FileReader(minifs_dirpath), prefix_attr='rootdir')
+
+    s = mk_relative_path_store(
+        FileReader(minifs_dirpath), prefix_attr='rootdir'
+    )
     assert list(s) == ['x.bin', 'A/', 'B/']  # that works!
     assert s['x.bin'] == b'contents of x'
     ss = s['A/']

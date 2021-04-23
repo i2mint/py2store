@@ -7,14 +7,14 @@ from collections.abc import Mapping
 
 
 # Pattern:
-@cached_keys(keys_cache=set, name="SrcReader")
+@cached_keys(keys_cache=set, name='SrcReader')
 class SrcReader(KvReader):
     def __init__(self, src, src_to_keys, key_to_obj):
         self.src = src
         self.src_to_keys = src_to_keys
         self.key_to_obj = key_to_obj
         copy_attrs(
-            src, to_obj=self, attrs=("__name__", "__qualname__", "__module__")
+            src, to_obj=self, attrs=('__name__', '__qualname__', '__module__')
         )
 
     def __iter__(self):
@@ -27,15 +27,15 @@ class SrcReader(KvReader):
     #     return f"{self.__class__.__qualname__}({self.src}, {self._key_filt})"
 
 
-inf = float("infinity")
+inf = float('infinity')
 
 
 def print_call(func, name=None, really=True):
-    func_name = name or getattr(func, "__name__", func)
+    func_name = name or getattr(func, '__name__', func)
 
     def _func(*args, **kwargs):
         if really:
-            print(f"Calling {func_name} with {args=} and {kwargs=}")
+            print(f'Calling {func_name} with {args=} and {kwargs=}')
         return func(*args, **kwargs)
 
     return _func
@@ -57,7 +57,7 @@ def tuple_keypath_and_val(p, k, v):
     return p, v
 
 
-DO_NOT_YIELD = type("DoNotYield", (), {})()
+DO_NOT_YIELD = type('DoNotYield', (), {})()
 
 
 # TODO: More docs and doctests. This one even merits an extensive usage and example tutorial!

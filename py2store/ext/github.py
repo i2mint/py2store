@@ -3,7 +3,7 @@ a data object layer for github
 """
 from warnings import warn
 
-warn("Moved to independent package: pip install hubcap")
+warn('Moved to independent package: pip install hubcap')
 
 from contextlib import suppress
 

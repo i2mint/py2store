@@ -2,4 +2,4 @@
 
 from py2store.paths import *
 
-print(f"Deprecated: Use py2store.path instead")
+print(f'Deprecated: Use py2store.path instead')

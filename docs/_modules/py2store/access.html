@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>py2store.access &#8212; py2store 0.0.7 documentation</title>
+    <title>py2store.access &#8212; py2store 0.0.8 documentation</title>
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css" />
@@ -61,10 +61,11 @@
 <span class="kn">import</span> <span class="nn">importlib</span>
 <span class="kn">from</span> <span class="nn">warnings</span> <span class="kn">import</span> <span class="n">warn</span>
 <span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">reduce</span>
+<span class="kn">from</span> <span class="nn">operator</span> <span class="kn">import</span> <span class="n">getitem</span>
 <span class="kn">from</span> <span class="nn">py2store.util</span> <span class="kn">import</span> <span class="n">str_to_var_str</span>
 <span class="kn">from</span> <span class="nn">py2store.sources</span> <span class="kn">import</span> <span class="n">DictAttr</span>
 
-<span class="n">FAK</span> <span class="o">=</span> <span class="s2">&quot;$fak&quot;</span>
+<span class="n">FAK</span> <span class="o">=</span> <span class="s1">&#39;$fak&#39;</span>
 
 
 <span class="c1"># TODO: Make a config_utils.py module to centralize config tools (configs for access is just one -- serializers another)</span>
@@ -75,23 +76,23 @@
 <div class="viewcode-block" id="getenv"><a class="viewcode-back" href="../../test.html#py2store.access.getenv">[docs]</a><span class="k">def</span> <span class="nf">getenv</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Like os.getenv, but removes a suffix \\r character if present (problem with some env var systems)&quot;&quot;&quot;</span>
     <span class="n">v</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">default</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">v</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\r</span><span class="s2">&quot;</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">v</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\r</span><span class="s1">&#39;</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">v</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">v</span></div>
 
 
 <span class="k">def</span> <span class="nf">assert_callable</span><span class="p">(</span><span class="n">f</span><span class="p">:</span> <span class="n">callable</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">callable</span><span class="p">:</span>
-    <span class="k">assert</span> <span class="n">callable</span><span class="p">(</span><span class="n">f</span><span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Is not callable: </span><span class="si">{</span><span class="n">f</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="k">assert</span> <span class="n">callable</span><span class="p">(</span><span class="n">f</span><span class="p">),</span> <span class="sa">f</span><span class="s1">&#39;Is not callable: </span><span class="si">{</span><span class="n">f</span><span class="si">}</span><span class="s1">&#39;</span>
     <span class="k">return</span> <span class="n">f</span>
 
 
 <div class="viewcode-block" id="dotpath_to_obj"><a class="viewcode-back" href="../../test.html#py2store.access.dotpath_to_obj">[docs]</a><span class="k">def</span> <span class="nf">dotpath_to_obj</span><span class="p">(</span><span class="n">dotpath</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Loads and returns the object referenced by the string DOTPATH_TO_MODULE.OBJ_NAME&quot;&quot;&quot;</span>
-    <span class="o">*</span><span class="n">module_path</span><span class="p">,</span> <span class="n">obj_name</span> <span class="o">=</span> <span class="n">dotpath</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)</span>
+    <span class="o">*</span><span class="n">module_path</span><span class="p">,</span> <span class="n">obj_name</span> <span class="o">=</span> <span class="n">dotpath</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">module_path</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span>
-            <span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">module_path</span><span class="p">)),</span> <span class="n">obj_name</span>
+            <span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">module_path</span><span class="p">)),</span> <span class="n">obj_name</span>
         <span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="n">obj_name</span><span class="p">)</span></div>
@@ -103,13 +104,13 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-        <span class="k">if</span> <span class="s2">&quot;.&quot;</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
-            <span class="o">*</span><span class="n">module_path</span><span class="p">,</span> <span class="n">func_name</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;.&#39;</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
+            <span class="o">*</span><span class="n">module_path</span><span class="p">,</span> <span class="n">func_name</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
             <span class="n">f</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span>
-                <span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">module_path</span><span class="p">)),</span> <span class="n">func_name</span>
+                <span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">module_path</span><span class="p">)),</span> <span class="n">func_name</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">f</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="s2">&quot;py2store&quot;</span><span class="p">),</span> <span class="n">f</span><span class="p">)</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="s1">&#39;py2store&#39;</span><span class="p">),</span> <span class="n">f</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">assert_callable</span><span class="p">(</span><span class="n">f</span><span class="p">)</span></div>
 
@@ -134,11 +135,11 @@
 
 
 <span class="k">def</span> <span class="nf">fakit_from_dict</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">func_loader</span><span class="o">=</span><span class="n">assert_callable</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">_fakit</span><span class="p">(</span><span class="n">func_loader</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s2">&quot;f&quot;</span><span class="p">]),</span> <span class="n">a</span><span class="o">=</span><span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="p">()),</span> <span class="n">k</span><span class="o">=</span><span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;k&quot;</span><span class="p">,</span> <span class="p">{}))</span>
+    <span class="k">return</span> <span class="n">_fakit</span><span class="p">(</span><span class="n">func_loader</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s1">&#39;f&#39;</span><span class="p">]),</span> <span class="n">a</span><span class="o">=</span><span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="p">()),</span> <span class="n">k</span><span class="o">=</span><span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="p">{}))</span>
 
 
 <span class="k">def</span> <span class="nf">fakit_from_tuple</span><span class="p">(</span>
-        <span class="n">t</span><span class="p">:</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">),</span> <span class="n">func_loader</span><span class="p">:</span> <span class="n">callable</span> <span class="o">=</span> <span class="n">dflt_func_loader</span>
+    <span class="n">t</span><span class="p">:</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">),</span> <span class="n">func_loader</span><span class="p">:</span> <span class="n">callable</span> <span class="o">=</span> <span class="n">dflt_func_loader</span>
 <span class="p">):</span>
     <span class="n">f</span> <span class="o">=</span> <span class="n">func_loader</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
     <span class="n">a</span> <span class="o">=</span> <span class="p">()</span>
@@ -147,24 +148,24 @@
         <span class="mi">1</span><span class="p">,</span>
         <span class="mi">2</span><span class="p">,</span>
         <span class="mi">3</span><span class="p">,</span>
-    <span class="p">},</span> <span class="s2">&quot;A tuple fak must be of length 1, 2, or 3. No more, no less.&quot;</span>
+    <span class="p">},</span> <span class="s1">&#39;A tuple fak must be of length 1, 2, or 3. No more, no less.&#39;</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="nb">dict</span><span class="p">):</span>
             <span class="n">k</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span>
                 <span class="n">t</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>
-            <span class="p">),</span> <span class="s2">&quot;argument specs should be dict, tuple, or list&quot;</span>
+            <span class="p">),</span> <span class="s1">&#39;argument specs should be dict, tuple, or list&#39;</span>
             <span class="n">a</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="nb">dict</span><span class="p">):</span>
-                <span class="k">assert</span> <span class="ow">not</span> <span class="n">k</span><span class="p">,</span> <span class="s2">&quot;can only have one kwargs&quot;</span>
+                <span class="k">assert</span> <span class="ow">not</span> <span class="n">k</span><span class="p">,</span> <span class="s1">&#39;can only have one kwargs&#39;</span>
                 <span class="n">k</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span>
                     <span class="n">t</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>
-                <span class="p">),</span> <span class="s2">&quot;argument specs should be dict, tuple, or list&quot;</span>
-                <span class="k">assert</span> <span class="ow">not</span> <span class="n">a</span><span class="p">,</span> <span class="s2">&quot;can only have one args&quot;</span>
+                <span class="p">),</span> <span class="s1">&#39;argument specs should be dict, tuple, or list&#39;</span>
+                <span class="k">assert</span> <span class="ow">not</span> <span class="n">a</span><span class="p">,</span> <span class="s1">&#39;can only have one args&#39;</span>
                 <span class="n">a</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
     <span class="k">return</span> <span class="n">_fakit</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
 
@@ -187,7 +188,7 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span>
             <span class="n">fak</span><span class="p">,</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>
-        <span class="p">),</span> <span class="s2">&quot;fak should be dict, tuple, or list&quot;</span>
+        <span class="p">),</span> <span class="s1">&#39;fak should be dict, tuple, or list&#39;</span>
         <span class="k">return</span> <span class="n">fakit_from_tuple</span><span class="p">(</span><span class="n">fak</span><span class="p">,</span> <span class="n">func_loader</span><span class="o">=</span><span class="n">func_loader</span><span class="p">)</span></div>
 
 
@@ -204,10 +205,10 @@
     <span class="kn">import</span> <span class="nn">json</span>
 
     <span class="n">user_configs_dirpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span>
-        <span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;PY2STORE_CONFIGS_DIR&quot;</span><span class="p">,</span> <span class="s2">&quot;~/.py2store_configs&quot;</span><span class="p">)</span>
+        <span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;PY2STORE_CONFIGS_DIR&#39;</span><span class="p">,</span> <span class="s1">&#39;~/.py2store_configs&#39;</span><span class="p">)</span>
     <span class="p">)</span>
     <span class="n">my_configs_dirname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span>
-        <span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;MY_PY2STORE_DIR_NAME&quot;</span><span class="p">,</span> <span class="s2">&quot;my&quot;</span><span class="p">)</span>
+        <span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;MY_PY2STORE_DIR_NAME&#39;</span><span class="p">,</span> <span class="s1">&#39;my&#39;</span><span class="p">)</span>
     <span class="p">)</span>
     <span class="n">myconfigs_dirpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">user_configs_dirpath</span><span class="p">,</span> <span class="n">my_configs_dirname</span><span class="p">)</span>
 
@@ -215,7 +216,7 @@
 
         <span class="k">def</span> <span class="nf">directory_json_items</span><span class="p">():</span>
             <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="nb">filter</span><span class="p">(</span>
-                    <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.json&quot;</span><span class="p">),</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">user_configs_dirpath</span><span class="p">)</span>
+                <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.json&#39;</span><span class="p">),</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">user_configs_dirpath</span><span class="p">)</span>
             <span class="p">):</span>
                 <span class="n">filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">user_configs_dirpath</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
                 <span class="n">name</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
@@ -228,9 +229,8 @@
                     <span class="p">)</span>
                 <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
                     <span class="n">warn</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;Unknown error when trying to json.load this file: </span><span class="si">{</span><span class="n">filepath</span><span class="si">}</span><span class="s2">&quot;</span>
+                        <span class="sa">f</span><span class="s1">&#39;Unknown error when trying to json.load this file: </span><span class="si">{</span><span class="n">filepath</span><span class="si">}</span><span class="s1">&#39;</span>
                     <span class="p">)</span>
-
 
         <span class="n">user_configs</span> <span class="o">=</span> <span class="n">DictAttr</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">directory_json_items</span><span class="p">()})</span>
 
@@ -246,9 +246,10 @@
         <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">myconfigs_dirpath</span><span class="p">):</span>
             <span class="kn">from</span> <span class="nn">py2store.mixins</span> <span class="kn">import</span> <span class="n">OverWritesNotAllowedMixin</span>
 
-
-<div class="viewcode-block" id="MyConfigs"><a class="viewcode-back" href="../../test.html#py2store.access.MyConfigs">[docs]</a>            <span class="nd">@OverWritesNotAllowedMixin</span><span class="o">.</span><span class="n">wrap</span>
+            <span class="nd">@OverWritesNotAllowedMixin</span><span class="o">.</span><span class="n">wrap</span>
             <span class="k">class</span> <span class="nc">MyConfigs</span><span class="p">(</span><span class="n">MiscStoreMixin</span><span class="p">,</span> <span class="n">LocalBinaryStore</span><span class="p">):</span>
+                <span class="n">key_sep</span> <span class="o">=</span> <span class="s1">&#39;:&#39;</span>
+
                 <span class="nd">@wraps</span><span class="p">(</span><span class="n">LocalBinaryStore</span><span class="p">)</span>
                 <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
                     <span class="n">LocalBinaryStore</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
@@ -264,25 +265,24 @@
                     <span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_init_args_kwargs</span>
                     <span class="bp">self</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
-                <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
-                    <span class="n">v</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                        <span class="kn">from</span> <span class="nn">warnings</span> <span class="kn">import</span> <span class="n">warn</span>
-
-                        <span class="n">warn</span><span class="p">(</span>
-                            <span class="sa">f</span><span class="s2">&quot;&quot;&quot;You don&#39;t have the config file I&#39;m expecting, so you&#39;ll have to enter it manually.</span>
-<span class="s2">                        I&#39;m expecting this filepath:</span><span class="se">\n\t</span><span class="s2"> </span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dirpath</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span><span class="si">}</span><span class="s2"></span>
-<span class="s2">                        &quot;&quot;&quot;</span>
-                        <span class="p">)</span>
-                    <span class="k">return</span> <span class="n">v</span>
+                <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+                    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="n">default</span>
 
                 <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
                     <span class="k">try</span><span class="p">:</span>
-                        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">key_sep</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">k</span><span class="p">:</span>
+                            <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="k">return</span> <span class="n">reduce</span><span class="p">(</span><span class="n">getitem</span><span class="p">,</span> <span class="n">k</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key_sep</span><span class="p">),</span> <span class="bp">self</span><span class="p">)</span>
                     <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-                        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The &#39;</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">&#39; key wasn&#39;t found. &quot;</span>
-                                       <span class="sa">f</span><span class="s2">&quot;What this probably is, is that you need &quot;</span>
-                                       <span class="sa">f</span><span class="s2">&quot;a file named &#39;</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">&#39; in your </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">dirpath</span><span class="si">}</span><span class="s2"> folder. Do that and try again.&quot;</span><span class="p">)</span>
+                        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span>
+                            <span class="sa">f</span><span class="s2">&quot;The &#39;</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">&#39; key wasn&#39;t found. &quot;</span>
+                            <span class="sa">f</span><span class="s1">&#39;What this probably is, is that you need &#39;</span>
+                            <span class="sa">f</span><span class="s2">&quot;a file named &#39;</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">&#39; in your </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">dirpath</span><span class="si">}</span><span class="s2"> folder. Do that and try again.&quot;</span>
+                        <span class="p">)</span>
 
                 <span class="k">def</span> <span class="nf">get_config_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
                     <span class="n">v</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
@@ -300,58 +300,55 @@
 
                 <span class="k">def</span> <span class="fm">__delitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
                     <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
-                        <span class="s2">&quot;Deletion was disabled. &quot;</span>
-                        <span class="s2">&quot;MyConfigs wants to keep your configs safe, so if you want to delete this config, &quot;</span>
-                        <span class="s2">&quot;do it another way (like manually).&quot;</span>
-                    <span class="p">)</span></div>
+                        <span class="s1">&#39;Deletion was disabled. &#39;</span>
+                        <span class="s1">&#39;MyConfigs wants to keep your configs safe, so if you want to delete this config, &#39;</span>
+                        <span class="s1">&#39;do it another way (like manually).&#39;</span>
+                    <span class="p">)</span>
 
             <span class="n">myconfigs</span> <span class="o">=</span> <span class="n">MyConfigs</span><span class="p">(</span><span class="n">myconfigs_dirpath</span><span class="p">)</span>
             <span class="n">myconfigs</span><span class="o">.</span><span class="n">dirpath</span> <span class="o">=</span> <span class="n">myconfigs_dirpath</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">warn</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;&quot;&quot;The py2store-myconfigs directory wasn&#39;t found: </span><span class="si">{</span><span class="n">myconfigs_dirpath</span><span class="si">}</span><span class="s2"></span>
-<span class="s2">            If you want to have all the cool functionality of `myconfigs`, you should make this directory, </span>
-<span class="s2">            and put stuff in it. Here&#39;s to make it easy for you to do it. Go to a terminal and run this:</span>
-<span class="s2">                mkdir </span><span class="si">{</span><span class="n">myconfigs_dirpath</span><span class="si">}</span><span class="s2"></span>
-<span class="s2">            &quot;&quot;&quot;</span>
+                <span class="sa">f</span><span class="s1">&#39;&#39;&#39;The py2store-myconfigs directory wasn&#39;t found: </span><span class="si">{</span><span class="n">myconfigs_dirpath</span><span class="si">}</span><span class="s1"></span>
+<span class="s1">            If you want to have all the cool functionality of `myconfigs`, you should make this directory, </span>
+<span class="s1">            and put stuff in it. Here&#39;s to make it easy for you to do it. Go to a terminal and run this:</span>
+<span class="s1">                mkdir </span><span class="si">{</span><span class="n">myconfigs_dirpath</span><span class="si">}</span><span class="s1"></span>
+<span class="s1">            &#39;&#39;&#39;</span>
             <span class="p">)</span>
 
-<div class="viewcode-block" id="MyStores"><a class="viewcode-back" href="../../test.html#py2store.access.MyStores">[docs]</a>        <span class="k">class</span> <span class="nc">MyStores</span><span class="p">(</span><span class="n">KvStore</span><span class="p">):</span>
+        <span class="k">class</span> <span class="nc">MyStores</span><span class="p">(</span><span class="n">KvStore</span><span class="p">):</span>
             <span class="n">func_loader</span> <span class="o">=</span> <span class="nb">staticmethod</span><span class="p">(</span><span class="n">dflt_func_loader</span><span class="p">)</span>
 
             <span class="k">def</span> <span class="nf">_obj_of_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
                 <span class="k">if</span> <span class="n">FAK</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
                     <span class="k">return</span> <span class="n">fakit</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">FAK</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">func_loader</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;Case not handled by MyStores&quot;</span>
+                    <span class="n">msg</span> <span class="o">=</span> <span class="s1">&#39;Case not handled by MyStores&#39;</span>
                     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="s2">: keys: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="s1">: keys: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
                     <span class="k">else</span><span class="p">:</span>
-                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="s2">: type: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="s1">: type: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
 
             <span class="nd">@property</span>
             <span class="k">def</span> <span class="nf">configs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">store</span></div>
-
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">store</span>
 
         <span class="k">def</span> <span class="nf">without_json_ext</span><span class="p">(</span><span class="n">_id</span><span class="p">):</span>
-            <span class="k">assert</span> <span class="n">_id</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.json&quot;</span><span class="p">),</span> <span class="s2">&quot;Should end with .json&quot;</span>
-            <span class="k">return</span> <span class="n">_id</span><span class="p">[:</span> <span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="s2">&quot;.json&quot;</span><span class="p">)]</span>
-
+            <span class="k">assert</span> <span class="n">_id</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.json&#39;</span><span class="p">),</span> <span class="s1">&#39;Should end with .json&#39;</span>
+            <span class="k">return</span> <span class="n">_id</span><span class="p">[:</span> <span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="s1">&#39;.json&#39;</span><span class="p">)]</span>
 
         <span class="k">def</span> <span class="nf">add_json_ext</span><span class="p">(</span><span class="n">k</span><span class="p">):</span>
-            <span class="k">return</span> <span class="n">k</span> <span class="o">+</span> <span class="s2">&quot;.json&quot;</span>
-
+            <span class="k">return</span> <span class="n">k</span> <span class="o">+</span> <span class="s1">&#39;.json&#39;</span>
 
         <span class="n">ExtLessJsonStore</span> <span class="o">=</span> <span class="n">wrap_kvs</span><span class="p">(</span>
             <span class="n">LocalJsonStore</span><span class="p">,</span>
-            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;ExtLessJsonStore&quot;</span><span class="p">,</span>
+            <span class="n">name</span><span class="o">=</span><span class="s1">&#39;ExtLessJsonStore&#39;</span><span class="p">,</span>
             <span class="n">key_of_id</span><span class="o">=</span><span class="n">without_json_ext</span><span class="p">,</span>
             <span class="n">id_of_key</span><span class="o">=</span><span class="n">add_json_ext</span><span class="p">,</span>
         <span class="p">)</span>
 
         <span class="n">stores_json_path_format</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
-            <span class="n">user_configs_dirpath</span><span class="p">,</span> <span class="s2">&quot;stores&quot;</span><span class="p">,</span> <span class="s2">&quot;json&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">.json&quot;</span>
+            <span class="n">user_configs_dirpath</span><span class="p">,</span> <span class="s1">&#39;stores&#39;</span><span class="p">,</span> <span class="s1">&#39;json&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">.json&#39;</span>
         <span class="p">)</span>
         <span class="n">mystores</span> <span class="o">=</span> <span class="n">MyStores</span><span class="p">(</span><span class="n">ExtLessJsonStore</span><span class="p">(</span><span class="n">stores_json_path_format</span><span class="p">))</span>
         <span class="kn">from</span> <span class="nn">py2store.trans</span> <span class="kn">import</span> <span class="n">add_ipython_key_completions</span>
@@ -365,7 +362,7 @@
         <span class="p">)</span>
         <span class="n">user_configs_filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span>
             <span class="n">getenv</span><span class="p">(</span>
-                <span class="s2">&quot;PY2STORE_CONFIGS_JSON_FILEPATH&quot;</span><span class="p">,</span> <span class="s2">&quot;~/.py2store_configs.json&quot;</span>
+                <span class="s1">&#39;PY2STORE_CONFIGS_JSON_FILEPATH&#39;</span><span class="p">,</span> <span class="s1">&#39;~/.py2store_configs.json&#39;</span>
             <span class="p">)</span>
         <span class="p">)</span>
         <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">user_configs_filepath</span><span class="p">):</span>
@@ -375,7 +372,7 @@
             <span class="p">)</span>
 
     <span class="n">user_defaults_filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span>
-        <span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;PY2STORE_DEFAULTS_JSON_FILEPATH&quot;</span><span class="p">,</span> <span class="s2">&quot;~/.py2store_defaults.json&quot;</span><span class="p">)</span>
+        <span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;PY2STORE_DEFAULTS_JSON_FILEPATH&#39;</span><span class="p">,</span> <span class="s1">&#39;~/.py2store_defaults.json&#39;</span><span class="p">)</span>
     <span class="p">)</span>
     <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">user_defaults_filepath</span><span class="p">):</span>
         <span class="n">user_defaults_dict</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">user_defaults_filepath</span><span class="p">))</span>
@@ -385,7 +382,7 @@
 
 <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="n">warn</span><span class="p">(</span>
-        <span class="sa">f</span><span class="s2">&quot;There was an exception when trying to get configs and defaults: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s1">&#39;There was an exception when trying to get configs and defaults: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span>
     <span class="p">)</span>
 </pre></div>
 
@@ -405,107 +402,86 @@
 
 
 <h3>Navigation</h3>
-<p class="caption"><span class="caption-text">Contents:</span></p>
+<p><span class="caption-text">Contents:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html">py2store.filesys</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.misc">py2store.misc</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.mixins">py2store.mixins</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.test.util">py2store.test.util</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-test-quick">py2store.test.quick</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.test">py2store.test</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-test-simple">py2store.test.simple</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-test-scrap">py2store.test.scrap</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.util">py2store.util</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-ext-docx">py2store.ext.docx</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.ext.gitlab">py2store.ext.gitlab</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-ext-hdf">py2store.ext.hdf</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.ext">py2store.ext</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-ext-matlab">py2store.ext.matlab</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.ext.kaggle">py2store.ext.kaggle</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-ext-module-imports">py2store.ext.module_imports</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.ext.audio">py2store.ext.audio</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-ext-github">py2store.ext.github</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.ext.dataframes">py2store.ext.dataframes</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.access">py2store.access</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.__init__">py2store.__init__</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.stores.s3_store">py2store.stores.s3_store</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.stores.delegation_stores">py2store.stores.delegation_stores</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.stores.sql_w_sqlalchemy">py2store.stores.sql_w_sqlalchemy</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-stores-arangodb-store">py2store.stores.arangodb_store</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-stores-dropbox-store">py2store.stores.dropbox_store</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.stores.local_store">py2store.stores.local_store</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.stores">py2store.stores</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-stores-couchdb-store">py2store.stores.couchdb_store</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.stores.mongo_store">py2store.stores.mongo_store</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.core">py2store.core</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.uri_utils">py2store.utils.uri_utils</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.explicit">py2store.utils.explicit</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.timeseries_caching">py2store.utils.timeseries_caching</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-utils-attr-dict-py-attr-dict">py2store.utils.attr_dict.py.attr_dict</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-utils-attr-dict-py">py2store.utils.attr_dict.py</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.cumul_aggreg_write">py2store.utils.cumul_aggreg_write</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils">py2store.utils</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.cache_descriptors">py2store.utils.cache_descriptors</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.appendable">py2store.utils.appendable</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.affine_conversion">py2store.utils.affine_conversion</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.signatures">py2store.utils.signatures</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.sliceable">py2store.utils.sliceable</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.mappify">py2store.utils.mappify</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.utils.glom">py2store.utils.glom</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-persisters-sql-w-odbc">py2store.persisters.sql_w_odbc</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.dynamodb_w_boto3">py2store.persisters.dynamodb_w_boto3</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-persisters-couchdb-w-couchdb">py2store.persisters.couchdb_w_couchdb</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.ftp_persister">py2store.persisters.ftp_persister</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.dropbox_w_urllib">py2store.persisters.dropbox_w_urllib</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters._google_drive_in_progress">py2store.persisters._google_drive_in_progress</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-persisters-dropbox-w-dropbox">py2store.persisters.dropbox_w_dropbox</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-persisters-redis-w-redis">py2store.persisters.redis_w_redis</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.sql_w_sqlalchemy">py2store.persisters.sql_w_sqlalchemy</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.new_s3">py2store.persisters.new_s3</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters">py2store.persisters</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.dropbox_w_requests">py2store.persisters.dropbox_w_requests</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.w_aiofile">py2store.persisters.w_aiofile</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.local_files">py2store.persisters.local_files</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-persisters-arangodb-w-pyarango">py2store.persisters.arangodb_w_pyarango</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters._cassandra_in_progress">py2store.persisters._cassandra_in_progress</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters._couchdb_in_progress">py2store.persisters._couchdb_in_progress</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.s3_w_boto3">py2store.persisters.s3_w_boto3</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-persisters-postgres-w-psycopg2-in-progress">py2store.persisters._postgres_w_psycopg2_in_progress</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-persisters-ssh-persister">py2store.persisters.ssh_persister</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.persisters.mongo_w_pymongo">py2store.persisters.mongo_w_pymongo</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-persisters-googledrive-w-pydrive">py2store.persisters.googledrive_w_pydrive</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.sources">py2store.sources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.dig">py2store.dig</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.serializers.pickled">py2store.serializers.pickled</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.serializers.jsonization">py2store.serializers.jsonization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.serializers">py2store.serializers</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.serializers.sequential">py2store.serializers.sequential</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.serializers.regular_panel_data">py2store.serializers.regular_panel_data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.serializers.audio">py2store.serializers.audio</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.caching">py2store.caching</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.scrap">py2store.scrap</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.scrap.new_gen_local">py2store.scrap.new_gen_local</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.examples.write_caches">py2store.examples.write_caches</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.examples">py2store.examples</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.examples.python_code_stats">py2store.examples.python_code_stats</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.examples.kv_walking">py2store.examples.kv_walking</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.my">py2store.my</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.my.grabbers">py2store.my.grabbers</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.trans">py2store.trans</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.key_mappers.str_utils">py2store.key_mappers.str_utils</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.key_mappers.tuples">py2store.key_mappers.tuples</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.key_mappers.paths">py2store.key_mappers.paths</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.key_mappers.naming">py2store.key_mappers.naming</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.key_mappers">py2store.key_mappers</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.errors">py2store.errors</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.slib.s_configparser">py2store.slib.s_configparser</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.slib">py2store.slib</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.slib.s_zipfile">py2store.slib.s_zipfile</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.base">py2store.base</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-selectors-mg-selectors">py2store.selectors.mg_selectors</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-selectors-mongoquery">py2store.selectors.mongoquery</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#py2store-selectors">py2store.selectors</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-py2store.parse_format">py2store.parse_format</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store.html">py2store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/access.html">py2store.access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/appendable.html">py2store.appendable</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/base.html">py2store.base</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/caching.html">py2store.caching</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/core.html">py2store.core</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/dig.html">py2store.dig</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/errors.html">py2store.errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/examples.html">py2store.examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/examples/dropbox_w_urllib.html">py2store.examples.dropbox_w_urllib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/examples/kv_walking.html">py2store.examples.kv_walking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/examples/last_key_inserted.html">py2store.examples.last_key_inserted</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/examples/python_code_stats.html">py2store.examples.python_code_stats</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/examples/write_caches.html">py2store.examples.write_caches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/ext.html">py2store.ext</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/ext/dataframes.html">py2store.ext.dataframes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/ext/docx.html">py2store.ext.docx</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/ext/github.html">py2store.ext.github</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/ext/gitlab.html">py2store.ext.gitlab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/ext/hdf.html">py2store.ext.hdf</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/ext/matlab.html">py2store.ext.matlab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/ext/wordnet.html">py2store.ext.wordnet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/filesys.html">py2store.filesys</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/key_mappers.html">py2store.key_mappers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/key_mappers/naming.html">py2store.key_mappers.naming</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/key_mappers/paths.html">py2store.key_mappers.paths</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/key_mappers/str_utils.html">py2store.key_mappers.str_utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/key_mappers/tuples.html">py2store.key_mappers.tuples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/misc.html">py2store.misc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/mixins.html">py2store.mixins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/my.html">py2store.my</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/my/grabbers.html">py2store.my.grabbers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/naming.html">py2store.naming</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/parse_format.html">py2store.parse_format</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/paths.html">py2store.paths</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/persisters.html">py2store.persisters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/persisters/dropbox_w_dropbox.html">py2store.persisters.dropbox_w_dropbox</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/persisters/googledrive_w_pydrive.html">py2store.persisters.googledrive_w_pydrive</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/persisters/local_files.html">py2store.persisters.local_files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/persisters/new_s3.html">py2store.persisters.new_s3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/persisters/redis_w_redis.html">py2store.persisters.redis_w_redis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/persisters/s3_w_boto3.html">py2store.persisters.s3_w_boto3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/persisters/sql_w_sqlalchemy.html">py2store.persisters.sql_w_sqlalchemy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/persisters/w_aiofile.html">py2store.persisters.w_aiofile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/serializers.html">py2store.serializers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/serializers/pickled.html">py2store.serializers.pickled</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/signatures.html">py2store.signatures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/slib.html">py2store.slib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/slib/s_configparser.html">py2store.slib.s_configparser</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/slib/s_zipfile.html">py2store.slib.s_zipfile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/sources.html">py2store.sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/stores.html">py2store.stores</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/stores/dropbox_store.html">py2store.stores.dropbox_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/stores/local_store.html">py2store.stores.local_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/stores/s3_store.html">py2store.stores.s3_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/stores/sql_w_sqlalchemy.html">py2store.stores.sql_w_sqlalchemy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/test.html">py2store.test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/test/local_files_test.html">py2store.test.local_files_test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/test/quick_test.html">py2store.test.quick_test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/test/scrap.html">py2store.test.scrap</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/test/util.html">py2store.test.util</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/trans.html">py2store.trans</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/util.html">py2store.util</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/utils.html">py2store.utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/utils/affine_conversion.html">py2store.utils.affine_conversion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/utils/appendable.html">py2store.utils.appendable</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/utils/attr_dict.html">py2store.utils.attr_dict</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/utils/cache_descriptors.html">py2store.utils.cache_descriptors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/utils/cumul_aggreg_write.html">py2store.utils.cumul_aggreg_write</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/utils/explicit.html">py2store.utils.explicit</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/utils/glom.html">py2store.utils.glom</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/utils/mappify.html">py2store.utils.mappify</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/utils/mg_selectors.html">py2store.utils.mg_selectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/utils/mongoquery.html">py2store.utils.mongoquery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/utils/signatures.html">py2store.utils.signatures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/utils/sliceable.html">py2store.utils.sliceable</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/utils/timeseries_caching.html">py2store.utils.timeseries_caching</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/py2store/utils/uri_utils.html">py2store.utils.uri_utils</a></li>
 </ul>
 
 <div class="relations">
@@ -542,7 +518,7 @@
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2020.
+      &copy;NO COPYRIGHT.
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 3.3.1</a>

@@ -8,16 +8,14 @@ with suppress(ModuleNotFoundError, ImportError):
     import pandas as pd
     from py2store.utils.mongoquery import Query
 
-
     def _print_docs(docs):
         for doc in iter(docs):
             print(doc)
 
-
     class Selection:
         def __iter__(self) -> Iterator:
             raise NotImplementedError(
-                "Needs to be implemented by a concrete class"
+                'Needs to be implemented by a concrete class'
             )
 
         def __len__(self):
@@ -26,11 +24,9 @@ with suppress(ModuleNotFoundError, ImportError):
                 count += 1
             return count
 
-
     class Selector(Selection):
         def select(self, selector) -> Selection:
-            raise NotImplementedError("Need to implement in concrete class")
-
+            raise NotImplementedError('Need to implement in concrete class')
 
     class FiltSelector(Selector):
         def __init__(self, _docs, _filt=None):
@@ -50,7 +46,6 @@ with suppress(ModuleNotFoundError, ImportError):
             return self.__class__(
                 _docs=self._docs, _filt=self._filt_conjunction(filt)
             )
-
 
     class MgDfSelector(Selector):
         """
@@ -128,7 +123,9 @@ with suppress(ModuleNotFoundError, ImportError):
 
             """
             selector_file_func = Query(selector).match
-            lidx = list(map(selector_file_func, self._df.to_dict(orient="rows")))
+            lidx = list(
+                map(selector_file_func, self._df.to_dict(orient='rows'))
+            )
             return self.__class__(self._df[lidx])
             # Below are just ideas towards a more general (source, selector, selection) framework
             # selection = self.__class__(self._df[lidx])
@@ -141,7 +138,6 @@ with suppress(ModuleNotFoundError, ImportError):
         @classmethod
         def from_jdict(cls, jdict):
             return cls(_df=pd.DataFrame(jdict))
-
 
     ########################################################################################################################
     # Other versions of MgDfSelector that are more amenable to generalization...
@@ -189,9 +185,10 @@ with suppress(ModuleNotFoundError, ImportError):
 
         def select(self, selector) -> Selector:
             selector_file_func = Query(selector).match
-            lidx = list(map(selector_file_func, self._docs.to_dict(orient="records")))
+            lidx = list(
+                map(selector_file_func, self._docs.to_dict(orient='records'))
+            )
             return self.__class__(self._docs[lidx])
-
 
     class LidxSelector(Selector):
         """ See LidxSelectorDf for a 'concrete' subclass """
@@ -215,7 +212,6 @@ with suppress(ModuleNotFoundError, ImportError):
             selector_func = self._selector_func(selector)
             selection_lidx = self._selection_lidx(selector_func)
             return self.__class__(self[selection_lidx])
-
 
     class LidxSelectorDf(LidxSelector):
         """
@@ -256,7 +252,7 @@ with suppress(ModuleNotFoundError, ImportError):
             return (d.to_dict() for r, d in self._docs.iterrows())
 
         def to_dict(self):
-            return self._docs.to_dict(orient="records")
+            return self._docs.to_dict(orient='records')
 
         def _selector_func(self, selector):
             return Query(selector).match

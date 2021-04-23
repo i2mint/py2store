@@ -67,14 +67,14 @@ class Query(object):
             return _Undefined()
 
     def _path_exists(self, operator, condition, entry):
-        keys_list = list(operator.split("."))
+        keys_list = list(operator.split('.'))
         for i, k in enumerate(keys_list):
             if isinstance(entry, Sequence) and not k.isdigit():
                 for elem in entry:
-                    operator = ".".join(keys_list[i:])
+                    operator = '.'.join(keys_list[i:])
                     if (
-                            self._path_exists(operator, condition, elem)
-                            == condition
+                        self._path_exists(operator, condition, elem)
+                        == condition
                     ):
                         return condition
                 return not condition
@@ -87,24 +87,24 @@ class Query(object):
         return condition
 
     def _process_condition(self, operator, condition, entry):
-        if isinstance(condition, Mapping) and "$exists" in condition:
-            if isinstance(operator, string_types) and operator.find(".") != -1:
-                return self._path_exists(operator, condition["$exists"], entry)
-            elif condition["$exists"] != (operator in entry):
+        if isinstance(condition, Mapping) and '$exists' in condition:
+            if isinstance(operator, string_types) and operator.find('.') != -1:
+                return self._path_exists(operator, condition['$exists'], entry)
+            elif condition['$exists'] != (operator in entry):
                 return False
-            elif tuple(condition.keys()) == ("$exists",):
+            elif tuple(condition.keys()) == ('$exists',):
                 return True
         if isinstance(operator, str):
-            if operator.startswith("$"):
+            if operator.startswith('$'):
                 try:
-                    return getattr(self, "_" + operator[1:])(condition, entry)
+                    return getattr(self, '_' + operator[1:])(condition, entry)
                 except AttributeError:
                     raise QueryError(
                         "{!r} operator isn't supported".format(operator)
                     )
             else:
                 try:
-                    extracted_data = self._extract(entry, operator.split("."))
+                    extracted_data = self._extract(entry, operator.split('.'))
                 except IndexError:
                     extracted_data = _Undefined()
         else:
@@ -160,7 +160,7 @@ class Query(object):
                     return True
             return False
         else:
-            raise TypeError("condition must be a list")
+            raise TypeError('condition must be a list')
 
     @staticmethod
     def _lt(condition, entry):
@@ -194,7 +194,7 @@ class Query(object):
                 for sub_condition in condition
             )
         raise QueryError(
-            "$and has been attributed incorrect argument {!r}".format(
+            '$and has been attributed incorrect argument {!r}'.format(
                 condition
             )
         )
@@ -206,7 +206,7 @@ class Query(object):
                 for sub_condition in condition
             )
         raise QueryError(
-            "$nor has been attributed incorrect argument {!r}".format(
+            '$nor has been attributed incorrect argument {!r}'.format(
                 condition
             )
         )
@@ -221,7 +221,7 @@ class Query(object):
                 for sub_condition in condition
             )
         raise QueryError(
-            "$nor has been attributed incorrect argument {!r}".format(
+            '$nor has been attributed incorrect argument {!r}'.format(
                 condition
             )
         )
@@ -252,28 +252,28 @@ class Query(object):
             18: int,  # 64-bit integer
         }
         bson_alias = {
-            "double": 1,
-            "string": 2,
-            "object": 3,
-            "array": 4,
-            "binData": 5,
-            "objectId": 7,
-            "bool": 8,
-            "date": 9,
-            "null": 10,
-            "regex": 11,
-            "javascript": 13,
-            "javascriptWithScope": 15,
-            "int": 16,
-            "timestamp": 17,
-            "long": 18,
+            'double': 1,
+            'string': 2,
+            'object': 3,
+            'array': 4,
+            'binData': 5,
+            'objectId': 7,
+            'bool': 8,
+            'date': 9,
+            'null': 10,
+            'regex': 11,
+            'javascript': 13,
+            'javascriptWithScope': 15,
+            'int': 16,
+            'timestamp': 17,
+            'long': 18,
         }
 
-        if condition == "number":
+        if condition == 'number':
             return any(
                 [
                     isinstance(entry, bson_type[bson_alias[alias]])
-                    for alias in ["double", "int", "long"]
+                    for alias in ['double', 'int', 'long']
                 ]
             )
 
@@ -282,7 +282,7 @@ class Query(object):
 
         if condition not in bson_type:
             raise QueryError(
-                "$type has been used with unknown type {!r}".format(condition)
+                '$type has been used with unknown type {!r}'.format(condition)
             )
 
         return isinstance(entry, bson_type.get(condition))
@@ -303,12 +303,12 @@ class Query(object):
             return False
         try:
             regex = re.match(
-                r"\A/(.+)/([imsx]{,4})\Z", condition, flags=re.DOTALL
+                r'\A/(.+)/([imsx]{,4})\Z', condition, flags=re.DOTALL
             )
         except TypeError:
             raise QueryError(
-                "{!r} is not a regular expression "
-                "and should be a string".format(condition)
+                '{!r} is not a regular expression '
+                'and should be a string'.format(condition)
             )
 
         flags = 0
@@ -324,7 +324,7 @@ class Query(object):
             match = re.search(exp, entry, flags=flags)
         except Exception as error:
             raise QueryError(
-                "{!r} failed to execute with error {!r}".format(
+                '{!r} failed to execute with error {!r}'.format(
                     condition, error
                 )
             )
@@ -355,7 +355,7 @@ class Query(object):
     def _size(condition, entry):
         if not isinstance(condition, int):
             raise QueryError(
-                "$size has been attributed incorrect argument {!r}".format(
+                '$size has been attributed incorrect argument {!r}'.format(
                     condition
                 )
             )

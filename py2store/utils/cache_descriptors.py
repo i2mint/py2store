@@ -34,8 +34,8 @@ class _CachedProperty(object):
         self.data = (
             func,
             names,
-            "_v_cached_property_key_%s" % ncaches,
-            "_v_cached_property_value_%s" % ncaches,
+            '_v_cached_property_key_%s' % ncaches,
+            '_v_cached_property_value_%s' % ncaches,
         )
         update_wrapper(self, func)
 
@@ -83,7 +83,7 @@ def CachedProperty(*args):
     arg1 = args[0]
     names = args[1:]
     if callable(
-            arg1
+        arg1
     ):  # @CachedProperty, *or* thing = CachedProperty(thing, ...)
         return _CachedProperty(arg1, *names)
 

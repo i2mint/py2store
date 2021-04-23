@@ -60,7 +60,7 @@ def compile_str_from_parsed(parsed):
     >>> compile_str_from_parsed(parsed)
     'ROOT/{}/{0!r}/{1!i:format}/hello{:0.02f}TAIL'
     """
-    result = ""
+    result = ''
     for literal_text, field_name, format_spec, conversion in parsed:
         # output the literal text
         if literal_text:
@@ -68,14 +68,14 @@ def compile_str_from_parsed(parsed):
 
         # if there's a field, output it
         if field_name is not None:
-            result += "{"
-            if field_name != "":
+            result += '{'
+            if field_name != '':
                 result += field_name
             if conversion:
-                result += "!" + conversion
+                result += '!' + conversion
             if format_spec:
-                result += ":" + format_spec
-            result += "}"
+                result += ':' + format_spec
+            result += '}'
     return result
 
 
@@ -90,7 +90,7 @@ def transform_format_str(format_str, parsed_tuple_trans_func):
 
 def _empty_field_name(literal_text, field_name, format_spec, conversion):
     if field_name is not None:
-        return literal_text, "", format_spec, conversion
+        return literal_text, '', format_spec, conversion
     else:
         return literal_text, field_name, format_spec, conversion
 
@@ -156,8 +156,8 @@ def name_fields_in_format_str(format_str, field_names=None):
 
 
 no_hybrid_format_error = ValueError(
-    "cannot switch from manual field specification (i.e. {{number}} or {{name}}) "
-    "to automatic (i.e. {{}}) field numbering."
+    'cannot switch from manual field specification (i.e. {{number}} or {{name}}) '
+    'to automatic (i.e. {{}}) field numbering.'
 )
 
 
@@ -181,7 +181,7 @@ def format_params_in_str_format(format_string):
     """
     return list(
         map(
-            lambda x: int(x) if str.isnumeric(x) else x if x != "" else None,
+            lambda x: int(x) if str.isnumeric(x) else x if x != '' else None,
             filter(
                 _is_not_none,
                 (x[1] for x in dflt_formatter.parse(format_string)),
@@ -283,7 +283,7 @@ def empty_arg_and_kwargs_for_format(format_string, fill_val=None):
     if is_manual_format_params(format_params):
         args_keys, kwargs_keys = args_and_kwargs_indices(format_string)
         args = [fill_val] * (
-                max(args_keys) + 1
+            max(args_keys) + 1
         )  # max because e.g., sometimes, we have {0} and {2} without a {1}
         kwargs = {k: fill_val for k in kwargs_keys}
     elif is_automatic_format_params(format_params):

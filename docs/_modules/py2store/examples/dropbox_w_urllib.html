@@ -1,0 +1,336 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>py2store.examples.dropbox_w_urllib &#8212; py2store 0.0.8 documentation</title>
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css" />
+    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for py2store.examples.dropbox_w_urllib</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Dropbox read access with mapping interface -- using only builtins&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">zipfile</span>
+<span class="kn">import</span> <span class="nn">tempfile</span>
+<span class="kn">import</span> <span class="nn">urllib.request</span>
+<span class="kn">from</span> <span class="nn">py2store.base</span> <span class="kn">import</span> <span class="n">KvReader</span>
+
+
+<div class="viewcode-block" id="DropboxFolderCopyReader"><a class="viewcode-back" href="../../../module_docs/py2store/examples/dropbox_w_urllib.html#py2store.examples.dropbox_w_urllib.DropboxFolderCopyReader">[docs]</a><span class="k">class</span> <span class="nc">DropboxFolderCopyReader</span><span class="p">(</span><span class="n">KvReader</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Makes a full local copy of the folder (by default, to a local temp folder) and gives access to it.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">tempfile</span><span class="o">.</span><span class="n">gettempdir</span><span class="p">()):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">url</span> <span class="o">=</span> <span class="n">url</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">path</span>
+
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_zip_filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;shared_folder.zip&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_files</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_get_folder</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rel_path</span><span class="p">):</span>
+        <span class="n">real_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">rel_path</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">real_path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">FileNotFoundError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Key doesn&#39;t exist: </span><span class="si">{</span><span class="n">rel_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">yield from</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">path</span> <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_files</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">path</span> <span class="o">==</span> <span class="s1">&#39;/&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rel_path</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">rel_path</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_files</span>
+
+    <span class="k">def</span> <span class="nf">_get_folder</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">download_from_dropbox</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">url</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_zip_filepath</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_unzip</span><span class="p">()</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_zip_filepath</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_unzip</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">with</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_zip_filepath</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">zip_ref</span><span class="p">:</span>
+            <span class="n">zip_ref</span><span class="o">.</span><span class="n">extractall</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_files</span> <span class="o">=</span> <span class="n">zip_ref</span><span class="o">.</span><span class="n">namelist</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="DropboxFileCopyReader"><a class="viewcode-back" href="../../../module_docs/py2store/examples/dropbox_w_urllib.html#py2store.examples.dropbox_w_urllib.DropboxFileCopyReader">[docs]</a><span class="k">class</span> <span class="nc">DropboxFileCopyReader</span><span class="p">(</span><span class="n">KvReader</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">url</span> <span class="o">=</span> <span class="n">url</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">path</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_filename_from_url</span><span class="p">()</span>
+
+        <span class="n">download_from_dropbox</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">url</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">readlines</span><span class="p">()[</span><span class="n">index</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">file</span>
+
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">readlines</span><span class="p">())</span>
+
+    <span class="k">def</span> <span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="fm">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">file</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">file</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">readlines</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_get_filename_from_url</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># &#39;https:...txt?dl=0&amp;smth=else&#39; -&gt; &#39;https:...txt&#39;</span>
+        <span class="n">url_w_no_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">url</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;?&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1"># &#39;https://www.dropbox.com/.../my_file.txt&#39; -&gt; &#39;my_file.txt&#39;</span>
+        <span class="n">last_part_of_urls_path</span> <span class="o">=</span> <span class="n">url_w_no_params</span><span class="o">.</span><span class="n">rsplit</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">last_part_of_urls_path</span></div>
+
+
+<span class="n">DFLT_USER_AGENT</span> <span class="o">=</span> <span class="s1">&#39;Wget/1.16 (linux-gnu)&#39;</span>
+
+
+<span class="k">def</span> <span class="nf">download_from_dropbox</span><span class="p">(</span>
+    <span class="n">url</span><span class="p">,</span> <span class="n">file</span><span class="p">,</span> <span class="n">chk_size</span><span class="o">=</span><span class="mi">1024</span><span class="p">,</span> <span class="n">user_agent</span><span class="o">=</span><span class="n">DFLT_USER_AGENT</span>
+<span class="p">):</span>
+    <span class="k">def</span> <span class="nf">iter_content_and_copy_to</span><span class="p">(</span><span class="n">file</span><span class="p">):</span>
+        <span class="n">req</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">Request</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+        <span class="n">req</span><span class="o">.</span><span class="n">add_header</span><span class="p">(</span><span class="s1">&#39;user-agent&#39;</span><span class="p">,</span> <span class="n">user_agent</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">urllib</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">urlopen</span><span class="p">(</span><span class="n">req</span><span class="p">)</span> <span class="k">as</span> <span class="n">response</span><span class="p">:</span>
+            <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="n">chk</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">chk_size</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">chk</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">chk</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">break</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">iter_content_and_copy_to</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">_target_file</span><span class="p">:</span>
+            <span class="n">iter_content_and_copy_to</span><span class="p">(</span><span class="n">_target_file</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">bytes_from_dropbox</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">chk_size</span><span class="o">=</span><span class="mi">1024</span><span class="p">,</span> <span class="n">user_agent</span><span class="o">=</span><span class="n">DFLT_USER_AGENT</span><span class="p">):</span>
+    <span class="kn">from</span> <span class="nn">io</span> <span class="kn">import</span> <span class="n">BytesIO</span>
+
+    <span class="k">with</span> <span class="n">BytesIO</span><span class="p">()</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+        <span class="n">download_from_dropbox</span><span class="p">(</span>
+            <span class="n">url</span><span class="p">,</span> <span class="n">file</span><span class="p">,</span> <span class="n">chk_size</span><span class="o">=</span><span class="n">chk_size</span><span class="p">,</span> <span class="n">user_agent</span><span class="o">=</span><span class="n">user_agent</span>
+        <span class="p">)</span>
+        <span class="n">file</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">file</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+
+
+<span class="c1"># DFLT_USER_AGENT = &#39;Wget/1.16 (linux-gnu)&#39;</span>
+<span class="c1"># def download_from_dropbox(url, file, as_zip=False, chunk_size=1024, user_agent=DFLT_USER_AGENT):</span>
+<span class="c1">#</span>
+<span class="c1">#     response = requests.get(</span>
+<span class="c1">#         url,</span>
+<span class="c1">#         params={&#39;dl&#39;: int(as_zip)},</span>
+<span class="c1">#         headers={&#39;user-agent&#39;: user_agent},</span>
+<span class="c1">#         stream=True,</span>
+<span class="c1">#     )</span>
+<span class="c1">#</span>
+<span class="c1">#     def iter_content_and_copy_to(file):</span>
+<span class="c1">#         for chunk in response.iter_content(chunk_size=chunk_size):</span>
+<span class="c1">#             if chunk:</span>
+<span class="c1">#                 file.write(chunk)</span>
+<span class="c1">#</span>
+<span class="c1">#     if not isinstance(file, str):</span>
+<span class="c1">#         iter_content_and_copy_to(file)</span>
+<span class="c1">#     else:</span>
+<span class="c1">#         with open(file, &#39;wb&#39;) as _target_file:</span>
+<span class="c1">#             iter_content_and_copy_to(_target_file)</span>
+<span class="c1">#</span>
+<span class="c1">#</span>
+<span class="c1"># def bytes_from_dropbox(url, chunk_size=1024, user_agent=DFLT_USER_AGENT):</span>
+<span class="c1">#     from io import BytesIO</span>
+<span class="c1">#     with BytesIO() as file:</span>
+<span class="c1">#         download_from_dropbox(url, file, chunk_size=chunk_size, user_agent=user_agent)</span>
+<span class="c1">#         file.seek(0)</span>
+<span class="c1">#         return file.read()</span>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">py2store</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store.html">py2store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/access.html">py2store.access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/appendable.html">py2store.appendable</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/base.html">py2store.base</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/caching.html">py2store.caching</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/core.html">py2store.core</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/dig.html">py2store.dig</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/errors.html">py2store.errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/examples.html">py2store.examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/examples/dropbox_w_urllib.html">py2store.examples.dropbox_w_urllib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/examples/kv_walking.html">py2store.examples.kv_walking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/examples/last_key_inserted.html">py2store.examples.last_key_inserted</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/examples/python_code_stats.html">py2store.examples.python_code_stats</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/examples/write_caches.html">py2store.examples.write_caches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/ext.html">py2store.ext</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/ext/dataframes.html">py2store.ext.dataframes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/ext/docx.html">py2store.ext.docx</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/ext/github.html">py2store.ext.github</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/ext/gitlab.html">py2store.ext.gitlab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/ext/hdf.html">py2store.ext.hdf</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/ext/matlab.html">py2store.ext.matlab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/ext/wordnet.html">py2store.ext.wordnet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/filesys.html">py2store.filesys</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/key_mappers.html">py2store.key_mappers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/key_mappers/naming.html">py2store.key_mappers.naming</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/key_mappers/paths.html">py2store.key_mappers.paths</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/key_mappers/str_utils.html">py2store.key_mappers.str_utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/key_mappers/tuples.html">py2store.key_mappers.tuples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/misc.html">py2store.misc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/mixins.html">py2store.mixins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/my.html">py2store.my</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/my/grabbers.html">py2store.my.grabbers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/naming.html">py2store.naming</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/parse_format.html">py2store.parse_format</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/paths.html">py2store.paths</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/persisters.html">py2store.persisters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/persisters/dropbox_w_dropbox.html">py2store.persisters.dropbox_w_dropbox</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/persisters/googledrive_w_pydrive.html">py2store.persisters.googledrive_w_pydrive</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/persisters/local_files.html">py2store.persisters.local_files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/persisters/new_s3.html">py2store.persisters.new_s3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/persisters/redis_w_redis.html">py2store.persisters.redis_w_redis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/persisters/s3_w_boto3.html">py2store.persisters.s3_w_boto3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/persisters/sql_w_sqlalchemy.html">py2store.persisters.sql_w_sqlalchemy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/persisters/w_aiofile.html">py2store.persisters.w_aiofile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/serializers.html">py2store.serializers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/serializers/pickled.html">py2store.serializers.pickled</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/signatures.html">py2store.signatures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/slib.html">py2store.slib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/slib/s_configparser.html">py2store.slib.s_configparser</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/slib/s_zipfile.html">py2store.slib.s_zipfile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/sources.html">py2store.sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/stores.html">py2store.stores</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/stores/dropbox_store.html">py2store.stores.dropbox_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/stores/local_store.html">py2store.stores.local_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/stores/s3_store.html">py2store.stores.s3_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/stores/sql_w_sqlalchemy.html">py2store.stores.sql_w_sqlalchemy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/test.html">py2store.test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/test/local_files_test.html">py2store.test.local_files_test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/test/quick_test.html">py2store.test.quick_test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/test/scrap.html">py2store.test.scrap</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/test/util.html">py2store.test.util</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/trans.html">py2store.trans</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/util.html">py2store.util</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/utils.html">py2store.utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/utils/affine_conversion.html">py2store.utils.affine_conversion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/utils/appendable.html">py2store.utils.appendable</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/utils/attr_dict.html">py2store.utils.attr_dict</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/utils/cache_descriptors.html">py2store.utils.cache_descriptors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/utils/cumul_aggreg_write.html">py2store.utils.cumul_aggreg_write</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/utils/explicit.html">py2store.utils.explicit</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/utils/glom.html">py2store.utils.glom</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/utils/mappify.html">py2store.utils.mappify</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/utils/mg_selectors.html">py2store.utils.mg_selectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/utils/mongoquery.html">py2store.utils.mongoquery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/utils/signatures.html">py2store.utils.signatures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/utils/sliceable.html">py2store.utils.sliceable</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/utils/timeseries_caching.html">py2store.utils.timeseries_caching</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/utils/uri_utils.html">py2store.utils.uri_utils</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  <li><a href="../../py2store.html">py2store</a><ul>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;NO COPYRIGHT.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

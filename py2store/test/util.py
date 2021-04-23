@@ -22,7 +22,7 @@ from py2store.key_mappers.str_utils import (
 
 lower_case_letters = string.ascii_lowercase
 alphanumeric = string.digits + lower_case_letters
-non_alphanumeric = "".join(set(string.printable).difference(alphanumeric))
+non_alphanumeric = ''.join(set(string.printable).difference(alphanumeric))
 
 
 def random_word(length, alphabet, concat_func=add):
@@ -63,11 +63,11 @@ def _list_of_bytes_singletons(bytes_alphabet):
 def random_string(length=7, alphabet=lower_case_letters):
     """Same as random_word, but it optimized for strings
     (5-10% faster for words of length 7, 25-30% faster for words of size 1000)"""
-    return "".join(random.choice(alphabet) for _ in range(length))
+    return ''.join(random.choice(alphabet) for _ in range(length))
 
 
 def random_word_gen(
-        word_size_range=(1, 10), alphabet=lower_case_letters, n=100
+    word_size_range=(1, 10), alphabet=lower_case_letters, n=100
 ):
     """Random string generator
     Args:
@@ -89,10 +89,10 @@ def random_word_gen(
 
 
 def random_tuple_gen(
-        tuple_length=3,
-        word_size_range=(1, 10),
-        alphabet=lower_case_letters,
-        n: int = 100,
+    tuple_length=3,
+    word_size_range=(1, 10),
+    alphabet=lower_case_letters,
+    n: int = 100,
 ):
     """Random tuple (of strings) generator
 
@@ -110,10 +110,10 @@ def random_tuple_gen(
 
 
 def random_dict_gen(
-        fields=("a", "b", "c"),
-        word_size_range=(1, 10),
-        alphabet=lower_case_letters,
-        n: int = 100,
+    fields=('a', 'b', 'c'),
+    word_size_range=(1, 10),
+    alphabet=lower_case_letters,
+    n: int = 100,
 ):
     """Random dict (of strings) generator
 
@@ -134,10 +134,10 @@ def random_dict_gen(
 
 
 def random_formatted_str_gen(
-        format_string="root/{}/{}_{}.test",
-        word_size_range=(1, 10),
-        alphabet=lower_case_letters,
-        n=100,
+    format_string='root/{}/{}_{}.test',
+    word_size_range=(1, 10),
+    alphabet=lower_case_letters,
+    n=100,
 ):
     """Random formatted string generator
 
@@ -189,33 +189,33 @@ def random_formatted_str_gen(
 
 def extract_s3_access_info(access_dict):
     return {
-        "bucket_name": access_dict["bucket"],
-        "aws_access_key_id": access_dict["access"],
-        "aws_secret_access_key": access_dict["secret"],
+        'bucket_name': access_dict['bucket'],
+        'aws_access_key_id': access_dict['access'],
+        'aws_secret_access_key': access_dict['secret'],
     }
 
 
-def _s3_env_var_name(kind, perm="RO"):
+def _s3_env_var_name(kind, perm='RO'):
     kind = kind.upper()
     perm = perm.upper()
     assert kind in {
-        "BUCKET",
-        "ACCESS",
-        "SECRET",
+        'BUCKET',
+        'ACCESS',
+        'SECRET',
     }, "kind should be in {'BUCKET', 'ACCESS', 'SECRET'}"
-    assert perm in {"RW", "RO"}, "perm should be in {'RW', 'RO'}"
-    return "S3_TEST_{kind}_{perm}".format(kind=kind, perm=perm)
+    assert perm in {'RW', 'RO'}, "perm should be in {'RW', 'RO'}"
+    return 'S3_TEST_{kind}_{perm}'.format(kind=kind, perm=perm)
 
 
 def get_s3_test_access_info_from_env_vars(perm=None):
     if perm is None:
         try:
-            return get_s3_test_access_info_from_env_vars(perm="RO")
+            return get_s3_test_access_info_from_env_vars(perm='RO')
         except LookupError:
-            return get_s3_test_access_info_from_env_vars(perm="RW")
+            return get_s3_test_access_info_from_env_vars(perm='RW')
     else:
         access_keys = dict()
-        for kind in {"BUCKET", "ACCESS", "SECRET"}:
+        for kind in {'BUCKET', 'ACCESS', 'SECRET'}:
             k = _s3_env_var_name(kind, perm)
             if k not in os.environ:
                 raise LookupError(

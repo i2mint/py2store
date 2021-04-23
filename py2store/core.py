@@ -5,5 +5,3 @@ Core tools
 """
 
 from dol.core import *
-
-    

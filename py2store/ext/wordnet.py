@@ -31,32 +31,38 @@ with suppress(ModuleNotFoundError):
     from py2store.mixins import ReadOnlyMixin
     from py2store.util import ModuleNotFoundErrorNiceMessage
     from py2store.sources import Attrs
-    from py2store import Store, KvReader, cached_keys, add_ipython_key_completions
+    from py2store import (
+        Store,
+        KvReader,
+        cached_keys,
+        add_ipython_key_completions,
+    )
 
-    with ModuleNotFoundErrorNiceMessage("""You don't seem to have nltk.corpus.wordnet. 
+    with ModuleNotFoundErrorNiceMessage(
+        '''You don't seem to have nltk.corpus.wordnet. 
     If you don't have nltk already, do ``pip install nltk``, and if it's that 
     you don't have wordnet downloaded, do ``import nltk; nltk.download('wordnet');``
-    """):
+    '''
+    ):
         from nltk.corpus import wordnet as wn
         from nltk.corpus.reader.wordnet import Synset, Lemma
-
 
     def callable_attr_names(obj):
         """Set of attributes that are not callable"""
         return {name for name, a in Attrs(obj).items() if not callable(a.src)}
 
-
     def fully_defaulted_method_names(obj):
         """Set of method names whose arguments all have defaults (so are callable without arguments)."""
         return {
-            name for name, a in Attrs(obj).items()
-            if callable(a.src) and len(Sig(a.src)) - len(Sig(a.src).defaults) == 1}
-
+            name
+            for name, a in Attrs(obj).items()
+            if callable(a.src)
+            and len(Sig(a.src)) - len(Sig(a.src).defaults) == 1
+        }
 
     def keyable_attr_names(obj):
         """Set of attribute names of object that can be used as keys (because not callable, or callable without args)."""
         return callable_attr_names(obj) | fully_defaulted_method_names(obj)
-
 
     # lemma_names_of_non_callable_attrs = callable_attr_names(Lemma)
     # lemma_fully_defaulted_method_names = fully_defaulted_method_names(Lemma)
@@ -68,7 +74,9 @@ with suppress(ModuleNotFoundError):
 
     def wordnet_element_store_base(element_cls, __module__=__name__):
         @add_ipython_key_completions
-        @cached_keys(keys_cache=keyable_attr_names(element_cls), __module__=__module__)
+        @cached_keys(
+            keys_cache=keyable_attr_names(element_cls), __module__=__module__
+        )
         class _WordnetElementStore(Store):
             _from_name = None
 
@@ -83,7 +91,11 @@ with suppress(ModuleNotFoundError):
                 return cls(cls._from_name(name))
 
             def dict_of_non_empty_values(self):
-                return {k: v for k, v in self.items() if not isinstance(v, list) or len(v) > 0}
+                return {
+                    k: v
+                    for k, v in self.items()
+                    if not isinstance(v, list) or len(v) > 0
+                }
 
             def __getitem__(self, k):
                 attr = getattr(self, k)
@@ -94,14 +106,19 @@ with suppress(ModuleNotFoundError):
             def __repr__(self):
                 return f"{self.__class__.__name__}('{self._name}')"
 
-        _WordnetElementStore._from_name = {Lemma: wn.lemma, Synset: wn.synset}.get(element_cls, None)
+        _WordnetElementStore._from_name = {
+            Lemma: wn.lemma,
+            Synset: wn.synset,
+        }.get(element_cls, None)
 
         return _WordnetElementStore
 
-
     # Parsing method from nltk.corpus.reader.wordnet.Lemma's documentation.
     # Documentation states "These methods all return lists of Lemmas"
-    lemma_methods_returning_lemmas = set(re.findall(r"\w+", """
+    lemma_methods_returning_lemmas = set(
+        re.findall(
+            r'\w+',
+            '''
         - antonyms
         - hypernyms, instance_hypernyms
         - hyponyms, instance_hyponyms
@@ -116,8 +133,9 @@ with suppress(ModuleNotFoundError):
         - verb_groups
         - similar_tos
         - pertainyms
-    """))
-
+    ''',
+        )
+    )
 
     class KvLemma(wordnet_element_store_base(Lemma)):
         """
@@ -148,10 +166,12 @@ with suppress(ModuleNotFoundError):
             tup = type(self).__name__, self._synset._name, self._name
             return "%s('%s.%s')" % tup
 
-
     # Parsing method from nltk.corpus.reader.wordnet.Synset's documentation.
     # Documentation states "These methods all return lists of Synsets"
-    synset_methods_returning_synsets = set(re.findall(r"\w+", """
+    synset_methods_returning_synsets = set(
+        re.findall(
+            r'\w+',
+            '''
         - hypernyms, instance_hypernyms
         - hyponyms, instance_hyponyms
         - member_holonyms, substance_holonyms, part_holonyms
@@ -162,10 +182,14 @@ with suppress(ModuleNotFoundError):
         - also_sees
         - verb_groups
         - similar_tos
-    """))
+    ''',
+        )
+    )
 
-    synset_methods_returning_list_of_lists_of_synsets = {'hypernym_paths', 'hyponym_paths'}
-
+    synset_methods_returning_list_of_lists_of_synsets = {
+        'hypernym_paths',
+        'hyponym_paths',
+    }
 
     # @add_ipython_key_completions
     # @cached_keys(keys_cache=keyable_attr_names(Synset), __module__=__name__)
@@ -246,7 +270,6 @@ with suppress(ModuleNotFoundError):
             else:
                 return attr
 
-
     @add_ipython_key_completions
     class Synsets(ReadOnlyMixin, Store):
         """
@@ -265,14 +288,15 @@ with suppress(ModuleNotFoundError):
         """
 
         def __init__(self, pos=None):
-            super().__init__(store={ss.name(): ss for ss in wn.all_synsets(pos=pos)})
+            super().__init__(
+                store={ss.name(): ss for ss in wn.all_synsets(pos=pos)}
+            )
 
         def __getitem__(self, k):
             return KvSynset(self.store[k])
 
         def __repr__(self):
-            return f"{self.__class__.__name__}()"
-
+            return f'{self.__class__.__name__}()'
 
     @cached_keys(keys_cache=set)
     class Lemmas(KvReader):
@@ -282,31 +306,33 @@ with suppress(ModuleNotFoundError):
         def __getitem__(self, k):
             return {ss.name(): KvSynset(ss) for ss in wn.synsets(k)}
 
-
     import numpy as np
     import io
     import pandas as pd
     import itertools
     from collections import Counter
 
-
     def print_word_definitions(word):
         print(word_definitions_string(word))
 
-
     def word_definitions_string(word):
-        return '\n'.join(['%d: %s (%s)'
-                          % (i, x.definition(), x.name()) for i, x in enumerate(wn.synsets(word))])
-
+        return '\n'.join(
+            [
+                '%d: %s (%s)' % (i, x.definition(), x.name())
+                for i, x in enumerate(wn.synsets(word))
+            ]
+        )
 
     def print_word_lemmas(word):
         t = Counter([l.name for s in wn.synsets(word) for l in s.lemmas])
-        print(pd.Series(index=list(t.keys()), data=list(t.values())).sort(inplace=False, ascending=False))
-
+        print(
+            pd.Series(index=list(t.keys()), data=list(t.values())).sort(
+                inplace=False, ascending=False
+            )
+        )
 
     def _lemma_names_str(syn):
         return '(' + ', '.join(syn.lemma_names) + ')'
-
 
     def print_hypos_with_synset(syn, tab=''):
         print(tab + syn.name)
@@ -317,14 +343,12 @@ with suppress(ModuleNotFoundError):
         else:
             print(tab + '  ' + _lemma_names_str(syn))
 
-
     def pprint_hypos(syn, tab=''):
         print(tab + _lemma_names_str(syn))
         h = syn.hyponyms()
         if len(h) > 0:
             for hi in h:
                 pprint_hypos(hi, tab + '  ')
-
 
     class iTree(object):
         def __init__(self, value=None):
@@ -337,18 +361,18 @@ with suppress(ModuleNotFoundError):
                 yield v
             yield self
 
-        def tree_info_str(self,
-                          node_2_str=None,  # default info is node value
-                          tab_str=2 * ' ',  # tab string
-                          depth=0
-                          ):
+        def tree_info_str(
+            self,
+            node_2_str=None,  # default info is node value
+            tab_str=2 * ' ',  # tab string
+            depth=0,
+        ):
             node_2_str = node_2_str or self.default_node_2_str
             s = depth * tab_str + node_2_str(self) + '\n'
             new_depth = depth + 1
             for child in self.children:
                 s += child.tree_info_str(node_2_str, tab_str, new_depth)
             return s
-
 
     class HyponymTree(iTree):
         def __init__(self, value=None):
@@ -391,30 +415,42 @@ with suppress(ModuleNotFoundError):
                 * 'lemmas_and_def': The lemma names and definition
             """
             if method == 'name':
-                return lambda node: \
-                    node.value.name
+                return lambda node: node.value.name
             elif method == 'lemma_names' or method == 'lemmas':
                 lemma_sep = kwargs.get('lemma_sep', ', ')
-                return lambda node: \
-                    '(' + lemma_sep.join(node.value.lemma_names) + ')'
+                return (
+                    lambda node: '('
+                    + lemma_sep.join(node.value.lemma_names)
+                    + ')'
+                )
             elif method == 'name_and_def':
-                return lambda node: \
-                    node.value.name + ': ' + node.value.definition
+                return (
+                    lambda node: node.value.name + ': ' + node.value.definition
+                )
             elif method == 'lemmas_and_def':
                 lemma_sep = kwargs.get('lemma_sep', ', ')
                 def_sep = kwargs.get('def_sep', ': ')
-                return lambda node: \
-                    '(' + lemma_sep.join(node.value.lemma_names) + ')' \
-                    + def_sep + node.value.definition
+                return (
+                    lambda node: '('
+                    + lemma_sep.join(node.value.lemma_names)
+                    + ')'
+                    + def_sep
+                    + node.value.definition
+                )
             elif method == 'all':
                 lemma_sep = kwargs.get('lemma_sep', ', ')
                 def_sep = kwargs.get('def_sep', ': ')
-                return lambda node: \
-                    '(' + lemma_sep.join(node.value.lemma_names) + ')' \
-                    + def_sep + node.value.name \
-                    + def_sep + node.value.definition
+                return (
+                    lambda node: '('
+                    + lemma_sep.join(node.value.lemma_names)
+                    + ')'
+                    + def_sep
+                    + node.value.name
+                    + def_sep
+                    + node.value.definition
+                )
             else:
-                raise ValueError("Unknown node_2_str_function method")
+                raise ValueError('Unknown node_2_str_function method')
 
         def set_default_node_2_str(self, method='name'):
             """
@@ -428,26 +464,41 @@ with suppress(ModuleNotFoundError):
                 * 'name_and_def': The synset name and it's definition
                 * 'lemmas_and_def': The lemma names and definition
             """
-            self.default_node_2_str = HyponymTree.get_node_2_str_function(method)
+            self.default_node_2_str = HyponymTree.get_node_2_str_function(
+                method
+            )
 
         def _df_for_excel_export(self, method='all', method_args={}):
             method_args['def_sep'] = ':'
             method_args['tab_str'] = method_args.get('tab_str', '* ')
             s = ''
             # s = 'lemmas' + method_args['def_sep'] + 'synset' + method_args['def_sep'] + 'definition' + '\n'
-            s += self.tree_info_str(node_2_str=self.get_node_2_str_function(method=method),
-                                    tab_str=method_args['tab_str'])
-            return pd.DataFrame.from_csv(io.StringIO(str(s)),
-                                         sep=method_args['def_sep'], header=None, index_col=None)
+            s += self.tree_info_str(
+                node_2_str=self.get_node_2_str_function(method=method),
+                tab_str=method_args['tab_str'],
+            )
+            return pd.DataFrame.from_csv(
+                io.StringIO(str(s)),
+                sep=method_args['def_sep'],
+                header=None,
+                index_col=None,
+            )
 
-        def export_info_to_excel(self, filepath, sheet_name='hyponyms', method='all', method_args={}):
-            d = self._df_for_excel_export(method=method, method_args=method_args)
-            d.to_excel(filepath, sheet_name=sheet_name, header=False, index=False)
-
+        def export_info_to_excel(
+            self, filepath, sheet_name='hyponyms', method='all', method_args={}
+        ):
+            d = self._df_for_excel_export(
+                method=method, method_args=method_args
+            )
+            d.to_excel(
+                filepath, sheet_name=sheet_name, header=False, index=False
+            )
 
     class HyponymForest(object):
         def __init__(self, tree_list):
-            assert len(tree_list) == len(set(tree_list)), "synsets in list must be unique"
+            assert len(tree_list) == len(
+                set(tree_list)
+            ), 'synsets in list must be unique'
             for i, ss in enumerate(tree_list):
                 if not isinstance(ss, HyponymTree):
                     tree_list[i] = HyponymTree(ss)
@@ -456,8 +507,19 @@ with suppress(ModuleNotFoundError):
         def leafs(self):
             return {xx for x in self.tree_list for xx in x.leafs()}
 
-        def export_info_to_excel(self, filepath, sheet_name='hyponyms', method='all', method_args={}):
+        def export_info_to_excel(
+            self, filepath, sheet_name='hyponyms', method='all', method_args={}
+        ):
             d = pd.DataFrame()
             for dd in self.tree_list:
-                d = pd.concat([d, dd._df_for_excel_export(method=method, method_args=method_args)])
-            d.to_excel(filepath, sheet_name=sheet_name, header=False, index=False)
+                d = pd.concat(
+                    [
+                        d,
+                        dd._df_for_excel_export(
+                            method=method, method_args=method_args
+                        ),
+                    ]
+                )
+            d.to_excel(
+                filepath, sheet_name=sheet_name, header=False, index=False
+            )

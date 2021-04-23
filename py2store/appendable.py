@@ -10,5 +10,3 @@ See add_append_functionality_to_store_cls docs for examples.
 """
 
 from dol.appendable import *
-
-    

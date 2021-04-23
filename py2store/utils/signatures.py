@@ -2,4 +2,4 @@
 
 from py2store.signatures import *
 
-print("Deprecated: Forwards to py2store.signatures")
+print('Deprecated: Forwards to py2store.signatures')

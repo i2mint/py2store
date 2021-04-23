@@ -9,7 +9,7 @@ from py2store.utils.cumul_aggreg_write import (
 
 def append_and_print_state(store, data):
     store.append(data)
-    print(f"Appended [{data}].\tcache: {store.cache},\tstore: {store.store}")
+    print(f'Appended [{data}].\tcache: {store.cache},\tstore: {store.store}')
 
 
 def timestamp_on_store():
@@ -19,10 +19,10 @@ def timestamp_on_store():
         flush_cache_condition=lambda x: len(x) >= 3,
     )
 
-    append_and_print_state(s, b"Hello")
-    append_and_print_state(s, b"World")
-    append_and_print_state(s, b"!")
-    append_and_print_state(s, b"Wassup?")
+    append_and_print_state(s, b'Hello')
+    append_and_print_state(s, b'World')
+    append_and_print_state(s, b'!')
+    append_and_print_state(s, b'Wassup?')
 
 
 def timestamp_on_cache_and_concatenate_all_values():
@@ -40,8 +40,8 @@ def timestamp_on_cache_and_concatenate_all_values():
         sorted_items = sorted(items, key=lambda x: x[0])
         k = sorted_items[0][0]
         join_char = sorted_items[0][1][
-                    0:0
-                    ]  # better way to get '' or b'' according to data type?
+            0:0
+        ]  # better way to get '' or b'' according to data type?
         yield k, join_char.join(x[1] for x in sorted_items)
 
     s = CumulAggregWriteWithAutoFlush(
@@ -51,11 +51,11 @@ def timestamp_on_cache_and_concatenate_all_values():
         mk_cache=TimestampedItemsCache,
     )
 
-    append_and_print_state(s, b"Hello")
+    append_and_print_state(s, b'Hello')
     time.sleep(0.1)
-    append_and_print_state(s, b"World")
+    append_and_print_state(s, b'World')
     time.sleep(0.1)
-    append_and_print_state(s, b"!")
+    append_and_print_state(s, b'!')
     time.sleep(0.1)
-    append_and_print_state(s, b"Wassup?")
+    append_and_print_state(s, b'Wassup?')
     time.sleep(0.1)

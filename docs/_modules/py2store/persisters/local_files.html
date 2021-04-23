@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>py2store.persisters.local_files &#8212; py2store 0.0.7 documentation</title>
+    <title>py2store.persisters.local_files &#8212; py2store 0.0.8 documentation</title>
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css" />
@@ -33,27 +33,30 @@
           <div class="body" role="main">
             
   <h1>Source code for py2store.persisters.local_files</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">os</span>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">base classes to work with local files</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">re</span>
 <span class="kn">from</span> <span class="nn">glob</span> <span class="kn">import</span> <span class="n">iglob</span>
 <span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
 <span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">takewhile</span>
 
-<span class="kn">from</span> <span class="nn">py2store.errors</span> <span class="kn">import</span> <span class="n">NoSuchKeyError</span>
+<span class="kn">from</span> <span class="nn">dol.errors</span> <span class="kn">import</span> <span class="n">NoSuchKeyError</span>
+<span class="kn">from</span> <span class="nn">dol.base</span> <span class="kn">import</span> <span class="n">KeyValidationABC</span><span class="p">,</span> <span class="n">KvReader</span>
+<span class="kn">from</span> <span class="nn">dol.mixins</span> <span class="kn">import</span> <span class="n">FilteredKeysMixin</span><span class="p">,</span> <span class="n">IterBasedSizedMixin</span>
 
-<span class="kn">from</span> <span class="nn">py2store.base</span> <span class="kn">import</span> <span class="n">KeyValidationABC</span>
-<span class="kn">from</span> <span class="nn">py2store.mixins</span> <span class="kn">import</span> <span class="n">FilteredKeysMixin</span><span class="p">,</span> <span class="n">IterBasedSizedMixin</span>
 <span class="kn">from</span> <span class="nn">py2store.parse_format</span> <span class="kn">import</span> <span class="n">match_re_for_fstring</span>
-<span class="kn">from</span> <span class="nn">py2store.base</span> <span class="kn">import</span> <span class="n">KvReader</span>
+
 
 <span class="c1"># # TODO: These imports are for back compatibility and should be removed at some point</span>
 <span class="c1"># from py2store.slib.zipfile import ZipReader, ZipFileReader, ZipFilesReader, FilesOfZip</span>
 <span class="c1"># from py2store.filesys import FileCollection, DirCollection</span>
 
-<span class="n">DFLT_OPEN_MODE</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+<span class="n">DFLT_OPEN_MODE</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
 
 <span class="n">file_sep</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">sep</span>
-<span class="n">inf</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;infinity&quot;</span><span class="p">)</span>
+<span class="n">inf</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;infinity&#39;</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="FolderNotFoundError"><a class="viewcode-back" href="../../../test.html#py2store.persisters.local_files.FolderNotFoundError">[docs]</a><span class="k">class</span> <span class="nc">FolderNotFoundError</span><span class="p">(</span><span class="n">NoSuchKeyError</span><span class="p">):</span>
@@ -64,11 +67,12 @@
 <span class="c1"># File system navigation: Utils</span>
 
 
-<span class="k">def</span> <span class="nf">ensure_slash_suffix</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+<div class="viewcode-block" id="ensure_slash_suffix"><a class="viewcode-back" href="../../../test.html#py2store.persisters.local_files.ensure_slash_suffix">[docs]</a><span class="k">def</span> <span class="nf">ensure_slash_suffix</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+    <span class="sa">r</span><span class="sd">&quot;&quot;&quot;Add a file separation (/ or \) at the end of path str, if not already present.&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">path</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="n">file_sep</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">path</span> <span class="o">+</span> <span class="n">file_sep</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">path</span>
+        <span class="k">return</span> <span class="n">path</span></div>
 
 
 <span class="k">def</span> <span class="nf">pattern_filter</span><span class="p">(</span><span class="n">pattern</span><span class="p">):</span>
@@ -81,7 +85,7 @@
 
 
 <span class="k">def</span> <span class="nf">paths_in_dir_with_slash_suffix_for_dirs</span><span class="p">(</span><span class="n">rootdir</span><span class="p">):</span>
-    <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">iglob</span><span class="p">(</span><span class="n">ensure_slash_suffix</span><span class="p">(</span><span class="n">rootdir</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;*&quot;</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">iglob</span><span class="p">(</span><span class="n">ensure_slash_suffix</span><span class="p">(</span><span class="n">rootdir</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;*&#39;</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
             <span class="k">yield</span> <span class="n">ensure_slash_suffix</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
@@ -90,7 +94,7 @@
 
 <span class="k">def</span> <span class="nf">iter_relative_files_and_folder</span><span class="p">(</span><span class="n">root_folder</span><span class="p">):</span>
     <span class="n">root_folder</span> <span class="o">=</span> <span class="n">ensure_slash_suffix</span><span class="p">(</span><span class="n">root_folder</span><span class="p">)</span>
-    <span class="k">return</span> <span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">root_folder</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span> <span class="n">iglob</span><span class="p">(</span><span class="n">root_folder</span> <span class="o">+</span> <span class="s2">&quot;*&quot;</span><span class="p">))</span>
+    <span class="k">return</span> <span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">root_folder</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span> <span class="n">iglob</span><span class="p">(</span><span class="n">root_folder</span> <span class="o">+</span> <span class="s1">&#39;*&#39;</span><span class="p">))</span>
 
 
 <span class="k">def</span> <span class="nf">iter_filepaths_in_folder</span><span class="p">(</span><span class="n">root_folder</span><span class="p">):</span>
@@ -101,19 +105,19 @@
 
 
 <span class="k">def</span> <span class="nf">paths_in_dir</span><span class="p">(</span><span class="n">rootdir</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">iglob</span><span class="p">(</span><span class="n">ensure_slash_suffix</span><span class="p">(</span><span class="n">rootdir</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;*&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">iglob</span><span class="p">(</span><span class="n">ensure_slash_suffix</span><span class="p">(</span><span class="n">rootdir</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;*&#39;</span><span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">filepaths_in_dir</span><span class="p">(</span><span class="n">rootdir</span><span class="p">):</span>
-    <span class="k">return</span> <span class="nb">filter</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">,</span> <span class="n">iglob</span><span class="p">(</span><span class="n">ensure_slash_suffix</span><span class="p">(</span><span class="n">rootdir</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;*&quot;</span><span class="p">))</span>
+    <span class="k">return</span> <span class="nb">filter</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">,</span> <span class="n">iglob</span><span class="p">(</span><span class="n">ensure_slash_suffix</span><span class="p">(</span><span class="n">rootdir</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;*&#39;</span><span class="p">))</span>
 
 
 <span class="k">def</span> <span class="nf">dirpaths_in_dir</span><span class="p">(</span><span class="n">rootdir</span><span class="p">):</span>
-    <span class="k">return</span> <span class="nb">filter</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">,</span> <span class="n">iglob</span><span class="p">(</span><span class="n">ensure_slash_suffix</span><span class="p">(</span><span class="n">rootdir</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;*&quot;</span><span class="p">))</span>
+    <span class="k">return</span> <span class="nb">filter</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">,</span> <span class="n">iglob</span><span class="p">(</span><span class="n">ensure_slash_suffix</span><span class="p">(</span><span class="n">rootdir</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;*&#39;</span><span class="p">))</span>
 
 
 <span class="k">def</span> <span class="nf">iter_filepaths_in_folder_recursively</span><span class="p">(</span>
-        <span class="n">root_folder</span><span class="p">,</span> <span class="n">max_levels</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">_current_level</span><span class="o">=</span><span class="mi">0</span>
+    <span class="n">root_folder</span><span class="p">,</span> <span class="n">max_levels</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">_current_level</span><span class="o">=</span><span class="mi">0</span>
 <span class="p">):</span>
     <span class="k">if</span> <span class="n">max_levels</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">max_levels</span> <span class="o">=</span> <span class="n">inf</span>
@@ -121,7 +125,7 @@
         <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">full_path</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">_current_level</span> <span class="o">&lt;</span> <span class="n">max_levels</span><span class="p">:</span>
                 <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">iter_filepaths_in_folder_recursively</span><span class="p">(</span>
-                        <span class="n">full_path</span><span class="p">,</span> <span class="n">max_levels</span><span class="p">,</span> <span class="n">_current_level</span> <span class="o">+</span> <span class="mi">1</span>
+                    <span class="n">full_path</span><span class="p">,</span> <span class="n">max_levels</span><span class="p">,</span> <span class="n">_current_level</span> <span class="o">+</span> <span class="mi">1</span>
                 <span class="p">):</span>
                     <span class="k">yield</span> <span class="n">entry</span>
         <span class="k">else</span><span class="p">:</span>
@@ -130,7 +134,7 @@
 
 
 <span class="k">def</span> <span class="nf">iter_dirpaths_in_folder_recursively</span><span class="p">(</span>
-        <span class="n">root_folder</span><span class="p">,</span> <span class="n">max_levels</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">_current_level</span><span class="o">=</span><span class="mi">0</span>
+    <span class="n">root_folder</span><span class="p">,</span> <span class="n">max_levels</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">_current_level</span><span class="o">=</span><span class="mi">0</span>
 <span class="p">):</span>
     <span class="k">if</span> <span class="n">max_levels</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">max_levels</span> <span class="o">=</span> <span class="n">inf</span>
@@ -139,7 +143,7 @@
             <span class="k">yield</span> <span class="n">full_path</span>
             <span class="k">if</span> <span class="n">_current_level</span> <span class="o">&lt;</span> <span class="n">max_levels</span><span class="p">:</span>
                 <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">iter_dirpaths_in_folder_recursively</span><span class="p">(</span>
-                        <span class="n">full_path</span><span class="p">,</span> <span class="n">max_levels</span><span class="p">,</span> <span class="n">_current_level</span> <span class="o">+</span> <span class="mi">1</span>
+                    <span class="n">full_path</span><span class="p">,</span> <span class="n">max_levels</span><span class="p">,</span> <span class="n">_current_level</span> <span class="o">+</span> <span class="mi">1</span>
                 <span class="p">):</span>
                     <span class="k">yield</span> <span class="n">entry</span>
 
@@ -195,10 +199,10 @@
 
 
 <span class="k">def</span> <span class="nf">path_match_regex_from_path_format</span><span class="p">(</span><span class="n">path_format</span><span class="p">):</span>
-    <span class="k">if</span> <span class="s2">&quot;{&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">path_format</span><span class="p">:</span>
+    <span class="k">if</span> <span class="s1">&#39;{&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">path_format</span><span class="p">:</span>
         <span class="c1"># if the path_format is equal to the _prefix (i.e. there&#39;s no {} formatting)</span>
         <span class="c1"># ... append a formatting element so that the matcher can match all subfiles.</span>
-        <span class="n">path_format</span> <span class="o">=</span> <span class="n">path_format</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">&quot;</span>
+        <span class="n">path_format</span> <span class="o">=</span> <span class="n">path_format</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">&#39;</span>
 
     <span class="k">return</span> <span class="n">match_re_for_fstring</span><span class="p">(</span><span class="n">path_format</span><span class="p">)</span>
 
@@ -215,19 +219,15 @@
             <span class="n">path_format</span>  <span class="c1"># not intended for use, but keeping in case, for now</span>
         <span class="p">)</span>
 
-        <span class="k">if</span> <span class="s2">&quot;{&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">path_format</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s1">&#39;{&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">path_format</span><span class="p">:</span>
             <span class="n">rootdir</span> <span class="o">=</span> <span class="n">ensure_slash_suffix</span><span class="p">(</span><span class="n">path_format</span><span class="p">)</span>
-            <span class="c1"># if the path_format is equal to the _prefix (i.e. there&#39;s no {} formatting)</span>
-            <span class="c1"># ... append a formatting element so that the matcher can match all subfiles.</span>
-            <span class="n">path_pattern</span> <span class="o">=</span> <span class="n">path_format</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">&quot;</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">rootdir</span> <span class="o">=</span> <span class="n">ensure_slash_suffix</span><span class="p">(</span>
-                <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s2">&quot;[^\{]*&quot;</span><span class="p">,</span> <span class="n">path_format</span><span class="p">)</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;[^{]*&#39;</span><span class="p">,</span> <span class="n">path_format</span><span class="p">)</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
             <span class="p">)</span>
-            <span class="n">path_pattern</span> <span class="o">=</span> <span class="n">path_format</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_prefix</span> <span class="o">=</span> <span class="n">rootdir</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_path_match_re</span> <span class="o">=</span> <span class="n">match_re_for_fstring</span><span class="p">(</span><span class="n">path_pattern</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_path_match_re</span> <span class="o">=</span> <span class="n">path_match_regex_from_path_format</span><span class="p">(</span><span class="n">path_format</span><span class="p">)</span>
 
         <span class="k">def</span> <span class="nf">_key_filt</span><span class="p">(</span><span class="n">k</span><span class="p">):</span>
             <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_path_match_re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">k</span><span class="p">))</span>
@@ -243,7 +243,7 @@
 
 
 <span class="k">def</span> <span class="nf">first_non_existing_parent_dir</span><span class="p">(</span><span class="n">dirpath</span><span class="p">):</span>
-    <span class="n">parent</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
     <span class="k">for</span> <span class="n">parent</span> <span class="ow">in</span> <span class="n">takewhile</span><span class="p">(</span><span class="n">_is_not_dir</span><span class="p">,</span> <span class="n">Path</span><span class="p">(</span><span class="n">dirpath</span><span class="p">)</span><span class="o">.</span><span class="n">parents</span><span class="p">):</span>
         <span class="k">pass</span>
     <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
@@ -256,16 +256,19 @@
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Callable</span>
 
 
-<span class="k">def</span> <span class="nf">w_helpful_folder_not_found_error</span><span class="p">(</span><span class="o">*</span><span class="p">,</span>
-                                     <span class="n">raise_error</span><span class="o">=</span><span class="ne">KeyError</span><span class="p">,</span>
-                                     <span class="n">extra_msg</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
-                                     <span class="n">caught_errors</span><span class="o">=</span><span class="ne">FileNotFoundError</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">w_helpful_folder_not_found_error</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">raise_error</span><span class="o">=</span><span class="ne">KeyError</span><span class="p">,</span>
+    <span class="n">extra_msg</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="p">,</span>
+    <span class="n">caught_errors</span><span class="o">=</span><span class="ne">FileNotFoundError</span><span class="p">,</span>
+<span class="p">):</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">extra_msg</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
         <span class="n">extra_msg_str</span> <span class="o">=</span> <span class="n">extra_msg</span>
 
         <span class="k">def</span> <span class="nf">extra_msg</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">extra_msg_str</span>
-    <span class="k">assert</span> <span class="n">callable</span><span class="p">(</span><span class="n">extra_msg</span><span class="p">),</span> <span class="s2">&quot;extra_msg must be a callable or a string&quot;</span>
+
+    <span class="k">assert</span> <span class="n">callable</span><span class="p">(</span><span class="n">extra_msg</span><span class="p">),</span> <span class="s1">&#39;extra_msg must be a callable or a string&#39;</span>
 
     <span class="k">def</span> <span class="nf">_helpful_folder_not_found_error</span><span class="p">(</span><span class="n">method</span><span class="p">):</span>
         <span class="nd">@wraps</span><span class="p">(</span><span class="n">method</span><span class="p">)</span>
@@ -273,7 +276,9 @@
             <span class="k">try</span><span class="p">:</span>
                 <span class="k">return</span> <span class="n">method</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
             <span class="k">except</span> <span class="n">caught_errors</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">: </span><span class="si">{}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span> <span class="o">+</span> <span class="n">extra_msg</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">: </span><span class="si">{}</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span> <span class="o">+</span> <span class="n">extra_msg</span><span class="p">(</span>
+                    <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+                <span class="p">)</span>
                 <span class="k">raise</span> <span class="n">raise_error</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">wrapped_method</span>
@@ -282,12 +287,13 @@
 
 
 <span class="k">def</span> <span class="nf">_store_does_not_create_dirs_msg</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="k">return</span> <span class="p">(</span><span class="s2">&quot;The store you&#39;re using doesn&#39;t create directories for you. &quot;</span>
-            <span class="s2">&quot;You have to make the directories needed yourself manually, &quot;</span>
-            <span class="s2">&quot;or use a store that does that for you (example QuickStore). &quot;</span>
-            <span class="s2">&quot;This is the first directory that didn&#39;t exist:</span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">first_non_existing_parent_dir</span><span class="p">(</span><span class="n">k</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
-            <span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="s2">&quot;The store you&#39;re using doesn&#39;t create directories for you. &quot;</span>
+        <span class="s1">&#39;You have to make the directories needed yourself manually, &#39;</span>
+        <span class="s1">&#39;or use a store that does that for you (example QuickStore). &#39;</span>
+        <span class="s2">&quot;This is the first directory that didn&#39;t exist:</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">first_non_existing_parent_dir</span><span class="p">(</span><span class="n">k</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span>
+    <span class="p">)</span>
 
 
 <div class="viewcode-block" id="LocalFileStreamGetter"><a class="viewcode-back" href="../../../test.html#py2store.persisters.local_files.LocalFileStreamGetter">[docs]</a><span class="k">class</span> <span class="nc">LocalFileStreamGetter</span><span class="p">:</span>
@@ -329,11 +335,11 @@
 <span class="sd">    A class providing get, set and delete functionality using local files as the storage backend.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">open_kwargs</span><span class="p">):</span>
-        <span class="k">assert</span> <span class="n">mode</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="s2">&quot;t&quot;</span><span class="p">},</span> <span class="s2">&quot;mode should be &#39;&#39;, &#39;b&#39;, or &#39;t&#39;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">open_kwargs</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="n">mode</span> <span class="ow">in</span> <span class="p">{</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="s1">&#39;t&#39;</span><span class="p">},</span> <span class="s2">&quot;mode should be &#39;&#39;, &#39;b&#39;, or &#39;t&#39;&quot;</span>
 
-        <span class="n">read_mode</span> <span class="o">=</span> <span class="n">open_kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;read_mode&quot;</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span> <span class="o">+</span> <span class="n">mode</span><span class="p">)</span>
-        <span class="n">write_mode</span> <span class="o">=</span> <span class="n">open_kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;write_mode&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span> <span class="o">+</span> <span class="n">mode</span><span class="p">)</span>
+        <span class="n">read_mode</span> <span class="o">=</span> <span class="n">open_kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;read_mode&#39;</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span> <span class="o">+</span> <span class="n">mode</span><span class="p">)</span>
+        <span class="n">write_mode</span> <span class="o">=</span> <span class="n">open_kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;write_mode&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span> <span class="o">+</span> <span class="n">mode</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_open_kwargs_for_read</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">open_kwargs</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">read_mode</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_open_kwargs_for_write</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">open_kwargs</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">write_mode</span><span class="p">)</span>
 
@@ -343,7 +349,10 @@
             <span class="n">data</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">data</span>
 
-    <span class="nd">@w_helpful_folder_not_found_error</span><span class="p">(</span><span class="n">raise_error</span><span class="o">=</span><span class="n">FolderNotFoundError</span><span class="p">,</span> <span class="n">extra_msg</span><span class="o">=</span><span class="n">_store_does_not_create_dirs_msg</span><span class="p">)</span>
+    <span class="nd">@w_helpful_folder_not_found_error</span><span class="p">(</span>
+        <span class="n">raise_error</span><span class="o">=</span><span class="n">FolderNotFoundError</span><span class="p">,</span>
+        <span class="n">extra_msg</span><span class="o">=</span><span class="n">_store_does_not_create_dirs_msg</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">def</span> <span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">_open_kwargs_for_write</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
             <span class="n">fp</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
@@ -372,20 +381,18 @@
     <span class="n">PrefixedDirpathsRecursive</span><span class="p">,</span>
     <span class="n">IterBasedSizedMixin</span><span class="p">,</span>
 <span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
-                 <span class="n">path_format</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-                 <span class="n">max_levels</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">inf</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path_format</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">max_levels</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">inf</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">path_format</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_max_levels</span> <span class="o">=</span> <span class="n">max_levels</span></div>
 
 
 <div class="viewcode-block" id="PathFormatPersister"><a class="viewcode-back" href="../../../test.html#py2store.persisters.local_files.PathFormatPersister">[docs]</a><span class="k">class</span> <span class="nc">PathFormatPersister</span><span class="p">(</span><span class="n">FilepathFormatKeys</span><span class="p">,</span> <span class="n">LocalFileRWD</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
-            <span class="bp">self</span><span class="p">,</span>
-            <span class="n">path_format</span><span class="p">,</span>
-            <span class="n">max_levels</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">inf</span><span class="p">,</span>
-            <span class="n">mode</span><span class="o">=</span><span class="n">DFLT_OPEN_MODE</span><span class="p">,</span>
-            <span class="o">**</span><span class="n">open_kwargs</span><span class="p">,</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">path_format</span><span class="p">,</span>
+        <span class="n">max_levels</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">inf</span><span class="p">,</span>
+        <span class="n">mode</span><span class="o">=</span><span class="n">DFLT_OPEN_MODE</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">open_kwargs</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="n">FilepathFormatKeys</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path_format</span><span class="p">)</span>
         <span class="n">LocalFileRWD</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="o">**</span><span class="n">open_kwargs</span><span class="p">)</span>
@@ -453,8 +460,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_rootdir_length</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rootdir</span><span class="p">)</span>
         <span class="c1"># TODO: Look into alternatives for the raison d&#39;etre of _new_node and _class_name</span>
         <span class="c1"># (They are there, because using self.__class__ directly goes to super)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_new_node</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_class_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_new_node</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_class_name</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span>
 
     <span class="k">def</span> <span class="nf">_extended_prefix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_prefix</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rootdir</span><span class="p">,</span> <span class="n">new_prefix</span><span class="p">)</span>
@@ -462,15 +469,18 @@
     <span class="c1"># TODO: Possible optimization: Think if using cached keys makes more sense.</span>
     <span class="k">def</span> <span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
         <span class="k">return</span> <span class="p">(</span>
-                <span class="n">k</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rootdir</span><span class="p">)</span>  <span class="c1"># prefix is rootdir</span>
-                <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>  <span class="c1"># exists (as file or dir)</span>
-                <span class="ow">and</span> <span class="p">(</span><span class="n">k</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="n">file_sep</span><span class="p">)</span> <span class="ow">or</span> <span class="n">file_sep</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">k</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_rootdir_length</span><span class="p">:])</span>  <span class="c1"># is a dir or a first-level file</span>
+            <span class="n">k</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rootdir</span><span class="p">)</span>  <span class="c1"># prefix is rootdir</span>
+            <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>  <span class="c1"># exists (as file or dir)</span>
+            <span class="ow">and</span> <span class="p">(</span>
+                <span class="n">k</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="n">file_sep</span><span class="p">)</span>
+                <span class="ow">or</span> <span class="n">file_sep</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">k</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_rootdir_length</span> <span class="p">:]</span>
+            <span class="p">)</span>  <span class="c1"># is a dir or a first-level file</span>
         <span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="nb">map</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_extended_prefix</span><span class="p">,</span>  <span class="c1"># (2) extend prefix with sub-path name</span>
-                <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rootdir</span><span class="p">)</span>  <span class="c1"># (1) list file names under _prefix</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_extended_prefix</span><span class="p">,</span>  <span class="c1"># (2) extend prefix with sub-path name</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rootdir</span><span class="p">),</span>  <span class="c1"># (1) list file names under _prefix</span>
         <span class="p">):</span>
             <span class="k">if</span> <span class="n">is_dir_path</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
                 <span class="k">yield</span> <span class="n">ensure_slash_suffix</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
@@ -484,7 +494,9 @@
             <span class="k">elif</span> <span class="n">is_file_path</span><span class="p">(</span><span class="n">k</span><span class="p">):</span>
                 <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
                     <span class="k">return</span> <span class="n">fp</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__missing__</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>  <span class="c1"># if you got this far, the key is missing (or malformed)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__missing__</span><span class="p">(</span>
+            <span class="n">k</span>
+        <span class="p">)</span>  <span class="c1"># if you got this far, the key is missing (or malformed)</span>
 
     <span class="k">def</span> <span class="fm">__missing__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
         <span class="k">raise</span> <span class="n">NoSuchKeyError</span><span class="p">(</span>
@@ -525,107 +537,86 @@
 
 
 <h3>Navigation</h3>
-<p class="caption"><span class="caption-text">Contents:</span></p>
+<p><span class="caption-text">Contents:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html">py2store.filesys</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.misc">py2store.misc</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.mixins">py2store.mixins</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.test.util">py2store.test.util</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-test-quick">py2store.test.quick</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.test">py2store.test</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-test-simple">py2store.test.simple</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-test-scrap">py2store.test.scrap</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.util">py2store.util</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-ext-docx">py2store.ext.docx</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext.gitlab">py2store.ext.gitlab</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-ext-hdf">py2store.ext.hdf</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext">py2store.ext</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-ext-matlab">py2store.ext.matlab</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext.kaggle">py2store.ext.kaggle</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-ext-module-imports">py2store.ext.module_imports</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext.audio">py2store.ext.audio</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-ext-github">py2store.ext.github</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.ext.dataframes">py2store.ext.dataframes</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.access">py2store.access</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.__init__">py2store.__init__</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores.s3_store">py2store.stores.s3_store</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores.delegation_stores">py2store.stores.delegation_stores</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores.sql_w_sqlalchemy">py2store.stores.sql_w_sqlalchemy</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-stores-arangodb-store">py2store.stores.arangodb_store</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-stores-dropbox-store">py2store.stores.dropbox_store</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores.local_store">py2store.stores.local_store</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores">py2store.stores</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-stores-couchdb-store">py2store.stores.couchdb_store</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.stores.mongo_store">py2store.stores.mongo_store</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.core">py2store.core</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.uri_utils">py2store.utils.uri_utils</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.explicit">py2store.utils.explicit</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.timeseries_caching">py2store.utils.timeseries_caching</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-utils-attr-dict-py-attr-dict">py2store.utils.attr_dict.py.attr_dict</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-utils-attr-dict-py">py2store.utils.attr_dict.py</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.cumul_aggreg_write">py2store.utils.cumul_aggreg_write</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils">py2store.utils</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.cache_descriptors">py2store.utils.cache_descriptors</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.appendable">py2store.utils.appendable</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.affine_conversion">py2store.utils.affine_conversion</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.signatures">py2store.utils.signatures</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.sliceable">py2store.utils.sliceable</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.mappify">py2store.utils.mappify</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.utils.glom">py2store.utils.glom</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-sql-w-odbc">py2store.persisters.sql_w_odbc</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.dynamodb_w_boto3">py2store.persisters.dynamodb_w_boto3</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-couchdb-w-couchdb">py2store.persisters.couchdb_w_couchdb</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.ftp_persister">py2store.persisters.ftp_persister</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.dropbox_w_urllib">py2store.persisters.dropbox_w_urllib</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters._google_drive_in_progress">py2store.persisters._google_drive_in_progress</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-dropbox-w-dropbox">py2store.persisters.dropbox_w_dropbox</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-redis-w-redis">py2store.persisters.redis_w_redis</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.sql_w_sqlalchemy">py2store.persisters.sql_w_sqlalchemy</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.new_s3">py2store.persisters.new_s3</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters">py2store.persisters</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.dropbox_w_requests">py2store.persisters.dropbox_w_requests</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.w_aiofile">py2store.persisters.w_aiofile</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.local_files">py2store.persisters.local_files</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-arangodb-w-pyarango">py2store.persisters.arangodb_w_pyarango</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters._cassandra_in_progress">py2store.persisters._cassandra_in_progress</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters._couchdb_in_progress">py2store.persisters._couchdb_in_progress</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.s3_w_boto3">py2store.persisters.s3_w_boto3</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-postgres-w-psycopg2-in-progress">py2store.persisters._postgres_w_psycopg2_in_progress</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-ssh-persister">py2store.persisters.ssh_persister</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.persisters.mongo_w_pymongo">py2store.persisters.mongo_w_pymongo</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-persisters-googledrive-w-pydrive">py2store.persisters.googledrive_w_pydrive</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.sources">py2store.sources</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.dig">py2store.dig</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers.pickled">py2store.serializers.pickled</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers.jsonization">py2store.serializers.jsonization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers">py2store.serializers</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers.sequential">py2store.serializers.sequential</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers.regular_panel_data">py2store.serializers.regular_panel_data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.serializers.audio">py2store.serializers.audio</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.caching">py2store.caching</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.scrap">py2store.scrap</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.scrap.new_gen_local">py2store.scrap.new_gen_local</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.examples.write_caches">py2store.examples.write_caches</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.examples">py2store.examples</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.examples.python_code_stats">py2store.examples.python_code_stats</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.examples.kv_walking">py2store.examples.kv_walking</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.my">py2store.my</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.my.grabbers">py2store.my.grabbers</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.trans">py2store.trans</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.key_mappers.str_utils">py2store.key_mappers.str_utils</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.key_mappers.tuples">py2store.key_mappers.tuples</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.key_mappers.paths">py2store.key_mappers.paths</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.key_mappers.naming">py2store.key_mappers.naming</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.key_mappers">py2store.key_mappers</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.errors">py2store.errors</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.slib.s_configparser">py2store.slib.s_configparser</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.slib">py2store.slib</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.slib.s_zipfile">py2store.slib.s_zipfile</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.base">py2store.base</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-selectors-mg-selectors">py2store.selectors.mg_selectors</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-selectors-mongoquery">py2store.selectors.mongoquery</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#py2store-selectors">py2store.selectors</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-py2store.parse_format">py2store.parse_format</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store.html">py2store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/access.html">py2store.access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/appendable.html">py2store.appendable</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/base.html">py2store.base</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/caching.html">py2store.caching</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/core.html">py2store.core</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/dig.html">py2store.dig</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/errors.html">py2store.errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/examples.html">py2store.examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/examples/dropbox_w_urllib.html">py2store.examples.dropbox_w_urllib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/examples/kv_walking.html">py2store.examples.kv_walking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/examples/last_key_inserted.html">py2store.examples.last_key_inserted</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/examples/python_code_stats.html">py2store.examples.python_code_stats</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/examples/write_caches.html">py2store.examples.write_caches</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/ext.html">py2store.ext</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/ext/dataframes.html">py2store.ext.dataframes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/ext/docx.html">py2store.ext.docx</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/ext/github.html">py2store.ext.github</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/ext/gitlab.html">py2store.ext.gitlab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/ext/hdf.html">py2store.ext.hdf</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/ext/matlab.html">py2store.ext.matlab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/ext/wordnet.html">py2store.ext.wordnet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/filesys.html">py2store.filesys</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/key_mappers.html">py2store.key_mappers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/key_mappers/naming.html">py2store.key_mappers.naming</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/key_mappers/paths.html">py2store.key_mappers.paths</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/key_mappers/str_utils.html">py2store.key_mappers.str_utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/key_mappers/tuples.html">py2store.key_mappers.tuples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/misc.html">py2store.misc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/mixins.html">py2store.mixins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/my.html">py2store.my</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/my/grabbers.html">py2store.my.grabbers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/naming.html">py2store.naming</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/parse_format.html">py2store.parse_format</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/paths.html">py2store.paths</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/persisters.html">py2store.persisters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/persisters/dropbox_w_dropbox.html">py2store.persisters.dropbox_w_dropbox</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/persisters/googledrive_w_pydrive.html">py2store.persisters.googledrive_w_pydrive</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/persisters/local_files.html">py2store.persisters.local_files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/persisters/new_s3.html">py2store.persisters.new_s3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/persisters/redis_w_redis.html">py2store.persisters.redis_w_redis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/persisters/s3_w_boto3.html">py2store.persisters.s3_w_boto3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/persisters/sql_w_sqlalchemy.html">py2store.persisters.sql_w_sqlalchemy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/persisters/w_aiofile.html">py2store.persisters.w_aiofile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/serializers.html">py2store.serializers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/serializers/pickled.html">py2store.serializers.pickled</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/signatures.html">py2store.signatures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/slib.html">py2store.slib</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/slib/s_configparser.html">py2store.slib.s_configparser</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/slib/s_zipfile.html">py2store.slib.s_zipfile</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/sources.html">py2store.sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/stores.html">py2store.stores</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/stores/dropbox_store.html">py2store.stores.dropbox_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/stores/local_store.html">py2store.stores.local_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/stores/s3_store.html">py2store.stores.s3_store</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/stores/sql_w_sqlalchemy.html">py2store.stores.sql_w_sqlalchemy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/test.html">py2store.test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/test/local_files_test.html">py2store.test.local_files_test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/test/quick_test.html">py2store.test.quick_test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/test/scrap.html">py2store.test.scrap</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/test/util.html">py2store.test.util</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/trans.html">py2store.trans</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/util.html">py2store.util</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/utils.html">py2store.utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/utils/affine_conversion.html">py2store.utils.affine_conversion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/utils/appendable.html">py2store.utils.appendable</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/utils/attr_dict.html">py2store.utils.attr_dict</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/utils/cache_descriptors.html">py2store.utils.cache_descriptors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/utils/cumul_aggreg_write.html">py2store.utils.cumul_aggreg_write</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/utils/explicit.html">py2store.utils.explicit</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/utils/glom.html">py2store.utils.glom</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/utils/mappify.html">py2store.utils.mappify</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/utils/mg_selectors.html">py2store.utils.mg_selectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/utils/mongoquery.html">py2store.utils.mongoquery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/utils/signatures.html">py2store.utils.signatures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/utils/sliceable.html">py2store.utils.sliceable</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/utils/timeseries_caching.html">py2store.utils.timeseries_caching</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/py2store/utils/uri_utils.html">py2store.utils.uri_utils</a></li>
 </ul>
 
 <div class="relations">
@@ -662,7 +653,7 @@
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;2020.
+      &copy;NO COPYRIGHT.
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 3.3.1</a>
