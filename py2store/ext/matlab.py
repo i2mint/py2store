@@ -4,7 +4,7 @@ a data object layer for matlab
 from io import BytesIO
 from contextlib import suppress
 
-with suppress(ModuleNotFoundError):
+with suppress(ModuleNotFoundError, ImportError):
     from py2store.ext.hdf import HdfFileReader, HdfDatasetReader, HdfRefReader
 
 

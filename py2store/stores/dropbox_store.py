@@ -1,5 +1,7 @@
 """Forwards to dropboxdol
 """
+from contextlib import suppress
 
-from dropboxdol import *
+with suppress(ModuleNotFoundError):
+    from dropboxdol import *
 
