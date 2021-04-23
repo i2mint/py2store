@@ -1,3 +1,6 @@
+"""
+utils from strings
+"""
 import string
 
 dflt_formatter = string.Formatter()

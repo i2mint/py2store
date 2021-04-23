@@ -1,3 +1,6 @@
+"""
+a data object layer for matlab
+"""
 from io import BytesIO
 from py2store.ext.hdf import HdfFileReader, HdfDatasetReader, HdfRefReader
 

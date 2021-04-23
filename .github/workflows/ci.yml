@@ -1,5 +1,5 @@
 name: Continuous Integration
-on: [push, pull_request]
+on: [ push, pull_request ]
 env:
   PROJECT_NAME: py2store
 jobs:
@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.8]
+        python-version: [ 3.8 ]
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
@@ -29,7 +29,7 @@ jobs:
         run: black --line-length=79 .
 
       - name: Validate docstrings
-        run: pylint ./$PROJECT_NAME --ignore=tests,examples --disable=all --enable=C0114,C0115,C0116
+        run: pylint ./$PROJECT_NAME --ignore=tests,examples,test_* --disable=all --enable=C0114
 
       - name: Test
         run: pytest --doctest-modules -v $PROJECT_NAME
@@ -40,7 +40,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.8]
+        python-version: [ 3.8 ]
     steps:
       - uses: actions/checkout@v2
         with:

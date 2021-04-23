@@ -1,3 +1,6 @@
+"""
+stores to operate on local files
+"""
 import os
 from functools import wraps
 

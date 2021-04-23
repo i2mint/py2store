@@ -1,3 +1,6 @@
+"""
+descriptors to cache data
+"""
 ##############################################################################
 # Copyright (c) 2003 Zope Foundation and Contributors.
 # All Rights Reserved.

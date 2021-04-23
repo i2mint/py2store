@@ -1,3 +1,6 @@
+"""
+walking through kv stores
+"""
 from py2store import cached_keys, KvReader
 from py2store.util import copy_attrs
 from collections.abc import Mapping

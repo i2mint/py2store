@@ -1,3 +1,6 @@
+"""
+base classes to work with local files
+"""
 import os
 import re
 from glob import iglob

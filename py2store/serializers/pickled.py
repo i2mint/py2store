@@ -1,3 +1,6 @@
+"""
+functions to pickle objects
+"""
 import pickle
 import marshal
 from functools import partial

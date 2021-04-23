@@ -1,3 +1,6 @@
+"""
+stores that implement various write caching algorithms
+"""
 from py2store.utils.cumul_aggreg_write import (
     join_byte_values_and_key_as_current_utc_milliseconds,
     CumulAggregWriteWithAutoFlush,

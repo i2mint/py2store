@@ -1,3 +1,6 @@
+"""
+utils to add sliceable functionality to stores
+"""
 from itertools import islice
 from collections.abc import Mapping
 

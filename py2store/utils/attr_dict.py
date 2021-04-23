@@ -1,3 +1,6 @@
+"""
+a data object layer for object attributes
+"""
 from collections import abc
 from keyword import iskeyword
 from warnings import warn

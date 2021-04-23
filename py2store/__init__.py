@@ -1,3 +1,6 @@
+"""
+Your portal to many Data Object Layer goodies
+"""
 import os
 from contextlib import suppress
 

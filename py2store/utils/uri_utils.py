@@ -1,3 +1,6 @@
+"""
+utils to work with URIs
+"""
 from urllib.parse import urlsplit
 
 

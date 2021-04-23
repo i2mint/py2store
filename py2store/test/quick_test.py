@@ -1,3 +1,6 @@
+"""
+a quick test
+"""
 def test_quick_store():
     from py2store import QuickStore
 

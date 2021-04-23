@@ -1,3 +1,6 @@
+"""
+showing how to add the knowledge of the 'last key inserted' to stores
+"""
 from functools import wraps, partial
 
 NoKeyWasWrittenToYet = type("NoKeyWasWrittenToYet", (), {})()

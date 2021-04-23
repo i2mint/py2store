@@ -1,3 +1,6 @@
+"""
+a data object layer for zipfile
+"""
 import inspect
 import os
 from functools import wraps
