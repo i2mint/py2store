@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>dol.trans &#8212; py2store 0.1.0 documentation</title>
+    <title>dol.trans &#8212; py2store 0.1.1 documentation</title>
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css" />
@@ -1489,6 +1489,26 @@
     <span class="bp">cls</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">=</span> <span class="n">name</span>
 
     <span class="k">return</span> <span class="bp">cls</span>
+
+    <span class="c1"># name = name or (persister_cls.__qualname__ + &quot;PWrapped&quot;)</span>
+    <span class="c1">#</span>
+    <span class="c1"># cls = type(name, (Store,), {})</span>
+    <span class="c1">#</span>
+    <span class="c1"># # TODO: Investigate sanity and alternatives (cls = type(name, (Store, persister_cls), {}) leads to MRO problems)</span>
+    <span class="c1"># for attr in set(dir(persister_cls)) - set(dir(Store)):</span>
+    <span class="c1">#     persister_cls_attribute = getattr(persister_cls, attr)</span>
+    <span class="c1">#     setattr(cls, attr, persister_cls_attribute)  # copy the attribute over to cls</span>
+    <span class="c1">#</span>
+    <span class="c1"># if hasattr(persister_cls, &#39;__doc__&#39;):</span>
+    <span class="c1">#     cls.__doc__ = persister_cls.__doc__</span>
+    <span class="c1">#</span>
+    <span class="c1"># @wraps(persister_cls.__init__)</span>
+    <span class="c1"># def __init__(self, *args, **kwargs):</span>
+    <span class="c1">#     super(cls, self).__init__(persister_cls(*args, **kwargs))</span>
+    <span class="c1">#</span>
+    <span class="c1"># cls.__init__ = __init__</span>
+    <span class="c1">#</span>
+    <span class="c1"># return cls</span>
 
 
 <span class="k">def</span> <span class="nf">_wrap_outcoming</span><span class="p">(</span>
