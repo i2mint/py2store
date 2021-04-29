@@ -24,9 +24,9 @@ class AffineConverter(object):
     10.0
     """
 
-    def __init__(self, offset=0.0, scale=1.0):
-        self.offset = offset
+    def __init__(self, scale=1.0, offset=0.0):
         self.scale = scale
+        self.offset = offset
 
     @classmethod
     def from_slope_and_intercept(cls, slope=1.0, intercept=0.0):
@@ -45,9 +45,7 @@ class AffineConverter(object):
         return (self.inv(x) for x in seq)
 
 
-def get_affine_converter_and_inverse(
-    offset=0, scale=1, source_type_cast=None, target_type_cast=None
-):
+def get_affine_converter_and_inverse(scale=1, offset=0, source_type_cast=None, target_type_cast=None):
     """
     Getting two affine functions with given scale and offset, that are inverse of each other. Namely (for input val):
         (val - offset) * scale and val / scale + offset
@@ -66,7 +64,7 @@ def get_affine_converter_and_inverse(
 
     See also: ocore.utils.conversion.AffineConverter
 
-    >>> affine_converter, inverse_affine_converter = get_affine_converter_and_inverse(scale=0.5, offset=1)
+    >>> affine_converter, inverse_affine_converter = get_affine_converter_and_inverse(scale=0.5,offset=1)
     >>> affine_converter(0)
     -0.5
     >>> affine_converter(10)
@@ -75,8 +73,7 @@ def get_affine_converter_and_inverse(
     9.0
     >>> inverse_affine_converter(4.5)
     10.0
-    >>> affine_converter, inverse_affine_converter = get_affine_converter_and_inverse(
-    ...                                                 offset=1, scale=0.5, target_type_cast=int)
+    >>> affine_converter, inverse_affine_converter = get_affine_converter_and_inverse(scale=0.5,offset=1,target_type_cast=int)
     >>> affine_converter(10)
     4
     """
