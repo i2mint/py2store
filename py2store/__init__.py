@@ -106,6 +106,7 @@ from py2store.slib.s_zipfile import (
     ZipFilesReader,
     FilesOfZip,
     FlatZipFilesReader,
+    mk_flatzips_store,
 )
 
 from py2store.naming import StrTupleDict
