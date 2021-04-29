@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>py2store.utils.affine_conversion &#8212; py2store 0.1.1 documentation</title>
+    <title>py2store.utils.affine_conversion &#8212; py2store 0.1.2 documentation</title>
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css" />
@@ -59,9 +59,9 @@
 <span class="sd">    10.0</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">offset</span> <span class="o">=</span> <span class="n">offset</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">scale</span> <span class="o">=</span> <span class="n">scale</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">offset</span> <span class="o">=</span> <span class="n">offset</span>
 
     <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">from_slope_and_intercept</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">slope</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">intercept</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
@@ -81,7 +81,7 @@
 
 
 <div class="viewcode-block" id="get_affine_converter_and_inverse"><a class="viewcode-back" href="../../../test.html#py2store.utils.affine_conversion.get_affine_converter_and_inverse">[docs]</a><span class="k">def</span> <span class="nf">get_affine_converter_and_inverse</span><span class="p">(</span>
-    <span class="n">offset</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">source_type_cast</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">target_type_cast</span><span class="o">=</span><span class="kc">None</span>
+    <span class="n">scale</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">source_type_cast</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">target_type_cast</span><span class="o">=</span><span class="kc">None</span>
 <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Getting two affine functions with given scale and offset, that are inverse of each other. Namely (for input val):</span>
@@ -101,7 +101,7 @@
 
 <span class="sd">    See also: ocore.utils.conversion.AffineConverter</span>
 
-<span class="sd">    &gt;&gt;&gt; affine_converter, inverse_affine_converter = get_affine_converter_and_inverse(scale=0.5, offset=1)</span>
+<span class="sd">    &gt;&gt;&gt; affine_converter, inverse_affine_converter = get_affine_converter_and_inverse(scale=0.5,offset=1)</span>
 <span class="sd">    &gt;&gt;&gt; affine_converter(0)</span>
 <span class="sd">    -0.5</span>
 <span class="sd">    &gt;&gt;&gt; affine_converter(10)</span>
@@ -110,8 +110,7 @@
 <span class="sd">    9.0</span>
 <span class="sd">    &gt;&gt;&gt; inverse_affine_converter(4.5)</span>
 <span class="sd">    10.0</span>
-<span class="sd">    &gt;&gt;&gt; affine_converter, inverse_affine_converter = get_affine_converter_and_inverse(</span>
-<span class="sd">    ...                                                 offset=1, scale=0.5, target_type_cast=int)</span>
+<span class="sd">    &gt;&gt;&gt; affine_converter, inverse_affine_converter = get_affine_converter_and_inverse(scale=0.5,offset=1,target_type_cast=int)</span>
 <span class="sd">    &gt;&gt;&gt; affine_converter(10)</span>
 <span class="sd">    4</span>
 <span class="sd">    &quot;&quot;&quot;</span>

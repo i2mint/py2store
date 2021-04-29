@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>py2store.filesys &#8212; py2store 0.1.1 documentation</title>
+    <title>py2store.filesys &#8212; py2store 0.1.2 documentation</title>
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" type="text/css" href="_static/graphviz.css" />
@@ -1075,7 +1075,7 @@ will work:
 <p>utils to carry out affine transformations (of indices)</p>
 <dl class="py class">
 <dt id="py2store.utils.affine_conversion.AffineConverter">
-<em class="property">class </em><code class="sig-prename descclassname">py2store.utils.affine_conversion.</code><code class="sig-name descname">AffineConverter</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">offset</span><span class="o">=</span><span class="default_value">0.0</span></em>, <em class="sig-param"><span class="n">scale</span><span class="o">=</span><span class="default_value">1.0</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/py2store/utils/affine_conversion.html#AffineConverter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.utils.affine_conversion.AffineConverter" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">py2store.utils.affine_conversion.</code><code class="sig-name descname">AffineConverter</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">scale</span><span class="o">=</span><span class="default_value">1.0</span></em>, <em class="sig-param"><span class="n">offset</span><span class="o">=</span><span class="default_value">0.0</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/py2store/utils/affine_conversion.html#AffineConverter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.utils.affine_conversion.AffineConverter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Getting a callable that will perform an affine conversion.
 Note, it does it as</p>
 <blockquote>
@@ -1101,7 +1101,7 @@ Note, it does it as</p>
 
 <dl class="py function">
 <dt id="py2store.utils.affine_conversion.get_affine_converter_and_inverse">
-<code class="sig-prename descclassname">py2store.utils.affine_conversion.</code><code class="sig-name descname">get_affine_converter_and_inverse</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">offset</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">scale</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">source_type_cast</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">target_type_cast</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/py2store/utils/affine_conversion.html#get_affine_converter_and_inverse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.utils.affine_conversion.get_affine_converter_and_inverse" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">py2store.utils.affine_conversion.</code><code class="sig-name descname">get_affine_converter_and_inverse</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">scale</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">offset</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">source_type_cast</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">target_type_cast</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/py2store/utils/affine_conversion.html#get_affine_converter_and_inverse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2store.utils.affine_conversion.get_affine_converter_and_inverse" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="simple">
 <dt>Getting two affine functions with given scale and offset, that are inverse of each other. Namely (for input val):</dt><dd><p>(val - offset) * scale and val / scale + offset</p>
 </dd>
@@ -1117,7 +1117,7 @@ be further cast to a given type.
 <p>Note: Code is a lot more complex than the basic operations it performs. The reason was a worry of efficiency since
 the functions that are returned are intended to be used in long loops.</p>
 <p>See also: ocore.utils.conversion.AffineConverter</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">affine_converter</span><span class="p">,</span> <span class="n">inverse_affine_converter</span> <span class="o">=</span> <span class="n">get_affine_converter_and_inverse</span><span class="p">(</span><span class="n">scale</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">affine_converter</span><span class="p">,</span> <span class="n">inverse_affine_converter</span> <span class="o">=</span> <span class="n">get_affine_converter_and_inverse</span><span class="p">(</span><span class="n">scale</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span><span class="n">offset</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">affine_converter</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 <span class="go">-0.5</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">affine_converter</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
@@ -1126,8 +1126,7 @@ the functions that are returned are intended to be used in long loops.</p>
 <span class="go">9.0</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">inverse_affine_converter</span><span class="p">(</span><span class="mf">4.5</span><span class="p">)</span>
 <span class="go">10.0</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">affine_converter</span><span class="p">,</span> <span class="n">inverse_affine_converter</span> <span class="o">=</span> <span class="n">get_affine_converter_and_inverse</span><span class="p">(</span>
-<span class="gp">... </span>                                                <span class="n">offset</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">target_type_cast</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">affine_converter</span><span class="p">,</span> <span class="n">inverse_affine_converter</span> <span class="o">=</span> <span class="n">get_affine_converter_and_inverse</span><span class="p">(</span><span class="n">scale</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span><span class="n">offset</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">target_type_cast</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">affine_converter</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
 <span class="go">4</span>
 </pre></div>

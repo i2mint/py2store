@@ -45,7 +45,9 @@ class AffineConverter(object):
         return (self.inv(x) for x in seq)
 
 
-def get_affine_converter_and_inverse(scale=1, offset=0, source_type_cast=None, target_type_cast=None):
+def get_affine_converter_and_inverse(
+    scale=1, offset=0, source_type_cast=None, target_type_cast=None
+):
     """
     Getting two affine functions with given scale and offset, that are inverse of each other. Namely (for input val):
         (val - offset) * scale and val / scale + offset
