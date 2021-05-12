@@ -350,6 +350,8 @@ def set_obj(
     func_key=lambda k: os.path.splitext(k)[1],
 ):
     """A quick way to get an object, with default... everything (but the key, you know, a clue of what you want)"""
+    if isinstance(store, LocalBinaryStore) and store._path_format == '':
+        k = os.path.abspath(os.path.expanduser(k))
 
     trans_func = outgoing_val_trans_for_key.get(
         func_key(k), dflt_outgoing_val_trans_for_key
