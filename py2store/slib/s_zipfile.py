@@ -21,17 +21,20 @@ class COMPRESSION:
     ZIP_STORED = (
         ZIP_STORED  # The numeric constant for an uncompressed archive member.
     )
-    ZIP_DEFLATED = ZIP_DEFLATED  # The numeric constant for the usual ZIP compression method. This requires zlib module.
-    ZIP_BZIP2 = ZIP_BZIP2  # The numeric constant for the BZIP2 compression method. This requires the bz2 module.
-    ZIP_LZMA = ZIP_LZMA  # The numeric constant for the LZMA compression method. This requires the lzma module.
+    ZIP_DEFLATED = ZIP_DEFLATED  # The numeric constant for the usual ZIP compression method.
+    # This requires zlib module.
+    ZIP_BZIP2 = ZIP_BZIP2  # The numeric constant for the BZIP2 compression method. This requires
+    # the bz2 module.
+    ZIP_LZMA = ZIP_LZMA  # The numeric constant for the LZMA compression method. This requires
+    # the lzma module.
 
 
 def func_conjunction(func1, func2):
     """Returns a function that is equivalent to lambda x: func1(x) and func2(x)"""
     # Should assert that the input paramters of func1 and func2 are the same
     assert (
-        inspect.signature(func1).parameters
-        == inspect.signature(func2).parameters
+            inspect.signature(func1).parameters
+            == inspect.signature(func2).parameters
     )
 
     @wraps(func2)
@@ -54,12 +57,14 @@ class ZipReader(KvReader):
 
     When a file, the value return is bytes, as usual.
 
-    When a directory, the value returned is a ``ZipReader`` itself, with all params the same, except for the ``prefix``
+    When a directory, the value returned is a ``ZipReader`` itself, with all params the same,
+    except for the ``prefix``
      which serves `to specify the subfolder (that is, ``prefix`` acts as a filter).
 
     Note: If you get data zipped by a mac, you might get some junk along with it.
     Namely `__MACOSX` folders `.DS_Store` files. I won't rant about it, since others have.
-    But you might find it useful to remove them from view. One choice is to use `py2store.trans.filt_iter`
+    But you might find it useful to remove them from view. One choice is to use
+    `py2store.trans.filt_iter`
     to get a filtered view of the zips contents. In most cases, this should do the job:
     ```
     # applied to store instance or class:
@@ -88,7 +93,8 @@ class ZipReader(KvReader):
         # >>> # when you ask for the contents for a key that's a directory,
         # >>> # you get a ZipReader filtered for that prefix:
         # >>> s['odir/app/data/audio/']
-        # ZipReader('/path/to/some_zip_file.zip', 'odir/app/data/audio/', {}, <function take_everything at 0x1538999e0>)
+        # ZipReader('/path/to/some_zip_file.zip', 'odir/app/data/audio/', {}, <function
+        take_everything at 0x1538999e0>)
         # >>> # Often, you only want files (not directories)
         # >>> # You can filter directories out using the file_info_filt argument
         # >>> s = ZipReader('/path/to/some_zip_file.zip', file_info_filt=ZipReader.FILES_ONLY)
@@ -117,7 +123,7 @@ class ZipReader(KvReader):
     """
 
     def __init__(
-        self, zip_file, prefix='', open_kws=None, file_info_filt=None
+            self, zip_file, prefix='', open_kws=None, file_info_filt=None
     ):
         """
 
@@ -125,7 +131,8 @@ class ZipReader(KvReader):
             zip_file: A path to make ZipFile(zip_file)
             prefix: A prefix to filter by.
             open_kws:  To be used when doing a ZipFile(...).open
-            file_info_filt: Filter for the FileInfo objects (see https://docs.python.org/3/library/zipfile.html)
+            file_info_filt: Filter for the FileInfo objects (see
+            https://docs.python.org/3/library/zipfile.html)
                 of the paths listed in the zip file
         """
         self.open_kws = open_kws or {}
@@ -146,7 +153,7 @@ class ZipReader(KvReader):
 
     @classmethod
     def for_files_only(
-        cls, zip_file, prefix='', open_kws=None, file_info_filt=None
+            cls, zip_file, prefix='', open_kws=None, file_info_filt=None
     ):
         if file_info_filt is None:
             file_info_filt = ZipReader.FILES_ONLY
@@ -207,17 +214,18 @@ class ZipReader(KvReader):
 
 
 class ZipFilesReader(FileCollection, KvReader):
-    """A local file reader whose keys are the zip filepaths of the rootdir and values are corresponding ZipReaders.
+    """A local file reader whose keys are the zip filepaths of the rootdir and values are
+    corresponding ZipReaders.
     """
 
     def __init__(
-        self,
-        rootdir,
-        subpath=r'.+\.zip',
-        pattern_for_field=None,
-        max_levels=0,
-        zip_reader=ZipReader,
-        **zip_reader_kwargs,
+            self,
+            rootdir,
+            subpath=r'.+\.zip',
+            pattern_for_field=None,
+            max_levels=0,
+            zip_reader=ZipReader,
+            **zip_reader_kwargs,
     ):
         super().__init__(rootdir, subpath, pattern_for_field, max_levels)
         self.zip_reader = zip_reader
@@ -240,7 +248,8 @@ class ZipFilesReader(FileCollection, KvReader):
 
 
 class ZipFilesReaderAndBytesWriter(ZipFilesReader):
-    """Like ZipFilesReader, but the ability to write bytes (assumed to be valid bytes of the zip format) to a key
+    """Like ZipFilesReader, but the ability to write bytes (assumed to be valid bytes of the zip
+    format) to a key
     """
 
     def __setitem__(self, k, v):
@@ -251,10 +260,12 @@ class ZipFilesReaderAndBytesWriter(ZipFilesReader):
 ZipFileReader = ZipFilesReader  # back-compatibility alias
 
 
-# TODO: Add easy connection to ExplicitKeymapReader and other path trans and cache useful for the folder of zips context
+# TODO: Add easy connection to ExplicitKeymapReader and other path trans and cache useful for the
+#  folder of zips context
 class FlatZipFilesReader(ZipFilesReader):
     """Read the union of the contents of multiple zip files.
-    A local file reader whose keys are the zip filepaths of the rootdir and values are corresponding ZipReaders.
+    A local file reader whose keys are the zip filepaths of the rootdir and values are
+    corresponding ZipReaders.
 
     """
 
@@ -270,13 +281,13 @@ class FlatZipFilesReader(ZipFilesReader):
 
     def __iter__(self):
         for (
-            zip_relpath,
-            zip_reader,
+                zip_relpath,
+                zip_reader,
         ) in self._zip_readers.items():  # go through the zip paths
             for (
-                path_in_zip
+                    path_in_zip
             ) in (
-                zip_reader
+                    zip_reader
             ):  # go through the keys of the ZipReader (the zipped filepaths)
                 yield (zip_relpath, path_in_zip)
 
@@ -289,16 +300,17 @@ class FlatZipFilesReader(ZipFilesReader):
 
 
 def mk_flatzips_store(
-    dir_of_zips,
-    zip_pair_path_preproc=sorted,
-    mk_store=FlatZipFilesReader,
-    **extra_mk_store_kwargs,
+        dir_of_zips,
+        zip_pair_path_preproc=sorted,
+        mk_store=FlatZipFilesReader,
+        **extra_mk_store_kwargs,
 ):
     """A store so that you can work with a folder that has a bunch of zip files,
     as if they've all been extracted in the same folder.
     Note that `zip_pair_path_preproc` can be used to control how to resolve key conflicts
     (i.e. when you get two different zip files that have a same path in their contents).
-    The last path encountered by `zip_pair_path_preproc(zip_path_pairs)` is the one that will be used, so
+    The last path encountered by `zip_pair_path_preproc(zip_path_pairs)` is the one that will be
+    used, so
     one should make `zip_pair_path_preproc` act accordingly.
     """
     from py2store.utils.explicit import ExplicitKeymapReader
@@ -383,7 +395,8 @@ class _EmptyZipReader(KvReader):
         #
         #     def read(self):
         #         raise EmptyZipError(
-        #             f"The zip file doesn't exist yet! Nothing was written in it: {self.zip_filepath}")
+        #             f"The zip file doesn't exist yet! Nothing was written in it: {
+        #             self.zip_filepath}")
         #
         #     def __enter__(self, ):
         #         return self
@@ -400,22 +413,60 @@ from zipfile import BadZipFile
 DFLT_COMPRESSION = COMPRESSION.ZIP_DEFLATED
 
 
-# TODO: Revise ZipReader and ZipFilesReader architecture and make ZipStore be a subclass of Reader if poss
+# TODO: Revise ZipReader and ZipFilesReader architecture and make ZipStore be a subclass of
+#  Reader if poss
 # TODO: What if I just want to zip a (single) file. What does py2store offer for that?
-# TODO: How about set_obj (in misc.py)? Make it recognize the .zip extension and subextension (e.g. .txt.zip) serialize
+# TODO: How about set_obj (in misc.py)? Make it recognize the .zip extension and subextension (
+#  e.g. .txt.zip) serialize
 class ZipStore(KvPersister):
     """Zip read and writing.
-    When you want to read zips, there's the `FilesOfZip`, `ZipReader`, or `ZipFilesReader` we know and love.
+    When you want to read zips, there's the `FilesOfZip`, `ZipReader`, or `ZipFilesReader` we
+    know and love.
 
     Sometimes though, you want to write to zips too. For this, we have `ZipStore`.
 
     Since ZipStore can write to a zip, it's read functionality is not going to assume static data,
     and cache things, as your favorite zip readers did.
-    This, and the acrobatics need to disguise the weird zipfile into something more... key-value natural,
+    This, and the acrobatics need to disguise the weird zipfile into something more... key-value
+    natural,
     makes for a not so efficient store, out of the box.
 
     I advise using one of the zip readers if all you need to do is read, or subclassing or
      wrapping ZipStore with caching layers if it is appropriate to you.
+
+    Let's verify that a ZipStore can indeed write data. First, we'll set things up!
+
+    >>> from tempfile import gettempdir
+    >>> import os
+    >>>
+    >>> rootdir = gettempdir()
+    >>>
+    >>> # preparation
+    >>> test_zipfile = os.path.join(rootdir, 'zipstore_test_file.zip')
+    >>> if os.path.isfile(test_zipfile):
+    ...     os.remove(test_zipfile)
+    >>> assert not os.path.isfile(test_zipfile)
+
+    Okay, test_zipfile doesn't exist (but will soon...)
+
+    >>> z = ZipStore(test_zipfile)
+
+    See that the file still doesn't exist (it will only be created when we start writing)
+    >>> assert not os.path.isfile(test_zipfile)
+    >>> list(z)  # z "is" empty (which makes sense?)
+    []
+
+    Now let's write something interesting (notice, it has to be in bytes):
+
+    >>> z['foo'] = b'bar'
+    >>> list(z)  # now we have something in z
+    ['foo']
+    >>> z['foo']  # and that thing is what we put there
+    b'bar'
+
+    And indeed we have a zip file now:
+
+    >>> assert os.path.isfile(test_zipfile)
 
     """
 
@@ -431,11 +482,11 @@ class ZipStore(KvPersister):
 
     # @wraps(ZipReader.__init__)
     def __init__(
-        self,
-        zip_filepath,
-        compression=DFLT_COMPRESSION,
-        allow_overwrites=True,
-        pwd=None,
+            self,
+            zip_filepath,
+            compression=DFLT_COMPRESSION,
+            allow_overwrites=True,
+            pwd=None,
     ):
         self.zip_filepath = fullpath(zip_filepath)
         self.zip_filepath = zip_filepath
@@ -483,13 +534,13 @@ class ZipStore(KvPersister):
     def __contains__(self, k):
         try:
             with self.zip_reader.open(
-                k, **dict(self._open_kw, mode='r')
+                    k, **dict(self._open_kw, mode='r')
             ) as fp:
                 pass
             return True
         except (
-            KeyError,
-            BadZipFile,
+                KeyError,
+                BadZipFile,
         ):  # BadZipFile is to catch when zip file exists, but is empty.
             return False
 
@@ -505,7 +556,8 @@ class ZipStore(KvPersister):
     #             if isinstance(e, EmptyZipError) or e.args[-1].endswith('archive'):
     #                 pass  #
     #             else:
-    #                 raise OverwriteNotAllowed(f"You're not allowed to overwrite an existing key: {k}")
+    #                 raise OverwriteNotAllowed(f"You're not allowed to overwrite an existing
+    #                 key: {k}")
 
     # TODO: Repeated with zip_writer logic. Consider DRY possibilities.
     def __setitem__(self, k, v):
@@ -515,7 +567,8 @@ class ZipStore(KvPersister):
             else:
                 if self.zip_writer_opened:
                     raise OverwriteNotAllowed(
-                        f"When using the context mode, you're not allowed to overwrite an existing key: {k}"
+                        f"When using the context mode, you're not allowed to overwrite an "
+                        f"existing key: {k}"
                     )
                 else:
                     raise OverwriteNotAllowed(
@@ -524,12 +577,12 @@ class ZipStore(KvPersister):
 
         if self.zip_writer_opened:
             with self.zip_writer.open(
-                k, **dict(self._open_kw, mode='w')
+                    k, **dict(self._open_kw, mode='w')
             ) as fp:
                 return fp.write(v)
         else:
             with ZipFile(
-                self.zip_filepath, mode='a', **self._zipfile_init_kw
+                    self.zip_filepath, mode='a', **self._zipfile_init_kw
             ) as zip_writer:
                 with zip_writer.open(k, **dict(self._open_kw, mode='w')) as fp:
                     return fp.write(v)
@@ -539,7 +592,8 @@ class ZipStore(KvPersister):
             os.system(f'zip -d {self.zip_filepath} {k}')
         except Exception as e:
             raise KeyError(f'{e.__class__}: {e.args}')
-        # raise NotImplementedError("zipfile, the backend of ZipStore, doesn't support deletion, so neither will we.")
+        # raise NotImplementedError("zipfile, the backend of ZipStore, doesn't support deletion,
+        # so neither will we.")
 
     def open(self):
         self.zip_writer = ZipFile(
@@ -559,9 +613,9 @@ class ZipStore(KvPersister):
         self.close()
         return False
 
-
 # TODO: The way prefix and file_info_filt is handled is not efficient
-# TODO: prefix is silly: less general than filename_filt would be, and not even producing relative paths
+# TODO: prefix is silly: less general than filename_filt would be, and not even producing
+#  relative paths
 # (especially when getitem returns subdirs)
 
 
