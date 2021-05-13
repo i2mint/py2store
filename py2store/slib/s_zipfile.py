@@ -452,6 +452,7 @@ class ZipStore(KvPersister):
     >>> z = ZipStore(test_zipfile)
 
     See that the file still doesn't exist (it will only be created when we start writing)
+
     >>> assert not os.path.isfile(test_zipfile)
     >>> list(z)  # z "is" empty (which makes sense?)
     []
