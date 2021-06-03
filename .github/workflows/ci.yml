@@ -26,7 +26,7 @@ jobs:
           isee install-requires
 
       - name: Format source code
-        run: black --line-length=79 .
+        run: black --line-length=88 .
 
       # Documentation on "enable" codes:
       #   http://pylint.pycqa.org/en/latest/technical_reference/features.html#basic-checker-messages
@@ -68,7 +68,7 @@ jobs:
           isee install-requires
 
       - name: Format source code
-        run: black --line-length=79 .
+        run: black --line-length=88 .
 
       - name: Update version number
         run: |
