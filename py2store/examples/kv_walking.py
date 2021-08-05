@@ -7,24 +7,26 @@ from collections.abc import Mapping
 
 
 # Pattern:
-@cached_keys(keys_cache=set, name='SrcReader')
-class SrcReader(KvReader):
-    def __init__(self, src, src_to_keys, key_to_obj):
-        self.src = src
-        self.src_to_keys = src_to_keys
-        self.key_to_obj = key_to_obj
-        copy_attrs(
-            src, to_obj=self, attrs=('__name__', '__qualname__', '__module__')
-        )
-
-    def __iter__(self):
-        yield from self.src_to_keys(self, self.src)
-
-    def __getitem__(self, k):
-        return self.key_to_obj(self, self.src, k)
-
-    # def __repr__(self):
-    #     return f"{self.__class__.__qualname__}({self.src}, {self._key_filt})"
+# TODO: Educational: This creates havoc in doctests. See why.
+# Note: No users, so perhaps not needed.
+# @cached_keys(keys_cache=set, name='SrcReader')
+# class SrcReader(KvReader):
+#     def __init__(self, src, src_to_keys, key_to_obj):
+#         self.src = src
+#         self.src_to_keys = src_to_keys
+#         self.key_to_obj = key_to_obj
+#         copy_attrs(
+#             src, to_obj=self, attrs=('__name__', '__qualname__', '__module__')
+#         )
+#
+#     def __iter__(self):
+#         yield from self.src_to_keys(self, self.src)
+#
+#     def __getitem__(self, k):
+#         return self.key_to_obj(self, self.src, k)
+#
+#     # def __repr__(self):
+#     #     return f"{self.__class__.__qualname__}({self.src}, {self._key_filt})"
 
 
 inf = float('infinity')
