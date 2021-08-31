@@ -209,9 +209,7 @@ def _test_dsv_of_list(n_tests=100, max_n_elements=10, max_sep_length=3):
             sep = random_string(sep_length, non_alphanumeric)
             dsv_line = dsv_of_list(words, sep)
             dsv_words = list_of_dsv(dsv_line, sep)
-            assert all(
-                dsv_words == words
-            ), f'Expected:\n\t{words}\nGot:\n\t{dsv_words}'
+            assert all(dsv_words == words), f'Expected:\n\t{words}\nGot:\n\t{dsv_words}'
 
 
 if __name__ == '__main__':

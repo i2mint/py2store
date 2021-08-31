@@ -491,8 +491,7 @@ def percentage(string, match):
 
 
 class FixedTzOffset(tzinfo):
-    """Fixed offset in minutes east from UTC.
-    """
+    """Fixed offset in minutes east from UTC."""
 
     ZERO = timedelta(0)
 
@@ -501,11 +500,7 @@ class FixedTzOffset(tzinfo):
         self._name = name
 
     def __repr__(self):
-        return '<%s %s %s>' % (
-            self.__class__.__name__,
-            self._name,
-            self._offset,
-        )
+        return '<%s %s %s>' % (self.__class__.__name__, self._name, self._offset,)
 
     def utcoffset(self, dt):
         return self._offset
@@ -669,8 +664,7 @@ ALLOWED_TYPES = set(list('nbox%fFegwWdDsS') + ['t' + c for c in 'ieahgcts'])
 
 
 def extract_format(format, extra_types):
-    """Pull apart the format [[fill]align][0][width][.precision][type]
-    """
+    """Pull apart the format [[fill]align][0][width][.precision][type]"""
     fill = align = None
     if format[0] in '<>=^':
         align = format[0]
@@ -711,14 +705,11 @@ def extract_format(format, extra_types):
     return locals()
 
 
-PARSE_RE = re.compile(
-    r'''({{|}}|{\w*(?:(?:\.\w+)|(?:\[[^\]]+\]))*(?::[^}]+)?})'''
-)
+PARSE_RE = re.compile(r'''({{|}}|{\w*(?:(?:\.\w+)|(?:\[[^\]]+\]))*(?::[^}]+)?})''')
 
 
 class Parser(object):
-    """Encapsulate a format string that may be used to parse other strings.
-    """
+    """Encapsulate a format string that may be used to parse other strings."""
 
     def __init__(self, format, extra_types=None, case_sensitive=False):
         # a mapping of a name as in {hello.world} to a regex-group compatible
@@ -753,10 +744,7 @@ class Parser(object):
 
     def __repr__(self):
         if len(self._format) > 20:
-            return '<%s %r>' % (
-                self.__class__.__name__,
-                self._format[:17] + '...',
-            )
+            return '<%s %r>' % (self.__class__.__name__, self._format[:17] + '...',)
         return '<%s %r>' % (self.__class__.__name__, self._format)
 
     @property
@@ -769,8 +757,7 @@ class Parser(object):
                 e = str(sys.exc_info()[1])
                 if e.endswith('this version only supports 100 named groups'):
                     raise TooManyFields(
-                        'sorry, you are attempting to parse '
-                        'too many complex fields'
+                        'sorry, you are attempting to parse ' 'too many complex fields'
                     )
         return self.__search_re
 
@@ -785,14 +772,12 @@ class Parser(object):
                 e = str(sys.exc_info()[1])
                 if e.endswith('this version only supports 100 named groups'):
                     raise TooManyFields(
-                        'sorry, you are attempting to parse '
-                        'too many complex fields'
+                        'sorry, you are attempting to parse ' 'too many complex fields'
                     )
             except re.error:
                 raise NotImplementedError(
                     'Group names (e.g. (?P<name>) can '
-                    "cause failure, as they are not escaped properly: '%s'"
-                    % expression
+                    "cause failure, as they are not escaped properly: '%s'" % expression
                 )
         return self.__match_re
 
@@ -834,12 +819,7 @@ class Parser(object):
             return Match(self, m)
 
     def findall(
-        self,
-        string,
-        pos=0,
-        endpos=None,
-        extra_types=None,
-        evaluate_result=True,
+        self, string, pos=0, endpos=None, extra_types=None, evaluate_result=True,
     ):
         """Search "string" for all occurrences of "format".
 
@@ -901,14 +881,10 @@ class Parser(object):
 
         # now figure the match spans
         spans = dict((n, m.span(name_map[n])) for n in named_fields)
-        spans.update(
-            (i, m.span(n + 1)) for i, n in enumerate(self._fixed_fields)
-        )
+        spans.update((i, m.span(n + 1)) for i, n in enumerate(self._fixed_fields))
 
         # and that's our result
-        return Result(
-            fixed_fields, self._expand_named_fields(named_fields), spans
-        )
+        return Result(fixed_fields, self._expand_named_fields(named_fields), spans)
 
     def _regex_replace(self, match):
         return '\\' + match.group(1)
@@ -1048,15 +1024,10 @@ class Parser(object):
                 width = '{1,%s}' % int(format['width'])
             else:
                 width = '+'
-            s = '\\d{w}|0[xX][0-9a-fA-F]{w}|0[bB][01]{w}|0[oO][0-7]{w}'.format(
-                w=width
-            )
+            s = '\\d{w}|0[xX][0-9a-fA-F]{w}|0[bB][01]{w}|0[oO][0-7]{w}'.format(w=width)
             self._type_conversions[group] = int_convert(10)
         elif type == 'ti':
-            s = (
-                r'(\d{4}-\d\d-\d\d)((\s+|T)%s)?(Z|\s*[-+]\d\d:?\d\d)?'
-                % TIME_PAT
-            )
+            s = r'(\d{4}-\d\d-\d\d)((\s+|T)%s)?(Z|\s*[-+]\d\d:?\d\d)?' % TIME_PAT
             n = self._group_index
             self._type_conversions[group] = partial(
                 date_convert, ymd=n + 1, hms=n + 4, tz=n + 7
@@ -1101,11 +1072,7 @@ class Parser(object):
             self._group_index += 8
         elif type == 'th':
             # slight flexibility here from the stock Apache format
-            s = r'(\d{1,2}[-/]%s[-/]\d{4}):%s%s' % (
-                MONTHS_PAT,
-                TIME_PAT,
-                TZ_PAT,
-            )
+            s = r'(\d{1,2}[-/]%s[-/]\d{4}):%s%s' % (MONTHS_PAT, TIME_PAT, TZ_PAT,)
             n = self._group_index
             self._type_conversions[group] = partial(
                 date_convert, dmy=n + 1, hms=n + 3, tz=n + 6
@@ -1265,11 +1232,7 @@ class ResultIterator(object):
 
 
 def parse(
-    format,
-    string,
-    extra_types=None,
-    evaluate_result=True,
-    case_sensitive=False,
+    format, string, extra_types=None, evaluate_result=True, case_sensitive=False,
 ):
     """Using "format" attempt to pull values from "string".
 

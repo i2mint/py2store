@@ -56,9 +56,7 @@ def dotpath_to_obj(dotpath):
     """Loads and returns the object referenced by the string DOTPATH_TO_MODULE.OBJ_NAME"""
     *module_path, obj_name = dotpath.split('.')
     if len(module_path) > 0:
-        return getattr(
-            importlib.import_module('.'.join(module_path)), obj_name
-        )
+        return getattr(importlib.import_module('.'.join(module_path)), obj_name)
     else:
         return importlib.import_module(obj_name)
 
@@ -71,9 +69,7 @@ def dotpath_to_func(f: (str, callable)) -> callable:
     if isinstance(f, str):
         if '.' in f:
             *module_path, func_name = f.split('.')
-            f = getattr(
-                importlib.import_module('.'.join(module_path)), func_name
-            )
+            f = getattr(importlib.import_module('.'.join(module_path)), func_name)
         else:
             f = getattr(importlib.import_module('py2store'), f)
 
@@ -103,9 +99,7 @@ def fakit_from_dict(d, func_loader=assert_callable):
     return _fakit(func_loader(d['f']), a=d.get('a', ()), k=d.get('k', {}))
 
 
-def fakit_from_tuple(
-    t: (tuple, list), func_loader: callable = dflt_func_loader
-):
+def fakit_from_tuple(t: (tuple, list), func_loader: callable = dflt_func_loader):
     f = func_loader(t[0])
     a = ()
     k = {}
@@ -151,9 +145,7 @@ def fakit(fak, func_loader=dflt_func_loader):
     if isinstance(fak, dict):
         return fakit_from_dict(fak, func_loader=func_loader)
     else:
-        assert isinstance(
-            fak, (tuple, list)
-        ), 'fak should be dict, tuple, or list'
+        assert isinstance(fak, (tuple, list)), 'fak should be dict, tuple, or list'
         return fakit_from_tuple(fak, func_loader=func_loader)
 
 
@@ -172,9 +164,7 @@ try:
     user_configs_dirpath = os.path.expanduser(
         getenv('PY2STORE_CONFIGS_DIR', '~/.py2store_configs')
     )
-    my_configs_dirname = os.path.expanduser(
-        getenv('MY_PY2STORE_DIR_NAME', 'my')
-    )
+    my_configs_dirname = os.path.expanduser(getenv('MY_PY2STORE_DIR_NAME', 'my'))
     myconfigs_dirpath = os.path.join(user_configs_dirpath, my_configs_dirname)
 
     if os.path.isdir(user_configs_dirpath):
@@ -189,9 +179,7 @@ try:
                     d = json.load(open(filepath))
                     yield str_to_var_str(name), d
                 except json.JSONDecodeError:
-                    warn(
-                        f"This json file couldn't be json-decoded: {filepath}"
-                    )
+                    warn(f"This json file couldn't be json-decoded: {filepath}")
                 except Exception:
                     warn(
                         f'Unknown error when trying to json.load this file: {filepath}'
@@ -326,9 +314,7 @@ try:
             f"The configs directory wasn't found (please make it): {user_configs_dirpath}"
         )
         user_configs_filepath = os.path.expanduser(
-            getenv(
-                'PY2STORE_CONFIGS_JSON_FILEPATH', '~/.py2store_configs.json'
-            )
+            getenv('PY2STORE_CONFIGS_JSON_FILEPATH', '~/.py2store_configs.json')
         )
         if os.path.isfile(user_configs_filepath):
             user_configs_dict = json.load(open(user_configs_filepath))
@@ -346,6 +332,4 @@ try:
         )
 
 except Exception as e:
-    warn(
-        f'There was an exception when trying to get configs and defaults: {e}'
-    )
+    warn(f'There was an exception when trying to get configs and defaults: {e}')

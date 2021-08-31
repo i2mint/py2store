@@ -121,8 +121,7 @@ def test_wrap_kvs():
 
     ###################### Test postget ####################
     B = wrap_kvs(
-        dict,
-        postget=lambda k, v: f'upper {v}' if k[0].isupper() else f'lower {v}',
+        dict, postget=lambda k, v: f'upper {v}' if k[0].isupper() else f'lower {v}',
     )
 
     b = B()
@@ -136,9 +135,7 @@ def test_wrap_kvs():
         ('small', 'lower text'),
     ]
 
-    to_csv = lambda LoL: '\\n'.join(
-        map(','.join, map(lambda L: (x for x in L), LoL))
-    )
+    to_csv = lambda LoL: '\\n'.join(map(','.join, map(lambda L: (x for x in L), LoL)))
 
     from_csv = lambda csv: list(map(lambda x: x.split(','), csv.split('\\n')))
 
@@ -185,10 +182,7 @@ def test_wrap_kvs():
 
     d['bar.json'] = obj  # store the object as json
     assert str(d) == str(
-        {
-            'foo.csv': 'a,b,c\\nd,e,f',
-            'bar.json': '[["a", "b", "c"], ["d", "e", "f"]]',
-        }
+        {'foo.csv': 'a,b,c\\nd,e,f', 'bar.json': '[["a", "b", "c"], ["d", "e", "f"]]',}
     )
 
     assert d['bar.json'] == [['a', 'b', 'c'], ['d', 'e', 'f']]

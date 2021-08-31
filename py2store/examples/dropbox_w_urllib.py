@@ -7,8 +7,7 @@ from py2store.base import KvReader
 
 
 class DropboxFolderCopyReader(KvReader):
-    """Makes a full local copy of the folder (by default, to a local temp folder) and gives access to it.
-    """
+    """Makes a full local copy of the folder (by default, to a local temp folder) and gives access to it."""
 
     def __init__(self, url, path=tempfile.gettempdir()):
         self.url = url
@@ -92,9 +91,7 @@ class DropboxFileCopyReader(KvReader):
 DFLT_USER_AGENT = 'Wget/1.16 (linux-gnu)'
 
 
-def download_from_dropbox(
-    url, file, chk_size=1024, user_agent=DFLT_USER_AGENT
-):
+def download_from_dropbox(url, file, chk_size=1024, user_agent=DFLT_USER_AGENT):
     def iter_content_and_copy_to(file):
         req = urllib.request.Request(url)
         req.add_header('user-agent', user_agent)
@@ -117,9 +114,7 @@ def bytes_from_dropbox(url, chk_size=1024, user_agent=DFLT_USER_AGENT):
     from io import BytesIO
 
     with BytesIO() as file:
-        download_from_dropbox(
-            url, file, chk_size=chk_size, user_agent=user_agent
-        )
+        download_from_dropbox(url, file, chk_size=chk_size, user_agent=user_agent)
         file.seek(0)
         return file.read()
 

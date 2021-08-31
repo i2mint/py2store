@@ -23,9 +23,7 @@ class COMPRESSION:
         ZIP_DEFLATED  # The numeric constant for the usual ZIP compression method.
     )
     # This requires zlib module.
-    ZIP_BZIP2 = (
-        ZIP_BZIP2  # The numeric constant for the BZIP2 compression method. This requires
-    )
+    ZIP_BZIP2 = ZIP_BZIP2  # The numeric constant for the BZIP2 compression method. This requires
     # the bz2 module.
     ZIP_LZMA = (
         ZIP_LZMA  # The numeric constant for the LZMA compression method. This requires
@@ -486,7 +484,11 @@ class ZipStore(KvPersister):
 
     # @wraps(ZipReader.__init__)
     def __init__(
-        self, zip_filepath, compression=DFLT_COMPRESSION, allow_overwrites=True, pwd=None,
+        self,
+        zip_filepath,
+        compression=DFLT_COMPRESSION,
+        allow_overwrites=True,
+        pwd=None,
     ):
         self.zip_filepath = fullpath(zip_filepath)
         self.zip_filepath = zip_filepath

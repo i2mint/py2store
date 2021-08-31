@@ -56,9 +56,7 @@ class ObjReader:
     @classmethod
     def from_composition(cls, data_of_key, obj_of_data=None):
         return cls(
-            _obj_of_key=ObjLoader(
-                data_of_key=data_of_key, obj_of_data=obj_of_data
-            )
+            _obj_of_key=ObjLoader(data_of_key=data_of_key, obj_of_data=obj_of_data)
         )
 
     def __getitem__(self, k):
@@ -94,9 +92,7 @@ class ExplicitKeys(Collection):
     ):  # don't remove this init: Don't. Need for _keys_cache init
         assert isinstance(key_collection, CollectionType), (
             'key_collection must be a collections.abc.Collection, i.e. have a __len__, __contains__, and __len__.'
-            'The key_collection you gave me was a {}'.format(
-                type(key_collection)
-            )
+            'The key_collection you gave me was a {}'.format(type(key_collection))
         )
         # self._key_collection = key_collection
         self._keys_cache = key_collection
@@ -196,9 +192,7 @@ def invertible_maps(mapping=None, inv_mapping=None):
 
 
 class ExplicitKeyMap:
-    def __init__(
-        self, *, key_of_id: Mapping = None, id_of_key: Mapping = None
-    ):
+    def __init__(self, *, key_of_id: Mapping = None, id_of_key: Mapping = None):
         """
 
         :param key_of_id:

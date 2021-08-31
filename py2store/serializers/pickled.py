@@ -12,10 +12,7 @@ rw_funcs_maker_for = dict()
 
 
 def mk_pickle_rw_funcs(
-    fix_imports=True,
-    protocol=None,
-    pickle_encoding='ASCII',
-    pickle_errors='strict',
+    fix_imports=True, protocol=None, pickle_encoding='ASCII', pickle_errors='strict',
 ):
     """Generates a reader and writer using pickle. That is, a pair of parametrized loads and dumps
 

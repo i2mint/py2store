@@ -182,21 +182,18 @@ def format_params_in_str_format(format_string):
     return list(
         map(
             lambda x: int(x) if str.isnumeric(x) else x if x != '' else None,
-            filter(
-                _is_not_none,
-                (x[1] for x in dflt_formatter.parse(format_string)),
-            ),
+            filter(_is_not_none, (x[1] for x in dflt_formatter.parse(format_string)),),
         )
     )
 
 
 def n_format_params_in_str_format(format_string):
-    """ The number of parameters"""
+    """The number of parameters"""
     return len(set(format_params_in_str_format(format_string)))
 
 
 def is_manual_format_string(format_string):
-    """ Says if the format_string uses a manual specification
+    """Says if the format_string uses a manual specification
     See Also: is_automatic_format_string and
     >>> is_manual_format_string('Manual: indices: {1} {2}, named: {named} {fields}')
     True
@@ -211,7 +208,7 @@ def is_manual_format_string(format_string):
 
 
 def is_automatic_format_string(format_string):
-    """ Says if the format_string is uses automatic specification
+    """Says if the format_string is uses automatic specification
     See Also: is_manual_format_params
     >>> is_automatic_format_string('Manual: indices: {1} {2}, named: {named} {fields}')
     False
@@ -222,13 +219,11 @@ def is_automatic_format_string(format_string):
     >>> is_manual_format_string('No formatting is both manual and automatic formatting!')
     True
     """
-    return is_automatic_format_params(
-        format_params_in_str_format(format_string)
-    )
+    return is_automatic_format_params(format_params_in_str_format(format_string))
 
 
 def is_hybrid_format_string(format_string):
-    """ Says if the format_params is from a hybrid of auto and manual.
+    """Says if the format_params is from a hybrid of auto and manual.
     Note: Hybrid specifications are considered non-valid and can't be formatted with format_string.format(...).
     Yet, it can be useful for flexibility of expression (but will need to be resolved to be used).
 
@@ -245,7 +240,7 @@ def is_hybrid_format_string(format_string):
 
 
 def is_manual_format_params(format_params):
-    """ Says if the format_params is from a manual specification
+    """Says if the format_params is from a manual specification
     See Also: is_automatic_format_params
     """
     assert not isinstance(
@@ -255,7 +250,7 @@ def is_manual_format_params(format_params):
 
 
 def is_automatic_format_params(format_params):
-    """ Says if the format_params is from an automatic specification
+    """Says if the format_params is from an automatic specification
     See Also: is_manual_format_params and is_hybrid_format_params
     """
     assert not isinstance(
@@ -265,7 +260,7 @@ def is_automatic_format_params(format_params):
 
 
 def is_hybrid_format_params(format_params):
-    """ Says if the format_params is from a hybrid of auto and manual.
+    """Says if the format_params is from a hybrid of auto and manual.
     Note: Hybrid specifications are considered non-valid and can't be formatted with format_string.format(...).
     Yet, it can be useful for flexibility of expression (but will need to be resolved to be used).
     See Also: is_manual_format_params and is_automatic_format_params
@@ -301,7 +296,7 @@ def empty_arg_and_kwargs_for_format(format_string, fill_val=None):
 
 
 def args_and_kwargs_indices(format_string):
-    """ Get the sets of indices and names used in manual specification of format strings, or None, None if auto spec.
+    """Get the sets of indices and names used in manual specification of format strings, or None, None if auto spec.
     Args:
         format_string: A format string (i.e. a string with {...} to mark parameter placement and formatting
 

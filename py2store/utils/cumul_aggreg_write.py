@@ -159,9 +159,7 @@ class CumulAggregWrite:
     >>>
     """
 
-    def __init__(
-        self, store, cache_to_kv=infinite_keycount_kvs, mk_cache=list
-    ):
+    def __init__(self, store, cache_to_kv=infinite_keycount_kvs, mk_cache=list):
         self.store = store
         self.cache_to_kv = cache_to_kv
         self._mk_cache = mk_cache
@@ -190,9 +188,7 @@ class CumulAggregWrite:
 
 class CumulAggregWriteKvItems(CumulAggregWrite):
     def __init__(self, store):
-        super().__init__(
-            store, cache_to_kv=lambda gen: iter(gen), mk_cache=list
-        )
+        super().__init__(store, cache_to_kv=lambda gen: iter(gen), mk_cache=list)
 
 
 def condition_flush_on_every_write(cache):

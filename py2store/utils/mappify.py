@@ -54,9 +54,7 @@ class Mappify(KvReader):
         self._key_concat = key_concat
         self._names_of_literals = set(names_of_literals)
 
-        self._kwargs = (
-            kwargs  # the stuff that is given to the **kwargs of glom
-        )
+        self._kwargs = kwargs  # the stuff that is given to the **kwargs of glom
         # TODO: Not sure the following is kosher. Doesn't make me feel nice and fuzzy.
         self._mk_similar_mappify = lambda x: self.__class__(
             x,

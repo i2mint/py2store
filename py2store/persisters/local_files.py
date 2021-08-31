@@ -98,9 +98,7 @@ def iter_filepaths_in_folder_recursively(
                 yield full_path
 
 
-def iter_dirpaths_in_folder_recursively(
-    root_folder, max_levels=None, _current_level=0
-):
+def iter_dirpaths_in_folder_recursively(root_folder, max_levels=None, _current_level=0):
     if max_levels is None:
         max_levels = inf
     for full_path in paths_in_dir(root_folder):
@@ -122,9 +120,7 @@ class PrefixedFilepaths:
     _max_levels = None
 
     def __iter__(self):
-        return iter_relative_files_and_folder(
-            self._prefix, max_levels=self._max_levels
-        )
+        return iter_relative_files_and_folder(self._prefix, max_levels=self._max_levels)
 
     def __contains__(self, k):
         """
@@ -315,8 +311,7 @@ class LocalFileRWD:
         return data
 
     @w_helpful_folder_not_found_error(
-        raise_error=FolderNotFoundError,
-        extra_msg=_store_does_not_create_dirs_msg,
+        raise_error=FolderNotFoundError, extra_msg=_store_does_not_create_dirs_msg,
     )
     def __setitem__(self, k, v):
         with open(k, **self._open_kwargs_for_write) as fp:
@@ -353,11 +348,7 @@ class DirpathFormatKeys(
 
 class PathFormatPersister(FilepathFormatKeys, LocalFileRWD):
     def __init__(
-        self,
-        path_format,
-        max_levels: int = inf,
-        mode=DFLT_OPEN_MODE,
-        **open_kwargs,
+        self, path_format, max_levels: int = inf, mode=DFLT_OPEN_MODE, **open_kwargs,
     ):
         FilepathFormatKeys.__init__(self, path_format)
         LocalFileRWD.__init__(self, mode, **open_kwargs)
@@ -415,7 +406,7 @@ def endswith_slash(path):
 
 
 class FileReader(KvReader):
-    """ KV Reader whose keys are paths and values are:
+    """KV Reader whose keys are paths and values are:
     - Another FileReader if a path points to a directory
     - The bytes of the file if the path points to a file.
     """
@@ -437,8 +428,7 @@ class FileReader(KvReader):
             k.startswith(self.rootdir)  # prefix is rootdir
             and os.path.exists(k)  # exists (as file or dir)
             and (
-                k.endswith(file_sep)
-                or file_sep not in k[self._rootdir_length :]
+                k.endswith(file_sep) or file_sep not in k[self._rootdir_length :]
             )  # is a dir or a first-level file
         )
 
@@ -473,8 +463,7 @@ class FileReader(KvReader):
 
 
 class DirReader(FileReader):
-    """ KV Reader whose keys (AND VALUES) are directory full paths of the subdirectories of rootdir.
-    """
+    """KV Reader whose keys (AND VALUES) are directory full paths of the subdirectories of rootdir."""
 
     def _extended_prefix(self, new_prefix):
         return ensure_slash_suffix(super()._extended_prefix(new_prefix))

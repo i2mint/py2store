@@ -61,9 +61,7 @@ def remember_last_key_written_to(
     3
     """
     if cls is None:
-        return partial(
-            remember_last_key_written_to, name=name, same_name_as_class=True
-        )
+        return partial(remember_last_key_written_to, name=name, same_name_as_class=True)
     else:
 
         class S(cls):

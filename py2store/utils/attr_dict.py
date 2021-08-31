@@ -67,9 +67,7 @@ def special_dir(self):
     s.update(self.__dict__)
     s.update(
         filter(
-            lambda k: isinstance(k, str)
-            and str.isidentifier(k)
-            and not iskeyword(k),
+            lambda k: isinstance(k, str) and str.isidentifier(k) and not iskeyword(k),
             self,
         )
     )

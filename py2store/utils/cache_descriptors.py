@@ -76,15 +76,11 @@ def CachedProperty(*args):
     """
 
     if not args:  # @CachedProperty()
-        return (
-            _CachedProperty  # A callable that produces the decorated function
-        )
+        return _CachedProperty  # A callable that produces the decorated function
 
     arg1 = args[0]
     names = args[1:]
-    if callable(
-        arg1
-    ):  # @CachedProperty, *or* thing = CachedProperty(thing, ...)
+    if callable(arg1):  # @CachedProperty, *or* thing = CachedProperty(thing, ...)
         return _CachedProperty(arg1, *names)
 
     # @CachedProperty( 'n' )
@@ -97,8 +93,7 @@ def CachedProperty(*args):
 
 
 class Lazy(object):
-    """Lazy Attributes.
-    """
+    """Lazy Attributes."""
 
     def __init__(self, func, name=None):
         if name is None:

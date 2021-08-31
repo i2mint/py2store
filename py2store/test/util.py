@@ -50,9 +50,7 @@ def random_word(length, alphabet, concat_func=add):
     if isinstance(alphabet, bytes) or isinstance(alphabet[0], bytes):
         # convert to list of bytes, or the function will return ints instead of bytes
         alphabet = _list_of_bytes_singletons(alphabet)
-    return reduce(
-        concat_func, (random.choice(alphabet) for _ in range(length))
-    )
+    return reduce(concat_func, (random.choice(alphabet) for _ in range(length)))
 
 
 def _list_of_bytes_singletons(bytes_alphabet):
@@ -66,9 +64,7 @@ def random_string(length=7, alphabet=lower_case_letters):
     return ''.join(random.choice(alphabet) for _ in range(length))
 
 
-def random_word_gen(
-    word_size_range=(1, 10), alphabet=lower_case_letters, n=100
-):
+def random_word_gen(word_size_range=(1, 10), alphabet=lower_case_letters, n=100):
     """Random string generator
     Args:
         word_size_range: An int, 2-tuple of ints, or list-like object that defines the choices of word sizes
@@ -89,10 +85,7 @@ def random_word_gen(
 
 
 def random_tuple_gen(
-    tuple_length=3,
-    word_size_range=(1, 10),
-    alphabet=lower_case_letters,
-    n: int = 100,
+    tuple_length=3, word_size_range=(1, 10), alphabet=lower_case_letters, n: int = 100,
 ):
     """Random tuple (of strings) generator
 
@@ -169,14 +162,10 @@ def random_formatted_str_gen(
     >>> list(random_formatted_str_gen('indexed field: {0}: named field: {name}', (2, 3), 'z', n=1))
     [('indexed field: zz: named field: zz',)]
     """
-    args_template, kwargs_template = empty_arg_and_kwargs_for_format(
-        format_string
-    )
+    args_template, kwargs_template = empty_arg_and_kwargs_for_format(format_string)
     n_args = len(args_template)
     args_gen = random_tuple_gen(n_args, word_size_range, alphabet, n)
-    kwargs_gen = random_dict_gen(
-        kwargs_template.keys(), word_size_range, alphabet, n
-    )
+    kwargs_gen = random_dict_gen(kwargs_template.keys(), word_size_range, alphabet, n)
     yield from zip(
         format_string.format(*args, **kwargs)
         for args, kwargs in zip(args_gen, kwargs_gen)

@@ -14,9 +14,7 @@ from py2store.slib.s_configparser import ConfigReader, ConfigStore
 from py2store.util import imdict
 
 
-def csv_fileobj(
-    csv_data, *args, **kwargs
-):  # TODO: Use extended wraps func to inject
+def csv_fileobj(csv_data, *args, **kwargs):  # TODO: Use extended wraps func to inject
     fp = StringIO('')
     writer = csv.writer(fp)
     writer.writerows(csv_data, *args, **kwargs)
@@ -323,9 +321,7 @@ class MiscStoreMixin(MiscReaderMixin):
         dflt_outgoing_val_trans=None,
         func_key=None,
     ):
-        super().__init__(
-            incoming_val_trans_for_key, dflt_incoming_val_trans, func_key
-        )
+        super().__init__(incoming_val_trans_for_key, dflt_incoming_val_trans, func_key)
         if outgoing_val_trans_for_key is not None:
             self._outgoing_val_trans_for_key = outgoing_val_trans_for_key
         if dflt_outgoing_val_trans is not None:
@@ -411,9 +407,7 @@ class MiscGetterAndSetter(MiscGetter):
         self.func_key = func_key
 
     def __setitem__(self, k, v):
-        return set_obj(
-            k, v, self.store, self.outgoing_val_trans_for_key, self.func_key
-        )
+        return set_obj(k, v, self.store, self.outgoing_val_trans_for_key, self.func_key)
 
 
 misc_objs = MiscGetterAndSetter()

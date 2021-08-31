@@ -357,13 +357,10 @@ class UnregisteredTarget(GlomError):
         if not self.type_map:
             return (
                 "glom() called without registering any types for operation '%s'. see"
-                " glom.register() or Glommer's constructor for details."
-                % (self.op,)
+                " glom.register() or Glommer's constructor for details." % (self.op,)
             )
         reg_types = sorted([t.__name__ for t, h in self.type_map.items() if h])
-        reg_types_str = (
-            '()' if not reg_types else ('(%s)' % ', '.join(reg_types))
-        )
+        reg_types_str = '()' if not reg_types else ('(%s)' % ', '.join(reg_types))
         msg = (
             "target type %r not registered for '%s', expected one of"
             ' registered types: %s'
@@ -421,8 +418,7 @@ class Path(object):
                 sub_parts = _T_PATHS[part]
                 if sub_parts[0] is not T:
                     raise ValueError(
-                        'path segment must be path from T, not %r'
-                        % sub_parts[0]
+                        'path segment must be path from T, not %r' % sub_parts[0]
                     )
                 i = 1
                 while i < len(sub_parts):
@@ -486,9 +482,7 @@ class Path(object):
         if isinstance(other, Path):
             other = other.path_t
         if not isinstance(other, TType):
-            raise TypeError(
-                'can only check if Path starts with string, Path or T'
-            )
+            raise TypeError('can only check if Path starts with string, Path or T')
         o_path = _T_PATHS[other]
         return _T_PATHS[self.path_t][: len(o_path)] == o_path
 
@@ -508,27 +502,15 @@ class Path(object):
             start = i.start if i.start is not None else 0
             stop = i.stop
 
-            start = (
-                (start * 2) + 1
-                if start >= 0
-                else (start * 2) + len(cur_t_path)
-            )
+            start = (start * 2) + 1 if start >= 0 else (start * 2) + len(cur_t_path)
             if stop is not None:
-                stop = (
-                    (stop * 2) + 1
-                    if stop >= 0
-                    else (stop * 2) + len(cur_t_path)
-                )
+                stop = (stop * 2) + 1 if stop >= 0 else (stop * 2) + len(cur_t_path)
         except AttributeError:
             step = 1
             start = (i * 2) + 1 if i >= 0 else (i * 2) + len(cur_t_path)
             if start < 0 or start > len(cur_t_path):
                 raise IndexError('Path index out of range')
-            stop = (
-                ((i + 1) * 2) + 1
-                if i >= 0
-                else ((i + 1) * 2) + len(cur_t_path)
-            )
+            stop = ((i + 1) * 2) + 1 if i >= 0 else ((i + 1) * 2) + len(cur_t_path)
 
         new_t = TType()
         new_path = cur_t_path[start:stop]
@@ -720,9 +702,7 @@ class Coalesce(object):
         self.default = kwargs.pop('default', _MISSING)
         self.default_factory = kwargs.pop('default_factory', _MISSING)
         if self.default and self.default_factory:
-            raise ValueError(
-                'expected one of "default" or "default_factory", not both'
-            )
+            raise ValueError('expected one of "default" or "default_factory", not both')
         self.skip = kwargs.pop('skip', _MISSING)
         if self.skip is _MISSING:
             self.skip_func = lambda v: False
@@ -734,9 +714,7 @@ class Coalesce(object):
             self.skip_func = lambda v: v == self.skip
         self.skip_exc = kwargs.pop('skip_exc', GlomError)
         if kwargs:
-            raise TypeError(
-                'unexpected keyword args: %r' % (sorted(kwargs.keys()),)
-            )
+            raise TypeError('unexpected keyword args: %r' % (sorted(kwargs.keys()),))
 
     def glomit(self, target, scope):
         skipped = []
@@ -906,8 +884,7 @@ class Call(object):
             func = T
         if not (callable(func) or isinstance(func, (Spec, TType))):
             raise TypeError(
-                'expected func to be a callable or T'
-                ' expression, not: %r' % (func,)
+                'expected func to be a callable or T' ' expression, not: %r' % (func,)
             )
         if args is None:
             args = ()
@@ -935,12 +912,7 @@ class Call(object):
 
     def __repr__(self):
         cn = self.__class__.__name__
-        return '%s(%r, args=%r, kwargs=%r)' % (
-            cn,
-            self.func,
-            self.args,
-            self.kwargs,
-        )
+        return '%s(%r, args=%r, kwargs=%r)' % (cn, self.func, self.args, self.kwargs,)
 
 
 def _is_spec(obj, strict=False):
@@ -1002,8 +974,7 @@ class Invoke(object):
     def __init__(self, func):
         if not callable(func) and not _is_spec(func, strict=True):
             raise TypeError(
-                'expected func to be a callable or Spec instance,'
-                ' not: %r' % (func,)
+                'expected func to be a callable or Spec instance,' ' not: %r' % (func,)
             )
         self.func = func
         self._args = ()
@@ -1153,22 +1124,14 @@ class Invoke(object):
         all_kwargs = {}
 
         recurse = lambda spec: scope[glom](target, spec, scope)
-        func = (
-            recurse(self.func)
-            if _is_spec(self.func, strict=True)
-            else self.func
-        )
+        func = recurse(self.func) if _is_spec(self.func, strict=True) else self.func
 
         for i in range(len(self._args) // 3):
             op, args, kwargs = self._args[i * 3 : i * 3 + 3]
             if op == 'C':
                 all_args.extend(args)
                 all_kwargs.update(
-                    {
-                        k: v
-                        for k, v in kwargs.items()
-                        if self._cur_kwargs[k] is kwargs
-                    }
+                    {k: v for k, v in kwargs.items() if self._cur_kwargs[k] is kwargs}
                 )
             elif op == 'S':
                 all_args.extend([recurse(arg) for arg in args])
@@ -1378,10 +1341,7 @@ class Let(object):
 
     def glomit(self, target, scope):
         scope.update(
-            {
-                k: scope[glom](target, v, scope)
-                for k, v in self._binding.items()
-            }
+            {k: scope[glom](target, v, scope) for k, v in self._binding.items()}
         )
         return target
 
@@ -1522,8 +1482,7 @@ class Check(object):
             for v in val:
                 if not func(v):
                     raise ValueError(
-                        'expected %r argument to be %s, not: %r'
-                        % (name, cond, v)
+                        'expected %r argument to be %s, not: %r' % (name, cond, v)
                     )
             return val
 
@@ -1541,15 +1500,9 @@ class Check(object):
         if kwargs:
             raise TypeError('unexpected keyword arguments: %r' % kwargs.keys())
 
-        self.validators = _get_arg_val(
-            'validate', 'callable', callable, validate
-        )
+        self.validators = _get_arg_val('validate', 'callable', callable, validate)
         self.instance_of = _get_arg_val(
-            'instance_of',
-            'a type',
-            lambda x: isinstance(x, type),
-            instance_of,
-            False,
+            'instance_of', 'a type', lambda x: isinstance(x, type), instance_of, False,
         )
         self.types = _get_arg_val(
             'type', 'a type', lambda x: isinstance(x, type), type_arg, False
@@ -1565,8 +1518,7 @@ class Check(object):
         elif one_of is not _MISSING:
             if not is_iterable(one_of):
                 raise ValueError(
-                    'expected "one_of" argument to be iterable'
-                    ' , not: %r' % one_of
+                    'expected "one_of" argument to be iterable' ' , not: %r' % one_of
                 )
             if not one_of:
                 raise ValueError(
@@ -1604,13 +1556,9 @@ class Check(object):
             if self.default is not RAISE:
                 return self.default
             if len(self.vals) == 1:
-                errs.append(
-                    'expected {}, found {}'.format(self.vals[0], target)
-                )
+                errs.append('expected {}, found {}'.format(self.vals[0], target))
             else:
-                errs.append(
-                    'expected one of {}, found {}'.format(self.vals, target)
-                )
+                errs.append('expected one of {}, found {}'.format(self.vals, target))
 
         if self.validators:
             for i, validator in enumerate(self.validators):
@@ -1698,9 +1646,7 @@ def _get_sequence_item(target, index):
 # spec is the first argument for convenience in the case
 # that the handler is a method of the spec type
 def _handle_dict(target, spec, scope):
-    ret = type(
-        spec
-    )()  # TODO: works for dict + ordereddict, but sufficient for all?
+    ret = type(spec)()  # TODO: works for dict + ordereddict, but sufficient for all?
     for field, subspec in spec.items():
         val = scope[glom](target, subspec, scope)
         if val is SKIP:
@@ -1713,9 +1659,7 @@ def _handle_dict(target, spec, scope):
 
 def _handle_list(target, spec, scope):
     subspec = spec[0]
-    iterate = scope[TargetRegistry].get_handler(
-        'iterate', target, path=scope[Path]
-    )
+    iterate = scope[TargetRegistry].get_handler('iterate', target, path=scope[Path])
     try:
         iterator = iterate(target)
     except Exception as e:
@@ -1794,9 +1738,7 @@ class TargetRegistry(object):
                     ret = type_map[closest]
 
         if ret is False and raise_exc:
-            raise UnregisteredTarget(
-                op, obj_type, type_map=type_map, path=path
-            )
+            raise UnregisteredTarget(op, obj_type, type_map=type_map, path=path)
 
         return ret
 
@@ -1841,9 +1783,7 @@ class TargetRegistry(object):
         registered = False
         for cur_type, sub_tree in list(_type_tree.items()):
             if issubclass(cur_type, new_type):
-                sub_tree = _type_tree.pop(
-                    cur_type
-                )  # mutation for recursion brevity
+                sub_tree = _type_tree.pop(cur_type)  # mutation for recursion brevity
                 try:
                     _type_tree[new_type][cur_type] = sub_tree
                 except KeyError:
@@ -1861,15 +1801,12 @@ class TargetRegistry(object):
     def register(self, target_type, **kwargs):
         if not isinstance(target_type, type):
             raise TypeError(
-                'register expected a type, not an instance: %r'
-                % (target_type,)
+                'register expected a type, not an instance: %r' % (target_type,)
             )
         exact = kwargs.pop('exact', None)
         new_op_map = dict(kwargs)
 
-        for op_name in sorted(
-            set(self._op_auto_map.keys()) | set(new_op_map.keys())
-        ):
+        for op_name in sorted(set(self._op_auto_map.keys()) | set(new_op_map.keys())):
             cur_type_map = self._op_type_map.setdefault(op_name, OrderedDict())
 
             if op_name in new_op_map:
@@ -1913,20 +1850,14 @@ class TargetRegistry(object):
         extensions.
         """
         if not isinstance(op_name, str):
-            raise TypeError(
-                'expected op_name to be a text name, not: %r' % (op_name,)
-            )
+            raise TypeError('expected op_name to be a text name, not: %r' % (op_name,))
         if auto_func is None:
             auto_func = lambda t: False
         elif not callable(auto_func):
-            raise TypeError(
-                'expected auto_func to be callable, not: %r' % (auto_func,)
-            )
+            raise TypeError('expected auto_func to be callable, not: %r' % (auto_func,))
 
         # determine support for any previously known types
-        known_types = set(
-            sum([list(m.keys()) for m in self._op_type_map.values()], [])
-        )
+        known_types = set(sum([list(m.keys()) for m in self._op_type_map.values()], []))
         type_map = self._op_type_map.get(op_name, OrderedDict())
         type_tree = self._op_type_tree.get(op_name, OrderedDict())
         for t in known_types:
@@ -1937,8 +1868,7 @@ class TargetRegistry(object):
             except Exception as e:
                 raise TypeError(
                     'error while determining support for operation'
-                    ' "%s" on target type: %s (got %r)'
-                    % (op_name, t.__name__, e)
+                    ' "%s" on target type: %s (got %r)' % (op_name, t.__name__, e)
                 )
             if handler is not False and not callable(handler):
                 raise TypeError(
@@ -1957,11 +1887,7 @@ class TargetRegistry(object):
 
     def _register_builtin_ops(self):
         def _get_iterable_handler(type_obj):
-            return (
-                iter
-                if callable(getattr(type_obj, '__iter__', None))
-                else False
-            )
+            return iter if callable(getattr(type_obj, '__iter__', None)) else False
 
         self.register_op('iterate', _get_iterable_handler)
         self.register_op('get', lambda _: getattr)

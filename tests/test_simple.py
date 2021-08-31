@@ -40,9 +40,7 @@ def _test_ops_on_store(store):
     if hasattr(s, 'values'):
         assert set(s.values()).issuperset({'bar', 'world'})
     if hasattr(s, 'items'):
-        assert set(s.items()).issuperset(
-            {('_foo', 'bar'), ('_hello', 'world')}
-        )
+        assert set(s.items()).issuperset({('_foo', 'bar'), ('_hello', 'world')})
     if hasattr(s, 'get'):
         for k in s:
             assert s.get(k) == s[k]
@@ -190,9 +188,7 @@ def test_dropbox():
                 '~/.py2store_configs/stores/json/dropbox.json'
             )
             configs = json.load(open(filepath))
-            store = DropboxTextStore(
-                '/py2store_data/test/', **configs[FAK]['k']
-            )
+            store = DropboxTextStore('/py2store_data/test/', **configs[FAK]['k'])
             _multi_test(store)
         except FileNotFoundError:
             from warnings import warn

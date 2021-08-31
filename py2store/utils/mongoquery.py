@@ -14,7 +14,7 @@ string_types = (str,)
 
 
 class QueryError(Exception):
-    """ Query error exception """
+    """Query error exception"""
 
     pass
 
@@ -25,19 +25,19 @@ class _Undefined(object):
 
 
 def is_non_string_sequence(entry):
-    """ Returns True if entry is a Python sequence iterable, and not a string """
+    """Returns True if entry is a Python sequence iterable, and not a string"""
     return isinstance(entry, Sequence) and not isinstance(entry, str)
 
 
 class Query(object):
-    """ The Query class is used to match an object against a MongoDB-like query """
+    """The Query class is used to match an object against a MongoDB-like query"""
 
     # pylint: disable=too-few-public-methods
     def __init__(self, definition):
         self._definition = definition
 
     def match(self, entry):
-        """ Matches the entry object against the query specified on instanciation """
+        """Matches the entry object against the query specified on instanciation"""
         return self._match(self._definition, entry)
 
     def _match(self, condition, entry):
@@ -72,10 +72,7 @@ class Query(object):
             if isinstance(entry, Sequence) and not k.isdigit():
                 for elem in entry:
                     operator = '.'.join(keys_list[i:])
-                    if (
-                        self._path_exists(operator, condition, elem)
-                        == condition
-                    ):
+                    if self._path_exists(operator, condition, elem) == condition:
                         return condition
                 return not condition
             elif isinstance(entry, Sequence):
@@ -99,9 +96,7 @@ class Query(object):
                 try:
                     return getattr(self, '_' + operator[1:])(condition, entry)
                 except AttributeError:
-                    raise QueryError(
-                        "{!r} operator isn't supported".format(operator)
-                    )
+                    raise QueryError("{!r} operator isn't supported".format(operator))
             else:
                 try:
                     extracted_data = self._extract(entry, operator.split('.'))
@@ -189,26 +184,18 @@ class Query(object):
 
     def _and(self, condition, entry):
         if isinstance(condition, Sequence):
-            return all(
-                self._match(sub_condition, entry)
-                for sub_condition in condition
-            )
+            return all(self._match(sub_condition, entry) for sub_condition in condition)
         raise QueryError(
-            '$and has been attributed incorrect argument {!r}'.format(
-                condition
-            )
+            '$and has been attributed incorrect argument {!r}'.format(condition)
         )
 
     def _nor(self, condition, entry):
         if isinstance(condition, Sequence):
             return all(
-                not self._match(sub_condition, entry)
-                for sub_condition in condition
+                not self._match(sub_condition, entry) for sub_condition in condition
             )
         raise QueryError(
-            '$nor has been attributed incorrect argument {!r}'.format(
-                condition
-            )
+            '$nor has been attributed incorrect argument {!r}'.format(condition)
         )
 
     def _not(self, condition, entry):
@@ -216,14 +203,9 @@ class Query(object):
 
     def _or(self, condition, entry):
         if isinstance(condition, Sequence):
-            return any(
-                self._match(sub_condition, entry)
-                for sub_condition in condition
-            )
+            return any(self._match(sub_condition, entry) for sub_condition in condition)
         raise QueryError(
-            '$nor has been attributed incorrect argument {!r}'.format(
-                condition
-            )
+            '$nor has been attributed incorrect argument {!r}'.format(condition)
         )
 
     ###################
@@ -302,9 +284,7 @@ class Query(object):
         if not isinstance(entry, str):
             return False
         try:
-            regex = re.match(
-                r'\A/(.+)/([imsx]{,4})\Z', condition, flags=re.DOTALL
-            )
+            regex = re.match(r'\A/(.+)/([imsx]{,4})\Z', condition, flags=re.DOTALL)
         except TypeError:
             raise QueryError(
                 '{!r} is not a regular expression '
@@ -324,9 +304,7 @@ class Query(object):
             match = re.search(exp, entry, flags=flags)
         except Exception as error:
             raise QueryError(
-                '{!r} failed to execute with error {!r}'.format(
-                    condition, error
-                )
+                '{!r} failed to execute with error {!r}'.format(condition, error)
             )
         return bool(match)
 
@@ -355,9 +333,7 @@ class Query(object):
     def _size(condition, entry):
         if not isinstance(condition, int):
             raise QueryError(
-                '$size has been attributed incorrect argument {!r}'.format(
-                    condition
-                )
+                '$size has been attributed incorrect argument {!r}'.format(condition)
             )
 
         if is_non_string_sequence(entry):

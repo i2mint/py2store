@@ -101,9 +101,7 @@ def kv_walk(
             p, k, vv
         ):  # should we recurse? (based on some function of p, k, v)
             # print(f"3: recurse with: pp={pp}, vv={vv}\n")
-            yield from kv_walk(
-                vv, yield_func, walk_filt, pkv_to_pv, pp
-            )  # recurse
+            yield from kv_walk(vv, yield_func, walk_filt, pkv_to_pv, pp)  # recurse
         # else:
         # print(f"4: yield_func(pp={pp}, k={k}, vv={vv})\n --> {yield_func(pp, k, vv)}")
 

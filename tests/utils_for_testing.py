@@ -26,9 +26,7 @@ def write_test_data(test_store, test_data=dflt_test_data):
 
 
 def check_if_the_user_wants_to_delete_all_the_elements(n):
-    confirmation = (
-        'I really want to delete these {n} elements forever, so help me god.'
-    )
+    confirmation = 'I really want to delete these {n} elements forever, so help me god.'
     conf_msg = confirmation.format(n='XX')
     msg = (
         f"Your store wasn't empty. In fact it has {n} elements."

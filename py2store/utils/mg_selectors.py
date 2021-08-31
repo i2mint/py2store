@@ -14,9 +14,7 @@ with suppress(ModuleNotFoundError, ImportError):
 
     class Selection:
         def __iter__(self) -> Iterator:
-            raise NotImplementedError(
-                'Needs to be implemented by a concrete class'
-            )
+            raise NotImplementedError('Needs to be implemented by a concrete class')
 
         def __len__(self):
             count = 0
@@ -43,9 +41,7 @@ with suppress(ModuleNotFoundError, ImportError):
             return filter(self._filt, self._docs.__iter__())
 
         def select(self, filt: callable) -> Selection:
-            return self.__class__(
-                _docs=self._docs, _filt=self._filt_conjunction(filt)
-            )
+            return self.__class__(_docs=self._docs, _filt=self._filt_conjunction(filt))
 
     class MgDfSelector(Selector):
         """
@@ -123,9 +119,7 @@ with suppress(ModuleNotFoundError, ImportError):
 
             """
             selector_file_func = Query(selector).match
-            lidx = list(
-                map(selector_file_func, self._df.to_dict(orient='rows'))
-            )
+            lidx = list(map(selector_file_func, self._df.to_dict(orient='rows')))
             return self.__class__(self._df[lidx])
             # Below are just ideas towards a more general (source, selector, selection) framework
             # selection = self.__class__(self._df[lidx])
@@ -185,13 +179,11 @@ with suppress(ModuleNotFoundError, ImportError):
 
         def select(self, selector) -> Selector:
             selector_file_func = Query(selector).match
-            lidx = list(
-                map(selector_file_func, self._docs.to_dict(orient='records'))
-            )
+            lidx = list(map(selector_file_func, self._docs.to_dict(orient='records')))
             return self.__class__(self._docs[lidx])
 
     class LidxSelector(Selector):
-        """ See LidxSelectorDf for a 'concrete' subclass """
+        """See LidxSelectorDf for a 'concrete' subclass"""
 
         def __init__(self, _docs):
             self._docs = _docs
