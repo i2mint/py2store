@@ -69,6 +69,8 @@ storage (persistence, serialization, and indexing) to your needs.
 
 Install it (e.g. `pip install py2store`).
 
+[Documentation here](https://i2mint.github.io/py2store/)
+
 # Quick peek
 
 Think of type of storage you want to use and just go ahead, like you're using a dict.
