@@ -227,20 +227,20 @@ class ZipFilesReader(FileCollection, KvReader):
     """
 
     def __init__(
-        self,
-        rootdir,
-        subpath=r'.+\.zip',
-        pattern_for_field=None,
-        max_levels=0,
-        zip_reader=ZipReader,
-        **zip_reader_kwargs,
+            self,
+            rootdir,
+            subpath=r'.+\.zip',
+            pattern_for_field=None,
+            max_levels=0,
+            zip_reader=ZipReader,
+            **zip_reader_kwargs,
     ):
         super().__init__(rootdir, subpath, pattern_for_field, max_levels)
         self.zip_reader = zip_reader
         self.zip_reader_kwargs = zip_reader_kwargs
         if self.zip_reader is ZipReader:
             self.zip_reader_kwargs = dict(
-                dict(prefix='', open_kws=None, file_info_filt=ZipReader.FILES_ONLY,),
+                dict(prefix='', open_kws=None, file_info_filt=ZipReader.FILES_ONLY, ),
                 **self.zip_reader_kwargs,
             )
 
@@ -271,6 +271,36 @@ class FlatZipFilesReader(ZipFilesReader):
     A local file reader whose keys are the zip filepaths of the rootdir and values are
     corresponding ZipReaders.
 
+    Example use case:
+
+    A remote data provider creates snapshots of whatever changed (modified files and new ones...)
+    since the last snapshot, dumping snapshot zip files in a specic accessible location.
+
+    You make `remote` and `local` stores and can update your local. Then you can perform
+    syncing actions such as:
+
+    ```
+    missing_keys = remote.keys() - local.keys()
+    local.update({k: remote[k] for k in missing_keys})  # downloads missing snapshots
+    ```
+
+    The data will look something like this:
+
+    ```
+    dump_folder/
+       2021_09_11.zip
+       2021_09_12.zip
+       2021_09_13.zip
+       etc.
+    ```
+    both on remote and local.
+
+    What should then local do to use this data?
+    Unzip and merge?
+
+    Well, one solution, provided through FlatZipFilesReader, is to not unzip at all, but instead,
+    give you a store that provides you a view "as if you unzipped and merged".
+
     """
 
     @lazyprop
@@ -283,13 +313,13 @@ class FlatZipFilesReader(ZipFilesReader):
 
     def __iter__(self):
         for (
-            zip_relpath,
-            zip_reader,
+                zip_relpath,
+                zip_reader,
         ) in self._zip_readers.items():  # go through the zip paths
             for (
-                path_in_zip
+                    path_in_zip
             ) in (
-                zip_reader
+                    zip_reader
             ):  # go through the keys of the ZipReader (the zipped filepaths)
                 yield (zip_relpath, path_in_zip)
 
@@ -302,10 +332,10 @@ class FlatZipFilesReader(ZipFilesReader):
 
 
 def mk_flatzips_store(
-    dir_of_zips,
-    zip_pair_path_preproc=sorted,
-    mk_store=FlatZipFilesReader,
-    **extra_mk_store_kwargs,
+        dir_of_zips,
+        zip_pair_path_preproc=sorted,
+        mk_store=FlatZipFilesReader,
+        **extra_mk_store_kwargs,
 ):
     """A store so that you can work with a folder that has a bunch of zip files,
     as if they've all been extracted in the same folder.
@@ -484,11 +514,11 @@ class ZipStore(KvPersister):
 
     # @wraps(ZipReader.__init__)
     def __init__(
-        self,
-        zip_filepath,
-        compression=DFLT_COMPRESSION,
-        allow_overwrites=True,
-        pwd=None,
+            self,
+            zip_filepath,
+            compression=DFLT_COMPRESSION,
+            allow_overwrites=True,
+            pwd=None,
     ):
         self.zip_filepath = fullpath(zip_filepath)
         self.zip_filepath = zip_filepath
@@ -530,8 +560,8 @@ class ZipStore(KvPersister):
                 pass
             return True
         except (
-            KeyError,
-            BadZipFile,
+                KeyError,
+                BadZipFile,
         ):  # BadZipFile is to catch when zip file exists, but is empty.
             return False
 
@@ -571,7 +601,7 @@ class ZipStore(KvPersister):
                 return fp.write(v)
         else:
             with ZipFile(
-                self.zip_filepath, mode='a', **self._zipfile_init_kw
+                    self.zip_filepath, mode='a', **self._zipfile_init_kw
             ) as zip_writer:
                 with zip_writer.open(k, **dict(self._open_kw, mode='w')) as fp:
                     return fp.write(v)
@@ -599,7 +629,6 @@ class ZipStore(KvPersister):
     def __exit__(self, *exc):
         self.close()
         return False
-
 
 # TODO: The way prefix and file_info_filt is handled is not efficient
 # TODO: prefix is silly: less general than filename_filt would be, and not even producing
