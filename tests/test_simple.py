@@ -178,8 +178,6 @@ def test_local_file_ops():
 
     _test_path_format_local_file_ops(cls)
 
-
-
     # from py2store.kv import LocalFileStore as cls
     # _test_path_format_local_file_ops(cls)
 
