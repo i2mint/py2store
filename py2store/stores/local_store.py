@@ -66,10 +66,10 @@ class PathFormatStore(PathFormatPersister, Persister):
     False
     >>> filepath_of('not_there') not in s  # rootdir/not_there is not in s
     True
-    >>> assert list(s.keys()) == [filepath_of('a'), filepath_of('b')]  # the keys (filepaths) of s
-    >>> sorted(list(s.values())) # the values of s (contents of files)
+    >>> assert sorted(s.keys()) == sorted([filepath_of('a'), filepath_of('b')])  # the keys (filepaths) of s
+    >>> sorted(s.values()) # the values of s (contents of files)
     ['bar', 'foo']
-    >>> assert list(s.items()) == [(filepath_of('a'), 'foo'), (filepath_of('b'), 'bar')]  # the (path, content) items
+    >>> assert sorted(s.items()) == sorted([(filepath_of('a'), 'foo'), (filepath_of('b'), 'bar')])  # the (path, content) items
     >>> assert s.get('this key is not there', None) is None  # trying to get the val of a non-existing key returns None
     >>> s.get('this key is not there', 'some default value')  # ... or whatever you say
     'some default value'
