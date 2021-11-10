@@ -2,9 +2,8 @@ import pytest
 import os
 import shutil
 from tempfile import gettempdir
-from py2store.errors import OverWritesNotAllowedError, DeletionsNotAllowed
-from py2store.test.util import get_s3_test_access_info_from_env_vars
-
+from dol.errors import OverWritesNotAllowedError, DeletionsNotAllowed
+from dol import Store
 
 # from collections.abc import MutableMapping
 # from py2store.base import AbstractObjStore
@@ -126,11 +125,17 @@ def _test_len(store):
 def _multi_test(store):
     _test_ops_on_store(store)
     _test_len(store)
+    s = Store.wrap(store)  # empty wrapping of an instance
+    _test_ops_on_store(s)
+    _test_len(s)
 
 
 def test_dict_ops():
     store = dict()
     _multi_test(store)
+    s = Store.wrap(store)  # empty wrapping of an instance
+    _test_ops_on_store(s)
+    _test_len(s)
 
 
 # def test_simple_file_ops():
@@ -174,26 +179,6 @@ def test_local_file_ops():
     _test_path_format_local_file_ops(cls)
 
 
-def test_dropbox():
-    from py2store.util import ModuleNotFoundIgnore
-
-    with ModuleNotFoundIgnore():
-        from py2store.access import FAK
-        from py2store.stores.dropbox_store import DropboxTextStore
-        import json
-        import os
-
-        try:
-            filepath = os.path.expanduser(
-                '~/.py2store_configs/stores/json/dropbox.json'
-            )
-            configs = json.load(open(filepath))
-            store = DropboxTextStore('/py2store_data/test/', **configs[FAK]['k'])
-            _multi_test(store)
-        except FileNotFoundError:
-            from warnings import warn
-
-            warn(f'FileNotFoundError: {filepath}')
 
     # from py2store.kv import LocalFileStore as cls
     # _test_path_format_local_file_ops(cls)
