@@ -77,6 +77,5 @@
    module_docs/py2store/utils/mg_selectors
    module_docs/py2store/utils/mongoquery
    module_docs/py2store/utils/signatures
-   module_docs/py2store/utils/sliceable
    module_docs/py2store/utils/timeseries_caching
    module_docs/py2store/utils/uri_utils
