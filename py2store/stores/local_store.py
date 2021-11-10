@@ -59,7 +59,7 @@ class PathFormatStore(PathFormatPersister, Persister):
     >>> # two files under rootdir (as long as the OS didn't create it's own under the hood)
     >>> len(s)
     2
-    >>> assert list(s) == [filepath_of('a'), filepath_of('b')]  # there's two files in s
+    >>> assert sort(s) == sort([filepath_of('a'), filepath_of('b')])  # there's two files in s
     >>> filepath_of('a') in s  # rootdir/a is in s
     True
     >>> filepath_of('not_there') in s  # rootdir/not_there is not in s
