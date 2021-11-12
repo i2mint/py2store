@@ -465,9 +465,6 @@ class FileReader(KvReader):
 class DirReader(FileReader):
     """KV Reader whose keys (AND VALUES) are directory full paths of the subdirectories of rootdir."""
 
-    def _extended_prefix(self, new_prefix):
-        return ensure_slash_suffix(super()._extended_prefix(new_prefix))
-
     def __contains__(self, k):
         return endswith_slash(k) and self.__contains__(k)
 
