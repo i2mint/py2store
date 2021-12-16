@@ -158,14 +158,29 @@ user_configs = None
 user_defaults = None
 mystores = None
 
+
+def mkdir_if_needed(dirpath, name=None, verbose=True):
+    if not os.path.isdir(dirpath):
+        name = name or 'directory'
+        print(f"The {name} doesn't exist. Making it: {dirpath}")
+        os.mkdir(dirpath)
+
+
+DFLT_PY2STORE_CONFIG_DIR = os.path.expanduser('~/.py2store_configs')
+DFLT_MY_CONFIGS_DIRNAME = 'my'
+
 try:
     import json
 
     user_configs_dirpath = os.path.expanduser(
-        getenv('PY2STORE_CONFIGS_DIR', '~/.py2store_configs')
+        getenv('PY2STORE_CONFIGS_DIR', DFLT_PY2STORE_CONFIG_DIR)
     )
-    my_configs_dirname = os.path.expanduser(getenv('MY_PY2STORE_DIR_NAME', 'my'))
+    mkdir_if_needed(user_configs_dirpath, 'user_configs_dirpath', verbose=True)
+    my_configs_dirname = os.path.expanduser(
+        getenv('MY_PY2STORE_DIR_NAME', DFLT_MY_CONFIGS_DIRNAME)
+    )
     myconfigs_dirpath = os.path.join(user_configs_dirpath, my_configs_dirname)
+    mkdir_if_needed(myconfigs_dirpath, 'myconfigs_dirpath', verbose=True)
 
     if os.path.isdir(user_configs_dirpath):
 
