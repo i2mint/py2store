@@ -4,19 +4,21 @@ stores to operate on local files
 import os
 from functools import wraps
 
-from py2store.base import Store, Persister
-from py2store.core import PrefixRelativizationMixin, PrefixRelativization
-from py2store.paths import mk_relative_path_store
-from py2store.serializers.pickled import mk_pickle_rw_funcs
+from dol.base import Store, Persister
+from dol.core import PrefixRelativizationMixin, PrefixRelativization
+from dol.paths import mk_relative_path_store
+from dol.mixins import SimpleJsonMixin
+from dol.filesys import MakeMissingDirsStoreMixin
+
+MakeMissingDirsStoreMixin  # just to tell linter to not complain (here for backcompat)
+
 from py2store.persisters.local_files import (
     PathFormatPersister,
     DirpathFormatKeys,
     DirReader,
     ensure_slash_suffix,
 )
-
-# from py2store.filesys import DirCollection
-from py2store.mixins import SimpleJsonMixin
+from py2store.serializers.pickled import mk_pickle_rw_funcs
 
 
 class PathFormatStore(PathFormatPersister, Persister):
@@ -143,18 +145,6 @@ RelativePathFormatStoreEnforcingFormat = RelPathLocalFileStoreEnforcingFormat
 #             return _id
 #         else:
 #             raise KeyError(f"Key not valid: {k}")
-
-
-class MakeMissingDirsStoreMixin:
-    """Will make a local file store automatically create the directories needed to create a file.
-    Should be placed before the concrete perisister in the mro but in such a manner so that it receives full paths.
-    """
-
-    def __setitem__(self, k, v):
-        _id = self._id_of_key(k)
-        dirname = os.path.dirname(_id)
-        os.makedirs(dirname, exist_ok=1)
-        super().__setitem__(k, v)
 
 
 class PathFormatStoreWithPrefix(Store):
