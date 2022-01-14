@@ -38,8 +38,9 @@
   * [Is a store an ORM? A DAO?](#is-a-store-an-orm--a-dao-)
   * [Should storage transform the data?](#should-storage-transform-the-data-)
 - [Some links](#some-links)
-
+- 
 <small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
+
 
 **Note: The core of py2store has now been moved to [`dol`](https://github.com/i2mint/dol),**
 and many of the specialized data object layers moved to separate packages. 
@@ -48,6 +49,12 @@ It's advised to use `dol` (and/or its specialized spin-off packages) directly wh
 
 # py2store
 Storage CRUD how and where you want it.
+
+[PyBay video about py2store](https://www.youtube.com/watch?v=6lx0A6oVM5E&t=1s).
+
+[Documentation here](https://i2mint.github.io/py2store/)
+
+Install it (e.g. `pip install py2store`).
 
 List, read, write, and delete data in a structured data source/target, 
 as if manipulating simple python builtins (dicts, lists), or through the interface **you** want to interact with, 
@@ -67,9 +74,6 @@ to bend your interface with data to your will.
 [More examples](#more-examples) will give you a taste of how you can adapt the three main aspects of 
 storage (persistence, serialization, and indexing) to your needs.
 
-Install it (e.g. `pip install py2store`).
-
-[Documentation here](https://i2mint.github.io/py2store/)
 
 # Quick peek
 
