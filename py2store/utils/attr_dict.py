@@ -1,5 +1,6 @@
 """
 a data object layer for object attributes
+
 """
 from collections import abc
 from keyword import iskeyword
@@ -19,6 +20,8 @@ class AttrMap:
     'bar'
     >>> t.b
     [1, 2, 3]
+
+    .. seealso:: 'DictAttr' in ``dol.sources`` module.
     """
 
     def __new__(cls, arg):  # <1>
@@ -87,6 +90,8 @@ def attr_wrap(cls, name=None):
     >>> assert 42 not in dir(t)
     >>> assert '$invalid' not in dir(t)
     >>> assert 'class' not in dir(t)
+
+    .. seealso:: 'DictAttr' in ``dol.sources`` module.
     """
     return type(
         name or f'Attr{cls.__name__}',
