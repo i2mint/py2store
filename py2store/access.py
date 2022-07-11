@@ -28,7 +28,7 @@ from warnings import warn
 from functools import reduce
 from operator import getitem
 from py2store.util import str_to_var_str
-from py2store.sources import DictAttr
+from py2store.sources import AttrDict
 
 FAK = '$fak'
 
@@ -200,7 +200,7 @@ try:
                         f'Unknown error when trying to json.load this file: {filepath}'
                     )
 
-        user_configs = DictAttr(**{k: v for k, v in directory_json_items()})
+        user_configs = AttrDict(**{k: v for k, v in directory_json_items()})
 
         from py2store.base import KvStore
         from py2store.stores.local_store import (
@@ -333,7 +333,7 @@ try:
         )
         if os.path.isfile(user_configs_filepath):
             user_configs_dict = json.load(open(user_configs_filepath))
-            user_configs = DictAttr(
+            user_configs = AttrDict(
                 **{str_to_var_str(k): v for k, v in user_configs_dict.items()}
             )
 
@@ -342,7 +342,7 @@ try:
     )
     if os.path.isfile(user_defaults_filepath):
         user_defaults_dict = json.load(open(user_defaults_filepath))
-        user_defaults = DictAttr(
+        user_defaults = AttrDict(
             **{str_to_var_str(k): v for k, v in user_defaults_dict.items()}
         )
 
