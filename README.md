@@ -13,8 +13,9 @@ Storage CRUD how and where you want it.
 
 Install it (e.g. `pip install py2store`).
 
-The main idea comes in many names such as [Data Access Object (DAO)](https://en.wikipedia.org/wiki/Data_access_object),
-[Repository Pattern](https://www.cosmicpython.com/book/chapter_02_repository.html)
+The main idea comes in many names such as 
+[Data Access Object (DAO)](https://en.wikipedia.org/wiki/Data_access_object),
+[Repository Pattern](https://www.cosmicpython.com/book/chapter_02_repository.html),
 [Hexagonal architecture, or ports and adapters architecture](https://en.wikipedia.org/wiki/Hexagonal_architecture_(software))
 for data. 
 But simply put, what `dol` provides is tools to make your interface with data be domain-oriented, simple, and isolated from the underlying data infrastucture. This makes the business logic code simple and stable, enables you to develop and test it without the need of any data infrastructure, and allows you to change this infrastructure independently.
