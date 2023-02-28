@@ -1,5 +1,48 @@
+**Note: The core of py2store has now been moved to [`dol`](https://github.com/i2mint/dol),**
+and many of the specialized data object layers moved to separate packages. 
+`py2store`'s functionality remains the same for now, forwarding to these packages. 
+It's advised to use `dol` (and/or its specialized spin-off packages) directly when sufficient, though.
+
+# py2store
+
+Storage CRUD how and where you want it.
+
+[PyBay video about py2store](https://www.youtube.com/watch?v=6lx0A6oVM5E&t=1s).
+
+[Documentation here](https://i2mint.github.io/py2store/)
+
+Install it (e.g. `pip install py2store`).
+
+The main idea comes in many names such as [Data Access Object (DAO)](https://en.wikipedia.org/wiki/Data_access_object),
+[Repository Pattern](https://www.cosmicpython.com/book/chapter_02_repository.html)
+[Hexagonal architecture, or ports and adapters architecture](https://en.wikipedia.org/wiki/Hexagonal_architecture_(software))
+for data. 
+But simply put, what `dol` provides is tools to make your interface with data be domain-oriented, simple, and isolated from the underlying data infrastucture. This makes the business logic code simple and stable, enables you to develop and test it without the need of any data infrastructure, and allows you to change this infrastructure independently.
+
+List, read, write, and delete data in a structured data source/target, 
+as if manipulating simple python builtins (dicts, lists), or through the interface **you** want to interact with, 
+with configuration or physical particularities out of the way. 
+Also, being able to change these particularities without having to change the business-logic code. 
+
+If you're not a "read from top to bottom" kinda person, here are some tips: 
+[Quick peek](#quick-peek) will show you a simple example of how it looks and feels. 
+[Use cases](#use-cases) will give you an idea of how py2store can be useful to you, if at all. 
+
+The section with the best bang for the buck is probably 
+[remove (much of the) data access entropy](#remove--much-of-the--data-access-entropy). 
+It will give you simple (but real) examples of how to use `py2store` tooling 
+to bend your interface with data to your will. 
+
+[How it works](#how-it-works) will give you a sense of how it works.
+[More examples](#more-examples) will give you a taste of how you can adapt the three main aspects of 
+storage (persistence, serialization, and indexing) to your needs.
+
+# Contents
+
 - [py2store](#py2store)
+- [Contents](#contents)
 - [Quick peek](#quick-peek)
+- [A list of stores for various uses](#a-list-of-stores-for-various-uses)
 - [Use cases](#use-cases)
   * [Interfacing reads](#interfacing-reads)
   * [Changing where and how things are stored](#changing-where-and-how-things-are-stored)
@@ -34,45 +77,14 @@
   * [Local Files](#local-files)
   * [MongoDB](#mongodb)
   * [S3, SQL, Zips, Dropbox](#s3--sql--zips--dropbox)
+- [Miscellenous](#miscellenous)
+  * [Caching](#caching)
 - [Philosophical FAQs](#philosophical-faqs)
   * [Is a store an ORM? A DAO?](#is-a-store-an-orm--a-dao-)
   * [Should storage transform the data?](#should-storage-transform-the-data-)
 - [Some links](#some-links)
-- 
+
 <small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
-
-
-**Note: The core of py2store has now been moved to [`dol`](https://github.com/i2mint/dol),**
-and many of the specialized data object layers moved to separate packages. 
-`py2store`'s functionality remains the same for now, forwarding to these packages. 
-It's advised to use `dol` (and/or its specialized spin-off packages) directly when sufficient, though.
-
-# py2store
-Storage CRUD how and where you want it.
-
-[PyBay video about py2store](https://www.youtube.com/watch?v=6lx0A6oVM5E&t=1s).
-
-[Documentation here](https://i2mint.github.io/py2store/)
-
-Install it (e.g. `pip install py2store`).
-
-List, read, write, and delete data in a structured data source/target, 
-as if manipulating simple python builtins (dicts, lists), or through the interface **you** want to interact with, 
-with configuration or physical particularities out of the way. 
-Also, being able to change these particularities without having to change the business-logic code. 
-
-If you're not a "read from top to bottom" kinda person, here are some tips: 
-[Quick peek](#quick-peek) will show you a simple example of how it looks and feels. 
-[Use cases](#use-cases) will give you an idea of how py2store can be useful to you, if at all. 
-
-The section with the best bang for the buck is probably 
-[remove (much of the) data access entropy](#remove--much-of-the--data-access-entropy). 
-It will give you simple (but real) examples of how to use `py2store` tooling 
-to bend your interface with data to your will. 
-
-[How it works](#how-it-works) will give you a sense of how it works.
-[More examples](#more-examples) will give you a taste of how you can adapt the three main aspects of 
-storage (persistence, serialization, and indexing) to your needs.
 
 
 # Quick peek
