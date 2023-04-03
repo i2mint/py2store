@@ -7,7 +7,6 @@
    module_docs/py2store/appendable
    module_docs/py2store/base
    module_docs/py2store/caching
-   module_docs/py2store/core
    module_docs/py2store/dig
    module_docs/py2store/errors
    module_docs/py2store/examples

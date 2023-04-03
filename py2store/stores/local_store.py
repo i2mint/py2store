@@ -6,7 +6,9 @@ from functools import wraps
 
 from dol.base import Store, Persister
 from dol.paths import (
-    mk_relative_path_store, PrefixRelativization, PrefixRelativizationMixin
+    mk_relative_path_store,
+    PrefixRelativization,
+    PrefixRelativizationMixin,
 )
 from dol.mixins import SimpleJsonMixin
 from dol.filesys import MakeMissingDirsStoreMixin
