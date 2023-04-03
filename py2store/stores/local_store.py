@@ -5,8 +5,8 @@ import os
 from functools import wraps
 
 from dol.base import Store, Persister
-from dol.core import PrefixRelativizationMixin, PrefixRelativization
-from dol.paths import mk_relative_path_store
+from dol.core import PrefixRelativizationMixin
+from dol.paths import mk_relative_path_store, PrefixRelativization
 from dol.mixins import SimpleJsonMixin
 from dol.filesys import MakeMissingDirsStoreMixin
 
