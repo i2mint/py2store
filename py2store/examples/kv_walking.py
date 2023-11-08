@@ -65,7 +65,7 @@ DO_NOT_YIELD = type('DoNotYield', (), {})()
 # TODO: More docs and doctests. This one even merits an extensive usage and example tutorial!
 def kv_walk(
     v: Mapping,
-    yield_func=asis,  # (p, k, v) -> what you want the gen to yield
+    leaf_yield=asis,  # (p, k, v) -> what you want the gen to yield
     walk_filt=val_is_mapping,  # (p, k, v) -> whether to explore the nested structure v further
     pkv_to_pv=tuple_keypath_and_val,
     p=(),
@@ -73,11 +73,11 @@ def kv_walk(
     """
 
     :param v:
-    :param yield_func: (pp, k, vv) -> what ever you want the gen to yield
+    :param leaf_yield: (pp, k, vv) -> what ever you want the gen to yield
     :param walk_filt: (p, k, vv) -> (bool) whether to explore the nested structure v further
     :param pkv_to_pv:  (p, k, v) -> (pp, vv)
         where pp is a form of p + k (update of the path with the new node k)
-        and vv is the value that will be used by both walk_filt and yield_func
+        and vv is the value that will be used by both walk_filt and leaf_yield
     :param p: The path to v
 
     >>> d = {'a': 1, 'b': {'c': 2, 'd': 3}}
@@ -94,18 +94,18 @@ def kv_walk(
         pp, vv = pkv_to_pv(
             p, k, vv
         )  # update the path with k (and preprocess v if necessary)
-        to_yield = yield_func(pp, k, vv)
+        to_yield = leaf_yield(pp, k, vv)
         if to_yield is not DO_NOT_YIELD:
             yield to_yield
         if walk_filt(
             p, k, vv
         ):  # should we recurse? (based on some function of p, k, v)
             # print(f"3: recurse with: pp={pp}, vv={vv}\n")
-            yield from kv_walk(vv, yield_func, walk_filt, pkv_to_pv, pp)  # recurse
+            yield from kv_walk(vv, leaf_yield, walk_filt, pkv_to_pv, pp)  # recurse
         # else:
-        # print(f"4: yield_func(pp={pp}, k={k}, vv={vv})\n --> {yield_func(pp, k, vv)}")
+        # print(f"4: leaf_yield(pp={pp}, k={k}, vv={vv})\n --> {leaf_yield(pp, k, vv)}")
 
-        # yield yield_func(pp, k, vv)  # yield something computed from p, k, vv
+        # yield leaf_yield(pp, k, vv)  # yield something computed from p, k, vv
 
 
 from inspect import signature
