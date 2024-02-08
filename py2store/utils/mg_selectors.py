@@ -90,7 +90,8 @@ with suppress(ModuleNotFoundError, ImportError):
             """
 
             :param selector: A mongo-like query of the underlying dataframe
-            :return:
+
+
             >>> _docs = [
             ...  {'bt': 0, 'tt': 5, 'tag': 'small'},
             ...  {'bt': 10, 'tt': 15, 'tag': 'small'},
@@ -119,7 +120,7 @@ with suppress(ModuleNotFoundError, ImportError):
 
             """
             selector_file_func = Query(selector).match
-            lidx = list(map(selector_file_func, self._df.to_dict(orient='rows')))
+            lidx = list(map(selector_file_func, self._df.to_dict(orient='records')))
             return self.__class__(self._df[lidx])
             # Below are just ideas towards a more general (source, selector, selection) framework
             # selection = self.__class__(self._df[lidx])
