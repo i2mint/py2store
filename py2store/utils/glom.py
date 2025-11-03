@@ -250,10 +250,7 @@ class PathAccessError(AttributeError, KeyError, IndexError, GlomError):
 
     def __str__(self):
         return 'could not access {!r}, part {!r} of {!r}, got error: {!r}'.format(
-            self.path.values()[self.part_idx],
-            self.part_idx,
-            self.path,
-            self.exc,
+            self.path.values()[self.part_idx], self.part_idx, self.path, self.exc,
         )
 
 
@@ -299,8 +296,7 @@ class CoalesceError(GlomError):
             for v in self.skipped
         ]
         msg = 'no valid values found. Tried {!r} and got ({})'.format(
-            missed_specs,
-            ', '.join(skipped_vals),
+            missed_specs, ', '.join(skipped_vals),
         )
         if self.coal_obj.skip is not _MISSING:
             msg += ', skip set to {!r}'.format(self.coal_obj.skip)
@@ -346,11 +342,7 @@ class UnregisteredTarget(GlomError):
         # <type %r> is because Python 3 inexplicably changed the type
         # repr from <type *> to <class *>
         return '{}({!r}, <type {!r}>, {!r}, {!r})'.format(
-            cn,
-            self.op,
-            self.target_type.__name__,
-            self.type_map,
-            self.path,
+            cn, self.op, self.target_type.__name__, self.type_map, self.path,
         )
 
     def __str__(self):
@@ -714,7 +706,9 @@ class Coalesce:
             self.skip_func = lambda v: v == self.skip
         self.skip_exc = kwargs.pop('skip_exc', GlomError)
         if kwargs:
-            raise TypeError('unexpected keyword args: {!r}'.format(sorted(kwargs.keys())))
+            raise TypeError(
+                'unexpected keyword args: {!r}'.format(sorted(kwargs.keys()))
+            )
 
     def glomit(self, target, scope):
         skipped = []
@@ -912,7 +906,9 @@ class Call:
 
     def __repr__(self):
         cn = self.__class__.__name__
-        return '{}({!r}, args={!r}, kwargs={!r})'.format(cn, self.func, self.args, self.kwargs)
+        return '{}({!r}, args={!r}, kwargs={!r})'.format(
+            cn, self.func, self.args, self.kwargs
+        )
 
 
 def _is_spec(obj, strict=False):
@@ -1482,7 +1478,9 @@ class Check:
             for v in val:
                 if not func(v):
                     raise ValueError(
-                        'expected {!r} argument to be {}, not: {!r}'.format(name, cond, v)
+                        'expected {!r} argument to be {}, not: {!r}'.format(
+                            name, cond, v
+                        )
                     )
             return val
 
@@ -1850,11 +1848,15 @@ class TargetRegistry:
         extensions.
         """
         if not isinstance(op_name, str):
-            raise TypeError('expected op_name to be a text name, not: {!r}'.format(op_name))
+            raise TypeError(
+                'expected op_name to be a text name, not: {!r}'.format(op_name)
+            )
         if auto_func is None:
             auto_func = lambda t: False
         elif not callable(auto_func):
-            raise TypeError('expected auto_func to be callable, not: {!r}'.format(auto_func))
+            raise TypeError(
+                'expected auto_func to be callable, not: {!r}'.format(auto_func)
+            )
 
         # determine support for any previously known types
         known_types = set(sum([list(m.keys()) for m in self._op_type_map.values()], []))

@@ -743,7 +743,9 @@ class Parser:
 
     def __repr__(self):
         if len(self._format) > 20:
-            return '<{} {!r}>'.format(self.__class__.__name__, self._format[:17] + '...')
+            return '<{} {!r}>'.format(
+                self.__class__.__name__, self._format[:17] + '...'
+            )
         return '<{} {!r}>'.format(self.__class__.__name__, self._format)
 
     @property
@@ -1034,10 +1036,7 @@ class Parser:
             self._group_index += 7
         elif type == 'tg':
             s = r'(\d{{1,2}}[-/](\d{{1,2}}|{})[-/]\d{{4}})(\s+{})?{}?{}?'.format(
-                ALL_MONTHS_PAT,
-                TIME_PAT,
-                AM_PAT,
-                TZ_PAT,
+                ALL_MONTHS_PAT, TIME_PAT, AM_PAT, TZ_PAT,
             )
             n = self._group_index
             self._type_conversions[group] = partial(
@@ -1046,10 +1045,7 @@ class Parser:
             self._group_index += 9
         elif type == 'ta':
             s = r'((\d{{1,2}}|{})[-/]\d{{1,2}}[-/]\d{{4}})(\s+{})?{}?{}?'.format(
-                ALL_MONTHS_PAT,
-                TIME_PAT,
-                AM_PAT,
-                TZ_PAT,
+                ALL_MONTHS_PAT, TIME_PAT, AM_PAT, TZ_PAT,
             )
             n = self._group_index
             self._type_conversions[group] = partial(
@@ -1059,10 +1055,7 @@ class Parser:
         elif type == 'te':
             # this will allow microseconds through if they're present, but meh
             s = r'({},\s+)?(\d{{1,2}}\s+{}\s+\d{{4}})\s+{}{}'.format(
-                DAYS_PAT,
-                MONTHS_PAT,
-                TIME_PAT,
-                TZ_PAT,
+                DAYS_PAT, MONTHS_PAT, TIME_PAT, TZ_PAT,
             )
             n = self._group_index
             self._type_conversions[group] = partial(
@@ -1071,7 +1064,9 @@ class Parser:
             self._group_index += 8
         elif type == 'th':
             # slight flexibility here from the stock Apache format
-            s = r'(\d{{1,2}}[-/]{}[-/]\d{{4}}):{}{}'.format(MONTHS_PAT, TIME_PAT, TZ_PAT)
+            s = r'(\d{{1,2}}[-/]{}[-/]\d{{4}}):{}{}'.format(
+                MONTHS_PAT, TIME_PAT, TZ_PAT
+            )
             n = self._group_index
             self._type_conversions[group] = partial(
                 date_convert, dmy=n + 1, hms=n + 3, tz=n + 6
@@ -1079,9 +1074,7 @@ class Parser:
             self._group_index += 6
         elif type == 'tc':
             s = r'({})\s+{}\s+(\d{{1,2}})\s+{}\s+(\d{{4}})'.format(
-                DAYS_PAT,
-                MONTHS_PAT,
-                TIME_PAT,
+                DAYS_PAT, MONTHS_PAT, TIME_PAT,
             )
             n = self._group_index
             self._type_conversions[group] = partial(

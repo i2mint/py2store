@@ -185,18 +185,14 @@ class Query:
     def _and(self, condition, entry):
         if isinstance(condition, Sequence):
             return all(self._match(sub_condition, entry) for sub_condition in condition)
-        raise QueryError(
-            f'$and has been attributed incorrect argument {condition!r}'
-        )
+        raise QueryError(f'$and has been attributed incorrect argument {condition!r}')
 
     def _nor(self, condition, entry):
         if isinstance(condition, Sequence):
             return all(
                 not self._match(sub_condition, entry) for sub_condition in condition
             )
-        raise QueryError(
-            f'$nor has been attributed incorrect argument {condition!r}'
-        )
+        raise QueryError(f'$nor has been attributed incorrect argument {condition!r}')
 
     def _not(self, condition, entry):
         return not self._match(condition, entry)
@@ -204,9 +200,7 @@ class Query:
     def _or(self, condition, entry):
         if isinstance(condition, Sequence):
             return any(self._match(sub_condition, entry) for sub_condition in condition)
-        raise QueryError(
-            f'$nor has been attributed incorrect argument {condition!r}'
-        )
+        raise QueryError(f'$nor has been attributed incorrect argument {condition!r}')
 
     ###################
     # Element operators
@@ -263,9 +257,7 @@ class Query:
         condition = bson_alias.get(condition, condition)
 
         if condition not in bson_type:
-            raise QueryError(
-                f'$type has been used with unknown type {condition!r}'
-            )
+            raise QueryError(f'$type has been used with unknown type {condition!r}')
 
         return isinstance(entry, bson_type.get(condition))
 
@@ -303,9 +295,7 @@ class Query:
         try:
             match = re.search(exp, entry, flags=flags)
         except Exception as error:
-            raise QueryError(
-                f'{condition!r} failed to execute with error {error!r}'
-            )
+            raise QueryError(f'{condition!r} failed to execute with error {error!r}')
         return bool(match)
 
     _options = _text = _where = _not_implemented

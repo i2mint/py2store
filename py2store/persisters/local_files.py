@@ -236,9 +236,7 @@ def w_helpful_folder_not_found_error(
             try:
                 return method(*args, **kwargs)
             except caught_errors as e:
-                msg = f'{type(e).__name__}: {e}\n' + extra_msg(
-                    *args, **kwargs
-                )
+                msg = f'{type(e).__name__}: {e}\n' + extra_msg(*args, **kwargs)
                 raise raise_error(msg)
 
         return wrapped_method
