@@ -19,7 +19,7 @@ class QueryError(Exception):
     pass
 
 
-class _Undefined(object):
+class _Undefined:
     # pylint: disable=too-few-public-methods
     pass
 
@@ -29,7 +29,7 @@ def is_non_string_sequence(entry):
     return isinstance(entry, Sequence) and not isinstance(entry, str)
 
 
-class Query(object):
+class Query:
     """The Query class is used to match an object against a MongoDB-like query"""
 
     # pylint: disable=too-few-public-methods
@@ -96,7 +96,7 @@ class Query(object):
                 try:
                     return getattr(self, '_' + operator[1:])(condition, entry)
                 except AttributeError:
-                    raise QueryError("{!r} operator isn't supported".format(operator))
+                    raise QueryError(f"{operator!r} operator isn't supported")
             else:
                 try:
                     extracted_data = self._extract(entry, operator.split('.'))
@@ -186,7 +186,7 @@ class Query(object):
         if isinstance(condition, Sequence):
             return all(self._match(sub_condition, entry) for sub_condition in condition)
         raise QueryError(
-            '$and has been attributed incorrect argument {!r}'.format(condition)
+            f'$and has been attributed incorrect argument {condition!r}'
         )
 
     def _nor(self, condition, entry):
@@ -195,7 +195,7 @@ class Query(object):
                 not self._match(sub_condition, entry) for sub_condition in condition
             )
         raise QueryError(
-            '$nor has been attributed incorrect argument {!r}'.format(condition)
+            f'$nor has been attributed incorrect argument {condition!r}'
         )
 
     def _not(self, condition, entry):
@@ -205,7 +205,7 @@ class Query(object):
         if isinstance(condition, Sequence):
             return any(self._match(sub_condition, entry) for sub_condition in condition)
         raise QueryError(
-            '$nor has been attributed incorrect argument {!r}'.format(condition)
+            f'$nor has been attributed incorrect argument {condition!r}'
         )
 
     ###################
@@ -264,7 +264,7 @@ class Query(object):
 
         if condition not in bson_type:
             raise QueryError(
-                '$type has been used with unknown type {!r}'.format(condition)
+                f'$type has been used with unknown type {condition!r}'
             )
 
         return isinstance(entry, bson_type.get(condition))
@@ -304,7 +304,7 @@ class Query(object):
             match = re.search(exp, entry, flags=flags)
         except Exception as error:
             raise QueryError(
-                '{!r} failed to execute with error {!r}'.format(condition, error)
+                f'{condition!r} failed to execute with error {error!r}'
             )
         return bool(match)
 
@@ -333,7 +333,7 @@ class Query(object):
     def _size(condition, entry):
         if not isinstance(condition, int):
             raise QueryError(
-                '$size has been attributed incorrect argument {!r}'.format(condition)
+                f'$size has been attributed incorrect argument {condition!r}'
             )
 
         if is_non_string_sequence(entry):

@@ -1,6 +1,6 @@
 """ Selectors that use the mongo-query interface """
 
-from typing import Iterator
+from collections.abc import Iterator
 from contextlib import suppress
 
 with suppress(ModuleNotFoundError, ImportError):

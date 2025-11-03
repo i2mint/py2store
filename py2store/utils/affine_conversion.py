@@ -3,7 +3,7 @@ utils to carry out affine transformations (of indices)
 """
 
 
-class AffineConverter(object):
+class AffineConverter:
     """
     Getting a callable that will perform an affine conversion.
     Note, it does it as

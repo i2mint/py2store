@@ -89,10 +89,9 @@ def iter_filepaths_in_folder_recursively(
     for full_path in paths_in_dir(root_folder):
         if os.path.isdir(full_path):
             if _current_level < max_levels:
-                for entry in iter_filepaths_in_folder_recursively(
+                yield from iter_filepaths_in_folder_recursively(
                     full_path, max_levels, _current_level + 1
-                ):
-                    yield entry
+                )
         else:
             if os.path.isfile(full_path):
                 yield full_path
@@ -105,10 +104,9 @@ def iter_dirpaths_in_folder_recursively(root_folder, max_levels=None, _current_l
         if os.path.isdir(full_path):
             yield full_path
             if _current_level < max_levels:
-                for entry in iter_dirpaths_in_folder_recursively(
+                yield from iter_dirpaths_in_folder_recursively(
                     full_path, max_levels, _current_level + 1
-                ):
-                    yield entry
+                )
 
 
 class PrefixedFilepaths:
@@ -214,13 +212,14 @@ def first_non_existing_parent_dir(dirpath):
 # Local File Persistence : Classes
 
 from functools import wraps
-from typing import Union, Callable
+from typing import Union
+from collections.abc import Callable
 
 
 def w_helpful_folder_not_found_error(
     *,
     raise_error=KeyError,
-    extra_msg: Union[str, Callable] = '',
+    extra_msg: str | Callable = '',
     caught_errors=FileNotFoundError,
 ):
     if isinstance(extra_msg, str):
@@ -237,7 +236,7 @@ def w_helpful_folder_not_found_error(
             try:
                 return method(*args, **kwargs)
             except caught_errors as e:
-                msg = '{}: {}\n'.format(type(e).__name__, e) + extra_msg(
+                msg = f'{type(e).__name__}: {e}\n' + extra_msg(
                     *args, **kwargs
                 )
                 raise raise_error(msg)

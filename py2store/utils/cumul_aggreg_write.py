@@ -41,8 +41,7 @@ def join_string_values_and_key_as_current_utc_milliseconds(gen):
 
 def mk_kv_from_keygen(keygen=itertools.count()):
     def aggregate(gen):
-        for k, v in zip(keygen, gen):
-            yield k, v
+        yield from zip(keygen, gen)
 
     return aggregate
 

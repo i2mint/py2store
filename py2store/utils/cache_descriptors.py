@@ -23,7 +23,7 @@ from functools import update_wrapper
 ncaches = 0
 
 
-class _CachedProperty(object):
+class _CachedProperty:
     """
     Cached property implementation class.
     """
@@ -92,7 +92,7 @@ def CachedProperty(*args):
     return factory
 
 
-class Lazy(object):
+class Lazy:
     """Lazy Attributes."""
 
     def __init__(self, func, name=None):
@@ -111,7 +111,7 @@ class Lazy(object):
         return value
 
 
-class readproperty(object):
+class readproperty:
     def __init__(self, func):
         self.func = func
         update_wrapper(self, func)
@@ -124,7 +124,7 @@ class readproperty(object):
         return func(inst)
 
 
-class cachedIn(object):
+class cachedIn:
     """Cached property with given cache attribute."""
 
     def __init__(self, attribute_name):

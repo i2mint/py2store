@@ -36,7 +36,7 @@ def check_if_the_user_wants_to_delete_all_the_elements(n):
         + ' without the --> and where XX is replaced by that number of elements I mentioned twice '
         + "(if you're not paying attention, you shouldn't be allowed to do it).\n"
         + 'If not, just type anything (or nothing) and hit enter.\n'
-        + 'So go on, what do you want to do?\n--> '.format(conf_msg=conf_msg)
+        + f'So go on, what do you want to do?\n--> '
     )
     feedback = input(msg)
     return feedback == confirmation.format(n=n)

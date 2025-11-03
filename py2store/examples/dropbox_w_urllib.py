@@ -22,7 +22,7 @@ class DropboxFolderCopyReader(KvReader):
     def __getitem__(self, rel_path):
         real_path = os.path.join(self.path, rel_path)
         try:
-            with open(real_path, 'r') as f:
+            with open(real_path) as f:
                 return f.read()
         except FileNotFoundError:
             raise KeyError(f"Key doesn't exist: {rel_path}")
@@ -50,7 +50,7 @@ class DropboxFileCopyReader(KvReader):
         self.path = path or self._get_filename_from_url()
 
         download_from_dropbox(self.url, self.path)
-        self.file = open(self.path, 'r')
+        self.file = open(self.path)
 
     def __getitem__(self, index):
         self.file.seek(0)
