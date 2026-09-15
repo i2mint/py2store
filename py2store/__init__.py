@@ -1,5 +1,21 @@
 """
-Your portal to many Data Object Layer goodies
+py2store: tools to create simple and consistent interfaces to complicated and varied data sources.
+
+The core has moved to the ``dol`` package (Data Object Layer); py2store keeps the original
+names, re-exports them, and keeps the local-file stores that still live here. A store is a
+``MutableMapping`` whose keys and values are transformed on the way in and out, so that files,
+zip archives or databases are read and written like a ``dict``.
+
+Main entry points:
+
+- ``LocalTextStore``, ``LocalBinaryStore``, ``LocalPickleStore``, ``LocalJsonStore``: the files under a root directory as a dict
+- ``QuickStore``: the pickle store with a temporary default root and directories created on write
+- ``wrap_kvs``, ``filt_iter``, ``cached_keys``: transform a store's keys, values or iteration (from ``dol.trans``)
+- ``kvhead``, ``ihead``: peek at the first items of a store or an iterable
+
+>>> from py2store import kvhead
+>>> kvhead({'a': 1, 'b': 2})
+('a', 1)
 """
 import os
 from contextlib import suppress
@@ -8,7 +24,18 @@ file_sep = os.path.sep
 
 
 def kvhead(store, n=1):
-    """Get the first item of a kv store, or a list of the first n items"""
+    """Get the first ``(key, value)`` item of a store, or a list of the first ``n`` items.
+
+    With ``n=1`` the item itself is returned (``None`` if the store is empty); otherwise a
+    list of at most ``n`` items, in the store's iteration order.
+
+    >>> kvhead({'a': 1, 'b': 2})
+    ('a', 1)
+    >>> kvhead({'a': 1, 'b': 2}, 5)
+    [('a', 1), ('b', 2)]
+    >>> kvhead({}) is None
+    True
+    """
     if n == 1:
         for k in store:
             return k, store[k]
@@ -17,7 +44,18 @@ def kvhead(store, n=1):
 
 
 def ihead(store, n=1):
-    """Get the first item of an iterable, or a list of the first n items"""
+    """Get the first item of an iterable, or a list of the first ``n`` items.
+
+    With ``n=1`` the item itself is returned (``None`` if the iterable is empty); otherwise a
+    list of at most ``n`` items.
+
+    >>> ihead(iter('abc'))
+    'a'
+    >>> ihead('abc', 2)
+    ['a', 'b']
+    >>> ihead(iter('')) is None
+    True
+    """
     if n == 1:
         for item in iter(store):
             return item

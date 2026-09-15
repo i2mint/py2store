@@ -1,5 +1,6 @@
 """
-Note: Moved to umpyre (pip install umpyre)
+Note:
+    Moved to umpyre (pip install umpyre)
 
 Get stats about packages. Your own, or other's.
 Things like...

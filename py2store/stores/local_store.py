@@ -1,5 +1,23 @@
 """
-stores to operate on local files
+Stores that read and write local files as key-value mappings.
+
+Keys are paths relative to a root directory and values are the file contents (text, bytes,
+or objects through pickle or json serialization). The ``Local*Store`` classes need the
+directories to exist already; the ``Quick*Store`` classes create missing directories on write
+and pick a temporary root when none is given.
+
+Main entry points:
+
+- ``LocalTextStore``, ``LocalBinaryStore``: file contents as ``str`` or ``bytes``
+- ``LocalPickleStore``, ``LocalJsonStore``: values serialized with pickle or json
+- ``QuickStore``: ``LocalPickleStore`` with a temporary default root and directories created on write
+- ``DirStore``: the subdirectories of a directory, as nested stores
+
+>>> import tempfile
+>>> s = LocalTextStore(tempfile.mkdtemp())
+>>> s['hello.txt'] = 'world'
+>>> list(s), s['hello.txt']
+(['hello.txt'], 'world')
 """
 import os
 from functools import wraps
@@ -151,6 +169,8 @@ RelativePathFormatStoreEnforcingFormat = RelPathLocalFileStoreEnforcingFormat
 
 
 class PathFormatStoreWithPrefix(Store):
+    """``PathFormatStore`` wrapped in a ``Store``, with the root directory available as ``_prefix``."""
+
     @wraps(PathFormatStore.__init__)
     def __init__(self, *args, **kwargs):
         super().__init__(store=PathFormatStore(*args, **kwargs))
@@ -163,25 +183,81 @@ class PathFormatStoreWithPrefix(Store):
 
 
 class RelativePathFormatStore2(PrefixRelativizationMixin, PathFormatStoreWithPrefix):
-    pass
+    """``PathFormatStoreWithPrefix`` with keys made relative to the root directory."""
 
 
 class LocalTextStore(RelativePathFormatStore):
-    """Local files store for text data"""
+    """Local files store for text data: keys are paths relative to the root, values are ``str``.
+
+    Directories are not created for you: writing under a missing directory raises
+    ``FolderNotFoundError``. Use ``QuickTextStore`` to have them created on write.
+
+    Args:
+        path_format: The root directory, optionally followed by a ``{}`` template (for example
+            ``'/data/{}.txt'``) that restricts which files under the root are listed
+            (a key that does not match the template can still be read or written).
+        max_levels: How many directory levels below the root to include when iterating
+            (``None`` for no limit).
+
+    >>> import os, tempfile
+    >>> rootdir = tempfile.mkdtemp()
+    >>> s = LocalTextStore(rootdir)
+    >>> len(s)
+    0
+    >>> s['hello.txt'] = 'world'
+    >>> list(s), s['hello.txt'], 'hello.txt' in s
+    (['hello.txt'], 'world', True)
+
+    A template filters the listing; it does not change how a key is written:
+
+    >>> only_txt = LocalTextStore(os.path.join(rootdir, '{}.txt'))
+    >>> only_txt['notes'] = 'x'  # written to rootdir/notes, not rootdir/notes.txt
+    >>> list(only_txt)
+    ['hello.txt']
+    """
 
     def __init__(self, path_format, max_levels=None):
         super().__init__(path_format, max_levels=max_levels, mode='t')
 
 
 class LocalBinaryStore(RelativePathFormatStore):
-    """Local files store for binary data"""
+    """Local files store for binary data: like ``LocalTextStore``, but values are ``bytes``.
+
+    >>> import tempfile
+    >>> s = LocalBinaryStore(tempfile.mkdtemp())
+    >>> s['raw.bin'] = b'ab'
+    >>> s['raw.bin']
+    b'ab'
+    """
 
     def __init__(self, path_format, max_levels=None):
         super().__init__(path_format, max_levels=max_levels, mode='b')
 
 
 class LocalPickleStore(RelativePathFormatStore):
-    """Local files store with pickle serialization"""
+    """Local files store with pickle serialization: values are any picklable Python object.
+
+    Args:
+        path_format: The root directory, optionally with a ``{}`` template (see ``LocalTextStore``).
+        max_levels: How many directory levels below the root to include when iterating.
+        fix_imports: Forwarded to ``pickle.dumps`` and ``pickle.loads``.
+        protocol: The pickle protocol used when writing.
+        pickle_encoding: Forwarded to ``pickle.loads``.
+        pickle_errors: Forwarded to ``pickle.loads``.
+        **open_kwargs: Forwarded to ``open`` when reading and writing files.
+
+    Raises:
+        ModuleNotFoundError: When unpickling a value needs a module that cannot be imported
+            (the message names the key).
+
+    >>> import tempfile
+    >>> s = LocalPickleStore(tempfile.mkdtemp())
+    >>> s['obj'] = {'x': [1, 2]}
+    >>> s['obj']
+    {'x': [1, 2]}
+    >>> s.head()
+    ('obj', {'x': [1, 2]})
+    """
 
     def __init__(
         self,
@@ -200,6 +276,7 @@ class LocalPickleStore(RelativePathFormatStore):
 
     @classmethod
     def for_dill(cls, path_format, max_levels=None, open_kwargs=None, *args, **kwargs):
+        """Make a store that serializes with ``dill`` instead of ``pickle``; ``*args`` and ``**kwargs`` go to ``mk_dill_rw_funcs``."""
         from py2store.serializers.pickled import mk_dill_rw_funcs
 
         open_kwargs = open_kwargs or {}
@@ -221,18 +298,27 @@ class LocalPickleStore(RelativePathFormatStore):
 
     # TODO: hack to take care of problem with head not playing well with wrappers. Find better solution.
     def head(self):
+        """Return the first ``(key, value)`` item, or ``None`` if the store is empty."""
         for k, v in self.items():
             return k, v
 
 
 class LocalJsonStore(SimpleJsonMixin, LocalTextStore):
-    __doc__ = str(LocalTextStore.__doc__) + SimpleJsonMixin._docsuffix
+    """Local files store for JSON data: values are read with ``json.loads`` and written with ``json.dumps``.
+
+    >>> import tempfile
+    >>> s = LocalJsonStore(tempfile.mkdtemp())
+    >>> s['conf.json'] = {'a': 1}
+    >>> s['conf.json']
+    {'a': 1}
+    """
 
 
 PickleStore = LocalPickleStore  # alias
 
 
 def mk_tmp_quick_store_dirpath(dirname=''):
+    """Path of ``dirname`` under the system temp directory (``tempfile.gettempdir()``)."""
     from tempfile import gettempdir
 
     temp_root = gettempdir()
@@ -240,6 +326,7 @@ def mk_tmp_quick_store_dirpath(dirname=''):
 
 
 def mk_absolute_path(path_format):
+    """Expand a leading ``~`` and make a path starting with ``.`` absolute; other paths are returned unchanged."""
     if path_format.startswith('~'):
         path_format = os.path.expanduser(path_format)
     elif path_format.startswith('.'):
@@ -264,6 +351,7 @@ class AutoMkPathformatMixin:
 
     @classmethod
     def mk_tmp_quick_store_path_format(cls, subpath=''):
+        """Path of ``subpath`` under the class's folder (``_tmp_dirname``) in the system temp directory."""
         return mk_tmp_quick_store_dirpath(os.path.join(cls._tmp_dirname, subpath))
 
     def __init__(self, path_format=None, max_levels=None):
@@ -308,19 +396,36 @@ class QuickLocalStoreMixin(AutoMkPathformatMixin, AutoMkDirsOnSetitemMixin):
 
 
 class QuickTextStore(QuickLocalStoreMixin, LocalTextStore):
-    __doc__ = str(LocalTextStore.__doc__) + QuickLocalStoreMixin._docsuffix
+    """``LocalTextStore`` with a temporary default root and directories created on write.
+
+    >>> import os, tempfile
+    >>> s = QuickTextStore(os.path.join(tempfile.mkdtemp(), 'sub'))
+    >>> s['x/y.txt'] = 'z'  # sub/ and sub/x/ are created for you
+    >>> list(s), s['x/y.txt']
+    (['x/y.txt'], 'z')
+    """
 
 
 class QuickBinaryStore(QuickLocalStoreMixin, LocalBinaryStore):
-    __doc__ = str(LocalBinaryStore.__doc__) + QuickLocalStoreMixin._docsuffix
+    """``LocalBinaryStore`` with a temporary default root and directories created on write."""
 
 
 class QuickJsonStore(SimpleJsonMixin, QuickTextStore):
-    __doc__ = str(QuickTextStore.__doc__) + SimpleJsonMixin._docsuffix
+    """``QuickTextStore`` whose values are read with ``json.loads`` and written with ``json.dumps``."""
 
 
 class QuickPickleStore(QuickLocalStoreMixin, PickleStore):
-    __doc__ = str(PickleStore.__doc__) + QuickLocalStoreMixin._docsuffix
+    """``LocalPickleStore`` with a temporary default root and directories created on write.
+
+    This is what ``QuickStore`` and ``LocalStore`` name. Without a ``path_format`` a folder
+    under the system temp directory is used, and its path is printed.
+
+    >>> import os, tempfile
+    >>> s = QuickPickleStore(os.path.join(tempfile.mkdtemp(), 'quick'))
+    >>> s['deep/er/key'] = [1, 2]
+    >>> s['deep/er/key'], list(s)
+    ([1, 2], ['deep/er/key'])
+    """
 
 
 QuickStore = QuickPickleStore  # alias
@@ -355,6 +460,8 @@ class DirStore(Store):
 
 
 class RelativeDirPathFormatKeys(PrefixRelativizationMixin, Store):
+    """``DirpathFormatKeys`` (the folders under a root) wrapped in a ``Store`` with keys relative to the root."""
+
     @wraps(DirpathFormatKeys.__init__)
     def __init__(self, *args, **kwargs):
         super().__init__(store=DirpathFormatKeys(*args, **kwargs))

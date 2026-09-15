@@ -83,10 +83,22 @@ jobs:
       - name: Publish
         run: |
           twine upload dist/$PROJECT_NAME-$VERSION.tar.gz -u ${{ secrets.PYPI_USERNAME }} -p ${{ secrets.PYPI_PASSWORD }} --non-interactive  --skip-existing --disable-progress-bar
-          epythet make . github
 
       - name: Push Changes
         run: pack check-in "**CI** Formatted code + Updated version number and documentation. [skip ci]" --auto-choose-default-action --bypass-docstring-validation --bypass-tests --bypass-code-formatting --verbose
 
       - name: Tag Repository
         run: isee tag-repo $VERSION
+
+  github-pages:
+    name: Publish GitHub Pages
+    if: "!contains(github.event.head_commit.message, '[skip ci]') && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)"
+    needs: publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: i2mint/epythet/actions/publish-github-pages@master
+        with:
+          # IMPORTANT Note: You don't need to specify GITHUB_TOKEN in your repo secrets.
+          # GITHUB_TOKEN is special & automatically provided to your workflow run.
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          ignore: "tests/,scrap/,examples/"

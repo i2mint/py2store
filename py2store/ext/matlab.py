@@ -8,7 +8,7 @@ with suppress(ModuleNotFoundError, ImportError):
     from py2store.ext.hdf import HdfFileReader, HdfDatasetReader, HdfRefReader
 
     def read_matlab_bytes_with_scipy(b: bytes):
-        """Note: Doesn't work after matlab 7.3. For >= 7.3, use hdf."""
+        """Read MATLAB bytes with scipy; not for MATLAB 7.3 and later (use hdf for those)."""
         from scipy.io import loadmat
 
         return loadmat(BytesIO(b))

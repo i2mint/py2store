@@ -142,6 +142,7 @@ with suppress(ModuleNotFoundError, ImportError):
 
         :param selector: A mongo-like query of the underlying dataframe
         :return:
+
         >>> _docs = [
         ...  {'bt': 0, 'tt': 5, 'tag': 'small'},
         ...  {'bt': 10, 'tt': 15, 'tag': 'small'},
@@ -211,6 +212,7 @@ with suppress(ModuleNotFoundError, ImportError):
 
         :param selector: A mongo-like query of the underlying dataframe
         :return:
+
         >>> _docs = [
         ...  {'bt': 0, 'tt': 5, 'tag': 'small'},
         ...  {'bt': 10, 'tt': 15, 'tag': 'small'},

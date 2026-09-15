@@ -114,13 +114,17 @@ from inspect import signature
 def conjunction(*funcs, name=None):
     """Make a function that is the conjunction of other functions.
     And by that we mean that
-    ```
-    conjunction(*args, **kwargs)
-    ```
+
+    .. code-block:: text
+
+        conjunction(*args, **kwargs)
+
     will be equal to
-    ```
-    func_1(*args, **kwargs) & ... & func_n(*args, **kwargs)
-    ```
+
+    .. code-block:: text
+
+        func_1(*args, **kwargs) & ... & func_n(*args, **kwargs)
+
     for all `args, kwargs`.
     """
     first_func, *other_funcs = funcs

@@ -11,15 +11,19 @@ Here are tools to help you out.
 
 There are two main key-value stores: One for configurations the user wants to reuse, and the other for the user's
 desired defaults. Both have the same structure:
+
     * first level key: Name of the resource (should be a valid python variable name)
     * The reminder is more or less free form (until the day we lay out some schemas for this)
 
 The system will look for the specification of user_configs and user_defaults in a json file.
 The filepath to this json file can specified in environment variables
     PY2STORE_CONFIGS_JSON_FILEPATH and PY2STORE_DEFAULTS_JSON_FILEPATH
+
 respectively.
-By default, they are:
+By default, they are::
+
     ~/.py2store_configs.json and ~/.py2store_defaults.json
+
 respectively.
 """
 import os
@@ -48,6 +52,7 @@ def getenv(name, default=None):
 
 
 def assert_callable(f: callable) -> callable:
+    """Return ``f`` unchanged if it is callable, else raise ``AssertionError``."""
     assert callable(f), f'Is not callable: {f}'
     return f
 
@@ -96,10 +101,23 @@ def _fakit(f: callable, a: (tuple, list), k: dict):
 
 
 def fakit_from_dict(d, func_loader=assert_callable):
+    """Call the function in ``d['f']`` (through ``func_loader``) with the args ``d['a']`` and kwargs ``d['k']``, both optional."""
     return _fakit(func_loader(d['f']), a=d.get('a', ()), k=d.get('k', {}))
 
 
 def fakit_from_tuple(t: (tuple, list), func_loader: callable = dflt_func_loader):
+    """Call the function in ``t[0]`` (through ``func_loader``) with the args and kwargs in the rest of ``t``.
+
+    ``t`` has 1 to 3 elements: ``(f,)``, ``(f, args)``, ``(f, kwargs)`` or ``(f, args, kwargs)``,
+    where ``args`` is a tuple or list and ``kwargs`` a dict.
+
+    >>> fakit_from_tuple((len, ['abc']))
+    3
+    >>> fakit_from_tuple(('builtins.len', ['ab']))
+    2
+    >>> fakit_from_tuple((dict, (), {'x': 1}))
+    {'x': 1}
+    """
     f = func_loader(t[0])
     a = ()
     k = {}
@@ -132,14 +150,15 @@ def fakit_from_tuple(t: (tuple, list), func_loader: callable = dflt_func_loader)
 def fakit(fak, func_loader=dflt_func_loader):
     """Execute a fak with given f, a, k and function loader.
 
-    Essentially returns func_loader(f)(*a, **k)
+    Essentially returns ``func_loader(f)(*a, **k)``
 
     Args:
         fak: A (f, a, k) specification. Could be a tuple or a dict (with 'f', 'a', 'k' keys). All but f are optional.
         func_loader: A function returning a function. This is where you specify any validation of func specification f,
             and/or how to get a callable from it.
 
-    Returns: A python object.
+    Returns:
+        A python object.
     """
 
     if isinstance(fak, dict):
@@ -160,6 +179,7 @@ mystores = None
 
 
 def mkdir_if_needed(dirpath, name=None, verbose=True):
+    """Create ``dirpath`` if it does not exist, printing a note that calls it ``name`` (``verbose`` is accepted but not used)."""
     if not os.path.isdir(dirpath):
         name = name or 'directory'
         print(f"The {name} doesn't exist. Making it: {dirpath}")
@@ -185,6 +205,7 @@ try:
     if os.path.isdir(user_configs_dirpath):
 
         def directory_json_items():
+            """Yield ``(name, contents)`` for every ``.json`` file in the user configs directory, warning about files that fail to decode."""
             for f in filter(
                 lambda x: x.endswith('.json'), os.listdir(user_configs_dirpath)
             ):
@@ -216,6 +237,12 @@ try:
 
             @OverWritesNotAllowedMixin.wrap
             class MyConfigs(MiscStoreMixin, LocalBinaryStore):
+                """The user's config files under the ``my`` configs directory, as a store.
+
+                A ``'name:key:subkey'`` key drills into the nested values of the ``name`` config.
+                Overwriting and deleting entries are disabled, to keep the configs safe.
+                """
+
                 key_sep = ':'
 
                 @wraps(LocalBinaryStore)
@@ -234,6 +261,7 @@ try:
                     self.__init__(*args, **kwargs)
 
                 def get(self, k, default=None):
+                    """``self[k]``, or ``default`` if the key is missing."""
                     try:
                         return self[k]
                     except KeyError:
@@ -253,6 +281,7 @@ try:
                         )
 
                 def get_config_value(self, k, path=None):
+                    """The config named ``k``, or its ``path`` entry when ``path`` is given (``KeyError`` if ``path`` is not in it)."""
                     v = self.get(k)
                     if path is None:
                         return v
@@ -264,6 +293,7 @@ try:
 
                 @property
                 def rootdir(self):
+                    """The directory the configs are read from."""
                     return self._prefix
 
                 def __delitem__(self, k):
@@ -285,6 +315,11 @@ try:
             )
 
         class MyStores(KvStore):
+            """Store specifications (json files under the user configs directory) that instantiate the store on read.
+
+            A specification is a dict with a ``'$fak'`` entry holding an ``(f, a, k)`` specification, run through ``fakit``.
+            """
+
             func_loader = staticmethod(dflt_func_loader)
 
             def _obj_of_data(self, data):
@@ -299,13 +334,16 @@ try:
 
             @property
             def configs(self):
+                """The underlying store of raw specifications."""
                 return self.store
 
         def without_json_ext(_id):
+            """Strip the ``.json`` extension from ``_id``."""
             assert _id.endswith('.json'), 'Should end with .json'
             return _id[: -len('.json')]
 
         def add_json_ext(k):
+            """Append ``.json`` to ``k``."""
             return k + '.json'
 
         ExtLessJsonStore = wrap_kvs(

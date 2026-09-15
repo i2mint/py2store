@@ -103,6 +103,7 @@ def auto_field_format_str(format_str):
 
     Returns:
         A transformed format_str that has no names {inside} {formatting} {braces}.
+
     >>> auto_field_format_str('R/{0}/{one}/{}/{two}/T')
     'R/{}/{}/{}/{}/T'
     """
@@ -117,6 +118,7 @@ def manual_field_format_str(format_str):
 
     Returns:
         A transformed format_str that has no names {inside} {formatting} {braces}.
+
     >>> auto_field_format_str('R/{0}/{one}/{}/{two}/T')
     'R/{}/{}/{}/{}/T'
     """
@@ -146,6 +148,7 @@ def name_fields_in_format_str(format_str, field_names=None):
 
     Returns:
         A transformed format_str
+
     >>> name_fields_in_format_str('R/{0}/{one}/{}/{two}/T')
     'R/{0}/{1}/{2}/{3}/T'
     >>> # Note here that we use the field name to inject a field format as well
@@ -175,6 +178,7 @@ def format_params_in_str_format(format_string):
     Returns:
         A list of parameter indices used in the format string, in the order they appear, with repetition.
         Parameter indices could be integers, strings, or None (to denote "automatic field numbering".
+
     >>> format_string = '{0} (no 1) {2}, and {0} is a duplicate, {} is unnamed and {name} is string-named'
     >>> format_params_in_str_format(format_string)
     [0, 2, 0, None, 'name']
@@ -194,7 +198,10 @@ def n_format_params_in_str_format(format_string):
 
 def is_manual_format_string(format_string):
     """Says if the format_string uses a manual specification
-    See Also: is_automatic_format_string and
+
+    See Also:
+        is_automatic_format_string and
+
     >>> is_manual_format_string('Manual: indices: {1} {2}, named: {named} {fields}')
     True
     >>> is_manual_format_string('Auto: only un-indexed and un-named: {} {}...')
@@ -209,7 +216,10 @@ def is_manual_format_string(format_string):
 
 def is_automatic_format_string(format_string):
     """Says if the format_string is uses automatic specification
-    See Also: is_manual_format_params
+
+    See Also:
+        is_manual_format_params
+
     >>> is_automatic_format_string('Manual: indices: {1} {2}, named: {named} {fields}')
     False
     >>> is_automatic_format_string('Auto: only un-indexed and un-named: {} {}...')
@@ -224,8 +234,10 @@ def is_automatic_format_string(format_string):
 
 def is_hybrid_format_string(format_string):
     """Says if the format_params is from a hybrid of auto and manual.
-    Note: Hybrid specifications are considered non-valid and can't be formatted with format_string.format(...).
-    Yet, it can be useful for flexibility of expression (but will need to be resolved to be used).
+
+    Note:
+        Hybrid specifications are considered non-valid and can't be formatted with format_string.format(...).
+        Yet, it can be useful for flexibility of expression (but will need to be resolved to be used).
 
     >>> is_hybrid_format_string('Manual: indices: {1} {2}, named: {named} {fields}')
     False
@@ -241,7 +253,9 @@ def is_hybrid_format_string(format_string):
 
 def is_manual_format_params(format_params):
     """Says if the format_params is from a manual specification
-    See Also: is_automatic_format_params
+
+    See Also:
+        is_automatic_format_params
     """
     assert not isinstance(
         format_params, str
@@ -251,7 +265,9 @@ def is_manual_format_params(format_params):
 
 def is_automatic_format_params(format_params):
     """Says if the format_params is from an automatic specification
-    See Also: is_manual_format_params and is_hybrid_format_params
+
+    See Also:
+        is_manual_format_params and is_hybrid_format_params
     """
     assert not isinstance(
         format_params, str
@@ -261,9 +277,13 @@ def is_automatic_format_params(format_params):
 
 def is_hybrid_format_params(format_params):
     """Says if the format_params is from a hybrid of auto and manual.
-    Note: Hybrid specifications are considered non-valid and can't be formatted with format_string.format(...).
-    Yet, it can be useful for flexibility of expression (but will need to be resolved to be used).
-    See Also: is_manual_format_params and is_automatic_format_params
+
+    Note:
+        Hybrid specifications are considered non-valid and can't be formatted with format_string.format(...).
+        Yet, it can be useful for flexibility of expression (but will need to be resolved to be used).
+
+    See Also:
+        is_manual_format_params and is_automatic_format_params
     """
     assert not isinstance(
         format_params, str
@@ -297,12 +317,14 @@ def empty_arg_and_kwargs_for_format(format_string, fill_val=None):
 
 def args_and_kwargs_indices(format_string):
     """Get the sets of indices and names used in manual specification of format strings, or None, None if auto spec.
+
     Args:
         format_string: A format string (i.e. a string with {...} to mark parameter placement and formatting
 
     Returns:
         None, None if format_string is an automatic specification
         set_of_indices_used, set_of_fields_used if it is a manual specification
+
     >>> format_string = '{0} (no 1) {2}, {see} this, {0} is a duplicate (appeared before) and {name} is string-named'
     >>> assert args_and_kwargs_indices(format_string) == ({0, 2}, {'name', 'see'})
     >>> format_string = 'This is a format string with only automatic field specification: {}, {}, {} etc.'

@@ -27,17 +27,20 @@ non_alphanumeric = ''.join(set(string.printable).difference(alphanumeric))
 
 def random_word(length, alphabet, concat_func=add):
     """Make a random word by concatenating randomly drawn elements from alphabet together
+
     Args:
         length: Length of the word
         alphabet: Alphabet to draw from
         concat_func: The concatenation function (e.g. + for strings and lists)
 
-    Note: Repeated elements in alphabet will have more chances of being drawn.
+    Note:
+        Repeated elements in alphabet will have more chances of being drawn.
 
     Returns:
         A word (whose type depends on what concatenating elements from alphabet produces).
 
     Not making this a proper doctest because I don't know how to seed the global random temporarily
+
     >>> t = random_word(4, 'abcde');  # e.g. 'acae'
     >>> t = random_word(5, ['a', 'b', 'c']);  # e.g. 'cabba'
     >>> t = random_word(4, [[1, 2, 3], [40, 50], [600], [7000]]);  # e.g. [40, 50, 7000, 7000, 1, 2, 3]
@@ -66,6 +69,7 @@ def random_string(length=7, alphabet=lower_case_letters):
 
 def random_word_gen(word_size_range=(1, 10), alphabet=lower_case_letters, n=100):
     """Random string generator
+
     Args:
         word_size_range: An int, 2-tuple of ints, or list-like object that defines the choices of word sizes
         alphabet: A string or iterable defining the alphabet to draw from
