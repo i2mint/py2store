@@ -194,7 +194,8 @@ class LocalTextStore(RelativePathFormatStore):
 
     Args:
         path_format: The root directory, optionally followed by a ``{}`` template (for example
-            ``'/data/{}.txt'``) that restricts which files under the root are listed and read.
+            ``'/data/{}.txt'``) that restricts which files under the root are listed
+            (a key that does not match the template can still be read or written).
         max_levels: How many directory levels below the root to include when iterating
             (``None`` for no limit).
 

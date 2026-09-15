@@ -74,7 +74,7 @@ def _is_html(x, key=None):
 
 
 def ipython_display_val_trans(val, key=None):
-    """Wrap ``val`` (bytes) in an IPython display object by content: ``Image`` for image data, ``Audio`` for WAV data, ``HTML`` for HTML (by the ``key``'s extension or a ``<!DOCTYPE html>`` start); anything else is returned unchanged.
+    """Wrap ``val`` (bytes) in an IPython display object by content: ``Image`` for image data, ``Audio`` for WAV data, ``HTML`` for HTML (by the ``key``'s extension when ``key`` is a string longer than 4 characters, else by a ``<!DOCTYPE html>`` start); anything else is returned unchanged.
 
     Requires IPython, and uses the ``imghdr`` module to detect images.
     """

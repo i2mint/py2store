@@ -206,8 +206,8 @@ class PathFormat:
     Args:
         path_format: The f-string template that the full path keys should match: a root
             directory (``'/data/'``, everything under it) or a template such as
-            ``'/data/{}.csv'`` (only ``.csv`` files under ``/data/``). The part before the
-            first ``{`` gives the root directory, available as ``_prefix``.
+            ``'/data/{}.csv'`` (only ``.csv`` files under ``/data/``). The directory
+            containing the part before the first ``{`` is the root, available as ``_prefix``.
 
     >>> pf = PathFormat('/data/{}.csv')
     >>> pf._prefix, pf.is_valid_key('/data/a.csv'), pf.is_valid_key('/data/a.txt')
