@@ -8,11 +8,9 @@ The easiest way to get nltk.corpus.wordnet is
 
     pip install nltk
 
-in your terminal, and then in a python console:
-#
-# ```
-# import nltk; nltk.download('wordnet')  # doctest: +SKIP
-# ```
+in your terminal, and then in a python console::
+
+    import nltk; nltk.download('wordnet')
 
 If you don't like that way, `see here <https://www.nltk.org/install.html>`_ for other ways to get wordnet.
 

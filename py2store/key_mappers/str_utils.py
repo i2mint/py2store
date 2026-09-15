@@ -317,6 +317,7 @@ def empty_arg_and_kwargs_for_format(format_string, fill_val=None):
 
 def args_and_kwargs_indices(format_string):
     """Get the sets of indices and names used in manual specification of format strings, or None, None if auto spec.
+
     Args:
         format_string: A format string (i.e. a string with {...} to mark parameter placement and formatting
 

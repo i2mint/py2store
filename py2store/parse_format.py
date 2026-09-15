@@ -1240,8 +1240,7 @@ def parse(
 
     If ``evaluate_result`` is False the return value will be a Match instance with one method:
 
-     .evaluate_result() - This will return a Result instance like you would get
-                          with ``evaluate_result`` set to True
+     .evaluate_result() - This will return a Result instance like you would get with ``evaluate_result`` set to True
 
     The default behaviour is to match strings case insensitively. You may match with
     case by specifying case_sensitive=True.
@@ -1281,8 +1280,7 @@ def search(
 
     If ``evaluate_result`` is False the return value will be a Match instance with one method:
 
-     .evaluate_result() - This will return a Result instance like you would get
-                          with ``evaluate_result`` set to True
+     .evaluate_result() - This will return a Result instance like you would get with ``evaluate_result`` set to True
 
     The default behaviour is to match strings case insensitively. You may match with
     case by specifying case_sensitive=True.
@@ -1321,8 +1319,7 @@ def findall(
 
     If ``evaluate_result`` is False each returned value is a Match instance with one method:
 
-     .evaluate_result() - This will return a Result instance like you would get
-                          with ``evaluate_result`` set to True
+     .evaluate_result() - This will return a Result instance like you would get with ``evaluate_result`` set to True
 
     The default behaviour is to match strings case insensitively. You may match with
     case by specifying case_sensitive=True.

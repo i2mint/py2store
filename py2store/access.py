@@ -136,7 +136,7 @@ def fakit_from_tuple(t: (tuple, list), func_loader: callable = dflt_func_loader)
 def fakit(fak, func_loader=dflt_func_loader):
     """Execute a fak with given f, a, k and function loader.
 
-    Essentially returns func_loader(f)(*a, **k)
+    Essentially returns ``func_loader(f)(*a, **k)``
 
     Args:
         fak: A (f, a, k) specification. Could be a tuple or a dict (with 'f', 'a', 'k' keys). All but f are optional.

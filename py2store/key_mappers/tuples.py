@@ -35,9 +35,11 @@ def dict_of_tuple(d, fields):
 
 def str_of_tuple(d, str_format):
     """Convert tuple to str.
-    It's just str_format.format(*d). Why even write such a function?
+    It's just ``str_format.format(*d)``. Why even write such a function?
+
     (1) To have a consistent interface for key conversions
     (2) We want a KeyValidationError to occur here
+
     Args:
         d: tuple if params to str_format
         str_format: Auto fields format string. If you have manual fields, consider auto_field_format_str to convert.
@@ -117,7 +119,7 @@ def mk_obj_of_str(constructor):
     """Make a function that transforms a string to an object. The factory making inverses of what mk_str_from_obj makes.
 
     Args:
-        constructor: The function (or class) that will be used to make objects from the **kwargs parsed out of the
+        constructor: The function (or class) that will be used to make objects from the ``**kwargs`` parsed out of the
             string.
 
     Returns:

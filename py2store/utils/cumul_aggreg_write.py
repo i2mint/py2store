@@ -56,11 +56,14 @@ def mk_group_aggregator(item_to_kv, aggregator_op=add, initial=no_initial):
     (b) group all items according to the key
 
     Args:
-        item_to_kv:
-        aggregator_op:
-        initial:
+        item_to_kv: Function taking an item and returning the ``(key, value)`` pair to group by key.
+        aggregator_op: The aggregation binary function that is used to aggregate two items together.
+            The function is used as is by the functools.reduce, applied to the sequence of items that were collected for
+            a given group
+        initial: The "empty" element to start the reduce (aggregation) with, if necessary.
 
     Returns:
+        A function taking an iterable of items and yielding ``(key, aggregate)`` pairs, one per key.
 
     >>> # Collect words (as a csv string), grouped by the lower case of the first letter
     >>> ag = mk_group_aggregator(lambda item: (item[0].lower(), item),
@@ -103,6 +106,7 @@ def mk_group_aggregator_with_key_func(
         initial: The "empty" element to start the reduce (aggregation) with, if necessary.
 
     Returns:
+        A function taking an iterable of items and yielding ``(key, aggregate)`` pairs, one per key.
 
     >>> # Collect words (as a csv string), grouped by the lower case of the first letter
     >>> ag = mk_group_aggregator_with_key_func(lambda item: item[0].lower(),

@@ -27,6 +27,7 @@ non_alphanumeric = ''.join(set(string.printable).difference(alphanumeric))
 
 def random_word(length, alphabet, concat_func=add):
     """Make a random word by concatenating randomly drawn elements from alphabet together
+
     Args:
         length: Length of the word
         alphabet: Alphabet to draw from
@@ -68,6 +69,7 @@ def random_string(length=7, alphabet=lower_case_letters):
 
 def random_word_gen(word_size_range=(1, 10), alphabet=lower_case_letters, n=100):
     """Random string generator
+
     Args:
         word_size_range: An int, 2-tuple of ints, or list-like object that defines the choices of word sizes
         alphabet: A string or iterable defining the alphabet to draw from

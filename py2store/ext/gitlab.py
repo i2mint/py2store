@@ -1,9 +1,7 @@
 """
 Stores to talk to gitlab, using requests.
 
-Example:
-
-.. code-block:: text
+For example::
 
     ogl = GitLabAccessor(base_url="http://...", project_name=None)
 
