@@ -38,6 +38,16 @@ to bend your interface with data to your will.
 [More examples](#more-examples) will give you a taste of how you can adapt the three main aspects of 
 storage (persistence, serialization, and indexing) to your needs.
 
+<!-- epythet:agentic-readme:start -->
+# For AI agents
+
+`py2store` publishes its documentation in forms made for coding agents. If you are one, start here.
+
+**The documentation, machine-readable**: [`llms.txt`](https://i2mint.github.io/py2store/llms.txt) indexes every page; [`py2store.md`](https://i2mint.github.io/py2store/py2store.md) is the whole documentation in one file; every page has a `.md` twin; [`objects.inv`](https://i2mint.github.io/py2store/objects.inv) maps symbols to URLs.
+
+If you like writing your own code, the rest of this README is written for you, starting at [Contents](#contents).
+<!-- epythet:agentic-readme:end -->
+
 # Contents
 
 - [py2store](#py2store)
