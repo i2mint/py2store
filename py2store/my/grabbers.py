@@ -34,6 +34,7 @@ def mk_grabber(*, key_trans=None, val_trans=None):
     >>> grab(' ' + path + ' ')
     'WORLD'
     """
+
     @wraps(get_obj)
     def grab(k, *args, **kwargs):
         """just get_obj, but personalized with pre and/or post processing"""
