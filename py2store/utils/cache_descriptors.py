@@ -68,6 +68,7 @@ def CachedProperty(*args):
     CachedProperties.
     This is usable directly as a decorator when given names, or when not. Any of these patterns
     will work:
+
     * ``@CachedProperty``
     * ``@CachedProperty()``
     * ``@CachedProperty('n','n2')``

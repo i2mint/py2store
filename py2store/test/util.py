@@ -32,12 +32,14 @@ def random_word(length, alphabet, concat_func=add):
         alphabet: Alphabet to draw from
         concat_func: The concatenation function (e.g. + for strings and lists)
 
-    Note: Repeated elements in alphabet will have more chances of being drawn.
+    Note:
+        Repeated elements in alphabet will have more chances of being drawn.
 
     Returns:
         A word (whose type depends on what concatenating elements from alphabet produces).
 
     Not making this a proper doctest because I don't know how to seed the global random temporarily
+
     >>> t = random_word(4, 'abcde');  # e.g. 'acae'
     >>> t = random_word(5, ['a', 'b', 'c']);  # e.g. 'cabba'
     >>> t = random_word(4, [[1, 2, 3], [40, 50], [600], [7000]]);  # e.g. [40, 50, 7000, 7000, 1, 2, 3]

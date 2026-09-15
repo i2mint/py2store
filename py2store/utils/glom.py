@@ -40,7 +40,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Now, at the time of writing this, I've already transformed it to bend it to my liking.
 At some point it may become something else, but I wanted there to be a trace of what my seed was.
 Though I can't promise I'll maintain the same functionality as I transform this module, here's
-a tutorial on how to use it in it's original form:
+a tutorial on how to use it in it's original form::
+
     https://glom.readthedocs.io/en/latest/
 
 
@@ -141,6 +142,7 @@ from collections.abc import Iterable
 def is_iterable(x):
     """Similar in nature to :func:`callable`, ``is_iterable`` returns
     ``True`` if an object is `iterable`_, ``False`` if not.
+
     >>> is_iterable([])
     True
     >>> is_iterable(1)
@@ -1608,9 +1610,10 @@ class Auto:
     """
     Switch to Auto mode (the default)
 
-    TODO: this seems like it should be a sub-class of class Spec() --
-    if Spec() could help define the interface for new "modes" or dialects
-    that would also help make match mode feel less duct-taped on
+    TODO:
+        this seems like it should be a sub-class of class Spec() --
+        if Spec() could help define the interface for new "modes" or dialects
+        that would also help make match mode feel less duct-taped on
     """
 
     def __init__(self, spec=None):

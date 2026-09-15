@@ -7,6 +7,7 @@ from urllib.parse import urlsplit
 def parse_uri(uri):
     """
     Parses DB URI string into a dict of params.
+
     :param uri: string formatted as: "scheme://username:password@host:port/database"
     :return: a dict with these params parsed.
     """

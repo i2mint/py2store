@@ -4,19 +4,20 @@ The py2store wrapper to nltk.corpus.wordnet. Your no fuss gateway to (English) w
 
 The easiest way to get nltk.corpus.wordnet is
 
-```
-pip install nltk
-```
+.. code-block:: text
+
+    pip install nltk
+
 in your terminal, and then in a python console:
 #
 # ```
 # import nltk; nltk.download('wordnet')  # doctest: +SKIP
 # ```
 
-If you don't like that way, [see here](https://www.nltk.org/install.html) for other ways to get wordnet.
+If you don't like that way, `see here <https://www.nltk.org/install.html>`_ for other ways to get wordnet.
 
 The central construct of this module is the Synset (a set of synonyms that share a common meaning).
-To see a few things you can do with Synsets, naked, [see here](https://www.nltk.org/howto/wordnet.html).
+To see a few things you can do with Synsets, naked, `see here <https://www.nltk.org/howto/wordnet.html>`_.
 
 Here we put a py2store wrapper around this stuff.
 

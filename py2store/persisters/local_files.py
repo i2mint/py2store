@@ -123,6 +123,7 @@ class PrefixedFilepaths:
     def __contains__(self, k):
         """
         Check if filepath exists (i.e. the path exists and is a file)
+
         :param k: A key to search for
         :return: True if k exists, False if not
         """
@@ -170,6 +171,7 @@ class PathFormat:
     def __init__(self, path_format: str):
         """
         A class for pattern-filtered exploration of file paths.
+
         :param path_format: The f-string format that the fullpath keys of the obj source should have.
             Often, just the root directory whose FILES contain the (full_filepath, content) data
             Also common is to use path_format='{rootdir}/{relative_path}.EXT' to impose a specific extension EXT
@@ -364,6 +366,7 @@ class PrefixedFilepaths:
     def __contains__(self, k):
         """
         Check if filepath exists (i.e. the path exists and is a file)
+
         :param k: A key to search for
         :return: True if k exists, False if not
         """
@@ -404,6 +407,7 @@ def endswith_slash(path):
 
 class FileReader(KvReader):
     """KV Reader whose keys are paths and values are:
+
     - Another FileReader if a path points to a directory
     - The bytes of the file if the path points to a file.
     """

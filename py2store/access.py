@@ -11,15 +11,19 @@ Here are tools to help you out.
 
 There are two main key-value stores: One for configurations the user wants to reuse, and the other for the user's
 desired defaults. Both have the same structure:
+
     * first level key: Name of the resource (should be a valid python variable name)
     * The reminder is more or less free form (until the day we lay out some schemas for this)
 
 The system will look for the specification of user_configs and user_defaults in a json file.
 The filepath to this json file can specified in environment variables
     PY2STORE_CONFIGS_JSON_FILEPATH and PY2STORE_DEFAULTS_JSON_FILEPATH
+
 respectively.
-By default, they are:
+By default, they are::
+
     ~/.py2store_configs.json and ~/.py2store_defaults.json
+
 respectively.
 """
 import os
@@ -139,7 +143,8 @@ def fakit(fak, func_loader=dflt_func_loader):
         func_loader: A function returning a function. This is where you specify any validation of func specification f,
             and/or how to get a callable from it.
 
-    Returns: A python object.
+    Returns:
+        A python object.
     """
 
     if isinstance(fak, dict):

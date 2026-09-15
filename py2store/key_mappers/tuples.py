@@ -1,6 +1,7 @@
 """
 Tools to map tuple-structured keys.
 That is, converting from any of the following kinds of keys:
+
     * tuples (or list-like)
     * dicts
     * formatted/templated strings

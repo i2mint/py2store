@@ -424,6 +424,7 @@ def with_pattern(pattern, regex_group_count=None):
     This annotates the type converter with the :attr:`pattern` attribute.
 
     EXAMPLE:
+
         >>> @with_pattern(r"\d+")
         ... def parse_number(text):
         ...     return int(text)
