@@ -1,0 +1,37 @@
+py2store.stores.local\_store
+============================
+
+.. automodule:: py2store.stores.local_store
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      mk_absolute_path
+      mk_tmp_quick_store_dirpath
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      AutoMkDirsOnSetitemMixin
+      AutoMkPathformatMixin
+      DirStore
+      LocalBinaryStore
+      LocalJsonStore
+      LocalPickleStore
+      LocalStore
+      LocalTextStore
+      PathFormatStore
+      PathFormatStoreWithPrefix
+      PickleStore
+      QuickBinaryStore
+      QuickJsonStore
+      QuickLocalStoreMixin
+      QuickPickleStore
+      QuickStore
+      QuickTextStore
+      RelativeDirPathFormatKeys
+      RelativePathFormatStore2
+   

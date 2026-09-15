@@ -1,0 +1,18 @@
+py2store.utils.affine\_conversion
+=================================
+
+.. automodule:: py2store.utils.affine_conversion
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      get_affine_converter_and_inverse
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      AffineConverter
+   

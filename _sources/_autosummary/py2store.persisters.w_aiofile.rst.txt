@@ -1,0 +1,6 @@
+py2store.persisters.w\_aiofile
+==============================
+
+.. automodule:: py2store.persisters.w_aiofile
+
+   

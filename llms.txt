@@ -1,0 +1,87 @@
+# py2store
+
+> Tools to create simple and consistent interfaces to complicated and varied data sources.
+
+
+## Pages
+
+- [py2store](index.html.md): **Note: The core of py2store has now been moved to [`dol`](https://github.com/i2mint/dol),**
+- [API reference](api.html.md): | [`py2store`](_autosummary/py2store.html.md#module-py2store)   | py2store: tools to create simple a...
+- [py2store](_autosummary/py2store.html.md): py2store: tools to create simple and consistent interfaces to complicated and varied data sources.
+- [py2store.access](_autosummary/py2store.access.html.md): Utils to load stores from store specifications.
+- [py2store.appendable](_autosummary/py2store.appendable.html.md): Makes a new class with append (and consequential extend) methods
+- [py2store.base](_autosummary/py2store.base.html.md): Forwards to dol.base:
+- [py2store.caching](_autosummary/py2store.caching.html.md): Forwards to dol.caching:
+- [py2store.dig](_autosummary/py2store.dig.html.md): Forwards to dol.dig:
+- [py2store.errors](_autosummary/py2store.errors.html.md): Forwards to dol.errors:
+- [py2store.ext](_autosummary/py2store.ext.html.md): py2store Extensions, Add-ons, etc.
+- [py2store.ext.dataframes](_autosummary/py2store.ext.dataframes.html.md): Data as `pandas.DataFrame` from various sources
+- [py2store.ext.docx](_autosummary/py2store.ext.docx.html.md): Simple access to docx (Word Doc) elements.
+- [py2store.ext.github](_autosummary/py2store.ext.github.html.md): a data object layer for github
+- [py2store.ext.gitlab](_autosummary/py2store.ext.gitlab.html.md): Stores to talk to gitlab, using requests.
+- [py2store.ext.hdf](_autosummary/py2store.ext.hdf.html.md): a data object layer for HDF files
+- [py2store.ext.matlab](_autosummary/py2store.ext.matlab.html.md): a data object layer for matlab
+- [py2store.ext.wordnet](_autosummary/py2store.ext.wordnet.html.md): This moved to lexis project
+- [py2store.filesys](_autosummary/py2store.filesys.html.md): Forwards to dol.filesys:
+- [py2store.key_mappers](_autosummary/py2store.key_mappers.html.md): key mapping
+- [py2store.key_mappers.naming](_autosummary/py2store.key_mappers.naming.html.md): This module only forwards to py2store.naming, and is deprecated.
+- [py2store.key_mappers.paths](_autosummary/py2store.key_mappers.paths.html.md): Module that forwards to py2store.paths, kept for back-compatibility
+- [py2store.key_mappers.str_utils](_autosummary/py2store.key_mappers.str_utils.html.md): utils from strings
+- [py2store.key_mappers.tuples](_autosummary/py2store.key_mappers.tuples.html.md): Tools to map tuple-structured keys.
+- [py2store.misc](_autosummary/py2store.misc.html.md): Functions to read from and write to misc sources.
+- [py2store.mixins](_autosummary/py2store.mixins.html.md): Forwards to dol.mixins:
+- [py2store.my](_autosummary/py2store.my.html.md): functionalities meant to be configurable
+- [py2store.my.grabbers](_autosummary/py2store.my.grabbers.html.md): Grabbers: fetch an object from a key (a path or URL) and post-process it by kind.
+- [py2store.naming](_autosummary/py2store.naming.html.md): Forwards to dol.naming:
+- [py2store.parse_format](_autosummary/py2store.parse_format.html.md): Modified from [https://github.com/r1chardj0n3s/parse](https://github.com/r1chardj0n3s/parse)
+- [py2store.paths](_autosummary/py2store.paths.html.md): Forwards to dol.paths:
+- [py2store.persisters](_autosummary/py2store.persisters.html.md): base persisters – now all forwarding to separate libraries
+- [py2store.persisters.dropbox_w_dropbox](_autosummary/py2store.persisters.dropbox_w_dropbox.html.md): Forwards to dropboxdol
+- [py2store.persisters.googledrive_w_pydrive](_autosummary/py2store.persisters.googledrive_w_pydrive.html.md): Forwards to pydrivedol
+- [py2store.persisters.local_files](_autosummary/py2store.persisters.local_files.html.md): Base classes and helpers to read and write local files as key-value collections.
+- [py2store.persisters.new_s3](_autosummary/py2store.persisters.new_s3.html.md): Forwards to s3dol.new_s3
+- [py2store.persisters.redis_w_redis](_autosummary/py2store.persisters.redis_w_redis.html.md): Forwards to redisdol
+- [py2store.persisters.s3_w_boto3](_autosummary/py2store.persisters.s3_w_boto3.html.md): Forwards to s3dol.s3_w_boto3
+- [py2store.persisters.sql_w_sqlalchemy](_autosummary/py2store.persisters.sql_w_sqlalchemy.html.md): Forwards to sqldol
+- [py2store.persisters.w_aiofile](_autosummary/py2store.persisters.w_aiofile.html.md): Forwards to aiofiledol
+- [py2store.serializers](_autosummary/py2store.serializers.html.md): a package of serializers
+- [py2store.serializers.pickled](_autosummary/py2store.serializers.pickled.html.md): functions to pickle objects
+- [py2store.signatures](_autosummary/py2store.signatures.html.md): Forwards to dol.signatures:
+- [py2store.slib](_autosummary/py2store.slib.html.md): Data Object Layers for a few standard libs.
+- [py2store.slib.s_configparser](_autosummary/py2store.slib.s_configparser.html.md): Data Object Layer for configparser standard lib.
+- [py2store.slib.s_zipfile](_autosummary/py2store.slib.s_zipfile.html.md): a data object layer for zipfile
+- [py2store.sources](_autosummary/py2store.sources.html.md): Forwards to dol.sources:
+- [py2store.stores](_autosummary/py2store.stores.html.md): a package of various stores
+- [py2store.stores.dropbox_store](_autosummary/py2store.stores.dropbox_store.html.md): Forwards to dropboxdol
+- [py2store.stores.local_store](_autosummary/py2store.stores.local_store.html.md): Stores that read and write local files as key-value mappings.
+- [py2store.stores.s3_store](_autosummary/py2store.stores.s3_store.html.md): Forwards to s3dol.s3_store
+- [py2store.stores.sql_w_sqlalchemy](_autosummary/py2store.stores.sql_w_sqlalchemy.html.md): Forwards to sqldol
+- [py2store.test](_autosummary/py2store.test.html.md): | `djoin`(\*paths)       |    |
+- [py2store.test.local_files_test](_autosummary/py2store.test.local_files_test.html.md): testing local files functionality
+- [py2store.test.quick_test](_autosummary/py2store.test.quick_test.html.md): a quick test
+- [py2store.test.util](_autosummary/py2store.test.util.html.md): utils for testing
+- [py2store.trans](_autosummary/py2store.trans.html.md): Forwards to dol.trans:
+- [py2store.util](_autosummary/py2store.util.html.md): Forwards to dol.util:
+- [py2store.utils](_autosummary/py2store.utils.html.md): general utils
+- [py2store.utils.affine_conversion](_autosummary/py2store.utils.affine_conversion.html.md): utils to carry out affine transformations (of indices)
+- [py2store.utils.appendable](_autosummary/py2store.utils.appendable.html.md): utils to make add append and extend functionality to KV stores
+- [py2store.utils.attr_dict](_autosummary/py2store.utils.attr_dict.html.md): a data object layer for object attributes
+- [py2store.utils.cache_descriptors](_autosummary/py2store.utils.cache_descriptors.html.md): descriptors to cache data
+- [py2store.utils.cumul_aggreg_write](_autosummary/py2store.utils.cumul_aggreg_write.html.md): utils for bulk writing – accumulate, aggregate and write when some condition is met
+- [py2store.utils.explicit](_autosummary/py2store.utils.explicit.html.md): utils to make stores based on a the input data itself
+- [py2store.utils.glom](_autosummary/py2store.utils.glom.html.md): *glom is a util to extract stuff from nested structures.*
+- [py2store.utils.mappify](_autosummary/py2store.utils.mappify.html.md): Utils to wrap any object into a mapping interface
+- [py2store.utils.mg_selectors](_autosummary/py2store.utils.mg_selectors.html.md): Selectors that use the mongo-query interface
+- [py2store.utils.mongoquery](_autosummary/py2store.utils.mongoquery.html.md): Transform mongo-like selector dicts (filters) into boolean functions that implement the condition
+- [py2store.utils.signatures](_autosummary/py2store.utils.signatures.html.md): Deprecated: Forwards to py2store.signatures
+- [py2store.utils.timeseries_caching](_autosummary/py2store.utils.timeseries_caching.html.md): Tools to cache time-series data.
+- [py2store.utils.uri_utils](_autosummary/py2store.utils.uri_utils.html.md): utils to work with URIs
+- [About this build](about-this-build.html.md): This documentation was built on **2026-09-15 11:34 UTC** from commit <a href="https://github.com/i2m...
+
+---
+
+For more comprehensive documentation, see [py2store.md](py2store.md)
+
+## Build
+
+- [build_info.json](build_info.json): build provenance (commit, version, tool versions, whether the docs match the package)

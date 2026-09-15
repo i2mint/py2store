@@ -1,0 +1,16 @@
+py2store.stores
+===============
+
+.. automodule:: py2store.stores
+
+   
+.. rubric:: Modules
+
+.. autosummary::
+   :toctree:
+   :recursive:
+
+   dropbox_store
+   local_store
+   s3_store
+   sql_w_sqlalchemy

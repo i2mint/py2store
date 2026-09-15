@@ -1,0 +1,17 @@
+py2store.test.util
+==================
+
+.. automodule:: py2store.test.util
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      random_dict_gen
+      random_formatted_str_gen
+      random_string
+      random_tuple_gen
+      random_word
+      random_word_gen
+   

@@ -1,0 +1,44 @@
+﻿py2store
+========
+
+.. automodule:: py2store
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      ihead
+      kvhead
+   
+.. rubric:: Modules
+
+.. autosummary::
+   :toctree:
+   :recursive:
+
+   access
+   appendable
+   base
+   caching
+   dig
+   errors
+   ext
+   filesys
+   key_mappers
+   misc
+   mixins
+   my
+   naming
+   parse_format
+   paths
+   persisters
+   serializers
+   signatures
+   slib
+   sources
+   stores
+   test
+   trans
+   util
+   utils

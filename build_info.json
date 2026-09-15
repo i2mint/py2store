@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "built_at": "2026-09-15T11:34:32Z",
+  "package": {
+    "name": "py2store",
+    "version": "0.1.23",
+    "display_name": "py2store",
+    "source": "setup.cfg"
+  },
+  "git": {
+    "available": true,
+    "commit": "03fbcfc37164a618f0b92b7ac3c83b7157747efa",
+    "short_commit": "03fbcfc",
+    "branch": "master",
+    "tags": [
+      "0.1.23"
+    ],
+    "dirty": false,
+    "remote_url": "https://github.com/i2mint/py2store",
+    "commit_url": "https://github.com/i2mint/py2store/commit/03fbcfc37164a618f0b92b7ac3c83b7157747efa",
+    "error": null
+  },
+  "ci": {
+    "provider": "github",
+    "repository": "i2mint/py2store",
+    "sha": "db92faff58d7acbc060f41aa54c127f37ee13ac8",
+    "sha_in_history": true,
+    "ref": "refs/heads/master",
+    "ref_name": "master",
+    "run_id": "34963902384",
+    "run_url": "https://github.com/i2mint/py2store/actions/runs/34963902384",
+    "server_url": "https://github.com"
+  },
+  "tools": {
+    "epythet": "0.2.11",
+    "sphinx": "9.1.0",
+    "docutils": "0.22.4",
+    "python": "3.12.14"
+  },
+  "config": {
+    "theme": "auto",
+    "html_theme": "furo",
+    "accent": "#87356b",
+    "mode": "auto",
+    "api_generator": "autosummary",
+    "ignore": [
+      "tests/",
+      "scrap/",
+      "examples/"
+    ],
+    "agent_outputs": true,
+    "aggregates": [
+      "md"
+    ],
+    "ai_artifacts": true,
+    "provenance": true,
+    "docs_dir": "docsrc"
+  },
+  "site": {
+    "modules_documented": 69,
+    "objects_documented": 166
+  },
+  "pypi": {
+    "checked": true,
+    "latest": "0.1.23",
+    "relation": "same",
+    "error": null
+  },
+  "reproduce": "git clone https://github.com/i2mint/py2store && cd py2store\ngit checkout 03fbcfc37164a618f0b92b7ac3c83b7157747efa\npip install \"epythet==0.2.11\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
+  "warnings": [],
+  "alignment": {
+    "aligned": true,
+    "notes": []
+  }
+}

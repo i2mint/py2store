@@ -1,0 +1,6 @@
+py2store.persisters.googledrive\_w\_pydrive
+===========================================
+
+.. automodule:: py2store.persisters.googledrive_w_pydrive
+
+   

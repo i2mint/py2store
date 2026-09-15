@@ -1,0 +1,6 @@
+py2store.persisters.redis\_w\_redis
+===================================
+
+.. automodule:: py2store.persisters.redis_w_redis
+
+   

@@ -1,0 +1,13 @@
+py2store.my
+===========
+
+.. automodule:: py2store.my
+
+   
+.. rubric:: Modules
+
+.. autosummary::
+   :toctree:
+   :recursive:
+
+   grabbers

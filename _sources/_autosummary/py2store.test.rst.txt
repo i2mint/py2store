@@ -1,0 +1,22 @@
+py2store.test
+=============
+
+.. automodule:: py2store.test
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      djoin
+      minifs_join
+   
+.. rubric:: Modules
+
+.. autosummary::
+   :toctree:
+   :recursive:
+
+   local_files_test
+   quick_test
+   util

@@ -1,0 +1,1362 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="../../../">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark">
+<link rel="alternate" type="text/markdown" href="local_files.html.md">
+<link rel="describedby" href="../../../llms.txt" type="text/markdown"><link rel="index" title="Index" href="../../../genindex.html"><link rel="search" title="Search" href="../../../search.html">
+
+    <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
+        <title>py2store.persisters.local_files - py2store</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d75fae25" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f0f0f0;
+  --color-code-foreground: black;
+  --color-brand-primary: #87356b;
+  --color-brand-content: #87356b;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #f195cd;
+  --color-brand-content: #f195cd;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #f195cd;
+  --color-brand-content: #f195cd;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../../../index.html"><div class="brand">py2store</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../../../index.html">
+  
+  <span class="sidebar-brand-text">py2store</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../../../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../api.html">API reference</a><input aria-label="Toggle navigation of API reference" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../_autosummary/py2store.html">py2store</a><input aria-label="Toggle navigation of py2store" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../_autosummary/py2store.access.html">py2store.access</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_autosummary/py2store.appendable.html">py2store.appendable</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_autosummary/py2store.base.html">py2store.base</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_autosummary/py2store.caching.html">py2store.caching</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_autosummary/py2store.dig.html">py2store.dig</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_autosummary/py2store.errors.html">py2store.errors</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../_autosummary/py2store.ext.html">py2store.ext</a><input aria-label="Toggle navigation of py2store.ext" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../_autosummary/py2store.ext.dataframes.html">py2store.ext.dataframes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../_autosummary/py2store.ext.docx.html">py2store.ext.docx</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../_autosummary/py2store.ext.github.html">py2store.ext.github</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../_autosummary/py2store.ext.gitlab.html">py2store.ext.gitlab</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../_autosummary/py2store.ext.hdf.html">py2store.ext.hdf</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../_autosummary/py2store.ext.matlab.html">py2store.ext.matlab</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../_autosummary/py2store.ext.wordnet.html">py2store.ext.wordnet</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_autosummary/py2store.filesys.html">py2store.filesys</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../_autosummary/py2store.key_mappers.html">py2store.key_mappers</a><input aria-label="Toggle navigation of py2store.key_mappers" class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../_autosummary/py2store.key_mappers.naming.html">py2store.key_mappers.naming</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../_autosummary/py2store.key_mappers.paths.html">py2store.key_mappers.paths</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../_autosummary/py2store.key_mappers.str_utils.html">py2store.key_mappers.str_utils</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../_autosummary/py2store.key_mappers.tuples.html">py2store.key_mappers.tuples</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_autosummary/py2store.misc.html">py2store.misc</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_autosummary/py2store.mixins.html">py2store.mixins</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../_autosummary/py2store.my.html">py2store.my</a><input aria-label="Toggle navigation of py2store.my" class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../_autosummary/py2store.my.grabbers.html">py2store.my.grabbers</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_autosummary/py2store.naming.html">py2store.naming</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_autosummary/py2store.parse_format.html">py2store.parse_format</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_autosummary/py2store.paths.html">py2store.paths</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../_autosummary/py2store.persisters.html">py2store.persisters</a><input aria-label="Toggle navigation of py2store.persisters" class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" role="switch" type="checkbox"/><label for="toctree-checkbox-6"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../_autosummary/py2store.persisters.dropbox_w_dropbox.html">py2store.persisters.dropbox_w_dropbox</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../_autosummary/py2store.persisters.googledrive_w_pydrive.html">py2store.persisters.googledrive_w_pydrive</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../_autosummary/py2store.persisters.local_files.html">py2store.persisters.local_files</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../_autosummary/py2store.persisters.new_s3.html">py2store.persisters.new_s3</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../_autosummary/py2store.persisters.redis_w_redis.html">py2store.persisters.redis_w_redis</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../_autosummary/py2store.persisters.s3_w_boto3.html">py2store.persisters.s3_w_boto3</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../_autosummary/py2store.persisters.sql_w_sqlalchemy.html">py2store.persisters.sql_w_sqlalchemy</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../_autosummary/py2store.persisters.w_aiofile.html">py2store.persisters.w_aiofile</a></li>
+</ul>
+</li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../_autosummary/py2store.serializers.html">py2store.serializers</a><input aria-label="Toggle navigation of py2store.serializers" class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" role="switch" type="checkbox"/><label for="toctree-checkbox-7"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../_autosummary/py2store.serializers.pickled.html">py2store.serializers.pickled</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_autosummary/py2store.signatures.html">py2store.signatures</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../_autosummary/py2store.slib.html">py2store.slib</a><input aria-label="Toggle navigation of py2store.slib" class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" role="switch" type="checkbox"/><label for="toctree-checkbox-8"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../_autosummary/py2store.slib.s_configparser.html">py2store.slib.s_configparser</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../_autosummary/py2store.slib.s_zipfile.html">py2store.slib.s_zipfile</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_autosummary/py2store.sources.html">py2store.sources</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../_autosummary/py2store.stores.html">py2store.stores</a><input aria-label="Toggle navigation of py2store.stores" class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../_autosummary/py2store.stores.dropbox_store.html">py2store.stores.dropbox_store</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../_autosummary/py2store.stores.local_store.html">py2store.stores.local_store</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../_autosummary/py2store.stores.s3_store.html">py2store.stores.s3_store</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../_autosummary/py2store.stores.sql_w_sqlalchemy.html">py2store.stores.sql_w_sqlalchemy</a></li>
+</ul>
+</li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../_autosummary/py2store.test.html">py2store.test</a><input aria-label="Toggle navigation of py2store.test" class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" role="switch" type="checkbox"/><label for="toctree-checkbox-10"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../_autosummary/py2store.test.local_files_test.html">py2store.test.local_files_test</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../_autosummary/py2store.test.quick_test.html">py2store.test.quick_test</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../_autosummary/py2store.test.util.html">py2store.test.util</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_autosummary/py2store.trans.html">py2store.trans</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../_autosummary/py2store.util.html">py2store.util</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../_autosummary/py2store.utils.html">py2store.utils</a><input aria-label="Toggle navigation of py2store.utils" class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" role="switch" type="checkbox"/><label for="toctree-checkbox-11"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../_autosummary/py2store.utils.affine_conversion.html">py2store.utils.affine_conversion</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../_autosummary/py2store.utils.appendable.html">py2store.utils.appendable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../_autosummary/py2store.utils.attr_dict.html">py2store.utils.attr_dict</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../_autosummary/py2store.utils.cache_descriptors.html">py2store.utils.cache_descriptors</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../_autosummary/py2store.utils.cumul_aggreg_write.html">py2store.utils.cumul_aggreg_write</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../_autosummary/py2store.utils.explicit.html">py2store.utils.explicit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../_autosummary/py2store.utils.glom.html">py2store.utils.glom</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../_autosummary/py2store.utils.mappify.html">py2store.utils.mappify</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../_autosummary/py2store.utils.mg_selectors.html">py2store.utils.mg_selectors</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../_autosummary/py2store.utils.mongoquery.html">py2store.utils.mongoquery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../_autosummary/py2store.utils.signatures.html">py2store.utils.signatures</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../_autosummary/py2store.utils.timeseries_caching.html">py2store.utils.timeseries_caching</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../_autosummary/py2store.utils.uri_utils.html">py2store.utils.uri_utils</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <h1>Source code for py2store.persisters.local_files</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""</span>
+<span class="sd">Base classes and helpers to read and write local files as key-value collections.</span>
+
+<span class="sd">Keys are full file paths. The pieces here (path listing, key validation from a path template,</span>
+<span class="sd">read, write and delete through ``open``) are what ``py2store.stores.local_store`` assembles</span>
+<span class="sd">into stores with relative keys.</span>
+
+<span class="sd">Main entry points:</span>
+
+<span class="sd">- ``FileReader``: a directory as a read-only mapping (subdirectories give nested readers, files give ``bytes``)</span>
+<span class="sd">- ``DirReader``: the subdirectories of a directory, as a mapping</span>
+<span class="sd">- ``PathFormatPersister``: read, write and delete the files whose paths match a template</span>
+<span class="sd">- ``iter_filepaths_in_folder_recursively``: the paths of all files under a folder</span>
+
+<span class="sd">&gt;&gt;&gt; import os, tempfile</span>
+<span class="sd">&gt;&gt;&gt; rootdir = tempfile.mkdtemp()</span>
+<span class="sd">&gt;&gt;&gt; _ = open(os.path.join(rootdir, 'a.txt'), 'w').write('hi')</span>
+<span class="sd">&gt;&gt;&gt; [os.path.basename(p) for p in iter_filepaths_in_folder_recursively(rootdir)]</span>
+<span class="sd">['a.txt']</span>
+<span class="sd">"""</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">glob</span><span class="w"> </span><span class="kn">import</span> <span class="n">iglob</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">itertools</span><span class="w"> </span><span class="kn">import</span> <span class="n">takewhile</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">dol.errors</span><span class="w"> </span><span class="kn">import</span> <span class="n">NoSuchKeyError</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dol.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">KeyValidationABC</span><span class="p">,</span> <span class="n">KvReader</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dol.mixins</span><span class="w"> </span><span class="kn">import</span> <span class="n">FilteredKeysMixin</span><span class="p">,</span> <span class="n">IterBasedSizedMixin</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">py2store.parse_format</span><span class="w"> </span><span class="kn">import</span> <span class="n">match_re_for_fstring</span>
+
+
+<span class="c1"># # TODO: These imports are for back compatibility and should be removed at some point</span>
+<span class="c1"># from py2store.slib.zipfile import ZipReader, ZipFileReader, ZipFilesReader, FilesOfZip</span>
+<span class="c1"># from py2store.filesys import FileCollection, DirCollection</span>
+
+<span class="n">DFLT_OPEN_MODE</span> <span class="o">=</span> <span class="s1">''</span>
+
+<span class="n">file_sep</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">sep</span>
+<span class="n">inf</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">'infinity'</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="FolderNotFoundError">
+<a class="viewcode-back" href="../../../_autosummary/py2store.persisters.local_files.html#py2store.persisters.local_files.FolderNotFoundError">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">FolderNotFoundError</span><span class="p">(</span><span class="n">NoSuchKeyError</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Raised when writing to a path whose directory does not exist; the message names the first missing directory."""</span></div>
+
+
+
+<span class="c1">########################################################################################################################</span>
+<span class="c1"># File system navigation: Utils</span>
+
+
+<div class="viewcode-block" id="ensure_slash_suffix">
+<a class="viewcode-back" href="../../../_autosummary/py2store.persisters.local_files.html#py2store.persisters.local_files.ensure_slash_suffix">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">ensure_slash_suffix</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""Add a file separation (/ or \) at the end of path str, if not already present."""</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">path</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="n">file_sep</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">path</span> <span class="o">+</span> <span class="n">file_sep</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">path</span></div>
+
+
+
+<div class="viewcode-block" id="pattern_filter">
+<a class="viewcode-back" href="../../../_autosummary/py2store.persisters.local_files.html#py2store.persisters.local_files.pattern_filter">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">pattern_filter</span><span class="p">(</span><span class="n">pattern</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Make a predicate that is true for strings matching the regex ``pattern`` from their start."""</span>
+    <span class="n">pattern</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">pattern</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_pattern_filter</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">pattern</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+
+    <span class="k">return</span> <span class="n">_pattern_filter</span></div>
+
+
+
+<div class="viewcode-block" id="paths_in_dir_with_slash_suffix_for_dirs">
+<a class="viewcode-back" href="../../../_autosummary/py2store.persisters.local_files.html#py2store.persisters.local_files.paths_in_dir_with_slash_suffix_for_dirs">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">paths_in_dir_with_slash_suffix_for_dirs</span><span class="p">(</span><span class="n">rootdir</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Yield the full paths directly under ``rootdir``, with a trailing separator on directories."""</span>
+    <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">iglob</span><span class="p">(</span><span class="n">ensure_slash_suffix</span><span class="p">(</span><span class="n">rootdir</span><span class="p">)</span> <span class="o">+</span> <span class="s1">'*'</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
+            <span class="k">yield</span> <span class="n">ensure_slash_suffix</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="n">f</span></div>
+
+
+
+<div class="viewcode-block" id="iter_relative_files_and_folder">
+<a class="viewcode-back" href="../../../_autosummary/py2store.persisters.local_files.html#py2store.persisters.local_files.iter_relative_files_and_folder">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">iter_relative_files_and_folder</span><span class="p">(</span><span class="n">root_folder</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""The names of the files and folders directly under ``root_folder``."""</span>
+    <span class="n">root_folder</span> <span class="o">=</span> <span class="n">ensure_slash_suffix</span><span class="p">(</span><span class="n">root_folder</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">root_folder</span><span class="p">,</span> <span class="s1">''</span><span class="p">),</span> <span class="n">iglob</span><span class="p">(</span><span class="n">root_folder</span> <span class="o">+</span> <span class="s1">'*'</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="iter_filepaths_in_folder">
+<a class="viewcode-back" href="../../../_autosummary/py2store.persisters.local_files.html#py2store.persisters.local_files.iter_filepaths_in_folder">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">iter_filepaths_in_folder</span><span class="p">(</span><span class="n">root_folder</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""The full paths of the files and folders directly under ``root_folder``."""</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">root_folder</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">iter_relative_files_and_folder</span><span class="p">(</span><span class="n">root_folder</span><span class="p">)</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="paths_in_dir">
+<a class="viewcode-back" href="../../../_autosummary/py2store.persisters.local_files.html#py2store.persisters.local_files.paths_in_dir">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">paths_in_dir</span><span class="p">(</span><span class="n">rootdir</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""The full paths of the files and folders directly under ``rootdir``."""</span>
+    <span class="k">return</span> <span class="n">iglob</span><span class="p">(</span><span class="n">ensure_slash_suffix</span><span class="p">(</span><span class="n">rootdir</span><span class="p">)</span> <span class="o">+</span> <span class="s1">'*'</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="filepaths_in_dir">
+<a class="viewcode-back" href="../../../_autosummary/py2store.persisters.local_files.html#py2store.persisters.local_files.filepaths_in_dir">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">filepaths_in_dir</span><span class="p">(</span><span class="n">rootdir</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""The full paths of the files (not the folders) directly under ``rootdir``."""</span>
+    <span class="k">return</span> <span class="nb">filter</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">,</span> <span class="n">iglob</span><span class="p">(</span><span class="n">ensure_slash_suffix</span><span class="p">(</span><span class="n">rootdir</span><span class="p">)</span> <span class="o">+</span> <span class="s1">'*'</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="dirpaths_in_dir">
+<a class="viewcode-back" href="../../../_autosummary/py2store.persisters.local_files.html#py2store.persisters.local_files.dirpaths_in_dir">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">dirpaths_in_dir</span><span class="p">(</span><span class="n">rootdir</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""The full paths of the folders directly under ``rootdir``."""</span>
+    <span class="k">return</span> <span class="nb">filter</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">,</span> <span class="n">iglob</span><span class="p">(</span><span class="n">ensure_slash_suffix</span><span class="p">(</span><span class="n">rootdir</span><span class="p">)</span> <span class="o">+</span> <span class="s1">'*'</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="iter_filepaths_in_folder_recursively">
+<a class="viewcode-back" href="../../../_autosummary/py2store.persisters.local_files.html#py2store.persisters.local_files.iter_filepaths_in_folder_recursively">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">iter_filepaths_in_folder_recursively</span><span class="p">(</span>
+    <span class="n">root_folder</span><span class="p">,</span> <span class="n">max_levels</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">_current_level</span><span class="o">=</span><span class="mi">0</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Yield the full paths of the files under ``root_folder``, recursively.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        root_folder: The folder to walk.</span>
+<span class="sd">        max_levels: How many folder levels below ``root_folder`` to descend into: ``0`` yields</span>
+<span class="sd">            only the files directly under it, ``None`` means no limit.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">max_levels</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">max_levels</span> <span class="o">=</span> <span class="n">inf</span>
+    <span class="k">for</span> <span class="n">full_path</span> <span class="ow">in</span> <span class="n">paths_in_dir</span><span class="p">(</span><span class="n">root_folder</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">full_path</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">_current_level</span> <span class="o">&lt;</span> <span class="n">max_levels</span><span class="p">:</span>
+                <span class="k">yield from</span> <span class="n">iter_filepaths_in_folder_recursively</span><span class="p">(</span>
+                    <span class="n">full_path</span><span class="p">,</span> <span class="n">max_levels</span><span class="p">,</span> <span class="n">_current_level</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">full_path</span><span class="p">):</span>
+                <span class="k">yield</span> <span class="n">full_path</span></div>
+
+
+
+<div class="viewcode-block" id="iter_dirpaths_in_folder_recursively">
+<a class="viewcode-back" href="../../../_autosummary/py2store.persisters.local_files.html#py2store.persisters.local_files.iter_dirpaths_in_folder_recursively">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">iter_dirpaths_in_folder_recursively</span><span class="p">(</span><span class="n">root_folder</span><span class="p">,</span> <span class="n">max_levels</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">_current_level</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Yield the full paths of the folders under ``root_folder``, recursively (``max_levels`` as in ``iter_filepaths_in_folder_recursively``)."""</span>
+    <span class="k">if</span> <span class="n">max_levels</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">max_levels</span> <span class="o">=</span> <span class="n">inf</span>
+    <span class="k">for</span> <span class="n">full_path</span> <span class="ow">in</span> <span class="n">paths_in_dir</span><span class="p">(</span><span class="n">root_folder</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">full_path</span><span class="p">):</span>
+            <span class="k">yield</span> <span class="n">full_path</span>
+            <span class="k">if</span> <span class="n">_current_level</span> <span class="o">&lt;</span> <span class="n">max_levels</span><span class="p">:</span>
+                <span class="k">yield from</span> <span class="n">iter_dirpaths_in_folder_recursively</span><span class="p">(</span>
+                    <span class="n">full_path</span><span class="p">,</span> <span class="n">max_levels</span><span class="p">,</span> <span class="n">_current_level</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="p">)</span></div>
+
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">PrefixedFilepaths</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Keys collection for local files, where the keys are full filepaths DIRECTLY under a given root dir _prefix.</span>
+<span class="sd">    This mixin adds iteration (__iter__), length (__len__), and containment (__contains__(k)).</span>
+<span class="sd">    """</span>
+
+    <span class="n">_max_levels</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">iter_relative_files_and_folder</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_prefix</span><span class="p">,</span> <span class="n">max_levels</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_max_levels</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Check if filepath exists (i.e. the path exists and is a file)</span>
+
+<span class="sd">        :param k: A key to search for</span>
+<span class="sd">        :return: True if k exists, False if not</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">PrefixedFilepathsRecursive</span><span class="p">(</span><span class="n">PrefixedFilepaths</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Keys collection for local files, where the keys are full filepaths RECURSIVELY under a given root dir _prefix.</span>
+<span class="sd">    This mixin adds iteration (__iter__), length (__len__), and containment (__contains__(k)).</span>
+<span class="sd">    """</span>
+
+    <span class="n">_max_levels</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">iter_filepaths_in_folder_recursively</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_prefix</span><span class="p">,</span> <span class="n">max_levels</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_max_levels</span>
+        <span class="p">)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">PrefixedDirpathsRecursive</span><span class="p">(</span><span class="n">PrefixedFilepaths</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Keys collection for local files, where the keys are full filepaths RECURSIVELY under a given root dir _prefix.</span>
+<span class="sd">    This mixin adds iteration (__iter__), length (__len__), and containment (__contains__(k)).</span>
+<span class="sd">    """</span>
+
+    <span class="n">_max_levels</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">iter_dirpaths_in_folder_recursively</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_prefix</span><span class="p">,</span> <span class="n">max_levels</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_max_levels</span>
+        <span class="p">)</span>
+
+
+<div class="viewcode-block" id="path_match_regex_from_path_format">
+<a class="viewcode-back" href="../../../_autosummary/py2store.persisters.local_files.html#py2store.persisters.local_files.path_match_regex_from_path_format">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">path_match_regex_from_path_format</span><span class="p">(</span><span class="n">path_format</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Compile the regex that full paths matching the ``path_format`` template satisfy (a bare directory matches everything under it)."""</span>
+    <span class="k">if</span> <span class="s1">'{'</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">path_format</span><span class="p">:</span>
+        <span class="c1"># if the path_format is equal to the _prefix (i.e. there's no {} formatting)</span>
+        <span class="c1"># ... append a formatting element so that the matcher can match all subfiles.</span>
+        <span class="n">path_format</span> <span class="o">=</span> <span class="n">path_format</span> <span class="o">+</span> <span class="s1">'</span><span class="si">{}</span><span class="s1">'</span>
+
+    <span class="k">return</span> <span class="n">match_re_for_fstring</span><span class="p">(</span><span class="n">path_format</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="PathFormat">
+<a class="viewcode-back" href="../../../_autosummary/py2store.persisters.local_files.html#py2store.persisters.local_files.PathFormat">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">PathFormat</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Key validation from a path template: which full paths belong to the collection.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        path_format: The f-string template that the full path keys should match: a root</span>
+<span class="sd">            directory (``'/data/'``, everything under it) or a template such as</span>
+<span class="sd">            ``'/data/{}.csv'`` (only ``.csv`` files under ``/data/``). The directory</span>
+<span class="sd">            containing the part before the first ``{`` is the root, available as ``_prefix``.</span>
+
+<span class="sd">    &gt;&gt;&gt; pf = PathFormat('/data/{}.csv')</span>
+<span class="sd">    &gt;&gt;&gt; pf._prefix, pf.is_valid_key('/data/a.csv'), pf.is_valid_key('/data/a.txt')</span>
+<span class="sd">    ('/data/', True, False)</span>
+<span class="sd">    """</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path_format</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_path_format</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">path_format</span>  <span class="c1"># not intended for use, but keeping in case, for now</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="s1">'{'</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">path_format</span><span class="p">:</span>
+            <span class="n">rootdir</span> <span class="o">=</span> <span class="n">ensure_slash_suffix</span><span class="p">(</span><span class="n">path_format</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">rootdir</span> <span class="o">=</span> <span class="n">ensure_slash_suffix</span><span class="p">(</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sa">r</span><span class="s1">'[^{]*'</span><span class="p">,</span> <span class="n">path_format</span><span class="p">)</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+            <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_prefix</span> <span class="o">=</span> <span class="n">rootdir</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_path_match_re</span> <span class="o">=</span> <span class="n">path_match_regex_from_path_format</span><span class="p">(</span><span class="n">path_format</span><span class="p">)</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">_key_filt</span><span class="p">(</span><span class="n">k</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_path_match_re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">k</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_key_filt</span> <span class="o">=</span> <span class="n">_key_filt</span>
+
+<div class="viewcode-block" id="PathFormat.is_valid_key">
+<a class="viewcode-back" href="../../../_autosummary/py2store.persisters.local_files.html#py2store.persisters.local_files.PathFormat.is_valid_key">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_valid_key</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Whether ``k`` matches the path template."""</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_key_filt</span><span class="p">(</span><span class="n">k</span><span class="p">)</span></div>
+</div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_is_not_dir</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+    <span class="k">return</span> <span class="ow">not</span> <span class="n">p</span><span class="o">.</span><span class="n">is_dir</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="first_non_existing_parent_dir">
+<a class="viewcode-back" href="../../../_autosummary/py2store.persisters.local_files.html#py2store.persisters.local_files.first_non_existing_parent_dir">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">first_non_existing_parent_dir</span><span class="p">(</span><span class="n">dirpath</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""The highest ancestor directory of ``dirpath`` that does not exist, or ``''`` if they all exist."""</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="s1">''</span>
+    <span class="k">for</span> <span class="n">parent</span> <span class="ow">in</span> <span class="n">takewhile</span><span class="p">(</span><span class="n">_is_not_dir</span><span class="p">,</span> <span class="n">Path</span><span class="p">(</span><span class="n">dirpath</span><span class="p">)</span><span class="o">.</span><span class="n">parents</span><span class="p">):</span>
+        <span class="k">pass</span>
+    <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span></div>
+
+
+
+<span class="c1">########################################################################################################################</span>
+<span class="c1"># Local File Persistence : Classes</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">wraps</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Union</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span>
+
+
+<div class="viewcode-block" id="w_helpful_folder_not_found_error">
+<a class="viewcode-back" href="../../../_autosummary/py2store.persisters.local_files.html#py2store.persisters.local_files.w_helpful_folder_not_found_error">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">w_helpful_folder_not_found_error</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">raise_error</span><span class="o">=</span><span class="ne">KeyError</span><span class="p">,</span>
+    <span class="n">extra_msg</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Callable</span> <span class="o">=</span> <span class="s1">''</span><span class="p">,</span>
+    <span class="n">caught_errors</span><span class="o">=</span><span class="ne">FileNotFoundError</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Decorator factory: re-raise ``caught_errors`` from a method as ``raise_error``, with the original message plus ``extra_msg`` (a string, or a callable of the method's arguments)."""</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">extra_msg</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">extra_msg_str</span> <span class="o">=</span> <span class="n">extra_msg</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">extra_msg</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">extra_msg_str</span>
+
+    <span class="k">assert</span> <span class="nb">callable</span><span class="p">(</span><span class="n">extra_msg</span><span class="p">),</span> <span class="s1">'extra_msg must be a callable or a string'</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_helpful_folder_not_found_error</span><span class="p">(</span><span class="n">method</span><span class="p">):</span>
+        <span class="nd">@wraps</span><span class="p">(</span><span class="n">method</span><span class="p">)</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">wrapped_method</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">method</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">caught_errors</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s1">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="se">\n</span><span class="s1">'</span> <span class="o">+</span> <span class="n">extra_msg</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">raise_error</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">wrapped_method</span>
+
+    <span class="k">return</span> <span class="n">_helpful_folder_not_found_error</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_store_does_not_create_dirs_msg</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="s2">"The store you're using doesn't create directories for you. "</span>
+        <span class="s1">'You have to make the directories needed yourself manually, '</span>
+        <span class="s1">'or use a store that does that for you (example QuickStore). '</span>
+        <span class="s2">"This is the first directory that didn't exist:</span><span class="se">\n</span><span class="s2">"</span>
+        <span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="n">first_non_existing_parent_dir</span><span class="p">(</span><span class="n">k</span><span class="p">)</span><span class="si">}</span><span class="s1">'</span>
+    <span class="p">)</span>
+
+
+<div class="viewcode-block" id="LocalFileStreamGetter">
+<a class="viewcode-back" href="../../../_autosummary/py2store.persisters.local_files.html#py2store.persisters.local_files.LocalFileStreamGetter">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">LocalFileStreamGetter</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""A class to get stream objects of local open files.</span>
+<span class="sd">    The class can only get keys, and only to read, write (destructive or append).</span>
+
+<span class="sd">    &gt;&gt;&gt; from tempfile import mkdtemp</span>
+<span class="sd">    &gt;&gt;&gt; import os</span>
+<span class="sd">    &gt;&gt;&gt; rootdir = mkdtemp()</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; appendable_stream = LocalFileStreamGetter(mode='a+')</span>
+<span class="sd">    &gt;&gt;&gt; reader = PathFormatPersister(rootdir)</span>
+<span class="sd">    &gt;&gt;&gt; filepath = os.path.join(rootdir, 'tmp.txt')</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; with appendable_stream[filepath] as fp:</span>
+<span class="sd">    ...     fp.write('hello')</span>
+<span class="sd">    5</span>
+<span class="sd">    &gt;&gt;&gt; print(reader[filepath])</span>
+<span class="sd">    hello</span>
+<span class="sd">    &gt;&gt;&gt; with appendable_stream[filepath] as fp:</span>
+<span class="sd">    ...     fp.write(' world')</span>
+<span class="sd">    6</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; print(reader[filepath])</span>
+<span class="sd">    hello world</span>
+<span class="sd">    """</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">open_kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">open_kwargs</span> <span class="o">=</span> <span class="n">open_kwargs</span>
+
+    <span class="nd">@w_helpful_folder_not_found_error</span><span class="p">()</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">open</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">open_kwargs</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># TODO: Use LocalFileStream</span>
+<div class="viewcode-block" id="LocalFileRWD">
+<a class="viewcode-back" href="../../../_autosummary/py2store.persisters.local_files.html#py2store.persisters.local_files.LocalFileRWD">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">LocalFileRWD</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    A class providing get, set and delete functionality using local files as the storage backend.</span>
+<span class="sd">    """</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">''</span><span class="p">,</span> <span class="o">**</span><span class="n">open_kwargs</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="n">mode</span> <span class="ow">in</span> <span class="p">{</span><span class="s1">''</span><span class="p">,</span> <span class="s1">'b'</span><span class="p">,</span> <span class="s1">'t'</span><span class="p">},</span> <span class="s2">"mode should be '', 'b', or 't'"</span>
+
+        <span class="n">read_mode</span> <span class="o">=</span> <span class="n">open_kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">'read_mode'</span><span class="p">,</span> <span class="s1">'r'</span> <span class="o">+</span> <span class="n">mode</span><span class="p">)</span>
+        <span class="n">write_mode</span> <span class="o">=</span> <span class="n">open_kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">'write_mode'</span><span class="p">,</span> <span class="s1">'w'</span> <span class="o">+</span> <span class="n">mode</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_open_kwargs_for_read</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">open_kwargs</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">read_mode</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_open_kwargs_for_write</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">open_kwargs</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">write_mode</span><span class="p">)</span>
+
+    <span class="nd">@w_helpful_folder_not_found_error</span><span class="p">()</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">_open_kwargs_for_read</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">data</span>
+
+    <span class="nd">@w_helpful_folder_not_found_error</span><span class="p">(</span>
+        <span class="n">raise_error</span><span class="o">=</span><span class="n">FolderNotFoundError</span><span class="p">,</span> <span class="n">extra_msg</span><span class="o">=</span><span class="n">_store_does_not_create_dirs_msg</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">_open_kwargs_for_write</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+            <span class="n">fp</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+
+    <span class="nd">@w_helpful_folder_not_found_error</span><span class="p">()</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__delitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">k</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="FilepathFormatKeys">
+<a class="viewcode-back" href="../../../_autosummary/py2store.persisters.local_files.html#py2store.persisters.local_files.FilepathFormatKeys">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">FilepathFormatKeys</span><span class="p">(</span>
+    <span class="n">PathFormat</span><span class="p">,</span>
+    <span class="n">FilteredKeysMixin</span><span class="p">,</span>
+    <span class="n">KeyValidationABC</span><span class="p">,</span>
+    <span class="n">PrefixedFilepathsRecursive</span><span class="p">,</span>
+    <span class="n">IterBasedSizedMixin</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Keys collection of the files matching a path template, recursively under its root (``max_levels`` limits the depth)."""</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path_format</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">max_levels</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">inf</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">path_format</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_max_levels</span> <span class="o">=</span> <span class="n">max_levels</span></div>
+
+
+
+<div class="viewcode-block" id="DirpathFormatKeys">
+<a class="viewcode-back" href="../../../_autosummary/py2store.persisters.local_files.html#py2store.persisters.local_files.DirpathFormatKeys">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">DirpathFormatKeys</span><span class="p">(</span>
+    <span class="n">PathFormat</span><span class="p">,</span>
+    <span class="n">FilteredKeysMixin</span><span class="p">,</span>
+    <span class="n">KeyValidationABC</span><span class="p">,</span>
+    <span class="n">PrefixedDirpathsRecursive</span><span class="p">,</span>
+    <span class="n">IterBasedSizedMixin</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Keys collection of the folders matching a path template, recursively under its root (``max_levels`` limits the depth)."""</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path_format</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">max_levels</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">inf</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">path_format</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_max_levels</span> <span class="o">=</span> <span class="n">max_levels</span></div>
+
+
+
+<div class="viewcode-block" id="PathFormatPersister">
+<a class="viewcode-back" href="../../../_autosummary/py2store.persisters.local_files.html#py2store.persisters.local_files.PathFormatPersister">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">PathFormatPersister</span><span class="p">(</span><span class="n">FilepathFormatKeys</span><span class="p">,</span> <span class="n">LocalFileRWD</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Read, write and delete local files whose full paths match a path template.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        path_format: The path template (see ``PathFormat``).</span>
+<span class="sd">        max_levels: How many folder levels below the root to include when iterating.</span>
+<span class="sd">        mode: ``''``, ``'t'`` or ``'b'``: whether files are opened in text or binary mode.</span>
+<span class="sd">        **open_kwargs: Forwarded to ``open``; ``read_mode`` and ``write_mode`` entries override</span>
+<span class="sd">            the modes derived from ``mode``.</span>
+<span class="sd">    """</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">path_format</span><span class="p">,</span> <span class="n">max_levels</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">inf</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">DFLT_OPEN_MODE</span><span class="p">,</span> <span class="o">**</span><span class="n">open_kwargs</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="n">FilepathFormatKeys</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path_format</span><span class="p">)</span>
+        <span class="n">LocalFileRWD</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="o">**</span><span class="n">open_kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_max_levels</span> <span class="o">=</span> <span class="n">max_levels</span></div>
+
+
+
+<div class="viewcode-block" id="PrefixedFilepaths">
+<a class="viewcode-back" href="../../../_autosummary/py2store.persisters.local_files.html#py2store.persisters.local_files.PrefixedFilepaths">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">PrefixedFilepaths</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Keys collection for local files, where the keys are full filepaths DIRECTLY under a given root dir _prefix.</span>
+<span class="sd">    This mixin adds iteration (__iter__), length (__len__), and containment (__contains__(k)).</span>
+<span class="sd">    """</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">iter_relative_files_and_folder</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_prefix</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Check if filepath exists (i.e. the path exists and is a file)</span>
+
+<span class="sd">        :param k: A key to search for</span>
+<span class="sd">        :return: True if k exists, False if not</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">k</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="PrefixedFilepathsRecursive">
+<a class="viewcode-back" href="../../../_autosummary/py2store.persisters.local_files.html#py2store.persisters.local_files.PrefixedFilepathsRecursive">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">PrefixedFilepathsRecursive</span><span class="p">(</span><span class="n">PrefixedFilepaths</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Keys collection for local files, where the keys are full filepaths RECURSIVELY under a given root dir _prefix.</span>
+<span class="sd">    This mixin adds iteration (__iter__), length (__len__), and containment (__contains__(k)).</span>
+<span class="sd">    """</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">iter_filepaths_in_folder_recursively</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_prefix</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="PrefixedDirpathsRecursive">
+<a class="viewcode-back" href="../../../_autosummary/py2store.persisters.local_files.html#py2store.persisters.local_files.PrefixedDirpathsRecursive">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">PrefixedDirpathsRecursive</span><span class="p">(</span><span class="n">PrefixedFilepaths</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Keys collection for local files, where the keys are full filepaths RECURSIVELY under a given root dir _prefix.</span>
+<span class="sd">    This mixin adds iteration (__iter__), length (__len__), and containment (__contains__(k)).</span>
+<span class="sd">    """</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">iter_dirpaths_in_folder_recursively</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_prefix</span><span class="p">)</span></div>
+
+
+
+<span class="n">is_dir_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span>
+<span class="n">is_file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span>
+
+
+<div class="viewcode-block" id="extend_prefix">
+<a class="viewcode-back" href="../../../_autosummary/py2store.persisters.local_files.html#py2store.persisters.local_files.extend_prefix">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">extend_prefix</span><span class="p">(</span><span class="n">prefix</span><span class="p">,</span> <span class="n">new_prefix</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Join ``new_prefix`` to ``prefix``, with a trailing separator."""</span>
+    <span class="k">return</span> <span class="n">ensure_slash_suffix</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">prefix</span><span class="p">,</span> <span class="n">new_prefix</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="endswith_slash">
+<a class="viewcode-back" href="../../../_autosummary/py2store.persisters.local_files.html#py2store.persisters.local_files.endswith_slash">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">endswith_slash</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Whether ``path`` ends with the OS path separator."""</span>
+    <span class="k">return</span> <span class="n">path</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="n">file_sep</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="FileReader">
+<a class="viewcode-back" href="../../../_autosummary/py2store.persisters.local_files.html#py2store.persisters.local_files.FileReader">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">FileReader</span><span class="p">(</span><span class="n">KvReader</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""KV Reader whose keys are paths and values are:</span>
+
+<span class="sd">    - Another FileReader if a path points to a directory</span>
+<span class="sd">    - The bytes of the file if the path points to a file.</span>
+
+<span class="sd">    Keys are the full paths directly under ``rootdir``; directory keys end with a separator.</span>
+
+<span class="sd">    &gt;&gt;&gt; import os, tempfile</span>
+<span class="sd">    &gt;&gt;&gt; rootdir = tempfile.mkdtemp()</span>
+<span class="sd">    &gt;&gt;&gt; _ = open(os.path.join(rootdir, 'a.txt'), 'wb').write(b'hi')</span>
+<span class="sd">    &gt;&gt;&gt; os.mkdir(os.path.join(rootdir, 'sub'))</span>
+<span class="sd">    &gt;&gt;&gt; s = FileReader(rootdir)</span>
+<span class="sd">    &gt;&gt;&gt; sorted(k[len(s.rootdir):] for k in s)</span>
+<span class="sd">    ['a.txt', 'sub/']</span>
+<span class="sd">    &gt;&gt;&gt; s[os.path.join(rootdir, 'a.txt')]</span>
+<span class="sd">    b'hi'</span>
+<span class="sd">    &gt;&gt;&gt; type(s[os.path.join(rootdir, 'sub', '')]).__name__</span>
+<span class="sd">    'FileReader'</span>
+<span class="sd">    """</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rootdir</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rootdir</span> <span class="o">=</span> <span class="n">ensure_slash_suffix</span><span class="p">(</span><span class="n">rootdir</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_rootdir_length</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rootdir</span><span class="p">)</span>
+        <span class="c1"># TODO: Look into alternatives for the raison d'etre of _new_node and _class_name</span>
+        <span class="c1"># (They are there, because using self.__class__ directly goes to super)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_new_node</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_class_name</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_extended_prefix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_prefix</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rootdir</span><span class="p">,</span> <span class="n">new_prefix</span><span class="p">)</span>
+
+    <span class="c1"># TODO: Possible optimization: Think if using cached keys makes more sense.</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="n">k</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rootdir</span><span class="p">)</span>  <span class="c1"># prefix is rootdir</span>
+            <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>  <span class="c1"># exists (as file or dir)</span>
+            <span class="ow">and</span> <span class="p">(</span>
+                <span class="n">k</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="n">file_sep</span><span class="p">)</span> <span class="ow">or</span> <span class="n">file_sep</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">k</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_rootdir_length</span> <span class="p">:]</span>
+            <span class="p">)</span>  <span class="c1"># is a dir or a first-level file</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="nb">map</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_extended_prefix</span><span class="p">,</span>  <span class="c1"># (2) extend prefix with sub-path name</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rootdir</span><span class="p">),</span>  <span class="c1"># (1) list file names under _prefix</span>
+        <span class="p">):</span>
+            <span class="k">if</span> <span class="n">is_dir_path</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+                <span class="k">yield</span> <span class="n">ensure_slash_suffix</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="n">path</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">is_dir_path</span><span class="p">(</span><span class="n">k</span><span class="p">):</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_new_node</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">is_file_path</span><span class="p">(</span><span class="n">k</span><span class="p">):</span>
+                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="s1">'rb'</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">fp</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__missing__</span><span class="p">(</span>
+            <span class="n">k</span>
+        <span class="p">)</span>  <span class="c1"># if you got this far, the key is missing (or malformed)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__missing__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">NoSuchKeyError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"No such key (perhaps it's not a valid path, or was deleted?): </span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">"</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_class_name</span><span class="si">}</span><span class="s2">('</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">rootdir</span><span class="si">}</span><span class="s2">')"</span></div>
+
+
+
+<div class="viewcode-block" id="DirReader">
+<a class="viewcode-back" href="../../../_autosummary/py2store.persisters.local_files.html#py2store.persisters.local_files.DirReader">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">DirReader</span><span class="p">(</span><span class="n">FileReader</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""KV Reader whose keys are the full paths of the subdirectories of ``rootdir`` and whose values are ``DirReader`` instances of them.</span>
+
+<span class="sd">    &gt;&gt;&gt; import os, tempfile</span>
+<span class="sd">    &gt;&gt;&gt; rootdir = tempfile.mkdtemp()</span>
+<span class="sd">    &gt;&gt;&gt; _ = open(os.path.join(rootdir, 'a.txt'), 'wb').write(b'hi')</span>
+<span class="sd">    &gt;&gt;&gt; os.mkdir(os.path.join(rootdir, 'sub'))</span>
+<span class="sd">    &gt;&gt;&gt; s = DirReader(rootdir)</span>
+<span class="sd">    &gt;&gt;&gt; [k[len(s.rootdir):] for k in s]</span>
+<span class="sd">    ['sub/']</span>
+<span class="sd">    &gt;&gt;&gt; os.path.join(rootdir, 'a.txt') in s</span>
+<span class="sd">    False</span>
+<span class="sd">    &gt;&gt;&gt; type(s[os.path.join(rootdir, 'sub', '')]).__name__</span>
+<span class="sd">    'DirReader'</span>
+<span class="sd">    """</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">endswith_slash</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__contains__</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">filter</span><span class="p">(</span><span class="n">endswith_slash</span><span class="p">,</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__iter__</span><span class="p">())</span></div>
+
+</pre></div>
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          
+          
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            Made with 
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer no-toc">
+      
+      
+      
+    </aside>
+  </div>
+</div><script src="../../../_static/documentation_options.js?v=2d24694c"></script>
+    <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/scripts/furo.js?v=46bd48cc"></script>
+    <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../_static/copybutton.js?v=fd10adb8"></script>
+    <script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.12.1/dist/mermaid.esm.min.mjs";
+
+
+
+
+
+const initStyles = () => {
+    const defaultStyle = document.createElement('style');
+    defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
+    document.head.appendChild(defaultStyle);
+
+    const fullscreenStyle = document.createElement('style');
+    fullscreenStyle.textContent = ".mermaid-container {\n    position: relative;\n    display: flex;\n    flex-direction: row;\n    width: 100%;\n}\n\n.mermaid-container > pre {\n    display: block;\n    width: 100%;\n}\n\n.mermaid-container > pre > svg {\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}\n\n.mermaid-fullscreen-btn {\n    position: absolute;\n    width: 28px;\n    height: 28px;\n    background: rgba(255, 255, 255, 0.95);\n    border: 1px solid rgba(0, 0, 0, 0.3);\n    border-radius: 4px;\n    cursor: pointer;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    transition: all 0.2s;\n    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);\n    font-size: 14px;\n    line-height: 1;\n    padding: 0;\n    color: #333;\n}\n\n.mermaid-fullscreen-btn:hover {\n    opacity: 100% !important;\n    background: rgba(255, 255, 255, 1);\n    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);\n    transform: scale(1.1);\n}\n\n.mermaid-fullscreen-btn.dark-theme {\n    background: rgba(50, 50, 50, 0.95);\n    border: 1px solid rgba(255, 255, 255, 0.3);\n    color: #e0e0e0;\n}\n\n.mermaid-fullscreen-btn.dark-theme:hover {\n    background: rgba(60, 60, 60, 1);\n    box-shadow: 0 3px 10px rgba(255, 255, 255, 0.2);\n}\n\n.mermaid-fullscreen-modal {\n    display: none;\n    position: fixed !important;\n    top: 0 !important;\n    left: 0 !important;\n    width: 95vw;\n    height: 100vh;\n    background: rgba(255, 255, 255, 0.98);\n    z-index: 9999;\n    padding: 20px;\n    overflow: auto;\n}\n\n.mermaid-fullscreen-modal.dark-theme {\n    background: rgba(0, 0, 0, 0.98);\n}\n\n.mermaid-fullscreen-modal.active {\n    display: flex;\n    align-items: center;\n    justify-content: center;\n}\n\n.mermaid-container-fullscreen {\n    position: relative;\n    width: 95vw;\n    height: 90vh;\n    max-width: 95vw;\n    max-height: 90vh;\n    background: white;\n    border-radius: 8px;\n    padding: 20px;\n    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);\n    overflow: auto;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n}\n\n.mermaid-container-fullscreen.dark-theme {\n    background: #1a1a1a;\n    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);\n}\n\n.mermaid-container-fullscreen pre.mermaid {\n    width: 100%;\n    height: 100%;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n}\n\n.mermaid-container-fullscreen .mermaid svg {\n    height: 100% !important;\n    width: 100% !important;\n    cursor: grab;\n}\n\n.mermaid-fullscreen-close {\n    position: fixed !important;\n    top: 20px !important;\n    right: 20px !important;\n    width: 40px;\n    height: 40px;\n    background: rgba(255, 255, 255, 0.95);\n    border: 1px solid rgba(0, 0, 0, 0.2);\n    border-radius: 50%;\n    cursor: pointer;\n    z-index: 10000;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);\n    transition: all 0.2s;\n    font-size: 24px;\n    line-height: 1;\n    color: #333;\n}\n\n.mermaid-fullscreen-close:hover {\n    background: white;\n    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);\n    transform: scale(1.1);\n}\n\n.mermaid-fullscreen-close.dark-theme {\n    background: rgba(50, 50, 50, 0.95);\n    border: 1px solid rgba(255, 255, 255, 0.2);\n    color: #e0e0e0;\n}\n\n.mermaid-fullscreen-close.dark-theme:hover {\n    background: rgba(60, 60, 60, 1);\n    box-shadow: 0 6px 16px rgba(255, 255, 255, 0.2);\n}\n\n.mermaid-fullscreen-modal .mermaid-fullscreen-btn {\n    display: none !important;\n}";
+    document.head.appendChild(fullscreenStyle);
+}
+
+// Detect if page has dark background
+const isDarkTheme = () => {
+    // We use a set of heuristics:
+    // 1. Check for common dark mode classes or attributes
+    // 2. Check computed background color brightness
+    if (document.documentElement.classList.contains('dark') ||
+        document.documentElement.getAttribute('data-theme') === 'dark' ||
+        document.body.classList.contains('dark') ||
+        document.body.getAttribute('data-theme') === 'dark') {
+        // console.log("Dark theme detected via class/attribute");
+        return true;
+    }
+    if (document.documentElement.classList.contains('light') ||
+        document.documentElement.getAttribute('data-theme') === 'light' ||
+        document.body.classList.contains('light') ||
+        document.body.getAttribute('data-theme') === 'light') {
+        // console.log("Light theme detected via class/attribute");
+        return false;
+    }
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        // console.log("Dark theme detected via prefers-color-scheme");
+        return true;
+    }
+    const bgColor = window.getComputedStyle(document.body).backgroundColor;
+    const match = bgColor.match(/rgb\((\d+),\s*(\d+),\s*(\d+)/);
+    if (match) {
+        const r = parseInt(match[1]);
+        const g = parseInt(match[2]);
+        const b = parseInt(match[3]);
+        const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+        // console.log("Background color brightness:", brightness);
+        return brightness < 128;
+    }
+    // console.log("No dark or light theme detected, defaulting to light theme");
+    return false;
+};
+
+let darkTheme = isDarkTheme();
+let modal = null;
+let modalContent = null;
+let previousScrollOffset = [window.scrollX, window.scrollY];
+let _lazyObserver = null;
+let _renderQueue = Promise.resolve();
+let closeModal = () => {};
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal?.classList.contains('active')) {
+        closeModal();
+    }
+});
+
+// Apply d3 zoom to each SVG. Idempotent: an SVG already wrapped is skipped,
+// so this is safe to call both for the initial batch and for diagrams that
+// render lazily once they become visible.
+const addZoomToSvgs = (svgs) => {
+    svgs.each(function() {
+        if (this.getAttribute('data-zoom-applied') === 'true') return;
+        var svg = d3.select(this);
+        svg.html("<g class='wrapper'>" + svg.html() + "</g>");
+        var inner = svg.select("g");
+        var zoom = d3.zoom().on("zoom", function(event) {
+            inner.attr("transform", event.transform);
+        });
+        svg.call(zoom);
+        this.setAttribute('data-zoom-applied', 'true');
+    });
+};
+
+const runMermaid = async (rerun) => {
+    console.log("Running mermaid diagrams, rerun =", rerun);
+    // clear all existing mermaid charts
+    let all_mermaids = document.querySelectorAll(".mermaid");
+
+    if (rerun) {
+        // Disconnect any previous lazy rendering observer
+        if (_lazyObserver) {
+            _lazyObserver.disconnect();
+            _lazyObserver = null;
+        }
+
+        all_mermaids.forEach((el) => {
+            el.removeAttribute('data-mermaid-deferred');
+            el.removeAttribute('data-mermaid-render-failed');
+            if(!el.hasAttribute("data-original-code")) {
+                // store original code
+                // console.log(`Storing original code for first run: `, el.innerHTML);
+                el.setAttribute('data-original-code', el.innerHTML);
+            }
+            if(el.getAttribute("data-processed") === "true") {
+                // remove and restore original
+                el.removeAttribute("data-processed");
+                // console.log(`Restoring original code for re-run: `, el.getAttribute('data-original-code'));
+                el.innerHTML = el.getAttribute('data-original-code');
+            } else {
+                // store original code
+                // console.log(`Storing original code for re-run: `, el.innerHTML);
+                el.setAttribute('data-original-code', el.innerHTML);
+            }
+        });
+
+        // Separate visible and hidden elements. Mermaid's layout engine measures
+        // text dimensions via the DOM, which fails for elements hidden by a parent
+        // (e.g., Reveal.js non-active slides, sphinx-design unopened tabs),
+        // producing broken SVGs. Render visible elements now, defer hidden ones.
+        const visible = [];
+        const hidden = [];
+        all_mermaids.forEach((el) => {
+            // offsetParent is null for display:none ancestors.
+            // getClientRects().length > 0 catches position:fixed elements
+            // (which also have null offsetParent but are still visible).
+            if (el.offsetParent !== null || el.getClientRects().length > 0) {
+                visible.push(el);
+            } else {
+                hidden.push(el);
+                el.setAttribute('data-mermaid-deferred', 'true');
+            }
+        });
+
+        if (visible.length > 0) {
+            try {
+                await mermaid.run({ nodes: visible });
+            } catch (e) {
+                console.error("Mermaid rendering failed:", e);
+            }
+        }
+
+        // Lazily render hidden elements when they become visible.
+        // Uses a promise chain (_renderQueue) to serialize rendering,
+        // since IntersectionObserver may report multiple entries at once
+        // and mermaid.run() is not safe to call concurrently.
+        if (hidden.length > 0) {
+            if (typeof IntersectionObserver === 'undefined') {
+                console.warn("IntersectionObserver not available; hidden mermaid diagrams will not render.");
+            } else {
+                _renderQueue = Promise.resolve();
+                _lazyObserver = new IntersectionObserver((entries) => {
+                    for (const entry of entries) {
+                        if (entry.isIntersecting && entry.target.getAttribute("data-processed") !== "true") {
+                            _lazyObserver.unobserve(entry.target);
+                            const el = entry.target;
+                            _renderQueue = _renderQueue.then(async () => {
+                                try {
+                                    await mermaid.run({ nodes: [el] });
+                                    el.removeAttribute('data-mermaid-deferred');
+                                    // Apply zoom to the now-rendered diagram, matching
+                                    // the decoration visible diagrams receive.
+                                    if (false) {
+                                        addZoomToSvgs(d3.selectAll("").select(function() {
+                                            return this.querySelector("svg");
+                                        }));
+                                    }
+                                } catch (e) {
+                                    console.error("Mermaid deferred rendering failed:", e);
+                                    el.removeAttribute('data-mermaid-deferred');
+                                    el.setAttribute('data-mermaid-render-failed', 'true');
+                                }
+                            });
+                        }
+                    }
+                });
+                hidden.forEach((el) => _lazyObserver.observe(el));
+            }
+        }
+    }
+
+    all_mermaids = document.querySelectorAll(".mermaid");
+    // Exclude deferred (hidden) and render-failed elements from completion checks
+    const mermaids_active = document.querySelectorAll(".mermaid:not([data-mermaid-deferred]):not([data-mermaid-render-failed])");
+    const mermaids_processed = document.querySelectorAll(".mermaid:not([data-mermaid-deferred]):not([data-mermaid-render-failed])[data-processed='true']");
+
+    if (false) {
+        const mermaids_to_add_zoom = 0 === -1 ? mermaids_active.length : 0;
+        if(mermaids_to_add_zoom > 0) {
+            var svgs = d3.selectAll("").select(function() {
+                return this.querySelector("svg");
+            });
+            // Wait until every active (visible) diagram has rendered. Deferred
+            // diagrams are excluded, so a fixed d3_node_count that counts a
+            // hidden diagram no longer loops forever waiting for its SVG.
+            if(mermaids_active.length !== mermaids_processed.length) {
+                setTimeout(() => runMermaid(false), 200);
+                return;
+            }
+            addZoomToSvgs(svgs);
+        }
+    } else if(mermaids_active.length !== mermaids_processed.length) {
+        // Wait for mermaid to process all diagrams
+        setTimeout(() => runMermaid(false), 200);
+        return;
+    }
+
+    // Stop here if not adding fullscreen capability
+    if (!true) return;
+
+    if (modal !== null ) {
+        // Destroy existing modal
+        modal.remove();
+        modal = null;
+        modalContent = null;
+    }
+
+    modal = document.createElement('div');
+    modal.className = 'mermaid-fullscreen-modal' + (darkTheme ? ' dark-theme' : '');
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-label', 'Fullscreen diagram viewer');
+    modal.innerHTML = `
+        <button class="mermaid-fullscreen-close${darkTheme ? ' dark-theme' : ''}" aria-label="Close fullscreen">✕</button>
+        <div class="mermaid-container-fullscreen${darkTheme ? ' dark-theme' : ''}"></div>
+    `;
+    document.body.appendChild(modal);
+
+    modalContent = modal.querySelector('.mermaid-container-fullscreen');
+    const closeBtn = modal.querySelector('.mermaid-fullscreen-close');
+
+    closeModal = () => {
+        modal.classList.remove('active');
+        modalContent.innerHTML = '';
+        document.body.style.overflow = ''
+        window.scrollTo({left: previousScrollOffset[0], top: previousScrollOffset[1], behavior: 'instant'});
+    };
+
+    closeBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+    });
+    document.querySelectorAll('.mermaid').forEach((mermaidDiv) => {
+        if (mermaidDiv.parentNode.classList.contains('mermaid-container') ||
+            mermaidDiv.closest('.mermaid-fullscreen-modal')) {
+            // Already processed, adjust button class if needed
+            const existingBtn = mermaidDiv.parentNode.querySelector('.mermaid-fullscreen-btn');
+            if (existingBtn) {
+                existingBtn.className = 'mermaid-fullscreen-btn' + (darkTheme ? ' dark-theme' : '');
+            }
+            return;
+        }
+
+        const container = document.createElement('div');
+        container.className = 'mermaid-container';
+        mermaidDiv.parentNode.insertBefore(container, mermaidDiv);
+        container.appendChild(mermaidDiv);
+
+        const fullscreenBtn = document.createElement('button');
+        fullscreenBtn.className = 'mermaid-fullscreen-btn' + (darkTheme ? ' dark-theme' : '');
+        fullscreenBtn.setAttribute('aria-label', 'View diagram in fullscreen');
+        fullscreenBtn.textContent = "\u26f6";
+        fullscreenBtn.style.opacity = "50%";
+
+        // Calculate dynamic position based on diagram's margin and padding
+        const diagramStyle = window.getComputedStyle(mermaidDiv);
+        const marginTop = parseFloat(diagramStyle.marginTop) || 0;
+        const marginRight = parseFloat(diagramStyle.marginRight) || 0;
+        const paddingTop = parseFloat(diagramStyle.paddingTop) || 0;
+        const paddingRight = parseFloat(diagramStyle.paddingRight) || 0;
+        fullscreenBtn.style.top = `${marginTop + paddingTop + 4}px`;
+        fullscreenBtn.style.right = `${marginRight + paddingRight + 4}px`;
+
+        fullscreenBtn.addEventListener('click', () => {
+            previousScrollOffset = [window.scrollX, window.scrollY];
+            const clone = mermaidDiv.cloneNode(true);
+            modalContent.innerHTML = '';
+            modalContent.appendChild(clone);
+
+            const svg = clone.querySelector('svg');
+            if (svg) {
+                svg.removeAttribute('width');
+                svg.removeAttribute('height');
+                svg.style.width = '100%';
+                svg.style.height = 'auto';
+                svg.style.maxWidth = '100%';
+                svg.style.display = 'block';
+
+                if (false) {
+                    setTimeout(() => {
+                        const g = svg.querySelector('g');
+                        if (g) {
+                            var svgD3 = d3.select(svg);
+                            svgD3.html("<g class='wrapper'>" + svgD3.html() + "</g>");
+                            var inner = svgD3.select("g");
+                            var zoom = d3.zoom().on("zoom", function(event) {
+                                inner.attr("transform", event.transform);
+                            });
+                            svgD3.call(zoom);
+                        }
+                    }, 100);
+                }
+            }
+
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        });
+        container.appendChild(fullscreenBtn);
+    });
+};
+
+
+
+const load = async () => {
+    initStyles();
+
+
+    await runMermaid(true);
+
+    const reRunIfThemeChanges = async () => {
+        const newDarkTheme = isDarkTheme();
+        if (newDarkTheme !== darkTheme) {
+            darkTheme = newDarkTheme;
+            console.log("Theme change detected, re-running mermaid with", darkTheme ? "dark" : "default", "theme");
+            await mermaid.initialize(
+                {...{"startOnLoad": false},
+                ...{ darkMode: darkTheme, theme: darkTheme ? "dark" : "default" },
+                }
+            );
+            await runMermaid(true);
+        }
+    };
+
+    // Update theme classes when theme changes
+    const themeObserver = new MutationObserver(reRunIfThemeChanges);
+    themeObserver.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['class', 'style', 'data-theme']
+    });
+    themeObserver.observe(document.body, {
+        attributes: true,
+        attributeFilter: ['class', 'style', 'data-theme']
+    });
+};
+
+
+
+
+
+console.log("Initializing mermaid with", darkTheme ? "dark" : "default", "theme");
+mermaid.initialize(
+    {...{"startOnLoad": false},
+    ...{ darkMode: darkTheme, theme: darkTheme ? "dark" : "default" },
+    }
+);
+
+window.addEventListener("load", load);
+window.runMermaid = runMermaid;</script>
+    </body>
+</html>

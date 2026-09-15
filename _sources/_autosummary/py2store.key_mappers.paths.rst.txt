@@ -1,0 +1,6 @@
+py2store.key\_mappers.paths
+===========================
+
+.. automodule:: py2store.key_mappers.paths
+
+   

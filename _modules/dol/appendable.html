@@ -1,0 +1,1407 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="../../">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark">
+<link rel="alternate" type="text/markdown" href="appendable.html.md">
+<link rel="describedby" href="../../llms.txt" type="text/markdown"><link rel="index" title="Index" href="../../genindex.html"><link rel="search" title="Search" href="../../search.html">
+
+    <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
+        <title>dol.appendable - py2store</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d75fae25" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f0f0f0;
+  --color-code-foreground: black;
+  --color-brand-primary: #87356b;
+  --color-brand-content: #87356b;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #f195cd;
+  --color-brand-content: #f195cd;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #f195cd;
+  --color-brand-content: #f195cd;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../../index.html"><div class="brand">py2store</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../../index.html">
+  
+  <span class="sidebar-brand-text">py2store</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../api.html">API reference</a><input aria-label="Toggle navigation of API reference" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../_autosummary/py2store.html">py2store</a><input aria-label="Toggle navigation of py2store" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/py2store.access.html">py2store.access</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/py2store.appendable.html">py2store.appendable</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/py2store.base.html">py2store.base</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/py2store.caching.html">py2store.caching</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/py2store.dig.html">py2store.dig</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/py2store.errors.html">py2store.errors</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../_autosummary/py2store.ext.html">py2store.ext</a><input aria-label="Toggle navigation of py2store.ext" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../_autosummary/py2store.ext.dataframes.html">py2store.ext.dataframes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../_autosummary/py2store.ext.docx.html">py2store.ext.docx</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../_autosummary/py2store.ext.github.html">py2store.ext.github</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../_autosummary/py2store.ext.gitlab.html">py2store.ext.gitlab</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../_autosummary/py2store.ext.hdf.html">py2store.ext.hdf</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../_autosummary/py2store.ext.matlab.html">py2store.ext.matlab</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../_autosummary/py2store.ext.wordnet.html">py2store.ext.wordnet</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/py2store.filesys.html">py2store.filesys</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../_autosummary/py2store.key_mappers.html">py2store.key_mappers</a><input aria-label="Toggle navigation of py2store.key_mappers" class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../_autosummary/py2store.key_mappers.naming.html">py2store.key_mappers.naming</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../_autosummary/py2store.key_mappers.paths.html">py2store.key_mappers.paths</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../_autosummary/py2store.key_mappers.str_utils.html">py2store.key_mappers.str_utils</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../_autosummary/py2store.key_mappers.tuples.html">py2store.key_mappers.tuples</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/py2store.misc.html">py2store.misc</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/py2store.mixins.html">py2store.mixins</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../_autosummary/py2store.my.html">py2store.my</a><input aria-label="Toggle navigation of py2store.my" class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../_autosummary/py2store.my.grabbers.html">py2store.my.grabbers</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/py2store.naming.html">py2store.naming</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/py2store.parse_format.html">py2store.parse_format</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/py2store.paths.html">py2store.paths</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../_autosummary/py2store.persisters.html">py2store.persisters</a><input aria-label="Toggle navigation of py2store.persisters" class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" role="switch" type="checkbox"/><label for="toctree-checkbox-6"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../_autosummary/py2store.persisters.dropbox_w_dropbox.html">py2store.persisters.dropbox_w_dropbox</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../_autosummary/py2store.persisters.googledrive_w_pydrive.html">py2store.persisters.googledrive_w_pydrive</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../_autosummary/py2store.persisters.local_files.html">py2store.persisters.local_files</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../_autosummary/py2store.persisters.new_s3.html">py2store.persisters.new_s3</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../_autosummary/py2store.persisters.redis_w_redis.html">py2store.persisters.redis_w_redis</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../_autosummary/py2store.persisters.s3_w_boto3.html">py2store.persisters.s3_w_boto3</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../_autosummary/py2store.persisters.sql_w_sqlalchemy.html">py2store.persisters.sql_w_sqlalchemy</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../_autosummary/py2store.persisters.w_aiofile.html">py2store.persisters.w_aiofile</a></li>
+</ul>
+</li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../_autosummary/py2store.serializers.html">py2store.serializers</a><input aria-label="Toggle navigation of py2store.serializers" class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" role="switch" type="checkbox"/><label for="toctree-checkbox-7"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../_autosummary/py2store.serializers.pickled.html">py2store.serializers.pickled</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/py2store.signatures.html">py2store.signatures</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../_autosummary/py2store.slib.html">py2store.slib</a><input aria-label="Toggle navigation of py2store.slib" class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" role="switch" type="checkbox"/><label for="toctree-checkbox-8"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../_autosummary/py2store.slib.s_configparser.html">py2store.slib.s_configparser</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../_autosummary/py2store.slib.s_zipfile.html">py2store.slib.s_zipfile</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/py2store.sources.html">py2store.sources</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../_autosummary/py2store.stores.html">py2store.stores</a><input aria-label="Toggle navigation of py2store.stores" class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" role="switch" type="checkbox"/><label for="toctree-checkbox-9"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../_autosummary/py2store.stores.dropbox_store.html">py2store.stores.dropbox_store</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../_autosummary/py2store.stores.local_store.html">py2store.stores.local_store</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../_autosummary/py2store.stores.s3_store.html">py2store.stores.s3_store</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../_autosummary/py2store.stores.sql_w_sqlalchemy.html">py2store.stores.sql_w_sqlalchemy</a></li>
+</ul>
+</li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../_autosummary/py2store.test.html">py2store.test</a><input aria-label="Toggle navigation of py2store.test" class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" role="switch" type="checkbox"/><label for="toctree-checkbox-10"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../_autosummary/py2store.test.local_files_test.html">py2store.test.local_files_test</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../_autosummary/py2store.test.quick_test.html">py2store.test.quick_test</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../_autosummary/py2store.test.util.html">py2store.test.util</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/py2store.trans.html">py2store.trans</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/py2store.util.html">py2store.util</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../_autosummary/py2store.utils.html">py2store.utils</a><input aria-label="Toggle navigation of py2store.utils" class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" role="switch" type="checkbox"/><label for="toctree-checkbox-11"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../_autosummary/py2store.utils.affine_conversion.html">py2store.utils.affine_conversion</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../_autosummary/py2store.utils.appendable.html">py2store.utils.appendable</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../_autosummary/py2store.utils.attr_dict.html">py2store.utils.attr_dict</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../_autosummary/py2store.utils.cache_descriptors.html">py2store.utils.cache_descriptors</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../_autosummary/py2store.utils.cumul_aggreg_write.html">py2store.utils.cumul_aggreg_write</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../_autosummary/py2store.utils.explicit.html">py2store.utils.explicit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../_autosummary/py2store.utils.glom.html">py2store.utils.glom</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../_autosummary/py2store.utils.mappify.html">py2store.utils.mappify</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../_autosummary/py2store.utils.mg_selectors.html">py2store.utils.mg_selectors</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../_autosummary/py2store.utils.mongoquery.html">py2store.utils.mongoquery</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../_autosummary/py2store.utils.signatures.html">py2store.utils.signatures</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../_autosummary/py2store.utils.timeseries_caching.html">py2store.utils.timeseries_caching</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../_autosummary/py2store.utils.uri_utils.html">py2store.utils.uri_utils</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <h1>Source code for dol.appendable</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""Tools to add append-functionality to key-val stores.</span>
+
+<span class="sd">The main function is ``appendable(store_cls, item2kv=...)``: you give it the store</span>
+<span class="sd">class you want to subclass and an item -&gt; (key, val) function, and you get a store</span>
+<span class="sd">(subclass) that has a ``store.append(item)`` method (and an ``extend``, which appends in</span>
+<span class="sd">a loop). ``mk_item2kv_for`` holds ready-made item2kv factories (timestamps, uuids,</span>
+<span class="sd">fields of the item, ...).</span>
+
+<span class="sd">    &gt;&gt;&gt; from dol.appendable import appendable</span>
+<span class="sd">    &gt;&gt;&gt; S = appendable(dict, item2kv=lambda item: (item['id'], item))</span>
+<span class="sd">    &gt;&gt;&gt; s = S()</span>
+<span class="sd">    &gt;&gt;&gt; s.append({'id': 1})</span>
+<span class="sd">    &gt;&gt;&gt; s</span>
+<span class="sd">    {1: {'id': 1}}</span>
+<span class="sd">"""</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">types</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">dol.trans</span><span class="w"> </span><span class="kn">import</span> <span class="n">store_decorator</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dol.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">exhaust</span>
+
+<span class="n">utc_now</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">define_extend_as_seq_of_appends</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Inject an extend method in obj that will used append method.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        obj: Class (type) or instance of an object that has an "append" method.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The obj, but with that extend method.</span>
+
+<span class="sd">    &gt;&gt;&gt; class A:</span>
+<span class="sd">    ...     def __init__(self):</span>
+<span class="sd">    ...         self.t = list()</span>
+<span class="sd">    ...     def append(self, item):</span>
+<span class="sd">    ...         self.t.append(item)</span>
+<span class="sd">    ...</span>
+<span class="sd">    &gt;&gt;&gt; AA = define_extend_as_seq_of_appends(A)</span>
+<span class="sd">    &gt;&gt;&gt; a = AA()</span>
+<span class="sd">    &gt;&gt;&gt; a.extend([1,2,3])</span>
+<span class="sd">    &gt;&gt;&gt; a.t</span>
+<span class="sd">    [1, 2, 3]</span>
+<span class="sd">    &gt;&gt;&gt; a.extend([10, 20])</span>
+<span class="sd">    &gt;&gt;&gt; a.t</span>
+<span class="sd">    [1, 2, 3, 10, 20]</span>
+<span class="sd">    &gt;&gt;&gt; a = A()</span>
+<span class="sd">    &gt;&gt;&gt; a = define_extend_as_seq_of_appends(a)</span>
+<span class="sd">    &gt;&gt;&gt; a.extend([1,2,3])</span>
+<span class="sd">    &gt;&gt;&gt; a.t</span>
+<span class="sd">    [1, 2, 3]</span>
+<span class="sd">    &gt;&gt;&gt; a.extend([10, 20])</span>
+<span class="sd">    &gt;&gt;&gt; a.t</span>
+<span class="sd">    [1, 2, 3, 10, 20]</span>
+<span class="sd">    """</span>
+    <span class="k">assert</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">"append"</span><span class="p">),</span> <span class="p">(</span>
+        <span class="sa">f</span><span class="s2">"Your object needs to have an append method! Object was: </span><span class="si">{</span><span class="n">obj</span><span class="si">}</span><span class="s2">"</span>
+    <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">extend</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">items</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">items</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="nb">type</span><span class="p">):</span>
+        <span class="n">obj</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="p">(</span><span class="n">obj</span><span class="p">,),</span> <span class="p">{})</span>
+        <span class="n">obj</span><span class="o">.</span><span class="n">extend</span> <span class="o">=</span> <span class="n">extend</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">obj</span><span class="o">.</span><span class="n">extend</span> <span class="o">=</span> <span class="n">types</span><span class="o">.</span><span class="n">MethodType</span><span class="p">(</span><span class="n">extend</span><span class="p">,</span> <span class="n">obj</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">obj</span>
+
+
+<span class="c1">########################################################################################################################</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">NotSpecified</span><span class="p">:</span>
+    <span class="k">pass</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">mk_item2kv_for</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""A bunch of functions to make item2kv functions</span>
+
+<span class="sd">    A few examples (see individual methods' docs for more examples)</span>
+
+<span class="sd">    &gt;&gt;&gt; # item_to_key</span>
+<span class="sd">    &gt;&gt;&gt; item2kv = mk_item2kv_for.item_to_key(item2key=lambda item: item['L'] )</span>
+<span class="sd">    &gt;&gt;&gt; item2kv({'L': 'let', 'I': 'it', 'G': 'go'})</span>
+<span class="sd">    ('let', {'L': 'let', 'I': 'it', 'G': 'go'})</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; # utc_key</span>
+<span class="sd">    &gt;&gt;&gt; import time</span>
+<span class="sd">    &gt;&gt;&gt; item2key = mk_item2kv_for.utc_key()</span>
+<span class="sd">    &gt;&gt;&gt; k, v = item2key('some data')</span>
+<span class="sd">    &gt;&gt;&gt; assert abs(time.time() - k) &lt; 0.01  # which asserts that k is indeed a (current) utc timestamp</span>
+<span class="sd">    &gt;&gt;&gt; assert v == 'some data'  # just the item itself</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; # item_to_key_params_and_val</span>
+<span class="sd">    &gt;&gt;&gt; item_to_kv = mk_item2kv_for.item_to_key_params_and_val(lambda x: ((x['L'], x['I']), x['G']), '{}/{}')</span>
+<span class="sd">    &gt;&gt;&gt; item_to_kv({'L': 'let', 'I': 'it', 'G': 'go'})</span>
+<span class="sd">    ('let/it', 'go')</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; # fields</span>
+<span class="sd">    &gt;&gt;&gt; item_to_kv = mk_item2kv_for.fields(['L', 'I'])</span>
+<span class="sd">    &gt;&gt;&gt; item_to_kv({'L': 'let', 'I': 'it', 'G': 'go'})</span>
+<span class="sd">    ({'L': 'let', 'I': 'it'}, {'G': 'go'})</span>
+<span class="sd">    &gt;&gt;&gt; item_to_kv = mk_item2kv_for.fields(('G', 'L'), keep_field_in_value=True)</span>
+<span class="sd">    &gt;&gt;&gt; item_to_kv({'L': 'let', 'I': 'it', 'G': 'go'})  # note the order of the key is not ('G', 'L')...</span>
+<span class="sd">    ({'L': 'let', 'G': 'go'}, {'L': 'let', 'I': 'it', 'G': 'go'})</span>
+<span class="sd">    &gt;&gt;&gt; item_to_kv = mk_item2kv_for.fields(('G', 'L'), key_as_tuple=True)  # but ('G', 'L') order is respected here</span>
+<span class="sd">    &gt;&gt;&gt; item_to_kv({'L': 'let', 'I': 'it', 'G': 'go'})</span>
+<span class="sd">    (('go', 'let'), {'I': 'it'})</span>
+<span class="sd">    """</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">attr</span><span class="p">(</span><span class="n">attr_name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Make item2kv from an attribute name (the value will be the item itself).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            attr_name: The attribute name to use as the key</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            an item -&gt; (key, val) function</span>
+
+<span class="sd">        &gt;&gt;&gt; ref_getter =mk_item2kv_for.attr("ref")</span>
+<span class="sd">        &gt;&gt;&gt; from collections import namedtuple</span>
+<span class="sd">        &gt;&gt;&gt; A = namedtuple('A', ['ref'])</span>
+<span class="sd">        &gt;&gt;&gt; a = A(ref='some_ref')</span>
+<span class="sd">        &gt;&gt;&gt; ref_getter(a)</span>
+<span class="sd">        ('some_ref', A(ref='some_ref'))</span>
+<span class="sd">        """</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">item2kv</span><span class="p">(</span><span class="n">item</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">attr_name</span><span class="p">),</span> <span class="n">item</span>
+
+        <span class="k">return</span> <span class="n">item2kv</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">kv_pairs</span><span class="p">():</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Essentially, the identity. Is used when the items are already (key, val) pairs.</span>
+<span class="sd">        """</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">item2kv</span><span class="p">(</span><span class="n">item</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">item</span>
+
+        <span class="k">return</span> <span class="n">item2kv</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">item_to_key</span><span class="p">(</span><span class="n">item2key</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Make item2kv from a item2key function (the value will be the item itself).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item2key: an item -&gt; key function</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            an item -&gt; (key, val) function</span>
+
+<span class="sd">        &gt;&gt;&gt; item2key = lambda item: item['G']  # use value of 'L' as the key</span>
+<span class="sd">        &gt;&gt;&gt; item2key({'L': 'let', 'I': 'it', 'G': 'go'})</span>
+<span class="sd">        'go'</span>
+<span class="sd">        &gt;&gt;&gt; item2kv = mk_item2kv_for.item_to_key(item2key)</span>
+<span class="sd">        &gt;&gt;&gt; item2kv({'L': 'let', 'I': 'it', 'G': 'go'})</span>
+<span class="sd">        ('go', {'L': 'let', 'I': 'it', 'G': 'go'})</span>
+<span class="sd">        """</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">item2kv</span><span class="p">(</span><span class="n">item</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">item2key</span><span class="p">(</span><span class="n">item</span><span class="p">),</span> <span class="n">item</span>
+
+        <span class="k">return</span> <span class="n">item2kv</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">field</span><span class="p">(</span><span class="n">field</span><span class="p">,</span> <span class="n">keep_field_in_value</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">dflt_if_missing</span><span class="o">=</span><span class="n">NotSpecified</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""item2kv that uses a specific key of a (mapping) item as the key</span>
+
+<span class="sd">        Note:</span>
+<span class="sd">            If keep_field_in_value=False, the field will be popped OUT of the item.</span>
+<span class="sd">            If that's not the desired effect, one should feed copies of the items (e.g. map(dict.copy, items))</span>
+
+<span class="sd">        :param field: The field (value) to use as the returned key</span>
+<span class="sd">        :param keep_field_in_value: Whether to leave the field in the item. If False, will pop it out</span>
+<span class="sd">        :param dflt_if_missing: If specified (even None) will use the specified key as the key, if the field is missig</span>
+<span class="sd">        :return: A item2kv function</span>
+
+<span class="sd">        &gt;&gt;&gt; item2kv = mk_item2kv_for.field('G')</span>
+<span class="sd">        &gt;&gt;&gt; item2kv({'L': 'let', 'I': 'it', 'G': 'go'})</span>
+<span class="sd">        ('go', {'L': 'let', 'I': 'it', 'G': 'go'})</span>
+<span class="sd">        &gt;&gt;&gt; item2kv = mk_item2kv_for.field('G', keep_field_in_value=False)</span>
+<span class="sd">        &gt;&gt;&gt; item2kv({'L': 'let', 'I': 'it', 'G': 'go'})</span>
+<span class="sd">        ('go', {'L': 'let', 'I': 'it'})</span>
+<span class="sd">        &gt;&gt;&gt; item2kv = mk_item2kv_for.field('G', dflt_if_missing=None)</span>
+<span class="sd">        &gt;&gt;&gt; item2kv({'L': 'let', 'I': 'it', 'DIE': 'go'})</span>
+<span class="sd">        (None, {'L': 'let', 'I': 'it', 'DIE': 'go'})</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="n">dflt_if_missing</span> <span class="ow">is</span> <span class="n">NotSpecified</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">keep_field_in_value</span><span class="p">:</span>
+
+                <span class="k">def</span><span class="w"> </span><span class="nf">item2kv</span><span class="p">(</span><span class="n">item</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="n">item</span><span class="p">[</span><span class="n">field</span><span class="p">],</span> <span class="n">item</span>
+
+            <span class="k">else</span><span class="p">:</span>
+
+                <span class="k">def</span><span class="w"> </span><span class="nf">item2kv</span><span class="p">(</span><span class="n">item</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="n">item</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">field</span><span class="p">),</span> <span class="n">item</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">keep_field_in_value</span><span class="p">:</span>
+
+                <span class="k">def</span><span class="w"> </span><span class="nf">item2kv</span><span class="p">(</span><span class="n">item</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">field</span><span class="p">,</span> <span class="n">dflt_if_missing</span><span class="p">),</span> <span class="n">item</span>
+
+            <span class="k">else</span><span class="p">:</span>
+
+                <span class="k">def</span><span class="w"> </span><span class="nf">item2kv</span><span class="p">(</span><span class="n">item</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="n">item</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">field</span><span class="p">,</span> <span class="n">dflt_if_missing</span><span class="p">),</span> <span class="n">item</span>
+
+        <span class="k">return</span> <span class="n">item2kv</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">utc_key</span><span class="p">(</span><span class="n">offset_s</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">factor</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">time_postproc</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Make an item2kv function that uses the current time as the key, and the unchanged item as a value.</span>
+<span class="sd">        The offset_s, which is added to the output key, can be used, for example, to align to another system's clock,</span>
+<span class="sd">        or to get a more accurate timestamp of an event.</span>
+
+<span class="sd">        Use case for offset_s:</span>
+
+<span class="sd">            * Align to another system's clock</span>
+<span class="sd">            * Get more accurate timestamping of an event. For example, in situations where the item is a chunk of live</span>
+<span class="sd">              streaming data and we want the key (timestamp) to represent the timestamp of the beginning of the chunk.</span>
+
+<span class="sd">            Without an offset_s, the timestamp would be the timestamp after the last byte of the chunk was produced,</span>
+<span class="sd">            plus the time it took to reach the present function. If we know the data production rate (e.g. sample rate)</span>
+<span class="sd">            and the average lag to get to the present function, we can get a more accurate timestamp for the beginning</span>
+<span class="sd">            of the chunk</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            offset_s: An offset (in seconds, possibly negative) to add to the current time.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            an item -&gt; (current_utc_s, item) function</span>
+
+<span class="sd">        &gt;&gt;&gt; import time</span>
+<span class="sd">        &gt;&gt;&gt; item2key = mk_item2kv_for.utc_key()</span>
+<span class="sd">        &gt;&gt;&gt; k, v = item2key('some data')</span>
+<span class="sd">        &gt;&gt;&gt; assert abs(time.time() - k) &lt; 0.01  # which asserts that k is indeed a (current) utc timestamp</span>
+<span class="sd">        &gt;&gt;&gt; assert v == 'some data'  # just the item itself</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="n">time_postproc</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+
+            <span class="k">def</span><span class="w"> </span><span class="nf">item2kv</span><span class="p">(</span><span class="n">item</span><span class="p">):</span>
+                <span class="c1"># Note: If real time accuracy is needed, you should use your own optimized</span>
+                <span class="c1"># item2kv function.</span>
+                <span class="k">return</span> <span class="n">factor</span> <span class="o">*</span> <span class="n">utc_now</span><span class="p">()</span> <span class="o">+</span> <span class="n">offset_s</span><span class="p">,</span> <span class="n">item</span>
+
+        <span class="k">else</span><span class="p">:</span>
+
+            <span class="k">def</span><span class="w"> </span><span class="nf">item2kv</span><span class="p">(</span><span class="n">item</span><span class="p">):</span>
+                <span class="c1"># Note: If real time accuracy is needed, you should use your own optimized</span>
+                <span class="c1"># item2kv function.</span>
+                <span class="k">return</span> <span class="n">time_postproc</span><span class="p">(</span><span class="n">factor</span> <span class="o">*</span> <span class="n">utc_now</span><span class="p">()</span> <span class="o">+</span> <span class="n">offset_s</span><span class="p">),</span> <span class="n">item</span>
+
+        <span class="k">return</span> <span class="n">item2kv</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">uuid_key</span><span class="p">(</span><span class="nb">hex</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Make an item2kv function that uses a uuid hex as the key.</span>
+<span class="sd">        This uses uuid.uuid1() to generate the uuid, so it is not cryptographically</span>
+<span class="sd">        secure, and it may not be unique if you generate more than 10k uuids per second.</span>
+<span class="sd">        One advantage though, is that the uuid is time-based, so it can be used to sort</span>
+<span class="sd">        the keys in the order they were IDed.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            an item -&gt; (uuid, item) function</span>
+
+<span class="sd">        &gt;&gt;&gt; import uuid</span>
+<span class="sd">        &gt;&gt;&gt; item2key = mk_item2kv_for.uuid_key()</span>
+<span class="sd">        &gt;&gt;&gt; k, v = item2key('some data')</span>
+<span class="sd">        &gt;&gt;&gt; v</span>
+<span class="sd">        'some data'</span>
+<span class="sd">        &gt;&gt;&gt; isinstance(k, str)</span>
+<span class="sd">        True</span>
+<span class="sd">        &gt;&gt;&gt; k  # doctest: +SKIP</span>
+<span class="sd">        '0d8a9930aaf411ee9f605e03a02258c9'</span>
+<span class="sd">        &gt;&gt;&gt; item2key = mk_item2kv_for.uuid_key(hex=False)</span>
+<span class="sd">        &gt;&gt;&gt; k, v = item2key('some data')</span>
+<span class="sd">        &gt;&gt;&gt; isinstance(k, uuid.UUID)</span>
+<span class="sd">        True</span>
+<span class="sd">        """</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">uuid</span>
+
+        <span class="k">if</span> <span class="nb">hex</span><span class="p">:</span>
+
+            <span class="k">def</span><span class="w"> </span><span class="nf">item2kv</span><span class="p">(</span><span class="n">item</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">uuid</span><span class="o">.</span><span class="n">uuid1</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span><span class="p">,</span> <span class="n">item</span>
+
+        <span class="k">else</span><span class="p">:</span>
+
+            <span class="k">def</span><span class="w"> </span><span class="nf">item2kv</span><span class="p">(</span><span class="n">item</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">uuid</span><span class="o">.</span><span class="n">uuid1</span><span class="p">(),</span> <span class="n">item</span>
+
+        <span class="k">return</span> <span class="n">item2kv</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">item_to_key_params_and_val</span><span class="p">(</span><span class="n">item_to_key_params_and_val</span><span class="p">,</span> <span class="n">key_str_format</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Make item2kv from a function that produces key_params and val,</span>
+<span class="sd">        and a key_template that will produce a string key from the key_params</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item_to_key_params_and_val: an item -&gt; (key_params, val) function</span>
+<span class="sd">            key_str_format: A string format such that ``key_str_format.format(*key_params)``</span>
+<span class="sd">                or ``key_str_format.format(**key_params)`` will produce the desired key string</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            an item -&gt; (key, val) function</span>
+
+<span class="sd">        &gt;&gt;&gt; # Using tuple key params with unnamed string format fields</span>
+<span class="sd">        &gt;&gt;&gt; item_to_kv = mk_item2kv_for.item_to_key_params_and_val(lambda x: ((x['L'], x['I']), x['G']), '{}/{}')</span>
+<span class="sd">        &gt;&gt;&gt; item_to_kv({'L': 'let', 'I': 'it', 'G': 'go'})</span>
+<span class="sd">        ('let/it', 'go')</span>
+<span class="sd">        &gt;&gt;&gt;</span>
+<span class="sd">        &gt;&gt;&gt; # Using dict key params with named string format fields</span>
+<span class="sd">        &gt;&gt;&gt; item_to_kv = mk_item2kv_for.item_to_key_params_and_val(</span>
+<span class="sd">        ...                             lambda x: ({'second': x['L'], 'first': x['G']}, x['I']), '{first}_{second}')</span>
+<span class="sd">        &gt;&gt;&gt; item_to_kv({'L': 'let', 'I': 'it', 'G': 'go'})</span>
+<span class="sd">        ('go_let', 'it')</span>
+<span class="sd">        """</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">item2kv</span><span class="p">(</span><span class="n">item</span><span class="p">):</span>
+            <span class="n">key_params</span><span class="p">,</span> <span class="n">val</span> <span class="o">=</span> <span class="n">item_to_key_params_and_val</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key_params</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">key_str_format</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">key_params</span><span class="p">),</span> <span class="n">val</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">key_str_format</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">*</span><span class="n">key_params</span><span class="p">),</span> <span class="n">val</span>
+
+        <span class="k">return</span> <span class="n">item2kv</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fields</span><span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="n">keep_field_in_value</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">key_as_tuple</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Make item2kv from specific fields of a Mapping (i.e. dict-like object) item.</span>
+
+<span class="sd">        Note:</span>
+<span class="sd">            item2kv will not mutate item (even if keep_field_in_value=False).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            fields: The sequence (list, tuple, etc.) of item fields that should be used to create the key.</span>
+<span class="sd">            keep_field_in_value: Set to True to return the item as is, as the value</span>
+<span class="sd">            key_as_tuple: Set to True if you want keys to be tuples (note that the fields order is important here!)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            an item -&gt; (item[fields], item[not in fields]) function</span>
+
+<span class="sd">        &gt;&gt;&gt; item_to_kv = mk_item2kv_for.fields('L')</span>
+<span class="sd">        &gt;&gt;&gt; item_to_kv({'L': 'let', 'I': 'it', 'G': 'go'})</span>
+<span class="sd">        ({'L': 'let'}, {'I': 'it', 'G': 'go'})</span>
+<span class="sd">        &gt;&gt;&gt; item_to_kv = mk_item2kv_for.fields(['L', 'I'])</span>
+<span class="sd">        &gt;&gt;&gt; item_to_kv({'L': 'let', 'I': 'it', 'G': 'go'})</span>
+<span class="sd">        ({'L': 'let', 'I': 'it'}, {'G': 'go'})</span>
+<span class="sd">        &gt;&gt;&gt; item_to_kv = mk_item2kv_for.fields(('G', 'L'), keep_field_in_value=True)</span>
+<span class="sd">        &gt;&gt;&gt; item_to_kv({'L': 'let', 'I': 'it', 'G': 'go'})  # note the order of the key is not ('G', 'L')...</span>
+<span class="sd">        ({'L': 'let', 'G': 'go'}, {'L': 'let', 'I': 'it', 'G': 'go'})</span>
+<span class="sd">        &gt;&gt;&gt; item_to_kv = mk_item2kv_for.fields(('G', 'L'), key_as_tuple=True)  # but ('G', 'L') order is respected here</span>
+<span class="sd">        &gt;&gt;&gt; item_to_kv({'L': 'let', 'I': 'it', 'G': 'go'})</span>
+<span class="sd">        (('go', 'let'), {'I': 'it'})</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">fields_set</span> <span class="o">=</span> <span class="p">{</span><span class="n">fields</span><span class="p">}</span>
+            <span class="n">fields</span> <span class="o">=</span> <span class="p">(</span><span class="n">fields</span><span class="p">,)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">fields_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">fields</span><span class="p">)</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">item2kv</span><span class="p">(</span><span class="n">item</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">keep_field_in_value</span><span class="p">:</span>
+                <span class="n">key</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">item</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">fields_set</span><span class="p">:</span>
+                        <span class="n">key</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+                <span class="n">val</span> <span class="o">=</span> <span class="n">item</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">key</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+                <span class="n">val</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">item</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">fields_set</span><span class="p">:</span>
+                        <span class="n">key</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+                    <span class="k">elif</span> <span class="ow">not</span> <span class="n">keep_field_in_value</span><span class="p">:</span>
+                        <span class="n">val</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+
+            <span class="k">if</span> <span class="n">key_as_tuple</span><span class="p">:</span>
+                <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">key</span><span class="p">[</span><span class="n">f</span><span class="p">]</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">),</span> <span class="n">val</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span>
+
+        <span class="k">return</span> <span class="n">item2kv</span>
+
+
+<div class="viewcode-block" id="appendable">
+<a class="viewcode-back" href="../../_autosummary/py2store.appendable.html#py2store.appendable">[docs]</a>
+<span class="nd">@store_decorator</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">appendable</span><span class="p">(</span><span class="n">store_cls</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">item2kv</span><span class="p">,</span> <span class="n">return_keys</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Makes a new class with append (and consequential extend) methods</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        store_cls: The store class to subclass</span>
+<span class="sd">        item2kv: The function that produces a (key, val) pair from an item</span>
+<span class="sd">        new_store_name: The name to give the new class (default will be 'Appendable' + store_cls.__name__)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A subclass of store_cls with two additional methods: append, and extend.</span>
+
+
+<span class="sd">    &gt;&gt;&gt; item_to_kv = lambda item: (item['L'], item)  # use value of 'L' as the key, and value is the item itself</span>
+<span class="sd">    &gt;&gt;&gt; MyStore = appendable(dict, item2kv=item_to_kv)</span>
+<span class="sd">    &gt;&gt;&gt; s = MyStore(); s.append({'L': 'let', 'I': 'it', 'G': 'go'}); list(s.items())</span>
+<span class="sd">    [('let', {'L': 'let', 'I': 'it', 'G': 'go'})]</span>
+
+<span class="sd">    Use mk_item2kv.from_item_to_key_params_and_val with tuple key params</span>
+
+<span class="sd">    &gt;&gt;&gt; item_to_kv = appendable.mk_item2kv_for.item_to_key_params_and_val(lambda x: ((x['L'], x['I']), x['G']), '{}/{}')</span>
+<span class="sd">    &gt;&gt;&gt; MyStore = appendable(item2kv=item_to_kv)(dict)  # showing the append(...)(store) form</span>
+<span class="sd">    &gt;&gt;&gt; s = MyStore(); s.append({'L': 'let', 'I': 'it', 'G': 'go'}); list(s.items())</span>
+<span class="sd">    [('let/it', 'go')]</span>
+
+<span class="sd">    Use mk_item2kv.from_item_to_key_params_and_val with dict key params</span>
+
+<span class="sd">    &gt;&gt;&gt; item_to_kv = appendable.mk_item2kv_for.item_to_key_params_and_val(</span>
+<span class="sd">    ...     lambda x: ({'L': x['L'], 'G': x['G']}, x['I']), '{G}_{L}')</span>
+<span class="sd">    &gt;&gt;&gt; @appendable(item2kv=item_to_kv)  # showing the @ form</span>
+<span class="sd">    ... class MyStore(dict):</span>
+<span class="sd">    ...     pass</span>
+<span class="sd">    &gt;&gt;&gt; s = MyStore(); s.append({'L': 'let', 'I': 'it', 'G': 'go'}); list(s.items())</span>
+<span class="sd">    [('go_let', 'it')]</span>
+
+<span class="sd">    Use mk_item2kv.fields to get a tuple key from item fields,</span>
+<span class="sd">    defining the sub-dict of the remaining fields to be the value.</span>
+<span class="sd">    Also showing here how you can decorate the instance itself.</span>
+
+<span class="sd">    &gt;&gt;&gt; item_to_kv = appendable.mk_item2kv_for.fields(['G', 'L'], key_as_tuple=True)</span>
+<span class="sd">    &gt;&gt;&gt; d = {}</span>
+<span class="sd">    &gt;&gt;&gt; s = appendable(d, item2kv=item_to_kv)</span>
+<span class="sd">    &gt;&gt;&gt; s.append({'L': 'let', 'I': 'it', 'G': 'go'}); list(s.items())</span>
+<span class="sd">    [(('go', 'let'), {'I': 'it'})]</span>
+
+<span class="sd">    You can make the "append" and "extend" methods to return the new generated keys by</span>
+<span class="sd">    using the "return_keys" flag.</span>
+
+<span class="sd">    &gt;&gt;&gt; d = {}</span>
+<span class="sd">    &gt;&gt;&gt; s = appendable(d, item2kv=item_to_kv, return_keys=True)</span>
+<span class="sd">    &gt;&gt;&gt; s.append({'L': 'let', 'I': 'it', 'G': 'go'})</span>
+<span class="sd">    ('go', 'let')</span>
+<span class="sd">    """</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+        <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="o">=</span> <span class="n">item2kv</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+        <span class="bp">self</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+        <span class="k">if</span> <span class="n">return_keys</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">k</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">extend</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">items</span><span class="p">):</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">gen_keys</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">items</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+
+        <span class="n">gen</span> <span class="o">=</span> <span class="n">gen_keys</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">return_keys</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">gen</span><span class="p">)</span>
+        <span class="n">exhaust</span><span class="p">(</span><span class="n">gen</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="nb">type</span><span class="p">(</span>
+        <span class="s2">"Appendable"</span> <span class="o">+</span> <span class="n">store_cls</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
+        <span class="p">(</span><span class="n">store_cls</span><span class="p">,),</span>
+        <span class="p">{</span><span class="s2">"append"</span><span class="p">:</span> <span class="n">append</span><span class="p">,</span> <span class="s2">"extend"</span><span class="p">:</span> <span class="n">extend</span><span class="p">},</span>
+    <span class="p">)</span></div>
+
+
+
+<span class="n">add_append_functionality_to_store_cls</span> <span class="o">=</span> <span class="n">appendable</span>  <span class="c1"># for back compatibility</span>
+
+<span class="n">appendable</span><span class="o">.</span><span class="n">mk_item2kv_for</span> <span class="o">=</span> <span class="n">mk_item2kv_for</span>  <span class="c1"># adding as attribute for convenient access</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sequence</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterable</span>
+
+<span class="n">NotAVal</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="s2">"NotAVal"</span><span class="p">,</span> <span class="p">(),</span> <span class="p">{})()</span>  <span class="c1"># singleton instance to distinguish from None</span>
+
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">MutableMapping</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">partial</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">operator</span><span class="w"> </span><span class="kn">import</span> <span class="n">add</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">read_add_write</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">iterable</span><span class="p">,</span> <span class="n">add_iterables</span><span class="o">=</span><span class="n">add</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Retrieves"""</span>
+    <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">store</span><span class="p">:</span>
+        <span class="n">store</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">add_iterables</span><span class="p">(</span><span class="n">store</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="n">iterable</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">store</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">iterable</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Extender</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Extends a value in a store.</span>
+
+<span class="sd">    The value in the store (if it exists) must be an iterable.</span>
+<span class="sd">    The value to extend must also be an iterable.</span>
+
+<span class="sd">    Unless a different ``extend_store_value`` function is given,</span>
+<span class="sd">    the sum of the two iterables must be an iterable.</span>
+
+<span class="sd">    The default ``extend_store_value`` is such that if the key is not in the store,</span>
+<span class="sd">    the value is simply written in the store.</span>
+
+<span class="sd">    The default ``append_method`` is ``None``, which means that the ``append`` method</span>
+<span class="sd">    is not defined. If you want to define it, you can pass a function that takes</span>
+<span class="sd">    the ``Extender`` instance as first argument, and the object to append as second</span>
+<span class="sd">    argument. The ``append`` method will then be defined as a partial of this function</span>
+<span class="sd">    with the ``Extender`` instance as first argument.</span>
+
+<span class="sd">    &gt;&gt;&gt; store = {'a': 'pple'}</span>
+<span class="sd">    &gt;&gt;&gt; # test normal extend</span>
+<span class="sd">    &gt;&gt;&gt; a_extender = Extender(store, 'a')</span>
+<span class="sd">    &gt;&gt;&gt; a_extender.extend('sauce')</span>
+<span class="sd">    &gt;&gt;&gt; store</span>
+<span class="sd">    {'a': 'pplesauce'}</span>
+<span class="sd">    &gt;&gt;&gt; # test creation (when key is not in store)</span>
+<span class="sd">    &gt;&gt;&gt; b_extender = Extender(store, 'b')</span>
+<span class="sd">    &gt;&gt;&gt; b_extender.extend('anana')</span>
+<span class="sd">    &gt;&gt;&gt; store</span>
+<span class="sd">    {'a': 'pplesauce', 'b': 'anana'}</span>
+<span class="sd">    &gt;&gt;&gt; # you can use the += operator too</span>
+<span class="sd">    &gt;&gt;&gt; b_extender += ' split'</span>
+<span class="sd">    &gt;&gt;&gt; store</span>
+<span class="sd">    {'a': 'pplesauce', 'b': 'anana split'}</span>
+<span class="sd">    """</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">store</span><span class="p">:</span> <span class="n">MutableMapping</span><span class="p">,</span>
+        <span class="n">key</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">extend_store_value</span><span class="o">=</span><span class="n">read_add_write</span><span class="p">,</span>
+        <span class="n">append_method</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">store</span> <span class="o">=</span> <span class="n">store</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">key</span> <span class="o">=</span> <span class="n">key</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">extend_store_value</span> <span class="o">=</span> <span class="n">extend_store_value</span>
+
+        <span class="c1"># Note: Not sure this is a good idea.</span>
+        <span class="c1"># Note:   I'm not documenting it or testing it until I let class mature.</span>
+        <span class="c1"># Note: Yes, I tried making this a method of the class, but it became ugly.</span>
+        <span class="k">if</span> <span class="n">append_method</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">append</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">append_method</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">extend</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">iterable</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Extend the iterable stored in"""</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">extend_store_value</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">store</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">iterable</span><span class="p">)</span>
+
+    <span class="fm">__iadd__</span> <span class="o">=</span> <span class="n">extend</span>  <span class="c1"># Note: Better to forward dunders to non-dunder-methods</span>
+
+    <span class="c1"># TODO: Should we even have this? Is it violating the purity of the class?</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">value</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">store</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">]</span>
+
+
+<span class="c1">#</span>
+<span class="c1"># class FixedSizeStack(Sequence):</span>
+<span class="c1">#     """A finite Sequence that can have no more than one element.</span>
+<span class="c1">#</span>
+<span class="c1">#     &gt;&gt;&gt; t = FixedSizeStack(maxsize=1)</span>
+<span class="c1">#     &gt;&gt;&gt; assert len(t) == 0</span>
+<span class="c1">#     &gt;&gt;&gt;</span>
+<span class="c1">#     &gt;&gt;&gt; t.append('something')</span>
+<span class="c1">#     &gt;&gt;&gt; assert len(t) == 1</span>
+<span class="c1">#     &gt;&gt;&gt; assert t[0] == 'something'</span>
+<span class="c1">#     &gt;&gt;&gt;</span>
+<span class="c1">#     &gt;&gt;&gt; t.append('something else')</span>
+<span class="c1">#     &gt;&gt;&gt; assert len(t) == 1  # still only one item</span>
+<span class="c1">#     &gt;&gt;&gt; assert t[0] == 'something'  # still the same item</span>
+<span class="c1">#</span>
+<span class="c1">#     Not that we'd ever these methods of FirstAppendOnly,</span>
+<span class="c1">#     but know that FirstAppendOnly is a collection.abc.Sequence, so...</span>
+<span class="c1">#</span>
+<span class="c1">#     &gt;&gt;&gt; t[:1] == t[:10] == t[::-1] == t[::-10] == t[0:2:10] == list(reversed(t)) == ['something']</span>
+<span class="c1">#     True</span>
+<span class="c1">#     &gt;&gt;&gt;</span>
+<span class="c1">#     &gt;&gt;&gt; assert t.count('something') == 1</span>
+<span class="c1">#     &gt;&gt;&gt; assert t.index('something') == 0</span>
+<span class="c1">#</span>
+<span class="c1">#     """</span>
+<span class="c1">#</span>
+<span class="c1">#     def __init__(self, iterable: Optional[Iterable] = None, *, maxsize: int):</span>
+<span class="c1">#         self.maxsize = maxsize</span>
+<span class="c1">#         self.data = [NotAVal] * maxsize</span>
+<span class="c1">#         # self.data = (isinstance(iterable, Iterable) and list(iterable)) or []</span>
+<span class="c1">#         # if iterable is not None:</span>
+<span class="c1">#         #     pass</span>
+<span class="c1">#         self.cursor = 0</span>
+<span class="c1">#</span>
+<span class="c1">#     def append(self, v):</span>
+<span class="c1">#         if self.cursor &lt; self.maxsize:</span>
+<span class="c1">#             self.data[self.cursor] = v</span>
+<span class="c1">#             self.cursor += 1</span>
+<span class="c1">#</span>
+<span class="c1">#     def __len__(self):</span>
+<span class="c1">#         return self.cursor</span>
+<span class="c1">#</span>
+<span class="c1">#     def __getitem__(self, k):</span>
+<span class="c1">#         if isinstance(k, int):</span>
+<span class="c1">#             if k &lt; self.cursor:</span>
+<span class="c1">#                 return self.data[k]</span>
+<span class="c1">#             else:</span>
+<span class="c1">#                 raise IndexError(</span>
+<span class="c1">#                     f"There are only {len(self)} items: You asked for self[{k}]."</span>
+<span class="c1">#                 )</span>
+<span class="c1">#         elif isinstance(k, slice):</span>
+<span class="c1">#             return self.data[: self.cursor][k]</span>
+<span class="c1">#         else:</span>
+<span class="c1">#             raise IndexError(</span>
+<span class="c1">#                 f"A {self.__class__} instance can only have one value, or none at all."</span>
+<span class="c1">#             )</span>
+<span class="c1">#</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">FirstAppendOnly</span><span class="p">(</span><span class="n">Sequence</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""A finite Sequence that can have no more than one element.</span>
+
+<span class="sd">    &gt;&gt;&gt; t = FirstAppendOnly()</span>
+<span class="sd">    &gt;&gt;&gt; assert len(t) == 0</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; t.append('something')</span>
+<span class="sd">    &gt;&gt;&gt; assert len(t) == 1</span>
+<span class="sd">    &gt;&gt;&gt; assert t[0] == 'something'</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; t.append('something else')</span>
+<span class="sd">    &gt;&gt;&gt; assert len(t) == 1  # still only one item</span>
+<span class="sd">    &gt;&gt;&gt; assert t[0] == 'something'  # still the same item</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; # Not that we'd ever these methods of FirstAppendOnly, but know that FirstAppendOnly is a collection.abc.Sequence, so...</span>
+<span class="sd">    &gt;&gt;&gt; t[:1] == t[:10] == t[::-1] == t[::-10] == t[0:2:10] == list(reversed(t)) == ['something']</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; t.count('something') == 1</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; t.index('something') == 0</span>
+<span class="sd">    True</span>
+<span class="sd">    """</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">val</span> <span class="o">=</span> <span class="n">NotAVal</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">val</span> <span class="o">==</span> <span class="n">NotAVal</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">val</span> <span class="o">=</span> <span class="n">v</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">val</span> <span class="o">!=</span> <span class="n">NotAVal</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"There are no items in this </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="si">}</span><span class="s2"> instance"</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">k</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">val</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="nb">slice</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">val</span><span class="p">][</span><span class="n">k</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"A </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="si">}</span><span class="s2"> instance can only have one value, or none at all."</span>
+            <span class="p">)</span>
+
+    <span class="c1"># @staticmethod</span>
+    <span class="c1"># def from</span>
+
+
+<span class="c1"># def add_append_functionality_to_str_key_store(store_cls,</span>
+<span class="c1">#                                               item_to_key_params_and_val,</span>
+<span class="c1">#                                               key_template=None,</span>
+<span class="c1">#                                               new_store_name=None):</span>
+<span class="c1">#     def item_to_kv(item):</span>
+<span class="c1">#         nonlocal key_template</span>
+<span class="c1">#         if key_template is None:</span>
+<span class="c1">#             key_params, _ = item_to_key_params_and_val(item)</span>
+<span class="c1">#             key_template = path_sep.join('{{{}}}'.format(p) for p in key_params)</span>
+<span class="c1">#         key_params, val = item_to_key_params_and_val(item)</span>
+<span class="c1">#         return key_template.format(**key_params), val</span>
+<span class="c1">#</span>
+<span class="c1">#     return add_append_functionality_to_store_cls(store_cls, item_to_kv, new_store_name)</span>
+</pre></div>
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          
+          
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            Made with 
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer no-toc">
+      
+      
+      
+    </aside>
+  </div>
+</div><script src="../../_static/documentation_options.js?v=2d24694c"></script>
+    <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=fd10adb8"></script>
+    <script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.12.1/dist/mermaid.esm.min.mjs";
+
+
+
+
+
+const initStyles = () => {
+    const defaultStyle = document.createElement('style');
+    defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
+    document.head.appendChild(defaultStyle);
+
+    const fullscreenStyle = document.createElement('style');
+    fullscreenStyle.textContent = ".mermaid-container {\n    position: relative;\n    display: flex;\n    flex-direction: row;\n    width: 100%;\n}\n\n.mermaid-container > pre {\n    display: block;\n    width: 100%;\n}\n\n.mermaid-container > pre > svg {\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}\n\n.mermaid-fullscreen-btn {\n    position: absolute;\n    width: 28px;\n    height: 28px;\n    background: rgba(255, 255, 255, 0.95);\n    border: 1px solid rgba(0, 0, 0, 0.3);\n    border-radius: 4px;\n    cursor: pointer;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    transition: all 0.2s;\n    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);\n    font-size: 14px;\n    line-height: 1;\n    padding: 0;\n    color: #333;\n}\n\n.mermaid-fullscreen-btn:hover {\n    opacity: 100% !important;\n    background: rgba(255, 255, 255, 1);\n    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);\n    transform: scale(1.1);\n}\n\n.mermaid-fullscreen-btn.dark-theme {\n    background: rgba(50, 50, 50, 0.95);\n    border: 1px solid rgba(255, 255, 255, 0.3);\n    color: #e0e0e0;\n}\n\n.mermaid-fullscreen-btn.dark-theme:hover {\n    background: rgba(60, 60, 60, 1);\n    box-shadow: 0 3px 10px rgba(255, 255, 255, 0.2);\n}\n\n.mermaid-fullscreen-modal {\n    display: none;\n    position: fixed !important;\n    top: 0 !important;\n    left: 0 !important;\n    width: 95vw;\n    height: 100vh;\n    background: rgba(255, 255, 255, 0.98);\n    z-index: 9999;\n    padding: 20px;\n    overflow: auto;\n}\n\n.mermaid-fullscreen-modal.dark-theme {\n    background: rgba(0, 0, 0, 0.98);\n}\n\n.mermaid-fullscreen-modal.active {\n    display: flex;\n    align-items: center;\n    justify-content: center;\n}\n\n.mermaid-container-fullscreen {\n    position: relative;\n    width: 95vw;\n    height: 90vh;\n    max-width: 95vw;\n    max-height: 90vh;\n    background: white;\n    border-radius: 8px;\n    padding: 20px;\n    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);\n    overflow: auto;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n}\n\n.mermaid-container-fullscreen.dark-theme {\n    background: #1a1a1a;\n    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);\n}\n\n.mermaid-container-fullscreen pre.mermaid {\n    width: 100%;\n    height: 100%;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n}\n\n.mermaid-container-fullscreen .mermaid svg {\n    height: 100% !important;\n    width: 100% !important;\n    cursor: grab;\n}\n\n.mermaid-fullscreen-close {\n    position: fixed !important;\n    top: 20px !important;\n    right: 20px !important;\n    width: 40px;\n    height: 40px;\n    background: rgba(255, 255, 255, 0.95);\n    border: 1px solid rgba(0, 0, 0, 0.2);\n    border-radius: 50%;\n    cursor: pointer;\n    z-index: 10000;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);\n    transition: all 0.2s;\n    font-size: 24px;\n    line-height: 1;\n    color: #333;\n}\n\n.mermaid-fullscreen-close:hover {\n    background: white;\n    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);\n    transform: scale(1.1);\n}\n\n.mermaid-fullscreen-close.dark-theme {\n    background: rgba(50, 50, 50, 0.95);\n    border: 1px solid rgba(255, 255, 255, 0.2);\n    color: #e0e0e0;\n}\n\n.mermaid-fullscreen-close.dark-theme:hover {\n    background: rgba(60, 60, 60, 1);\n    box-shadow: 0 6px 16px rgba(255, 255, 255, 0.2);\n}\n\n.mermaid-fullscreen-modal .mermaid-fullscreen-btn {\n    display: none !important;\n}";
+    document.head.appendChild(fullscreenStyle);
+}
+
+// Detect if page has dark background
+const isDarkTheme = () => {
+    // We use a set of heuristics:
+    // 1. Check for common dark mode classes or attributes
+    // 2. Check computed background color brightness
+    if (document.documentElement.classList.contains('dark') ||
+        document.documentElement.getAttribute('data-theme') === 'dark' ||
+        document.body.classList.contains('dark') ||
+        document.body.getAttribute('data-theme') === 'dark') {
+        // console.log("Dark theme detected via class/attribute");
+        return true;
+    }
+    if (document.documentElement.classList.contains('light') ||
+        document.documentElement.getAttribute('data-theme') === 'light' ||
+        document.body.classList.contains('light') ||
+        document.body.getAttribute('data-theme') === 'light') {
+        // console.log("Light theme detected via class/attribute");
+        return false;
+    }
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        // console.log("Dark theme detected via prefers-color-scheme");
+        return true;
+    }
+    const bgColor = window.getComputedStyle(document.body).backgroundColor;
+    const match = bgColor.match(/rgb\((\d+),\s*(\d+),\s*(\d+)/);
+    if (match) {
+        const r = parseInt(match[1]);
+        const g = parseInt(match[2]);
+        const b = parseInt(match[3]);
+        const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+        // console.log("Background color brightness:", brightness);
+        return brightness < 128;
+    }
+    // console.log("No dark or light theme detected, defaulting to light theme");
+    return false;
+};
+
+let darkTheme = isDarkTheme();
+let modal = null;
+let modalContent = null;
+let previousScrollOffset = [window.scrollX, window.scrollY];
+let _lazyObserver = null;
+let _renderQueue = Promise.resolve();
+let closeModal = () => {};
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal?.classList.contains('active')) {
+        closeModal();
+    }
+});
+
+// Apply d3 zoom to each SVG. Idempotent: an SVG already wrapped is skipped,
+// so this is safe to call both for the initial batch and for diagrams that
+// render lazily once they become visible.
+const addZoomToSvgs = (svgs) => {
+    svgs.each(function() {
+        if (this.getAttribute('data-zoom-applied') === 'true') return;
+        var svg = d3.select(this);
+        svg.html("<g class='wrapper'>" + svg.html() + "</g>");
+        var inner = svg.select("g");
+        var zoom = d3.zoom().on("zoom", function(event) {
+            inner.attr("transform", event.transform);
+        });
+        svg.call(zoom);
+        this.setAttribute('data-zoom-applied', 'true');
+    });
+};
+
+const runMermaid = async (rerun) => {
+    console.log("Running mermaid diagrams, rerun =", rerun);
+    // clear all existing mermaid charts
+    let all_mermaids = document.querySelectorAll(".mermaid");
+
+    if (rerun) {
+        // Disconnect any previous lazy rendering observer
+        if (_lazyObserver) {
+            _lazyObserver.disconnect();
+            _lazyObserver = null;
+        }
+
+        all_mermaids.forEach((el) => {
+            el.removeAttribute('data-mermaid-deferred');
+            el.removeAttribute('data-mermaid-render-failed');
+            if(!el.hasAttribute("data-original-code")) {
+                // store original code
+                // console.log(`Storing original code for first run: `, el.innerHTML);
+                el.setAttribute('data-original-code', el.innerHTML);
+            }
+            if(el.getAttribute("data-processed") === "true") {
+                // remove and restore original
+                el.removeAttribute("data-processed");
+                // console.log(`Restoring original code for re-run: `, el.getAttribute('data-original-code'));
+                el.innerHTML = el.getAttribute('data-original-code');
+            } else {
+                // store original code
+                // console.log(`Storing original code for re-run: `, el.innerHTML);
+                el.setAttribute('data-original-code', el.innerHTML);
+            }
+        });
+
+        // Separate visible and hidden elements. Mermaid's layout engine measures
+        // text dimensions via the DOM, which fails for elements hidden by a parent
+        // (e.g., Reveal.js non-active slides, sphinx-design unopened tabs),
+        // producing broken SVGs. Render visible elements now, defer hidden ones.
+        const visible = [];
+        const hidden = [];
+        all_mermaids.forEach((el) => {
+            // offsetParent is null for display:none ancestors.
+            // getClientRects().length > 0 catches position:fixed elements
+            // (which also have null offsetParent but are still visible).
+            if (el.offsetParent !== null || el.getClientRects().length > 0) {
+                visible.push(el);
+            } else {
+                hidden.push(el);
+                el.setAttribute('data-mermaid-deferred', 'true');
+            }
+        });
+
+        if (visible.length > 0) {
+            try {
+                await mermaid.run({ nodes: visible });
+            } catch (e) {
+                console.error("Mermaid rendering failed:", e);
+            }
+        }
+
+        // Lazily render hidden elements when they become visible.
+        // Uses a promise chain (_renderQueue) to serialize rendering,
+        // since IntersectionObserver may report multiple entries at once
+        // and mermaid.run() is not safe to call concurrently.
+        if (hidden.length > 0) {
+            if (typeof IntersectionObserver === 'undefined') {
+                console.warn("IntersectionObserver not available; hidden mermaid diagrams will not render.");
+            } else {
+                _renderQueue = Promise.resolve();
+                _lazyObserver = new IntersectionObserver((entries) => {
+                    for (const entry of entries) {
+                        if (entry.isIntersecting && entry.target.getAttribute("data-processed") !== "true") {
+                            _lazyObserver.unobserve(entry.target);
+                            const el = entry.target;
+                            _renderQueue = _renderQueue.then(async () => {
+                                try {
+                                    await mermaid.run({ nodes: [el] });
+                                    el.removeAttribute('data-mermaid-deferred');
+                                    // Apply zoom to the now-rendered diagram, matching
+                                    // the decoration visible diagrams receive.
+                                    if (false) {
+                                        addZoomToSvgs(d3.selectAll("").select(function() {
+                                            return this.querySelector("svg");
+                                        }));
+                                    }
+                                } catch (e) {
+                                    console.error("Mermaid deferred rendering failed:", e);
+                                    el.removeAttribute('data-mermaid-deferred');
+                                    el.setAttribute('data-mermaid-render-failed', 'true');
+                                }
+                            });
+                        }
+                    }
+                });
+                hidden.forEach((el) => _lazyObserver.observe(el));
+            }
+        }
+    }
+
+    all_mermaids = document.querySelectorAll(".mermaid");
+    // Exclude deferred (hidden) and render-failed elements from completion checks
+    const mermaids_active = document.querySelectorAll(".mermaid:not([data-mermaid-deferred]):not([data-mermaid-render-failed])");
+    const mermaids_processed = document.querySelectorAll(".mermaid:not([data-mermaid-deferred]):not([data-mermaid-render-failed])[data-processed='true']");
+
+    if (false) {
+        const mermaids_to_add_zoom = 0 === -1 ? mermaids_active.length : 0;
+        if(mermaids_to_add_zoom > 0) {
+            var svgs = d3.selectAll("").select(function() {
+                return this.querySelector("svg");
+            });
+            // Wait until every active (visible) diagram has rendered. Deferred
+            // diagrams are excluded, so a fixed d3_node_count that counts a
+            // hidden diagram no longer loops forever waiting for its SVG.
+            if(mermaids_active.length !== mermaids_processed.length) {
+                setTimeout(() => runMermaid(false), 200);
+                return;
+            }
+            addZoomToSvgs(svgs);
+        }
+    } else if(mermaids_active.length !== mermaids_processed.length) {
+        // Wait for mermaid to process all diagrams
+        setTimeout(() => runMermaid(false), 200);
+        return;
+    }
+
+    // Stop here if not adding fullscreen capability
+    if (!true) return;
+
+    if (modal !== null ) {
+        // Destroy existing modal
+        modal.remove();
+        modal = null;
+        modalContent = null;
+    }
+
+    modal = document.createElement('div');
+    modal.className = 'mermaid-fullscreen-modal' + (darkTheme ? ' dark-theme' : '');
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-label', 'Fullscreen diagram viewer');
+    modal.innerHTML = `
+        <button class="mermaid-fullscreen-close${darkTheme ? ' dark-theme' : ''}" aria-label="Close fullscreen">✕</button>
+        <div class="mermaid-container-fullscreen${darkTheme ? ' dark-theme' : ''}"></div>
+    `;
+    document.body.appendChild(modal);
+
+    modalContent = modal.querySelector('.mermaid-container-fullscreen');
+    const closeBtn = modal.querySelector('.mermaid-fullscreen-close');
+
+    closeModal = () => {
+        modal.classList.remove('active');
+        modalContent.innerHTML = '';
+        document.body.style.overflow = ''
+        window.scrollTo({left: previousScrollOffset[0], top: previousScrollOffset[1], behavior: 'instant'});
+    };
+
+    closeBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+    });
+    document.querySelectorAll('.mermaid').forEach((mermaidDiv) => {
+        if (mermaidDiv.parentNode.classList.contains('mermaid-container') ||
+            mermaidDiv.closest('.mermaid-fullscreen-modal')) {
+            // Already processed, adjust button class if needed
+            const existingBtn = mermaidDiv.parentNode.querySelector('.mermaid-fullscreen-btn');
+            if (existingBtn) {
+                existingBtn.className = 'mermaid-fullscreen-btn' + (darkTheme ? ' dark-theme' : '');
+            }
+            return;
+        }
+
+        const container = document.createElement('div');
+        container.className = 'mermaid-container';
+        mermaidDiv.parentNode.insertBefore(container, mermaidDiv);
+        container.appendChild(mermaidDiv);
+
+        const fullscreenBtn = document.createElement('button');
+        fullscreenBtn.className = 'mermaid-fullscreen-btn' + (darkTheme ? ' dark-theme' : '');
+        fullscreenBtn.setAttribute('aria-label', 'View diagram in fullscreen');
+        fullscreenBtn.textContent = "\u26f6";
+        fullscreenBtn.style.opacity = "50%";
+
+        // Calculate dynamic position based on diagram's margin and padding
+        const diagramStyle = window.getComputedStyle(mermaidDiv);
+        const marginTop = parseFloat(diagramStyle.marginTop) || 0;
+        const marginRight = parseFloat(diagramStyle.marginRight) || 0;
+        const paddingTop = parseFloat(diagramStyle.paddingTop) || 0;
+        const paddingRight = parseFloat(diagramStyle.paddingRight) || 0;
+        fullscreenBtn.style.top = `${marginTop + paddingTop + 4}px`;
+        fullscreenBtn.style.right = `${marginRight + paddingRight + 4}px`;
+
+        fullscreenBtn.addEventListener('click', () => {
+            previousScrollOffset = [window.scrollX, window.scrollY];
+            const clone = mermaidDiv.cloneNode(true);
+            modalContent.innerHTML = '';
+            modalContent.appendChild(clone);
+
+            const svg = clone.querySelector('svg');
+            if (svg) {
+                svg.removeAttribute('width');
+                svg.removeAttribute('height');
+                svg.style.width = '100%';
+                svg.style.height = 'auto';
+                svg.style.maxWidth = '100%';
+                svg.style.display = 'block';
+
+                if (false) {
+                    setTimeout(() => {
+                        const g = svg.querySelector('g');
+                        if (g) {
+                            var svgD3 = d3.select(svg);
+                            svgD3.html("<g class='wrapper'>" + svgD3.html() + "</g>");
+                            var inner = svgD3.select("g");
+                            var zoom = d3.zoom().on("zoom", function(event) {
+                                inner.attr("transform", event.transform);
+                            });
+                            svgD3.call(zoom);
+                        }
+                    }, 100);
+                }
+            }
+
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        });
+        container.appendChild(fullscreenBtn);
+    });
+};
+
+
+
+const load = async () => {
+    initStyles();
+
+
+    await runMermaid(true);
+
+    const reRunIfThemeChanges = async () => {
+        const newDarkTheme = isDarkTheme();
+        if (newDarkTheme !== darkTheme) {
+            darkTheme = newDarkTheme;
+            console.log("Theme change detected, re-running mermaid with", darkTheme ? "dark" : "default", "theme");
+            await mermaid.initialize(
+                {...{"startOnLoad": false},
+                ...{ darkMode: darkTheme, theme: darkTheme ? "dark" : "default" },
+                }
+            );
+            await runMermaid(true);
+        }
+    };
+
+    // Update theme classes when theme changes
+    const themeObserver = new MutationObserver(reRunIfThemeChanges);
+    themeObserver.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['class', 'style', 'data-theme']
+    });
+    themeObserver.observe(document.body, {
+        attributes: true,
+        attributeFilter: ['class', 'style', 'data-theme']
+    });
+};
+
+
+
+
+
+console.log("Initializing mermaid with", darkTheme ? "dark" : "default", "theme");
+mermaid.initialize(
+    {...{"startOnLoad": false},
+    ...{ darkMode: darkTheme, theme: darkTheme ? "dark" : "default" },
+    }
+);
+
+window.addEventListener("load", load);
+window.runMermaid = runMermaid;</script>
+    </body>
+</html>

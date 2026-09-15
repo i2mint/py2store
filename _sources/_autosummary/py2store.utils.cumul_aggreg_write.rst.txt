@@ -1,0 +1,29 @@
+py2store.utils.cumul\_aggreg\_write
+===================================
+
+.. automodule:: py2store.utils.cumul_aggreg_write
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      condition_flush_on_every_write
+      flush_on_exit
+      infinite_keycount_kvs
+      join_byte_values_and_key_as_current_utc_milliseconds
+      join_string_values_and_key_as_current_utc_milliseconds
+      key_count
+      let_through
+      mk_group_aggregator
+      mk_group_aggregator_with_key_func
+      mk_kv_from_keygen
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      CumulAggregWrite
+      CumulAggregWriteKvItems
+      CumulAggregWriteWithAutoFlush
+   

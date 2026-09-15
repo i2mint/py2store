@@ -1,0 +1,6 @@
+py2store.stores.sql\_w\_sqlalchemy
+==================================
+
+.. automodule:: py2store.stores.sql_w_sqlalchemy
+
+   

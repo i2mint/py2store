@@ -1,0 +1,19 @@
+py2store.utils.attr\_dict
+=========================
+
+.. automodule:: py2store.utils.attr_dict
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      attr_wrap
+      special_dir
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      AttrMap
+   

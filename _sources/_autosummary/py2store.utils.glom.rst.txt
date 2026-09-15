@@ -1,0 +1,45 @@
+py2store.utils.glom
+===================
+
+.. automodule:: py2store.utils.glom
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      glom
+      is_iterable
+      make_sentinel
+      register
+      register_op
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      Auto
+      Call
+      Check
+      Coalesce
+      Fill
+      Glommer
+      Inspect
+      Invoke
+      Let
+      Literal
+      Path
+      Spec
+      TType
+      TargetRegistry
+   
+   .. rubric:: Exceptions
+
+   .. autosummary::
+   
+      CheckError
+      CoalesceError
+      GlomError
+      PathAccessError
+      UnregisteredTarget
+   

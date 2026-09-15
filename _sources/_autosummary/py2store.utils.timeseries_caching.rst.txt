@@ -1,0 +1,12 @@
+py2store.utils.timeseries\_caching
+==================================
+
+.. automodule:: py2store.utils.timeseries_caching
+
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      RegularTimeseriesCache
+   

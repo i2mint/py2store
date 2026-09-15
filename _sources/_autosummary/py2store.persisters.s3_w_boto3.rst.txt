@@ -1,0 +1,6 @@
+py2store.persisters.s3\_w\_boto3
+================================
+
+.. automodule:: py2store.persisters.s3_w_boto3
+
+   

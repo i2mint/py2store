@@ -1,0 +1,6 @@
+py2store.slib.s\_zipfile
+========================
+
+.. automodule:: py2store.slib.s_zipfile
+
+   

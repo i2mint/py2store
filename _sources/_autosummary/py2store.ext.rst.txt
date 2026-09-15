@@ -1,0 +1,19 @@
+py2store.ext
+============
+
+.. automodule:: py2store.ext
+
+   
+.. rubric:: Modules
+
+.. autosummary::
+   :toctree:
+   :recursive:
+
+   dataframes
+   docx
+   github
+   gitlab
+   hdf
+   matlab
+   wordnet

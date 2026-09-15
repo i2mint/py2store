@@ -1,0 +1,6 @@
+py2store.appendable
+===================
+
+.. currentmodule:: py2store
+
+.. autofunction:: appendable

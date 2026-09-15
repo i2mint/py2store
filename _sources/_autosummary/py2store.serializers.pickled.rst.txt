@@ -1,0 +1,13 @@
+py2store.serializers.pickled
+============================
+
+.. automodule:: py2store.serializers.pickled
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      mk_marshal_rw_funcs
+      mk_pickle_rw_funcs
+   

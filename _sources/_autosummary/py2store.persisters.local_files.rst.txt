@@ -1,0 +1,48 @@
+py2store.persisters.local\_files
+================================
+
+.. automodule:: py2store.persisters.local_files
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      dirpaths_in_dir
+      endswith_slash
+      ensure_slash_suffix
+      extend_prefix
+      filepaths_in_dir
+      first_non_existing_parent_dir
+      iter_dirpaths_in_folder_recursively
+      iter_filepaths_in_folder
+      iter_filepaths_in_folder_recursively
+      iter_relative_files_and_folder
+      path_match_regex_from_path_format
+      paths_in_dir
+      paths_in_dir_with_slash_suffix_for_dirs
+      pattern_filter
+      w_helpful_folder_not_found_error
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      DirReader
+      DirpathFormatKeys
+      FileReader
+      FilepathFormatKeys
+      LocalFileRWD
+      LocalFileStreamGetter
+      PathFormat
+      PathFormatPersister
+      PrefixedDirpathsRecursive
+      PrefixedFilepaths
+      PrefixedFilepathsRecursive
+   
+   .. rubric:: Exceptions
+
+   .. autosummary::
+   
+      FolderNotFoundError
+   

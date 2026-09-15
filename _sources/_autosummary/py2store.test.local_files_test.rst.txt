@@ -1,0 +1,12 @@
+py2store.test.local\_files\_test
+================================
+
+.. automodule:: py2store.test.local_files_test
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      test_file_reader
+   

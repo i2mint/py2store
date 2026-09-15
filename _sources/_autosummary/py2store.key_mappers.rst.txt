@@ -1,0 +1,16 @@
+py2store.key\_mappers
+=====================
+
+.. automodule:: py2store.key_mappers
+
+   
+.. rubric:: Modules
+
+.. autosummary::
+   :toctree:
+   :recursive:
+
+   naming
+   paths
+   str_utils
+   tuples

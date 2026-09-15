@@ -1,0 +1,12 @@
+py2store.test.quick\_test
+=========================
+
+.. automodule:: py2store.test.quick_test
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      test_quick_store
+   

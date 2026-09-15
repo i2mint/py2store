@@ -1,0 +1,21 @@
+py2store.utils.mappify
+======================
+
+.. automodule:: py2store.utils.mappify
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      bracket_getter
+      dot_str_key_iterator
+      simple_glom
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      LeafMappify
+      Mappify
+   

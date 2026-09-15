@@ -1,0 +1,6 @@
+py2store.stores.dropbox\_store
+==============================
+
+.. automodule:: py2store.stores.dropbox_store
+
+   

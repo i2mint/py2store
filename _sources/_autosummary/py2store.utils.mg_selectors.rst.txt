@@ -1,0 +1,6 @@
+py2store.utils.mg\_selectors
+============================
+
+.. automodule:: py2store.utils.mg_selectors
+
+   

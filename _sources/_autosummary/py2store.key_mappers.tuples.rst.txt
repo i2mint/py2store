@@ -1,0 +1,21 @@
+py2store.key\_mappers.tuples
+============================
+
+.. automodule:: py2store.key_mappers.tuples
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      dict_of_str
+      dict_of_tuple
+      dsv_of_list
+      list_of_dsv
+      mk_obj_of_str
+      mk_str_of_obj
+      str_of_dict
+      str_of_tuple
+      tuple_of_dict
+      tuple_of_str
+   

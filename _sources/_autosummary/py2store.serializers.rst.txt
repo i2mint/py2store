@@ -1,0 +1,13 @@
+py2store.serializers
+====================
+
+.. automodule:: py2store.serializers
+
+   
+.. rubric:: Modules
+
+.. autosummary::
+   :toctree:
+   :recursive:
+
+   pickled

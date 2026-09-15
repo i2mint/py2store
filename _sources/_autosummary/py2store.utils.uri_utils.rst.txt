@@ -1,0 +1,14 @@
+py2store.utils.uri\_utils
+=========================
+
+.. automodule:: py2store.utils.uri_utils
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      build_uri
+      mk_str_making_func
+      parse_uri
+   

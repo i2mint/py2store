@@ -1,0 +1,14 @@
+py2store.slib
+=============
+
+.. automodule:: py2store.slib
+
+   
+.. rubric:: Modules
+
+.. autosummary::
+   :toctree:
+   :recursive:
+
+   s_configparser
+   s_zipfile

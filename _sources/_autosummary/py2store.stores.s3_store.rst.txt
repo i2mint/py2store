@@ -1,0 +1,6 @@
+py2store.stores.s3\_store
+=========================
+
+.. automodule:: py2store.stores.s3_store
+
+   

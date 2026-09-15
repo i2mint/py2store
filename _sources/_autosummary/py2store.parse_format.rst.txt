@@ -1,0 +1,15 @@
+py2store.parse\_format
+======================
+
+.. automodule:: py2store.parse_format
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      parse
+      search
+      findall
+      with_pattern
+   

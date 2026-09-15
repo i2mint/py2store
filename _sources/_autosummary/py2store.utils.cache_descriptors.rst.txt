@@ -1,0 +1,20 @@
+py2store.utils.cache\_descriptors
+=================================
+
+.. automodule:: py2store.utils.cache_descriptors
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      CachedProperty
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      Lazy
+      cachedIn
+      readproperty
+   

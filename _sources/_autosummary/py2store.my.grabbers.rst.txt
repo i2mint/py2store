@@ -1,0 +1,15 @@
+py2store.my.grabbers
+====================
+
+.. automodule:: py2store.my.grabbers
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      fullpath
+      grabber_for
+      ipython_display_val_trans
+      mk_grabber
+   

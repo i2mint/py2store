@@ -1,0 +1,28 @@
+py2store.key\_mappers.str\_utils
+================================
+
+.. automodule:: py2store.key_mappers.str_utils
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      args_and_kwargs_indices
+      auto_field_format_str
+      compile_str_from_parsed
+      empty_arg_and_kwargs_for_format
+      format_params_in_str_format
+      get_explicit_positions
+      is_automatic_format_params
+      is_automatic_format_string
+      is_hybrid_format_params
+      is_hybrid_format_string
+      is_manual_format_params
+      is_manual_format_string
+      manual_field_format_str
+      n_format_params_in_str_format
+      name_fields_in_format_str
+      parse_str_format
+      transform_format_str
+   

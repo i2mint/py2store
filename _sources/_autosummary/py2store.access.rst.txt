@@ -1,0 +1,31 @@
+py2store.access
+===============
+
+.. automodule:: py2store.access
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      add_json_ext
+      assert_callable
+      compose
+      dflt_func_loader
+      directory_json_items
+      dotpath_to_func
+      dotpath_to_obj
+      fakit
+      fakit_from_dict
+      fakit_from_tuple
+      getenv
+      mkdir_if_needed
+      without_json_ext
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      MyConfigs
+      MyStores
+   

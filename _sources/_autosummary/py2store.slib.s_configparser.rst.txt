@@ -1,0 +1,6 @@
+py2store.slib.s\_configparser
+=============================
+
+.. automodule:: py2store.slib.s_configparser
+
+   
