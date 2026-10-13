@@ -5,7 +5,9 @@
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
 
 <link rel="alternate" type="text/markdown" href="py2store.persisters.local_files.html.md">
-<link rel="describedby" href="../llms.txt" type="text/markdown"><link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="py2store.persisters.new_s3" href="py2store.persisters.new_s3.html"><link rel="prev" title="py2store.persisters.googledrive_w_pydrive" href="py2store.persisters.googledrive_w_pydrive.html">
+<link rel="describedby" href="../llms.txt" type="text/markdown">
+<link rel="alternate" type="text/markdown" href="py2store.persisters.local_files.html.md">
+<link rel="describedby" href="llms.txt"><link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="py2store.persisters.new_s3" href="py2store.persisters.new_s3.html"><link rel="prev" title="py2store.persisters.googledrive_w_pydrive" href="py2store.persisters.googledrive_w_pydrive.html">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
         <title>py2store.persisters.local_files - py2store</title>
@@ -525,14 +527,14 @@ into stores with relative keys.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="py2store.persisters.local_files.LocalFileRWD">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py2store.persisters.local_files.</span></span><span class="sig-name descname"><span class="pre">LocalFileRWD</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">open_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2store/persisters/local_files.html#LocalFileRWD"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2store.persisters.local_files.LocalFileRWD" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>A class providing get, set and delete functionality using local files as the storage backend.</p>
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="py2store.persisters.local_files.LocalFileStreamGetter">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py2store.persisters.local_files.</span></span><span class="sig-name descname"><span class="pre">LocalFileStreamGetter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">open_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2store/persisters/local_files.html#LocalFileStreamGetter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2store.persisters.local_files.LocalFileStreamGetter" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>A class to get stream objects of local open files.
 The class can only get keys, and only to read, write (destructive or append).</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">tempfile</span><span class="w"> </span><span class="kn">import</span> <span class="n">mkdtemp</span>
@@ -561,11 +563,11 @@ The class can only get keys, and only to read, write (destructive or append).</p
 <dl class="py class">
 <dt class="sig sig-object py" id="py2store.persisters.local_files.PathFormat">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py2store.persisters.local_files.</span></span><span class="sig-name descname"><span class="pre">PathFormat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path_format</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2store/persisters/local_files.html#PathFormat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2store.persisters.local_files.PathFormat" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Key validation from a path template: which full paths belong to the collection.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>path_format</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – The f-string template that the full path keys should match: a root
+<dd class="field-odd"><p><strong>path_format</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span>) – The f-string template that the full path keys should match: a root
 directory (<code class="docutils literal notranslate"><span class="pre">'/data/'</span></code>, everything under it) or a template such as
 <code class="docutils literal notranslate"><span class="pre">'/data/{}.csv'</span></code> (only <code class="docutils literal notranslate"><span class="pre">.csv</span></code> files under <code class="docutils literal notranslate"><span class="pre">/data/</span></code>). The directory
 containing the part before the first <code class="docutils literal notranslate"><span class="pre">{</span></code> is the root, available as <code class="docutils literal notranslate"><span class="pre">_prefix</span></code>.</p>
@@ -593,7 +595,7 @@ containing the part before the first <code class="docutils literal notranslate">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>path_format</strong> – The path template (see <code class="docutils literal notranslate"><span class="pre">PathFormat</span></code>).</p></li>
-<li><p><strong>max_levels</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></span>) – How many folder levels below the root to include when iterating.</p></li>
+<li><p><strong>max_levels</strong> (<span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></span>) – How many folder levels below the root to include when iterating.</p></li>
 <li><p><strong>mode</strong> – <code class="docutils literal notranslate"><span class="pre">''</span></code>, <code class="docutils literal notranslate"><span class="pre">'t'</span></code> or <code class="docutils literal notranslate"><span class="pre">'b'</span></code>: whether files are opened in text or binary mode.</p></li>
 <li><p><strong>**open_kwargs</strong> – Forwarded to <code class="docutils literal notranslate"><span class="pre">open</span></code>; <code class="docutils literal notranslate"><span class="pre">read_mode</span></code> and <code class="docutils literal notranslate"><span class="pre">write_mode</span></code> entries override
 the modes derived from <code class="docutils literal notranslate"><span class="pre">mode</span></code>.</p></li>
@@ -613,7 +615,7 @@ This mixin adds iteration (__iter__), length (__len__), and containment (__conta
 <dl class="py class">
 <dt class="sig sig-object py" id="py2store.persisters.local_files.PrefixedFilepaths">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py2store.persisters.local_files.</span></span><span class="sig-name descname"><span class="pre">PrefixedFilepaths</span></span><a class="reference internal" href="../_modules/py2store/persisters/local_files.html#PrefixedFilepaths"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2store.persisters.local_files.PrefixedFilepaths" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Keys collection for local files, where the keys are full filepaths DIRECTLY under a given root dir _prefix.
 This mixin adds iteration (__iter__), length (__len__), and containment (__contains__(k)).</p>
 </dd></dl>
@@ -824,7 +826,7 @@ only the files directly under it, <code class="docutils literal notranslate"><sp
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=2d24694c"></script>
+</div><script src="../_static/documentation_options.js?v=c50728fc"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/scripts/furo.js?v=46bd48cc"></script>

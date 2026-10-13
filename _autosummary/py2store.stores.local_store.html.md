@@ -193,26 +193,15 @@ Bases: [`PathFormatPersister`](py2store.persisters.local_files.html.md#py2store.
 Local file store using templated relative paths.
 
 ```pycon
->>> from tempfile import gettempdir
 >>> import os
+>>> import tempfile
 >>>
 >>> def write_to_key(fullpath_of_relative_path, relative_path, content):  # a function to write content in files
 ...    with open(fullpath_of_relative_path(relative_path), 'w') as fp:
 ...        fp.write(content)
 >>>
->>> # Preparation: Make a temporary rootdir and write two files in it
->>> rootdir = os.path.join(gettempdir(), 'path_format_store_test' + os.sep)
->>> if not os.path.isdir(rootdir):
-...     os.mkdir(rootdir)
->>> # recreate directory (remove existing files, delete directory, and re-create it)
->>> for f in os.listdir(rootdir):
-...     fullpath = os.path.join(rootdir, f)
-...     if os.path.isfile(fullpath):
-...         os.remove(os.path.join(rootdir, f))
->>> if os.path.isdir(rootdir):
-...     os.rmdir(rootdir)
->>> if not os.path.isdir(rootdir):
-...    os.mkdir(rootdir)
+>>> # Preparation: Make a fresh temporary rootdir (private to this doctest)
+>>> rootdir = tempfile.mkdtemp() + os.sep
 >>>
 >>> filepath_of = lambda p: os.path.join(rootdir, p)  # a function to get a fullpath from a relative one
 >>> # and make two files in this new dir, with some content
@@ -258,18 +247,20 @@ True
 >>> # but if we make an obj source to only take files whose extension is '.txt'...
 >>> s = PathFormatStore(path_format=rootdir + '{}.txt')
 >>>
->>> rootdir_2 = os.path.join(gettempdir(), 'obj_source_test_2') # get another rootdir
->>> if not os.path.isdir(rootdir_2):
-...    os.mkdir(rootdir_2)
+>>> rootdir_2 = tempfile.mkdtemp() + os.sep # get another (fresh) rootdir
 >>> filepath_of_2 = lambda p: os.path.join(rootdir_2, p)
 >>> # and make two files in this new dir, with some content
->>> write_to_key(filepath_of, 'this.txt', 'this')
->>> write_to_key(filepath_of, 'that.txt', 'blah')
->>> write_to_key(filepath_of, 'the_other.txt', 'bloo')
+>>> write_to_key(filepath_of_2, 'this.txt', 'this')
+>>> write_to_key(filepath_of_2, 'that.txt', 'blah')
+>>> write_to_key(filepath_of_2, 'the_other.txt', 'bloo')
 >>>
 >>> ss = PathFormatStore(path_format=rootdir_2 + '{}.txt')
 >>>
 >>> assert s != ss  # though pointing to identical content, o and oo are not equal since the paths are not equal!
+>>>
+>>> import shutil
+>>> for d in (rootdir, rootdir_2):  # clean up the temporary dirs
+...     shutil.rmtree(d)
 ```
 
 ### *class* py2store.stores.local_store.PathFormatStoreWithPrefix(path_format, max_levels=inf, mode='', \*\*open_kwargs)

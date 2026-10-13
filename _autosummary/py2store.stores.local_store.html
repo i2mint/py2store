@@ -5,7 +5,9 @@
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
 
 <link rel="alternate" type="text/markdown" href="py2store.stores.local_store.html.md">
-<link rel="describedby" href="../llms.txt" type="text/markdown"><link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="py2store.stores.s3_store" href="py2store.stores.s3_store.html"><link rel="prev" title="py2store.stores.dropbox_store" href="py2store.stores.dropbox_store.html">
+<link rel="describedby" href="../llms.txt" type="text/markdown">
+<link rel="alternate" type="text/markdown" href="py2store.stores.local_store.html.md">
+<link rel="describedby" href="llms.txt"><link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="py2store.stores.s3_store" href="py2store.stores.s3_store.html"><link rel="prev" title="py2store.stores.dropbox_store" href="py2store.stores.dropbox_store.html">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
         <title>py2store.stores.local_store - py2store</title>
@@ -431,14 +433,14 @@ and pick a temporary root when none is given.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="py2store.stores.local_store.AutoMkDirsOnSetitemMixin">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py2store.stores.local_store.</span></span><span class="sig-name descname"><span class="pre">AutoMkDirsOnSetitemMixin</span></span><a class="reference internal" href="../_modules/py2store/stores/local_store.html#AutoMkDirsOnSetitemMixin"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2store.stores.local_store.AutoMkDirsOnSetitemMixin" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>A mixin that will automatically create directories on setitem, when missing.</p>
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="py2store.stores.local_store.AutoMkPathformatMixin">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py2store.stores.local_store.</span></span><span class="sig-name descname"><span class="pre">AutoMkPathformatMixin</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path_format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_levels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2store/stores/local_store.html#AutoMkPathformatMixin"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2store.stores.local_store.AutoMkPathformatMixin" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>A mixin that will choose a path_format if none given</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="py2store.stores.local_store.AutoMkPathformatMixin.mk_tmp_quick_store_path_format">
@@ -509,7 +511,7 @@ Keys are directory names and values are subdirectory DirStores.</p>
 </ul>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#ModuleNotFoundError" title="(in Python v3.14)"><strong>ModuleNotFoundError</strong></a> – When unpickling a value needs a module that cannot be imported
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#ModuleNotFoundError" title="(in Python v3.15)"><strong>ModuleNotFoundError</strong></a> – When unpickling a value needs a module that cannot be imported
     (the message names the key).</p>
 </dd>
 </dl>
@@ -584,26 +586,15 @@ Keys are directory names and values are subdirectory DirStores.</p>
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py2store.stores.local_store.</span></span><span class="sig-name descname"><span class="pre">PathFormatStore</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path_format</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_levels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">inf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">open_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2store/stores/local_store.html#PathFormatStore"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2store.stores.local_store.PathFormatStore" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="py2store.persisters.local_files.html#py2store.persisters.local_files.PathFormatPersister" title="py2store.persisters.local_files.PathFormatPersister"><code class="xref py py-class docutils literal notranslate"><span class="pre">PathFormatPersister</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">KvPersister</span></code></p>
 <p>Local file store using templated relative paths.</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">tempfile</span><span class="w"> </span><span class="kn">import</span> <span class="n">gettempdir</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span>
 <span class="gp">&gt;&gt;&gt;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="k">def</span><span class="w"> </span><span class="nf">write_to_key</span><span class="p">(</span><span class="n">fullpath_of_relative_path</span><span class="p">,</span> <span class="n">relative_path</span><span class="p">,</span> <span class="n">content</span><span class="p">):</span>  <span class="c1"># a function to write content in files</span>
 <span class="gp">... </span>   <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">fullpath_of_relative_path</span><span class="p">(</span><span class="n">relative_path</span><span class="p">),</span> <span class="s1">'w'</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
 <span class="gp">... </span>       <span class="n">fp</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Preparation: Make a temporary rootdir and write two files in it</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">rootdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">gettempdir</span><span class="p">(),</span> <span class="s1">'path_format_store_test'</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">sep</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">rootdir</span><span class="p">):</span>
-<span class="gp">... </span>    <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">rootdir</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># recreate directory (remove existing files, delete directory, and re-create it)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">rootdir</span><span class="p">):</span>
-<span class="gp">... </span>    <span class="n">fullpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">rootdir</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
-<span class="gp">... </span>    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">fullpath</span><span class="p">):</span>
-<span class="gp">... </span>        <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">rootdir</span><span class="p">,</span> <span class="n">f</span><span class="p">))</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">rootdir</span><span class="p">):</span>
-<span class="gp">... </span>    <span class="n">os</span><span class="o">.</span><span class="n">rmdir</span><span class="p">(</span><span class="n">rootdir</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">rootdir</span><span class="p">):</span>
-<span class="gp">... </span>   <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">rootdir</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Preparation: Make a fresh temporary rootdir (private to this doctest)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rootdir</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">mkdtemp</span><span class="p">()</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">sep</span>
 <span class="gp">&gt;&gt;&gt;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">filepath_of</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">rootdir</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>  <span class="c1"># a function to get a fullpath from a relative one</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># and make two files in this new dir, with some content</span>
@@ -649,18 +640,20 @@ Keys are directory names and values are subdirectory DirStores.</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># but if we make an obj source to only take files whose extension is '.txt'...</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">s</span> <span class="o">=</span> <span class="n">PathFormatStore</span><span class="p">(</span><span class="n">path_format</span><span class="o">=</span><span class="n">rootdir</span> <span class="o">+</span> <span class="s1">'</span><span class="si">{}</span><span class="s1">.txt'</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">rootdir_2</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">gettempdir</span><span class="p">(),</span> <span class="s1">'obj_source_test_2'</span><span class="p">)</span> <span class="c1"># get another rootdir</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">rootdir_2</span><span class="p">):</span>
-<span class="gp">... </span>   <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">rootdir_2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rootdir_2</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">mkdtemp</span><span class="p">()</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">sep</span> <span class="c1"># get another (fresh) rootdir</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">filepath_of_2</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">rootdir_2</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># and make two files in this new dir, with some content</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">write_to_key</span><span class="p">(</span><span class="n">filepath_of</span><span class="p">,</span> <span class="s1">'this.txt'</span><span class="p">,</span> <span class="s1">'this'</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">write_to_key</span><span class="p">(</span><span class="n">filepath_of</span><span class="p">,</span> <span class="s1">'that.txt'</span><span class="p">,</span> <span class="s1">'blah'</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">write_to_key</span><span class="p">(</span><span class="n">filepath_of</span><span class="p">,</span> <span class="s1">'the_other.txt'</span><span class="p">,</span> <span class="s1">'bloo'</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">write_to_key</span><span class="p">(</span><span class="n">filepath_of_2</span><span class="p">,</span> <span class="s1">'this.txt'</span><span class="p">,</span> <span class="s1">'this'</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">write_to_key</span><span class="p">(</span><span class="n">filepath_of_2</span><span class="p">,</span> <span class="s1">'that.txt'</span><span class="p">,</span> <span class="s1">'blah'</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">write_to_key</span><span class="p">(</span><span class="n">filepath_of_2</span><span class="p">,</span> <span class="s1">'the_other.txt'</span><span class="p">,</span> <span class="s1">'bloo'</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">ss</span> <span class="o">=</span> <span class="n">PathFormatStore</span><span class="p">(</span><span class="n">path_format</span><span class="o">=</span><span class="n">rootdir_2</span> <span class="o">+</span> <span class="s1">'</span><span class="si">{}</span><span class="s1">.txt'</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">s</span> <span class="o">!=</span> <span class="n">ss</span>  <span class="c1"># though pointing to identical content, o and oo are not equal since the paths are not equal!</span>
+<span class="gp">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">shutil</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="p">(</span><span class="n">rootdir</span><span class="p">,</span> <span class="n">rootdir_2</span><span class="p">):</span>  <span class="c1"># clean up the temporary dirs</span>
+<span class="gp">... </span>    <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
 </pre></div>
 </div>
 <dl class="field-list simple">
@@ -863,7 +856,7 @@ under the system temp directory is used, and its path is printed.</p>
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=2d24694c"></script>
+</div><script src="../_static/documentation_options.js?v=c50728fc"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/scripts/furo.js?v=46bd48cc"></script>

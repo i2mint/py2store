@@ -1,41 +1,41 @@
 {
   "schema_version": 1,
-  "built_at": "2026-09-15T11:34:32Z",
+  "built_at": "2026-10-13T07:41:20Z",
   "package": {
     "name": "py2store",
-    "version": "0.1.23",
+    "version": "0.1.24",
     "display_name": "py2store",
     "source": "setup.cfg"
   },
   "git": {
     "available": true,
-    "commit": "03fbcfc37164a618f0b92b7ac3c83b7157747efa",
-    "short_commit": "03fbcfc",
+    "commit": "640b855cdb94d5ec4759dae8e7dddb267612260a",
+    "short_commit": "640b855",
     "branch": "master",
     "tags": [
-      "0.1.23"
+      "0.1.24"
     ],
     "dirty": false,
     "remote_url": "https://github.com/i2mint/py2store",
-    "commit_url": "https://github.com/i2mint/py2store/commit/03fbcfc37164a618f0b92b7ac3c83b7157747efa",
+    "commit_url": "https://github.com/i2mint/py2store/commit/640b855cdb94d5ec4759dae8e7dddb267612260a",
     "error": null
   },
   "ci": {
     "provider": "github",
     "repository": "i2mint/py2store",
-    "sha": "db92faff58d7acbc060f41aa54c127f37ee13ac8",
+    "sha": "a50cd301fd00ec2a3295f5fb39cbe6c58831b6e7",
     "sha_in_history": true,
     "ref": "refs/heads/master",
     "ref_name": "master",
-    "run_id": "34963902384",
-    "run_url": "https://github.com/i2mint/py2store/actions/runs/34963902384",
+    "run_id": "38364121901",
+    "run_url": "https://github.com/i2mint/py2store/actions/runs/38364121901",
     "server_url": "https://github.com"
   },
   "tools": {
-    "epythet": "0.2.11",
+    "epythet": "0.2.15",
     "sphinx": "9.1.0",
     "docutils": "0.22.4",
-    "python": "3.12.14"
+    "python": "3.12.15"
   },
   "config": {
     "theme": "auto",
@@ -62,11 +62,11 @@
   },
   "pypi": {
     "checked": true,
-    "latest": "0.1.23",
+    "latest": "0.1.24",
     "relation": "same",
     "error": null
   },
-  "reproduce": "git clone https://github.com/i2mint/py2store && cd py2store\ngit checkout 03fbcfc37164a618f0b92b7ac3c83b7157747efa\npip install \"epythet==0.2.11\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
+  "reproduce": "git clone https://github.com/i2mint/py2store && cd py2store\ngit checkout 640b855cdb94d5ec4759dae8e7dddb267612260a\npip install \"epythet==0.2.15\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
   "warnings": [],
   "alignment": {
     "aligned": true,

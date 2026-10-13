@@ -5,7 +5,9 @@
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
 
 <link rel="alternate" type="text/markdown" href="py2store.utils.glom.html.md">
-<link rel="describedby" href="../llms.txt" type="text/markdown"><link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="py2store.utils.mappify" href="py2store.utils.mappify.html"><link rel="prev" title="py2store.utils.explicit" href="py2store.utils.explicit.html">
+<link rel="describedby" href="../llms.txt" type="text/markdown">
+<link rel="alternate" type="text/markdown" href="py2store.utils.glom.html.md">
+<link rel="describedby" href="llms.txt"><link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="py2store.utils.mappify" href="py2store.utils.mappify.html"><link rel="prev" title="py2store.utils.explicit" href="py2store.utils.explicit.html">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
         <title>py2store.utils.glom - py2store</title>
@@ -403,7 +405,7 @@ semantics.</p>
 <td><p>Access or construct a value from a given <em>target</em> based on the specification declared by <em>spec</em>.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#py2store.utils.glom.is_iterable" title="py2store.utils.glom.is_iterable"><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_iterable</span></code></a>(x)</p></td>
-<td><p>Similar in nature to <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#callable" title="(in Python v3.14)"><code class="xref py py-func docutils literal notranslate"><span class="pre">callable()</span></code></a>, <code class="docutils literal notranslate"><span class="pre">is_iterable</span></code> returns <code class="docutils literal notranslate"><span class="pre">True</span></code> if an object is iterable, <code class="docutils literal notranslate"><span class="pre">False</span></code> if not.</p></td>
+<td><p>Similar in nature to <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#callable" title="(in Python v3.15)"><code class="xref py py-func docutils literal notranslate"><span class="pre">callable()</span></code></a>, <code class="docutils literal notranslate"><span class="pre">is_iterable</span></code> returns <code class="docutils literal notranslate"><span class="pre">True</span></code> if an object is iterable, <code class="docutils literal notranslate"><span class="pre">False</span></code> if not.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#py2store.utils.glom.make_sentinel" title="py2store.utils.glom.make_sentinel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">make_sentinel</span></code></a>([name, var_name])</p></td>
 <td><p>Creates and returns a new <strong>instance</strong> of a new class, suitable for usage as a &quot;sentinel&quot;, a kind of singleton often used to indicate a value is missing when <code class="docutils literal notranslate"><span class="pre">None</span></code> is a valid input.</p></td>
@@ -491,17 +493,17 @@ semantics.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="py2store.utils.glom.Auto">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py2store.utils.glom.</span></span><span class="sig-name descname"><span class="pre">Auto</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2store/utils/glom.html#Auto"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2store.utils.glom.Auto" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Switch to Auto mode (the default)</p>
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="py2store.utils.glom.Call">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py2store.utils.glom.</span></span><span class="sig-name descname"><span class="pre">Call</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kwargs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2store/utils/glom.html#Call"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2store.utils.glom.Call" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p><a class="reference internal" href="#py2store.utils.glom.Call" title="py2store.utils.glom.Call"><code class="xref py py-class docutils literal notranslate"><span class="pre">Call</span></code></a> specifies when a target should be passed to a function,
 <em>func</em>.</p>
-<p><a class="reference internal" href="#py2store.utils.glom.Call" title="py2store.utils.glom.Call"><code class="xref py py-class docutils literal notranslate"><span class="pre">Call</span></code></a> is similar to <a class="reference external" href="https://docs.python.org/3/library/functools.html#functools.partial" title="(in Python v3.14)"><code class="xref py py-func docutils literal notranslate"><span class="pre">partial()</span></code></a> in that
+<p><a class="reference internal" href="#py2store.utils.glom.Call" title="py2store.utils.glom.Call"><code class="xref py py-class docutils literal notranslate"><span class="pre">Call</span></code></a> is similar to <a class="reference external" href="https://docs.python.org/3/library/functools.html#functools.partial" title="(in Python v3.15)"><code class="xref py py-func docutils literal notranslate"><span class="pre">partial()</span></code></a> in that
 it is no more powerful than <code class="docutils literal notranslate"><span class="pre">lambda</span></code> or other functions, but
 it is designed to be more readable, with a better <code class="docutils literal notranslate"><span class="pre">repr</span></code>.</p>
 <dl class="field-list simple">
@@ -545,7 +547,7 @@ in 19.3.0: the <a class="reference internal" href="#py2store.utils.glom.Invoke" 
 <dl class="py class">
 <dt class="sig sig-object py" id="py2store.utils.glom.Check">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py2store.utils.glom.</span></span><span class="sig-name descname"><span class="pre">Check</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">T</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2store/utils/glom.html#Check"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2store.utils.glom.Check" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Check objects are used to make assertions about the target data,
 and either pass through the data or raise exceptions if there is a
 problem.</p>
@@ -605,7 +607,7 @@ in future releases.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="py2store.utils.glom.Coalesce">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py2store.utils.glom.</span></span><span class="sig-name descname"><span class="pre">Coalesce</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">subspecs</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2store/utils/glom.html#Coalesce"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2store.utils.glom.Coalesce" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Coalesce objects specify fallback behavior for a list of
 subspecs.</p>
 <p>Subspecs are passed as positional arguments, and keyword arguments
@@ -678,7 +680,7 @@ may be useful for processing:</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>coal_obj</strong> (<a class="reference internal" href="#py2store.utils.glom.Coalesce" title="py2store.utils.glom.Coalesce"><em>Coalesce</em></a>) – The original failing spec, see
 <a class="reference internal" href="#py2store.utils.glom.Coalesce" title="py2store.utils.glom.Coalesce"><code class="xref py py-class docutils literal notranslate"><span class="pre">Coalesce</span></code></a>’s docs for details.</p></li>
-<li><p><strong>skipped</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a>) – A list of ignored values and exceptions, in the
+<li><p><strong>skipped</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.15)"><em>list</em></a>) – A list of ignored values and exceptions, in the
 order that their respective subspecs appear in the original
 <em>coal_obj</em>.</p></li>
 <li><p><strong>path</strong> – Like many GlomErrors, this exception knows the path at
@@ -698,7 +700,7 @@ which it occurred.</p></li>
 <dl class="py class">
 <dt class="sig sig-object py" id="py2store.utils.glom.Fill">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py2store.utils.glom.</span></span><span class="sig-name descname"><span class="pre">Fill</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2store/utils/glom.html#Fill"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2store.utils.glom.Fill" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>A specifier type which switches to glom into “fill-mode”. For the
 spec contained within the Fill, glom will only interpret explicit
 specifier types (including T objects). Whereas the default mode
@@ -719,7 +721,7 @@ has switched into a simple tuple constructor.</p>
 <dl class="py exception">
 <dt class="sig sig-object py" id="py2store.utils.glom.GlomError">
 <span class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py2store.utils.glom.</span></span><span class="sig-name descname"><span class="pre">GlomError</span></span><a class="reference internal" href="../_modules/py2store/utils/glom.html#GlomError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2store.utils.glom.GlomError" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#Exception" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#Exception" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></a></p>
 <p>The base exception for all the errors that might be raised from
 <a class="reference internal" href="#py2store.utils.glom.glom" title="py2store.utils.glom.glom"><code class="xref py py-func docutils literal notranslate"><span class="pre">glom()</span></code></a> processing logic.</p>
 <p>By default, exceptions raised from within functions passed to glom
@@ -730,7 +732,7 @@ GlomError.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="py2store.utils.glom.Glommer">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py2store.utils.glom.</span></span><span class="sig-name descname"><span class="pre">Glommer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2store/utils/glom.html#Glommer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2store.utils.glom.Glommer" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>All the wholesome goodness that it takes to make glom work. This
 type mostly serves to encapsulate the type registration context so
 that advanced uses of glom don’t need to worry about stepping on
@@ -748,7 +750,7 @@ the <a class="reference internal" href="#py2store.utils.glom.glom" title="py2sto
 localized control over type handling.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>register_default_types</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – Whether or not to enable the
+<dd class="field-odd"><p><strong>register_default_types</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><em>bool</em></a>) – Whether or not to enable the
 handling behaviors of the default <a class="reference internal" href="#py2store.utils.glom.glom" title="py2store.utils.glom.glom"><code class="xref py py-func docutils literal notranslate"><span class="pre">glom()</span></code></a>. These
 default actions include dict access, list and iterable
 iteration, and generic object attribute access. Defaults to
@@ -763,15 +765,15 @@ know how to handle instances of that type as targets.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>target_type</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#type" title="(in Python v3.14)"><em>type</em></a>) – A type expected to appear in a glom()
+<li><p><strong>target_type</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#type" title="(in Python v3.15)"><em>type</em></a>) – A type expected to appear in a glom()
 call target</p></li>
 <li><p><strong>get</strong> (<em>callable</em>) – A function which takes a target object and
 a name, acting as a default accessor. Defaults to
-<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#getattr" title="(in Python v3.14)"><code class="xref py py-func docutils literal notranslate"><span class="pre">getattr()</span></code></a>.</p></li>
+<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#getattr" title="(in Python v3.15)"><code class="xref py py-func docutils literal notranslate"><span class="pre">getattr()</span></code></a>.</p></li>
 <li><p><strong>iterate</strong> (<em>callable</em>) – A function which takes a target object
-and returns an iterator. Defaults to <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#iter" title="(in Python v3.14)"><code class="xref py py-func docutils literal notranslate"><span class="pre">iter()</span></code></a> if
+and returns an iterator. Defaults to <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#iter" title="(in Python v3.15)"><code class="xref py py-func docutils literal notranslate"><span class="pre">iter()</span></code></a> if
 <em>target_type</em> appears to be iterable.</p></li>
-<li><p><strong>exact</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – Whether or not to match instances of subtypes
+<li><p><strong>exact</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><em>bool</em></a>) – Whether or not to match instances of subtypes
 of <em>target_type</em>.</p></li>
 </ul>
 </dd>
@@ -793,7 +795,7 @@ methods instead.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="py2store.utils.glom.Inspect">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py2store.utils.glom.</span></span><span class="sig-name descname"><span class="pre">Inspect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">a</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kw</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2store/utils/glom.html#Inspect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2store.utils.glom.Inspect" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>The <code class="xref py py-class docutils literal notranslate"><span class="pre">Inspect</span></code> specifier type provides a way to get
 visibility into glom’s evaluation of a specification, enabling
 debugging of those tricky problems that may arise with unexpected
@@ -818,16 +820,16 @@ values in the target, spec, or result.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>echo</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – Whether to print the path, target, and output of
+<li><p><strong>echo</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><em>bool</em></a>) – Whether to print the path, target, and output of
 each inspected glom. Defaults to True.</p></li>
-<li><p><strong>recursive</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – Whether or not the Inspect should be applied
+<li><p><strong>recursive</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><em>bool</em></a>) – Whether or not the Inspect should be applied
 at every level, at or below the spec that it wraps. Defaults
 to False.</p></li>
-<li><p><strong>breakpoint</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – This flag controls whether a debugging prompt
+<li><p><strong>breakpoint</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><em>bool</em></a>) – This flag controls whether a debugging prompt
 should appear before evaluating each inspected spec. Can also
 take a callable. Defaults to False.</p></li>
-<li><p><strong>post_mortem</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – This flag controls whether exceptions
-should be caught and interactively debugged with <a class="reference external" href="https://docs.python.org/3/library/pdb.html#module-pdb" title="(in Python v3.14)"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pdb</span></code></a> on
+<li><p><strong>post_mortem</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><em>bool</em></a>) – This flag controls whether exceptions
+should be caught and interactively debugged with <a class="reference external" href="https://docs.python.org/3/library/pdb.html#module-pdb" title="(in Python v3.15)"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pdb</span></code></a> on
 inspected specs.</p></li>
 </ul>
 </dd>
@@ -844,14 +846,14 @@ wrapped spec.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="py2store.utils.glom.Invoke">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py2store.utils.glom.</span></span><span class="sig-name descname"><span class="pre">Invoke</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2store/utils/glom.html#Invoke"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2store.utils.glom.Invoke" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Specifier type designed for easy invocation of callables from glom.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>func</strong> (<em>callable</em>) – A function or other callable object.</p>
 </dd>
 </dl>
-<p><code class="docutils literal notranslate"><span class="pre">Invoke</span></code> is similar to <a class="reference external" href="https://docs.python.org/3/library/functools.html#functools.partial" title="(in Python v3.14)"><code class="xref py py-func docutils literal notranslate"><span class="pre">functools.partial()</span></code></a>, but with the
+<p><code class="docutils literal notranslate"><span class="pre">Invoke</span></code> is similar to <a class="reference external" href="https://docs.python.org/3/library/functools.html#functools.partial" title="(in Python v3.15)"><code class="xref py py-func docutils literal notranslate"><span class="pre">functools.partial()</span></code></a>, but with the
 ability to set up a “templated” call which interleaves constants and
 glom specs.</p>
 <p>For example, the following creates a spec which can be used to
@@ -988,7 +990,7 @@ will be stacked in the order in which they are provided.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="py2store.utils.glom.Let">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py2store.utils.glom.</span></span><span class="sig-name descname"><span class="pre">Let</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kw</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2store/utils/glom.html#Let"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2store.utils.glom.Let" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>This specifier type assigns variables to the scope.</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">target</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'data'</span><span class="p">:</span> <span class="p">{</span><span class="s1">'val'</span><span class="p">:</span> <span class="mi">9</span><span class="p">}}</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">spec</span> <span class="o">=</span> <span class="p">(</span><span class="n">Let</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="n">T</span><span class="p">[</span><span class="s1">'data'</span><span class="p">][</span><span class="s1">'val'</span><span class="p">]),</span> <span class="p">{</span><span class="s1">'val'</span><span class="p">:</span> <span class="n">S</span><span class="p">[</span><span class="s1">'value'</span><span class="p">]})</span>
@@ -1001,7 +1003,7 @@ will be stacked in the order in which they are provided.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="py2store.utils.glom.Literal">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py2store.utils.glom.</span></span><span class="sig-name descname"><span class="pre">Literal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2store/utils/glom.html#Literal"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2store.utils.glom.Literal" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Literal objects specify literal values in rare cases when part of
 the spec should not be interpreted as a glommable
 subspec. Wherever a Literal object is encountered in a spec, it is
@@ -1019,13 +1021,13 @@ included the value.</p>
 in the glom output.</p>
 <p>This could also be achieved with a callable, e.g., <code class="docutils literal notranslate"><span class="pre">lambda</span> <span class="pre">x:</span>
 <span class="pre">'literal_string'</span></code> in the spec, but using a <code class="xref py py-class docutils literal notranslate"><span class="pre">Literal</span></code>
-object adds explicitness, code clarity, and a clean <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#repr" title="(in Python v3.14)"><code class="xref py py-func docutils literal notranslate"><span class="pre">repr()</span></code></a>.</p>
+object adds explicitness, code clarity, and a clean <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#repr" title="(in Python v3.15)"><code class="xref py py-func docutils literal notranslate"><span class="pre">repr()</span></code></a>.</p>
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="py2store.utils.glom.Path">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py2store.utils.glom.</span></span><span class="sig-name descname"><span class="pre">Path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">path_parts</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2store/utils/glom.html#Path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2store.utils.glom.Path" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Path objects specify explicit paths when the default
 <code class="docutils literal notranslate"><span class="pre">'a.b.c'</span></code>-style general access syntax won’t work or isn’t
 desirable. Use this to wrap ints, datetimes, and other valid
@@ -1095,7 +1097,7 @@ returning a new Path object:</p>
 <dl class="py exception">
 <dt class="sig sig-object py" id="py2store.utils.glom.PathAccessError">
 <span class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py2store.utils.glom.</span></span><span class="sig-name descname"><span class="pre">PathAccessError</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">exc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">part_idx</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2store/utils/glom.html#PathAccessError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2store.utils.glom.PathAccessError" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#AttributeError" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">AttributeError</span></code></a>, <a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#KeyError" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">KeyError</span></code></a>, <a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#IndexError" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">IndexError</span></code></a>, <a class="reference internal" href="#py2store.utils.glom.GlomError" title="py2store.utils.glom.GlomError"><code class="xref py py-class docutils literal notranslate"><span class="pre">GlomError</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#AttributeError" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">AttributeError</span></code></a>, <a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#KeyError" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">KeyError</span></code></a>, <a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#IndexError" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">IndexError</span></code></a>, <a class="reference internal" href="#py2store.utils.glom.GlomError" title="py2store.utils.glom.GlomError"><code class="xref py py-class docutils literal notranslate"><span class="pre">GlomError</span></code></a></p>
 <p>This <a class="reference internal" href="#py2store.utils.glom.GlomError" title="py2store.utils.glom.GlomError"><code class="xref py py-exc docutils literal notranslate"><span class="pre">GlomError</span></code></a> subtype represents a failure to access an
 attribute as dictated by the spec. The most commonly-seen error
 when using glom, it maintains a copy of the original exception and
@@ -1114,12 +1116,12 @@ wrapping!</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>exc</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#Exception" title="(in Python v3.14)"><em>Exception</em></a>) – The error that arose when we tried to access
+<li><p><strong>exc</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#Exception" title="(in Python v3.15)"><em>Exception</em></a>) – The error that arose when we tried to access
 <em>path</em>. Typically an instance of KeyError, AttributeError,
 IndexError, or TypeError, and sometimes others.</p></li>
 <li><p><strong>path</strong> (<a class="reference internal" href="#py2store.utils.glom.Path" title="py2store.utils.glom.Path"><em>Path</em></a>) – The full Path glom was in the middle of accessing
 when the error occurred.</p></li>
-<li><p><strong>part_idx</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – The index of the part of the <em>path</em> that caused
+<li><p><strong>part_idx</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a>) – The index of the part of the <em>path</em> that caused
 the error.</p></li>
 </ul>
 </dd>
@@ -1136,13 +1138,13 @@ the error.</p></li>
 <dl class="py class">
 <dt class="sig sig-object py" id="py2store.utils.glom.Spec">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py2store.utils.glom.</span></span><span class="sig-name descname"><span class="pre">Spec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scope</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2store/utils/glom.html#Spec"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2store.utils.glom.Spec" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Spec objects serve three purposes, here they are, roughly ordered
 by utility:</p>
 <blockquote>
 <div><ol class="arabic simple">
 <li><p>As a form of compiled or “curried” glom call, similar to
-Python’s built-in <a class="reference external" href="https://docs.python.org/3/library/re.html#re.compile" title="(in Python v3.14)"><code class="xref py py-func docutils literal notranslate"><span class="pre">re.compile()</span></code></a>.</p></li>
+Python’s built-in <a class="reference external" href="https://docs.python.org/3/library/re.html#re.compile" title="(in Python v3.15)"><code class="xref py py-func docutils literal notranslate"><span class="pre">re.compile()</span></code></a>.</p></li>
 <li><p>A marker as an object as representing a spec rather than a
 literal value in certain cases where that might be ambiguous.</p></li>
 <li><p>A way to update the scope within another Spec.</p></li>
@@ -1158,7 +1160,7 @@ assumed to be literal values and not specs.)</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>spec</strong> – The glom spec.</p></li>
-<li><p><strong>scope</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – additional values to add to the scope when
+<li><p><strong>scope</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><em>dict</em></a>) – additional values to add to the scope when
 evaluating this Spec</p></li>
 </ul>
 </dd>
@@ -1168,7 +1170,7 @@ evaluating this Spec</p></li>
 <dl class="py class">
 <dt class="sig sig-object py" id="py2store.utils.glom.TType">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py2store.utils.glom.</span></span><span class="sig-name descname"><span class="pre">TType</span></span><a class="reference internal" href="../_modules/py2store/utils/glom.html#TType"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2store.utils.glom.TType" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p><code class="docutils literal notranslate"><span class="pre">T</span></code>, short for “target”. A singleton object that enables
 object-oriented expression of a glom specification.</p>
 <div class="admonition note">
@@ -1233,7 +1235,7 @@ experimental and should not be relied upon.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="py2store.utils.glom.TargetRegistry">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py2store.utils.glom.</span></span><span class="sig-name descname"><span class="pre">TargetRegistry</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">register_default_types</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2store/utils/glom.html#TargetRegistry"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2store.utils.glom.TargetRegistry" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>responsible for registration of target types for iteration
 and attribute walking</p>
 <dl class="py method">
@@ -1279,9 +1281,9 @@ section for details on how to avoid this error.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>op</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The name of the operation being performed (‘get’ or ‘iterate’)</p></li>
-<li><p><strong>target_type</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#type" title="(in Python v3.14)"><em>type</em></a>) – The type of the target being processed.</p></li>
-<li><p><strong>type_map</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – A mapping of target types that do support this operation</p></li>
+<li><p><strong>op</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – The name of the operation being performed (‘get’ or ‘iterate’)</p></li>
+<li><p><strong>target_type</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#type" title="(in Python v3.15)"><em>type</em></a>) – The type of the target being processed.</p></li>
+<li><p><strong>type_map</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><em>dict</em></a>) – A mapping of target types that do support this operation</p></li>
 <li><p><strong>path</strong> – The path at which the error occurred.</p></li>
 </ul>
 </dd>
@@ -1314,7 +1316,7 @@ a new nested structure.</p>
 <p><code class="docutils literal notranslate"><span class="pre">glom</span></code> also takes a keyword-argument, <em>default</em>. When set,
 if a <code class="docutils literal notranslate"><span class="pre">glom</span></code> operation fails with a <a class="reference internal" href="#py2store.utils.glom.GlomError" title="py2store.utils.glom.GlomError"><code class="xref py py-exc docutils literal notranslate"><span class="pre">GlomError</span></code></a>, the
 <em>default</em> will be returned, very much like
-<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict.get" title="(in Python v3.14)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">dict.get()</span></code></a>:</p>
+<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict.get" title="(in Python v3.15)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">dict.get()</span></code></a>:</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">glom</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="s1">'a.xx'</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">'nada'</span><span class="p">)</span>
 <span class="go">'nada'</span>
 </pre></div>
@@ -1328,17 +1330,17 @@ be ignored.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>target</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><em>object</em></a>) – the object on which the glom will operate.</p></li>
-<li><p><strong>spec</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><em>object</em></a>) – Specification of the output object in the form
+<li><p><strong>target</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><em>object</em></a>) – the object on which the glom will operate.</p></li>
+<li><p><strong>spec</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><em>object</em></a>) – Specification of the output object in the form
 of a dict, list, tuple, string, other glom construct, or
 any composition of these.</p></li>
-<li><p><strong>default</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><em>object</em></a>) – An optional default to return in the case
+<li><p><strong>default</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><em>object</em></a>) – An optional default to return in the case
 an exception, specified by <em>skip_exc</em>, is raised.</p></li>
-<li><p><strong>skip_exc</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#Exception" title="(in Python v3.14)"><em>Exception</em></a>) – An optional exception or tuple of
+<li><p><strong>skip_exc</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#Exception" title="(in Python v3.15)"><em>Exception</em></a>) – An optional exception or tuple of
 exceptions to ignore and return <em>default</em> (None if
 omitted). If <em>skip_exc</em> and <em>default</em> are both not set,
 glom raises errors through.</p></li>
-<li><p><strong>scope</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Additional data that can be accessed
+<li><p><strong>scope</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><em>dict</em></a>) – Additional data that can be accessed
 via S inside the glom-spec.</p></li>
 </ul>
 </dd>
@@ -1350,7 +1352,7 @@ only surpassed by its intuitiveness. Give it a whirl!</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="py2store.utils.glom.is_iterable">
 <span class="sig-prename descclassname"><span class="pre">py2store.utils.glom.</span></span><span class="sig-name descname"><span class="pre">is_iterable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2store/utils/glom.html#is_iterable"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2store.utils.glom.is_iterable" title="Link to this definition">¶</a></dt>
-<dd><p>Similar in nature to <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#callable" title="(in Python v3.14)"><code class="xref py py-func docutils literal notranslate"><span class="pre">callable()</span></code></a>, <code class="docutils literal notranslate"><span class="pre">is_iterable</span></code> returns
+<dd><p>Similar in nature to <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#callable" title="(in Python v3.15)"><code class="xref py py-func docutils literal notranslate"><span class="pre">callable()</span></code></a>, <code class="docutils literal notranslate"><span class="pre">is_iterable</span></code> returns
 <code class="docutils literal notranslate"><span class="pre">True</span></code> if an object is iterable, <code class="docutils literal notranslate"><span class="pre">False</span></code> if not.</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">is_iterable</span><span class="p">([])</span>
 <span class="go">True</span>
@@ -1369,8 +1371,8 @@ a value is missing when <code class="docutils literal notranslate"><span class="
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Name of the Sentinel</p></li>
-<li><p><strong>var_name</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Set this name to the name of the variable in
+<li><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – Name of the Sentinel</p></li>
+<li><p><strong>var_name</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – Set this name to the name of the variable in
 its respective module enable pickleability.</p></li>
 </ul>
 </dd>
@@ -1405,15 +1407,15 @@ know how to handle instances of that type as targets.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>target_type</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#type" title="(in Python v3.14)"><em>type</em></a>) – A type expected to appear in a glom()
+<li><p><strong>target_type</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#type" title="(in Python v3.15)"><em>type</em></a>) – A type expected to appear in a glom()
 call target</p></li>
 <li><p><strong>get</strong> (<em>callable</em>) – A function which takes a target object and
 a name, acting as a default accessor. Defaults to
-<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#getattr" title="(in Python v3.14)"><code class="xref py py-func docutils literal notranslate"><span class="pre">getattr()</span></code></a>.</p></li>
+<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#getattr" title="(in Python v3.15)"><code class="xref py py-func docutils literal notranslate"><span class="pre">getattr()</span></code></a>.</p></li>
 <li><p><strong>iterate</strong> (<em>callable</em>) – A function which takes a target object
-and returns an iterator. Defaults to <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#iter" title="(in Python v3.14)"><code class="xref py py-func docutils literal notranslate"><span class="pre">iter()</span></code></a> if
+and returns an iterator. Defaults to <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#iter" title="(in Python v3.15)"><code class="xref py py-func docutils literal notranslate"><span class="pre">iter()</span></code></a> if
 <em>target_type</em> appears to be iterable.</p></li>
-<li><p><strong>exact</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – Whether or not to match instances of subtypes
+<li><p><strong>exact</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><em>bool</em></a>) – Whether or not to match instances of subtypes
 of <em>target_type</em>.</p></li>
 </ul>
 </dd>
@@ -1548,7 +1550,7 @@ methods instead.</p>
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=2d24694c"></script>
+</div><script src="../_static/documentation_options.js?v=c50728fc"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/scripts/furo.js?v=46bd48cc"></script>

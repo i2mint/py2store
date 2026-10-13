@@ -1,4 +1,4 @@
-> built 2026-09-15 11:34 UTC from 03fbcfc (master) · py2store 0.1.23. Details: build_info.json
+> built 2026-10-13 07:41 UTC from 640b855 (master) · py2store 0.1.24. Details: build_info.json
 
 # index.html.md
 
@@ -3884,26 +3884,15 @@ Bases: [`PathFormatPersister`](_autosummary/py2store.persisters.local_files.html
 Local file store using templated relative paths.
 
 ```pycon
->>> from tempfile import gettempdir
 >>> import os
+>>> import tempfile
 >>>
 >>> def write_to_key(fullpath_of_relative_path, relative_path, content):  # a function to write content in files
 ...    with open(fullpath_of_relative_path(relative_path), 'w') as fp:
 ...        fp.write(content)
 >>>
->>> # Preparation: Make a temporary rootdir and write two files in it
->>> rootdir = os.path.join(gettempdir(), 'path_format_store_test' + os.sep)
->>> if not os.path.isdir(rootdir):
-...     os.mkdir(rootdir)
->>> # recreate directory (remove existing files, delete directory, and re-create it)
->>> for f in os.listdir(rootdir):
-...     fullpath = os.path.join(rootdir, f)
-...     if os.path.isfile(fullpath):
-...         os.remove(os.path.join(rootdir, f))
->>> if os.path.isdir(rootdir):
-...     os.rmdir(rootdir)
->>> if not os.path.isdir(rootdir):
-...    os.mkdir(rootdir)
+>>> # Preparation: Make a fresh temporary rootdir (private to this doctest)
+>>> rootdir = tempfile.mkdtemp() + os.sep
 >>>
 >>> filepath_of = lambda p: os.path.join(rootdir, p)  # a function to get a fullpath from a relative one
 >>> # and make two files in this new dir, with some content
@@ -3949,18 +3938,20 @@ True
 >>> # but if we make an obj source to only take files whose extension is '.txt'...
 >>> s = PathFormatStore(path_format=rootdir + '{}.txt')
 >>>
->>> rootdir_2 = os.path.join(gettempdir(), 'obj_source_test_2') # get another rootdir
->>> if not os.path.isdir(rootdir_2):
-...    os.mkdir(rootdir_2)
+>>> rootdir_2 = tempfile.mkdtemp() + os.sep # get another (fresh) rootdir
 >>> filepath_of_2 = lambda p: os.path.join(rootdir_2, p)
 >>> # and make two files in this new dir, with some content
->>> write_to_key(filepath_of, 'this.txt', 'this')
->>> write_to_key(filepath_of, 'that.txt', 'blah')
->>> write_to_key(filepath_of, 'the_other.txt', 'bloo')
+>>> write_to_key(filepath_of_2, 'this.txt', 'this')
+>>> write_to_key(filepath_of_2, 'that.txt', 'blah')
+>>> write_to_key(filepath_of_2, 'the_other.txt', 'bloo')
 >>>
 >>> ss = PathFormatStore(path_format=rootdir_2 + '{}.txt')
 >>>
 >>> assert s != ss  # though pointing to identical content, o and oo are not equal since the paths are not equal!
+>>>
+>>> import shutil
+>>> for d in (rootdir, rootdir_2):  # clean up the temporary dirs
+...     shutil.rmtree(d)
 ```
 
 ### *class* py2store.stores.local_store.PathFormatStoreWithPrefix(path_format, max_levels=inf, mode='', \*\*open_kwargs)
@@ -5824,7 +5815,7 @@ Parses DB URI string into a dict of params.
 
 # About this build
 
-This documentation was built on **2026-09-15 11:34 UTC** from commit <a href="https://github.com/i2mint/py2store/commit/03fbcfc37164a618f0b92b7ac3c83b7157747efa"><code>03fbcfc</code></a> on branch <code>master</code>, for **py2store 0.1.23** (from <code>setup.cfg</code>).
+This documentation was built on **2026-10-13 07:41 UTC** from commit <a href="https://github.com/i2mint/py2store/commit/640b855cdb94d5ec4759dae8e7dddb267612260a"><code>640b855</code></a> on branch <code>master</code>, for **py2store 0.1.24** (from <code>setup.cfg</code>).
 
 #### NOTE
 Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
@@ -5833,9 +5824,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 |                     |                                                                                                                                                        |
 |---------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/i2mint/py2store/commit/03fbcfc37164a618f0b92b7ac3c83b7157747efa"><code>03fbcfc37164a618f0b92b7ac3c83b7157747efa</code></a> |
+| Commit              | <a href="https://github.com/i2mint/py2store/commit/640b855cdb94d5ec4759dae8e7dddb267612260a"><code>640b855cdb94d5ec4759dae8e7dddb267612260a</code></a> |
 | Branch              | <code>master</code>                                                                                                                                    |
-| Tags at this commit | <code>0.1.23</code>                                                                                                                                    |
+| Tags at this commit | <code>0.1.24</code>                                                                                                                                    |
 | Working tree        | clean                                                                                                                                                  |
 | Remote              | <code>https://github.com/i2mint/py2store</code>                                                                                                        |
 
@@ -5844,18 +5835,18 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>i2mint/py2store</code>                                                               |
-| Run          | <a href="https://github.com/i2mint/py2store/actions/runs/34963902384">34963902384</a>      |
+| Run          | <a href="https://github.com/i2mint/py2store/actions/runs/38364121901">38364121901</a>      |
 | Ref          | <code>refs/heads/master</code>                                                             |
-| Event commit | <code>db92faff58d7acbc060f41aa54c127f37ee13ac8</code> (in the history of the built commit) |
+| Event commit | <code>a50cd301fd00ec2a3295f5fb39cbe6c58831b6e7</code> (in the history of the built commit) |
 
 ## Tools
 
 |          |         |
 |----------|---------|
-| epythet  | 0.2.11  |
+| epythet  | 0.2.15  |
 | Sphinx   | 9.1.0   |
 | docutils | 0.22.4  |
-| Python   | 3.12.14 |
+| Python   | 3.12.15 |
 
 ## Configuration as resolved
 
@@ -5871,14 +5862,14 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/py2store/0.1.23/">0.1.23</a>, the same as the documented version.
+Latest release: <a href="https://pypi.org/project/py2store/0.1.24/">0.1.24</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/i2mint/py2store && cd py2store
-git checkout 03fbcfc37164a618f0b92b7ac3c83b7157747efa
-pip install "epythet==0.2.11"
+git checkout 640b855cdb94d5ec4759dae8e7dddb267612260a
+pip install "epythet==0.2.15"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```
 

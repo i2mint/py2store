@@ -374,26 +374,15 @@
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Local file store using templated relative paths.</span>
 
-<span class="sd">    &gt;&gt;&gt; from tempfile import gettempdir</span>
 <span class="sd">    &gt;&gt;&gt; import os</span>
+<span class="sd">    &gt;&gt;&gt; import tempfile</span>
 <span class="sd">    &gt;&gt;&gt;</span>
 <span class="sd">    &gt;&gt;&gt; def write_to_key(fullpath_of_relative_path, relative_path, content):  # a function to write content in files</span>
 <span class="sd">    ...    with open(fullpath_of_relative_path(relative_path), 'w') as fp:</span>
 <span class="sd">    ...        fp.write(content)</span>
 <span class="sd">    &gt;&gt;&gt;</span>
-<span class="sd">    &gt;&gt;&gt; # Preparation: Make a temporary rootdir and write two files in it</span>
-<span class="sd">    &gt;&gt;&gt; rootdir = os.path.join(gettempdir(), 'path_format_store_test' + os.sep)</span>
-<span class="sd">    &gt;&gt;&gt; if not os.path.isdir(rootdir):</span>
-<span class="sd">    ...     os.mkdir(rootdir)</span>
-<span class="sd">    &gt;&gt;&gt; # recreate directory (remove existing files, delete directory, and re-create it)</span>
-<span class="sd">    &gt;&gt;&gt; for f in os.listdir(rootdir):</span>
-<span class="sd">    ...     fullpath = os.path.join(rootdir, f)</span>
-<span class="sd">    ...     if os.path.isfile(fullpath):</span>
-<span class="sd">    ...         os.remove(os.path.join(rootdir, f))</span>
-<span class="sd">    &gt;&gt;&gt; if os.path.isdir(rootdir):</span>
-<span class="sd">    ...     os.rmdir(rootdir)</span>
-<span class="sd">    &gt;&gt;&gt; if not os.path.isdir(rootdir):</span>
-<span class="sd">    ...    os.mkdir(rootdir)</span>
+<span class="sd">    &gt;&gt;&gt; # Preparation: Make a fresh temporary rootdir (private to this doctest)</span>
+<span class="sd">    &gt;&gt;&gt; rootdir = tempfile.mkdtemp() + os.sep</span>
 <span class="sd">    &gt;&gt;&gt;</span>
 <span class="sd">    &gt;&gt;&gt; filepath_of = lambda p: os.path.join(rootdir, p)  # a function to get a fullpath from a relative one</span>
 <span class="sd">    &gt;&gt;&gt; # and make two files in this new dir, with some content</span>
@@ -439,18 +428,20 @@
 <span class="sd">    &gt;&gt;&gt; # but if we make an obj source to only take files whose extension is '.txt'...</span>
 <span class="sd">    &gt;&gt;&gt; s = PathFormatStore(path_format=rootdir + '{}.txt')</span>
 <span class="sd">    &gt;&gt;&gt;</span>
-<span class="sd">    &gt;&gt;&gt; rootdir_2 = os.path.join(gettempdir(), 'obj_source_test_2') # get another rootdir</span>
-<span class="sd">    &gt;&gt;&gt; if not os.path.isdir(rootdir_2):</span>
-<span class="sd">    ...    os.mkdir(rootdir_2)</span>
+<span class="sd">    &gt;&gt;&gt; rootdir_2 = tempfile.mkdtemp() + os.sep # get another (fresh) rootdir</span>
 <span class="sd">    &gt;&gt;&gt; filepath_of_2 = lambda p: os.path.join(rootdir_2, p)</span>
 <span class="sd">    &gt;&gt;&gt; # and make two files in this new dir, with some content</span>
-<span class="sd">    &gt;&gt;&gt; write_to_key(filepath_of, 'this.txt', 'this')</span>
-<span class="sd">    &gt;&gt;&gt; write_to_key(filepath_of, 'that.txt', 'blah')</span>
-<span class="sd">    &gt;&gt;&gt; write_to_key(filepath_of, 'the_other.txt', 'bloo')</span>
+<span class="sd">    &gt;&gt;&gt; write_to_key(filepath_of_2, 'this.txt', 'this')</span>
+<span class="sd">    &gt;&gt;&gt; write_to_key(filepath_of_2, 'that.txt', 'blah')</span>
+<span class="sd">    &gt;&gt;&gt; write_to_key(filepath_of_2, 'the_other.txt', 'bloo')</span>
 <span class="sd">    &gt;&gt;&gt;</span>
 <span class="sd">    &gt;&gt;&gt; ss = PathFormatStore(path_format=rootdir_2 + '{}.txt')</span>
 <span class="sd">    &gt;&gt;&gt;</span>
 <span class="sd">    &gt;&gt;&gt; assert s != ss  # though pointing to identical content, o and oo are not equal since the paths are not equal!</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; import shutil</span>
+<span class="sd">    &gt;&gt;&gt; for d in (rootdir, rootdir_2):  # clean up the temporary dirs</span>
+<span class="sd">    ...     shutil.rmtree(d)</span>
 <span class="sd">    """</span>
 
     <span class="k">pass</span></div>
@@ -883,7 +874,7 @@
       
     </aside>
   </div>
-</div><script src="../../../_static/documentation_options.js?v=2d24694c"></script>
+</div><script src="../../../_static/documentation_options.js?v=c50728fc"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/scripts/furo.js?v=46bd48cc"></script>
