@@ -103,13 +103,17 @@ class PathFormatStore(PathFormatPersister, Persister):
     >>> rootdir_2 = tempfile.mkdtemp() + os.sep # get another (fresh) rootdir
     >>> filepath_of_2 = lambda p: os.path.join(rootdir_2, p)
     >>> # and make two files in this new dir, with some content
-    >>> write_to_key(filepath_of, 'this.txt', 'this')
-    >>> write_to_key(filepath_of, 'that.txt', 'blah')
-    >>> write_to_key(filepath_of, 'the_other.txt', 'bloo')
+    >>> write_to_key(filepath_of_2, 'this.txt', 'this')
+    >>> write_to_key(filepath_of_2, 'that.txt', 'blah')
+    >>> write_to_key(filepath_of_2, 'the_other.txt', 'bloo')
     >>>
     >>> ss = PathFormatStore(path_format=rootdir_2 + '{}.txt')
     >>>
     >>> assert s != ss  # though pointing to identical content, o and oo are not equal since the paths are not equal!
+    >>>
+    >>> import shutil
+    >>> for d in (rootdir, rootdir_2):  # clean up the temporary dirs
+    ...     shutil.rmtree(d)
     """
 
     pass
