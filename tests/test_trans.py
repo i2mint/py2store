@@ -43,10 +43,10 @@ def test_wrap_kvs():
 
     A = wrap_kvs(
         dict,
-        key_of_id=key_of_id,
-        id_of_key=id_of_key,
-        obj_of_data=obj_of_data,
-        data_of_obj=data_of_obj,
+        key_decoder=key_of_id,
+        key_encoder=id_of_key,
+        value_decoder=obj_of_data,
+        value_encoder=data_of_obj,
     )
 
     test_a_class(A)
@@ -69,10 +69,10 @@ def test_wrap_kvs():
     A = wrap_kvs(
         dict,
         name='A',  # if you need to rely on a name
-        key_of_id=T.key_of_id,
-        id_of_key=T.id_of_key,
-        obj_of_data=T.obj_of_data,
-        data_of_obj=T.data_of_obj,
+        key_decoder=T.key_of_id,
+        key_encoder=T.id_of_key,
+        value_decoder=T.obj_of_data,
+        value_encoder=T.data_of_obj,
     )
 
     test_a_class(A)
@@ -100,10 +100,10 @@ def test_wrap_kvs():
     t = T(100)
     A = wrap_kvs(
         dict,
-        key_of_id=t.key_of_id,
-        id_of_key=t.id_of_key,
-        obj_of_data=t.obj_of_data,
-        data_of_obj=t.data_of_obj,
+        key_decoder=t.key_of_id,
+        key_encoder=t.id_of_key,
+        value_decoder=t.obj_of_data,
+        value_encoder=t.data_of_obj,
     )
 
     test_a_class(A)
@@ -111,10 +111,10 @@ def test_wrap_kvs():
     t = T(50)
     A = wrap_kvs(
         dict,
-        key_of_id=t.key_of_id,
-        id_of_key=t.id_of_key,
-        obj_of_data=t.obj_of_data,
-        data_of_obj=t.data_of_obj,
+        key_decoder=t.key_of_id,
+        key_encoder=t.id_of_key,
+        value_decoder=t.obj_of_data,
+        value_encoder=t.data_of_obj,
     )
 
     test_a_class(A)
