@@ -349,8 +349,8 @@ try:
         ExtLessJsonStore = wrap_kvs(
             LocalJsonStore,
             name='ExtLessJsonStore',
-            key_of_id=without_json_ext,
-            id_of_key=add_json_ext,
+            key_decoder=without_json_ext,
+            key_encoder=add_json_ext,
         )
 
         stores_json_path_format = os.path.join(
