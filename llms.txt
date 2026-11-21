@@ -76,7 +76,7 @@
 - [py2store.utils.signatures](_autosummary/py2store.utils.signatures.html.md): Deprecated: Forwards to py2store.signatures
 - [py2store.utils.timeseries_caching](_autosummary/py2store.utils.timeseries_caching.html.md): Tools to cache time-series data.
 - [py2store.utils.uri_utils](_autosummary/py2store.utils.uri_utils.html.md): utils to work with URIs
-- [About this build](about-this-build.html.md): This documentation was built on &#42;&#42;2026-10-13 07:41 UTC&#42;&#42; from commit &lt;a href="https://github.com/i2m...
+- [About this build](about-this-build.html.md): This documentation was built on &#42;&#42;2026-11-21 19:01 UTC&#42;&#42; from commit &lt;a href="https://github.com/i2m...
 
 ## Optional
 

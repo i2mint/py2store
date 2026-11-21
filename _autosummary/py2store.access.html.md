@@ -69,7 +69,7 @@ A specification is a dict with a `'$fak'` entry holding an `(f, a, k)` specifica
 
 The underlying store of raw specifications.
 
-#### *static* func_loader()
+#### *static* func_loader(f)
 
 Loads and returns the function referenced by f,
 which could be a callable or a DOTPATH_TO_MODULE.FUNC_NAME dotpath string to one, or a pipeline of these

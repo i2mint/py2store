@@ -2,7 +2,7 @@
 
 # About this build
 
-This documentation was built on **2026-10-13 07:41 UTC** from commit <a href="https://github.com/i2mint/py2store/commit/640b855cdb94d5ec4759dae8e7dddb267612260a"><code>640b855</code></a> on branch <code>master</code>, for **py2store 0.1.24** (from <code>setup.cfg</code>).
+This documentation was built on **2026-11-21 19:01 UTC** from commit <a href="https://github.com/i2mint/py2store/commit/c5ad5f72a55fb61c5a4b01ff87dd57cd2d6bc6a0"><code>c5ad5f7</code></a> on branch <code>master</code>, for **py2store 0.1.25** (from <code>setup.cfg</code>).
 
 #### NOTE
 Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
@@ -11,9 +11,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 |                     |                                                                                                                                                        |
 |---------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/i2mint/py2store/commit/640b855cdb94d5ec4759dae8e7dddb267612260a"><code>640b855cdb94d5ec4759dae8e7dddb267612260a</code></a> |
+| Commit              | <a href="https://github.com/i2mint/py2store/commit/c5ad5f72a55fb61c5a4b01ff87dd57cd2d6bc6a0"><code>c5ad5f72a55fb61c5a4b01ff87dd57cd2d6bc6a0</code></a> |
 | Branch              | <code>master</code>                                                                                                                                    |
-| Tags at this commit | <code>0.1.24</code>                                                                                                                                    |
+| Tags at this commit | <code>0.1.25</code>                                                                                                                                    |
 | Working tree        | clean                                                                                                                                                  |
 | Remote              | <code>https://github.com/i2mint/py2store</code>                                                                                                        |
 
@@ -22,18 +22,18 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>i2mint/py2store</code>                                                               |
-| Run          | <a href="https://github.com/i2mint/py2store/actions/runs/38364121901">38364121901</a>      |
+| Run          | <a href="https://github.com/i2mint/py2store/actions/runs/44938583539">44938583539</a>      |
 | Ref          | <code>refs/heads/master</code>                                                             |
-| Event commit | <code>a50cd301fd00ec2a3295f5fb39cbe6c58831b6e7</code> (in the history of the built commit) |
+| Event commit | <code>0a297f9096d3dc281a9044e8d7f554b2fe009490</code> (in the history of the built commit) |
 
 ## Tools
 
 |          |         |
 |----------|---------|
-| epythet  | 0.2.15  |
-| Sphinx   | 9.1.0   |
+| epythet  | 0.2.23  |
+| Sphinx   | 9.1.1   |
 | docutils | 0.22.4  |
-| Python   | 3.12.15 |
+| Python   | 3.12.16 |
 
 ## Configuration as resolved
 
@@ -49,14 +49,14 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/py2store/0.1.24/">0.1.24</a>, the same as the documented version.
+Latest release: <a href="https://pypi.org/project/py2store/0.1.25/">0.1.25</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/i2mint/py2store && cd py2store
-git checkout 640b855cdb94d5ec4759dae8e7dddb267612260a
-pip install "epythet==0.2.15"
+git checkout c5ad5f72a55fb61c5a4b01ff87dd57cd2d6bc6a0
+pip install "epythet==0.2.23"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```
 

@@ -1,4 +1,4 @@
-> built 2026-10-13 07:41 UTC from 640b855 (master) · py2store 0.1.24. Details: build_info.json
+> built 2026-11-21 19:01 UTC from c5ad5f7 (master) · py2store 0.1.25. Details: build_info.json
 
 # index.html.md
 
@@ -86,7 +86,7 @@ If you like writing your own code, the rest of this README is written for you, s
 - [More examples]()
   * [Looks like a dict]()
   * [Converting keys: Relative paths and absolute paths]()
-  * [Serialization/Deserialization]()
+  * [Serialization/Deserialization](index.html.md#serialization-deserialization)
   * [A pickle store]()
   * [But how do you change the persister?]()
   * [Talk your own CRUD dialect]()
@@ -365,7 +365,7 @@ So let’s tell our reader/store that’s what we want…
 ```python
 from py2store import wrap_kvs
 
-s = wrap_kvs(s, obj_of_data=lambda v: v.decode())
+s = wrap_kvs(s, value_decoder=lambda v: v.decode())
 
 v = s[k]  # let's get the value of that key again
 print(f"{type(v)=}, {len(v)=}")  # and see what v is like now...
@@ -406,8 +406,8 @@ No problem, let’s transform keys too, using tuples instead…
 
 ```python
 s = wrap_kvs(s, 
-             key_of_id=lambda _id: tuple(_id[:-len('.py')].split(os.path.sep)),
-             id_of_key=lambda k: k + '.py' if isinstance(k, str) else os.path.sep.join(k) + '.py'
+             key_decoder=lambda _id: tuple(_id[:-len('.py')].split(os.path.sep)),
+             key_encoder=lambda k: k + '.py' if isinstance(k, str) else os.path.sep.join(k) + '.py'
             )
 list(s)[:10]
 ```
@@ -502,9 +502,9 @@ from py2store import LocalBinaryStore, filt_iter, wrap_kvs, cached_keys
 key_filter_wrapper = filt_iter(filt=lambda k: k.endswith('.py'))
 
 key_and_value_wrapper = wrap_kvs(
-    obj_of_data=lambda v: v.decode(),
-    key_of_id=lambda _id: tuple(_id[:-len('.py')].split(os.path.sep)),
-    id_of_key=lambda k: k + '.py' if isinstance(k, str) else os.path.sep.join(k) + '.py'
+    value_decoder=lambda v: v.decode(),
+    key_decoder=lambda _id: tuple(_id[:-len('.py')].split(os.path.sep)),
+    key_encoder=lambda k: k + '.py' if isinstance(k, str) else os.path.sep.join(k) + '.py'
 )
 
 caching_wrapper = cached_keys(keys_cache=sorted)
@@ -914,7 +914,7 @@ import requests
 from py2store import wrap_kvs, add_ipython_key_completions
 
 @add_ipython_key_completions  # this enables tab-completion of keys in jupyter notebooks
-@wrap_kvs(obj_of_data=lambda url: Image(requests.get(url).content))
+@wrap_kvs(value_decoder=lambda url: Image(requests.get(url).content))
 class EmojiImages(EmojiUrls):
     """An emoji reader returning Image objects (displayable in jupyter notebooks)"""
     
@@ -1488,7 +1488,7 @@ def tuple_to_str(k: tuple, sep: str=os.path.sep) -> str:
 def str_to_tuple(k: str, sep: str=os.path.sep) -> tuple:
     return k.split(sep)
 
-@wrap_kvs(id_of_key=tuple_to_str, key_of_id=str_to_tuple)
+@wrap_kvs(key_encoder=tuple_to_str, key_decoder=str_to_tuple)
 class TupledQuickPickleStore(QuickPickleStore):
     """A local pickle store with tuple keys (to work well with cachetools)"""
     
@@ -1736,7 +1736,7 @@ A specification is a dict with a `'$fak'` entry holding an `(f, a, k)` specifica
 
 The underlying store of raw specifications.
 
-#### *static* func_loader()
+#### *static* func_loader(f)
 
 Loads and returns the function referenced by f,
 which could be a callable or a DOTPATH_TO_MODULE.FUNC_NAME dotpath string to one, or a pipeline of these
@@ -5815,7 +5815,7 @@ Parses DB URI string into a dict of params.
 
 # About this build
 
-This documentation was built on **2026-10-13 07:41 UTC** from commit <a href="https://github.com/i2mint/py2store/commit/640b855cdb94d5ec4759dae8e7dddb267612260a"><code>640b855</code></a> on branch <code>master</code>, for **py2store 0.1.24** (from <code>setup.cfg</code>).
+This documentation was built on **2026-11-21 19:01 UTC** from commit <a href="https://github.com/i2mint/py2store/commit/c5ad5f72a55fb61c5a4b01ff87dd57cd2d6bc6a0"><code>c5ad5f7</code></a> on branch <code>master</code>, for **py2store 0.1.25** (from <code>setup.cfg</code>).
 
 #### NOTE
 Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
@@ -5824,9 +5824,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 |                     |                                                                                                                                                        |
 |---------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/i2mint/py2store/commit/640b855cdb94d5ec4759dae8e7dddb267612260a"><code>640b855cdb94d5ec4759dae8e7dddb267612260a</code></a> |
+| Commit              | <a href="https://github.com/i2mint/py2store/commit/c5ad5f72a55fb61c5a4b01ff87dd57cd2d6bc6a0"><code>c5ad5f72a55fb61c5a4b01ff87dd57cd2d6bc6a0</code></a> |
 | Branch              | <code>master</code>                                                                                                                                    |
-| Tags at this commit | <code>0.1.24</code>                                                                                                                                    |
+| Tags at this commit | <code>0.1.25</code>                                                                                                                                    |
 | Working tree        | clean                                                                                                                                                  |
 | Remote              | <code>https://github.com/i2mint/py2store</code>                                                                                                        |
 
@@ -5835,18 +5835,18 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>i2mint/py2store</code>                                                               |
-| Run          | <a href="https://github.com/i2mint/py2store/actions/runs/38364121901">38364121901</a>      |
+| Run          | <a href="https://github.com/i2mint/py2store/actions/runs/44938583539">44938583539</a>      |
 | Ref          | <code>refs/heads/master</code>                                                             |
-| Event commit | <code>a50cd301fd00ec2a3295f5fb39cbe6c58831b6e7</code> (in the history of the built commit) |
+| Event commit | <code>0a297f9096d3dc281a9044e8d7f554b2fe009490</code> (in the history of the built commit) |
 
 ## Tools
 
 |          |         |
 |----------|---------|
-| epythet  | 0.2.15  |
-| Sphinx   | 9.1.0   |
+| epythet  | 0.2.23  |
+| Sphinx   | 9.1.1   |
 | docutils | 0.22.4  |
-| Python   | 3.12.15 |
+| Python   | 3.12.16 |
 
 ## Configuration as resolved
 
@@ -5862,14 +5862,14 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/py2store/0.1.24/">0.1.24</a>, the same as the documented version.
+Latest release: <a href="https://pypi.org/project/py2store/0.1.25/">0.1.25</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/i2mint/py2store && cd py2store
-git checkout 640b855cdb94d5ec4759dae8e7dddb267612260a
-pip install "epythet==0.2.15"
+git checkout c5ad5f72a55fb61c5a4b01ff87dd57cd2d6bc6a0
+pip install "epythet==0.2.23"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```
 

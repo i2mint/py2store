@@ -9,10 +9,11 @@
 <link rel="alternate" type="text/markdown" href="index.html.md">
 <link rel="describedby" href="llms.txt"><link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="API reference" href="api.html">
 
-    <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
+    <!-- Generated with Sphinx 9.1.1 and Furo 2025.12.19 -->
         <title>py2store</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d75fae25" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx_autodoc_typehints.css?v=057ac668" />
     <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
     
@@ -666,12 +667,12 @@ We’d like to make it <em>easier</em> to do it right than do it wrong.</p>
 </div>
 </section>
 <section id="value-transformation-a-k-a-serialization-and-deserialization">
-<h3>value transformation (a.k.a. serialization and deserialization)<a class="headerlink" href="#value-transformation-a-k-a-serialization-and-deserialization" title="Link to this heading">¶</a></h3>
+<span id="value-transformation-aka-serialization-and-deserialization"></span><h3>value transformation (a.k.a. serialization and deserialization)<a class="headerlink" href="#value-transformation-a-k-a-serialization-and-deserialization" title="Link to this heading">¶</a></h3>
 <p>For <code class="docutils literal notranslate"><span class="pre">.py</span></code> files, it makes sense to get data as text, not bytes.
 So let’s tell our reader/store that’s what we want…</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">py2store</span><span class="w"> </span><span class="kn">import</span> <span class="n">wrap_kvs</span>
 
-<span class="n">s</span> <span class="o">=</span> <span class="n">wrap_kvs</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">obj_of_data</span><span class="o">=</span><span class="k">lambda</span> <span class="n">v</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">decode</span><span class="p">())</span>
+<span class="n">s</span> <span class="o">=</span> <span class="n">wrap_kvs</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">value_decoder</span><span class="o">=</span><span class="k">lambda</span> <span class="n">v</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">decode</span><span class="p">())</span>
 
 <span class="n">v</span> <span class="o">=</span> <span class="n">s</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>  <span class="c1"># let's get the value of that key again</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="si">=}</span><span class="s2">, </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="si">=}</span><span class="s2">"</span><span class="p">)</span>  <span class="c1"># and see what v is like now...</span>
@@ -705,8 +706,8 @@ file_sep = os.pat
 That’s not pure <code class="docutils literal notranslate"><span class="pre">SOC</span></code>.</p>
 <p>No problem, let’s transform keys too, using tuples instead…</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">s</span> <span class="o">=</span> <span class="n">wrap_kvs</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> 
-             <span class="n">key_of_id</span><span class="o">=</span><span class="k">lambda</span> <span class="n">_id</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">_id</span><span class="p">[:</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="s1">'.py'</span><span class="p">)]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">sep</span><span class="p">)),</span>
-             <span class="n">id_of_key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">k</span><span class="p">:</span> <span class="n">k</span> <span class="o">+</span> <span class="s1">'.py'</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">sep</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="o">+</span> <span class="s1">'.py'</span>
+             <span class="n">key_decoder</span><span class="o">=</span><span class="k">lambda</span> <span class="n">_id</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">_id</span><span class="p">[:</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="s1">'.py'</span><span class="p">)]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">sep</span><span class="p">)),</span>
+             <span class="n">key_encoder</span><span class="o">=</span><span class="k">lambda</span> <span class="n">k</span><span class="p">:</span> <span class="n">k</span> <span class="o">+</span> <span class="s1">'.py'</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">sep</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="o">+</span> <span class="s1">'.py'</span>
             <span class="p">)</span>
 <span class="nb">list</span><span class="p">(</span><span class="n">s</span><span class="p">)[:</span><span class="mi">10</span><span class="p">]</span>
 </pre></div>
@@ -787,9 +788,9 @@ file_sep = os.pat
 <span class="n">key_filter_wrapper</span> <span class="o">=</span> <span class="n">filt_iter</span><span class="p">(</span><span class="n">filt</span><span class="o">=</span><span class="k">lambda</span> <span class="n">k</span><span class="p">:</span> <span class="n">k</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">'.py'</span><span class="p">))</span>
 
 <span class="n">key_and_value_wrapper</span> <span class="o">=</span> <span class="n">wrap_kvs</span><span class="p">(</span>
-    <span class="n">obj_of_data</span><span class="o">=</span><span class="k">lambda</span> <span class="n">v</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">decode</span><span class="p">(),</span>
-    <span class="n">key_of_id</span><span class="o">=</span><span class="k">lambda</span> <span class="n">_id</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">_id</span><span class="p">[:</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="s1">'.py'</span><span class="p">)]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">sep</span><span class="p">)),</span>
-    <span class="n">id_of_key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">k</span><span class="p">:</span> <span class="n">k</span> <span class="o">+</span> <span class="s1">'.py'</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">sep</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="o">+</span> <span class="s1">'.py'</span>
+    <span class="n">value_decoder</span><span class="o">=</span><span class="k">lambda</span> <span class="n">v</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">decode</span><span class="p">(),</span>
+    <span class="n">key_decoder</span><span class="o">=</span><span class="k">lambda</span> <span class="n">_id</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">_id</span><span class="p">[:</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="s1">'.py'</span><span class="p">)]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">sep</span><span class="p">)),</span>
+    <span class="n">key_encoder</span><span class="o">=</span><span class="k">lambda</span> <span class="n">k</span><span class="p">:</span> <span class="n">k</span> <span class="o">+</span> <span class="s1">'.py'</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">sep</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="o">+</span> <span class="s1">'.py'</span>
 <span class="p">)</span>
 
 <span class="n">caching_wrapper</span> <span class="o">=</span> <span class="n">cached_keys</span><span class="p">(</span><span class="n">keys_cache</span><span class="o">=</span><span class="nb">sorted</span><span class="p">)</span>
@@ -1157,7 +1158,7 @@ the name:url information for you.</p>
 <span class="kn">from</span><span class="w"> </span><span class="nn">py2store</span><span class="w"> </span><span class="kn">import</span> <span class="n">wrap_kvs</span><span class="p">,</span> <span class="n">add_ipython_key_completions</span>
 
 <span class="nd">@add_ipython_key_completions</span>  <span class="c1"># this enables tab-completion of keys in jupyter notebooks</span>
-<span class="nd">@wrap_kvs</span><span class="p">(</span><span class="n">obj_of_data</span><span class="o">=</span><span class="k">lambda</span> <span class="n">url</span><span class="p">:</span> <span class="n">Image</span><span class="p">(</span><span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">)</span><span class="o">.</span><span class="n">content</span><span class="p">))</span>
+<span class="nd">@wrap_kvs</span><span class="p">(</span><span class="n">value_decoder</span><span class="o">=</span><span class="k">lambda</span> <span class="n">url</span><span class="p">:</span> <span class="n">Image</span><span class="p">(</span><span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">)</span><span class="o">.</span><span class="n">content</span><span class="p">))</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">EmojiImages</span><span class="p">(</span><span class="n">EmojiUrls</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""An emoji reader returning Image objects (displayable in jupyter notebooks)"""</span>
     
@@ -1317,7 +1318,7 @@ or retrieve something?</p>
 <p>You see? The keys that the “backend” is using are actually prefixed with <code class="docutils literal notranslate"><span class="pre">&quot;/ROOT/&quot;</span></code></p>
 </section>
 <section id="serialization-deserialization">
-<h2>Serialization/Deserialization<a class="headerlink" href="#serialization-deserialization" title="Link to this heading">¶</a></h2>
+<span id="serializationdeserialization"></span><h2>Serialization/Deserialization<a class="headerlink" href="#serialization-deserialization" title="Link to this heading">¶</a></h2>
 <p>Let’s now demo serialization and deserialization.</p>
 <p>Say we want to deserialize any text we stored by appending <code class="docutils literal notranslate"><span class="pre">&quot;hello</span> <span class="pre">&quot;</span></code> to everything stored.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># defining the store</span>
@@ -1655,7 +1656,7 @@ AWS to use this. Find S3 stores in py2store.stores.s3_stores.</p>
 <section id="miscellenous">
 <h1>Miscellenous<a class="headerlink" href="#miscellenous" title="Link to this heading">¶</a></h1>
 <section id="id1">
-<h2>Caching<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
+<span id="caching-1"></span><h2>Caching<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
 <p>There’s some basic caching capabilities in py2store.
 Basic, but covers a lot of use cases.
 But if you want to bring your own caching tools, you might be able to use them here too.</p>
@@ -1675,7 +1676,7 @@ specify any mutable mapping (that takes tuples as keys!).</p>
 <span class="k">def</span><span class="w"> </span><span class="nf">str_to_tuple</span><span class="p">(</span><span class="n">k</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">sep</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">sep</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">k</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">sep</span><span class="p">)</span>
 
-<span class="nd">@wrap_kvs</span><span class="p">(</span><span class="n">id_of_key</span><span class="o">=</span><span class="n">tuple_to_str</span><span class="p">,</span> <span class="n">key_of_id</span><span class="o">=</span><span class="n">str_to_tuple</span><span class="p">)</span>
+<span class="nd">@wrap_kvs</span><span class="p">(</span><span class="n">key_encoder</span><span class="o">=</span><span class="n">tuple_to_str</span><span class="p">,</span> <span class="n">key_decoder</span><span class="o">=</span><span class="n">str_to_tuple</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">TupledQuickPickleStore</span><span class="p">(</span><span class="n">QuickPickleStore</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""A local pickle store with tuple keys (to work well with cachetools)"""</span>
     
@@ -1825,7 +1826,7 @@ ORM: Object-relational mapping: https://en.wikipedia.org/wiki/Object-relational_
 </div>
 </section>
 
-<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-10-13 07:41 UTC from <a href="https://github.com/i2mint/py2store/commit/640b855cdb94d5ec4759dae8e7dddb267612260a">640b855</a> (master) · py2store 0.1.24 · <a href="about-this-build.html">about this build</a></p>
+<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-11-21 19:01 UTC from <a href="https://github.com/i2mint/py2store/commit/c5ad5f72a55fb61c5a4b01ff87dd57cd2d6bc6a0">c5ad5f7</a> (master) · py2store 0.1.25 · <a href="about-this-build.html">about this build</a></p>
         </article>
       </div>
       <footer>
@@ -1861,7 +1862,7 @@ ORM: Object-relational mapping: https://en.wikipedia.org/wiki/Object-relational_
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=c50728fc"></script>
+</div><script src="_static/documentation_options.js?v=6c475c9a"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/scripts/furo.js?v=46bd48cc"></script>

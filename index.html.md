@@ -82,7 +82,7 @@ If you like writing your own code, the rest of this README is written for you, s
 - [More examples]()
   * [Looks like a dict]()
   * [Converting keys: Relative paths and absolute paths]()
-  * [Serialization/Deserialization]()
+  * [Serialization/Deserialization](#serialization-deserialization)
   * [A pickle store]()
   * [But how do you change the persister?]()
   * [Talk your own CRUD dialect]()
@@ -361,7 +361,7 @@ So let’s tell our reader/store that’s what we want…
 ```python
 from py2store import wrap_kvs
 
-s = wrap_kvs(s, obj_of_data=lambda v: v.decode())
+s = wrap_kvs(s, value_decoder=lambda v: v.decode())
 
 v = s[k]  # let's get the value of that key again
 print(f"{type(v)=}, {len(v)=}")  # and see what v is like now...
@@ -402,8 +402,8 @@ No problem, let’s transform keys too, using tuples instead…
 
 ```python
 s = wrap_kvs(s, 
-             key_of_id=lambda _id: tuple(_id[:-len('.py')].split(os.path.sep)),
-             id_of_key=lambda k: k + '.py' if isinstance(k, str) else os.path.sep.join(k) + '.py'
+             key_decoder=lambda _id: tuple(_id[:-len('.py')].split(os.path.sep)),
+             key_encoder=lambda k: k + '.py' if isinstance(k, str) else os.path.sep.join(k) + '.py'
             )
 list(s)[:10]
 ```
@@ -498,9 +498,9 @@ from py2store import LocalBinaryStore, filt_iter, wrap_kvs, cached_keys
 key_filter_wrapper = filt_iter(filt=lambda k: k.endswith('.py'))
 
 key_and_value_wrapper = wrap_kvs(
-    obj_of_data=lambda v: v.decode(),
-    key_of_id=lambda _id: tuple(_id[:-len('.py')].split(os.path.sep)),
-    id_of_key=lambda k: k + '.py' if isinstance(k, str) else os.path.sep.join(k) + '.py'
+    value_decoder=lambda v: v.decode(),
+    key_decoder=lambda _id: tuple(_id[:-len('.py')].split(os.path.sep)),
+    key_encoder=lambda k: k + '.py' if isinstance(k, str) else os.path.sep.join(k) + '.py'
 )
 
 caching_wrapper = cached_keys(keys_cache=sorted)
@@ -910,7 +910,7 @@ import requests
 from py2store import wrap_kvs, add_ipython_key_completions
 
 @add_ipython_key_completions  # this enables tab-completion of keys in jupyter notebooks
-@wrap_kvs(obj_of_data=lambda url: Image(requests.get(url).content))
+@wrap_kvs(value_decoder=lambda url: Image(requests.get(url).content))
 class EmojiImages(EmojiUrls):
     """An emoji reader returning Image objects (displayable in jupyter notebooks)"""
     
@@ -1484,7 +1484,7 @@ def tuple_to_str(k: tuple, sep: str=os.path.sep) -> str:
 def str_to_tuple(k: str, sep: str=os.path.sep) -> tuple:
     return k.split(sep)
 
-@wrap_kvs(id_of_key=tuple_to_str, key_of_id=str_to_tuple)
+@wrap_kvs(key_encoder=tuple_to_str, key_decoder=str_to_tuple)
 class TupledQuickPickleStore(QuickPickleStore):
     """A local pickle store with tuple keys (to work well with cachetools)"""
     
