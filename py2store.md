@@ -1,4 +1,4 @@
-> built 2026-11-22 14:38 UTC from dd47882 (master) · py2store 0.1.27. Details: build_info.json
+> built 2026-11-22 19:15 UTC from 8008139 (master) · py2store 0.1.28. Details: build_info.json
 
 # index.html.md
 
@@ -5881,20 +5881,20 @@ Parses DB URI string into a dict of params.
 
 # About this build
 
-This documentation was built on **2026-11-22 14:38 UTC** from commit <a href="https://github.com/i2mint/py2store/commit/dd47882a8da9c87bdbb63ce058b33802bf02c112"><code>dd47882</code></a> on branch <code>master</code>, for **py2store 0.1.27** (from <code>setup.cfg</code>).
+This documentation was built on **2026-11-22 19:15 UTC** from commit <a href="https://github.com/i2mint/py2store/commit/800813922e9075f8bd756e3acb08dcac102a302d"><code>8008139</code></a> on branch <code>master</code>, for **py2store 0.1.28** (from <code>setup.cfg</code>).
 
 #### WARNING
 The documentation and the package may be misaligned:
 
-- The documented version (0.1.27) is ahead of the latest release on PyPI (0.1.25): these docs describe unreleased code.
+- The documented version (0.1.28) is ahead of the latest release on PyPI (0.1.27): these docs describe unreleased code.
 
 ## Source
 
 |                     |                                                                                                                                                        |
 |---------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/i2mint/py2store/commit/dd47882a8da9c87bdbb63ce058b33802bf02c112"><code>dd47882a8da9c87bdbb63ce058b33802bf02c112</code></a> |
+| Commit              | <a href="https://github.com/i2mint/py2store/commit/800813922e9075f8bd756e3acb08dcac102a302d"><code>800813922e9075f8bd756e3acb08dcac102a302d</code></a> |
 | Branch              | <code>master</code>                                                                                                                                    |
-| Tags at this commit | <code>0.1.27</code>                                                                                                                                    |
+| Tags at this commit | <code>0.1.28</code>                                                                                                                                    |
 | Working tree        | clean                                                                                                                                                  |
 | Remote              | <code>https://github.com/i2mint/py2store</code>                                                                                                        |
 
@@ -5903,9 +5903,9 @@ The documentation and the package may be misaligned:
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>i2mint/py2store</code>                                                               |
-| Run          | <a href="https://github.com/i2mint/py2store/actions/runs/45033839626">45033839626</a>      |
+| Run          | <a href="https://github.com/i2mint/py2store/actions/runs/45059582532">45059582532</a>      |
 | Ref          | <code>refs/heads/master</code>                                                             |
-| Event commit | <code>340fb95a2bfcacd1b9cc9864a072592d9d0c0eea</code> (in the history of the built commit) |
+| Event commit | <code>7da9688dde5fc5472abf79688e25a5bd00042d47</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -5930,13 +5930,13 @@ The documentation and the package may be misaligned:
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/py2store/0.1.25/">0.1.25</a>, older than the documented version (0.1.27).
+Latest release: <a href="https://pypi.org/project/py2store/0.1.27/">0.1.27</a>, older than the documented version (0.1.28).
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/i2mint/py2store && cd py2store
-git checkout dd47882a8da9c87bdbb63ce058b33802bf02c112
+git checkout 800813922e9075f8bd756e3acb08dcac102a302d
 pip install "epythet==0.2.23"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```
