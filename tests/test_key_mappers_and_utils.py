@@ -31,38 +31,38 @@ from py2store.utils.uri_utils import build_uri, mk_str_making_func, parse_uri
 
 
 def test_tuple_and_dict_conversions_roundtrip():
-    fields = ("a", "b")
-    assert tuple_of_dict({"b": 2, "a": 1}, fields) == (1, 2)
-    assert dict_of_tuple((1, 2), fields) == {"a": 1, "b": 2}
-    assert dict_of_tuple(tuple_of_dict({"a": 1, "b": 2}, fields), fields) == {
-        "a": 1,
-        "b": 2,
+    fields = ('a', 'b')
+    assert tuple_of_dict({'b': 2, 'a': 1}, fields) == (1, 2)
+    assert dict_of_tuple((1, 2), fields) == {'a': 1, 'b': 2}
+    assert dict_of_tuple(tuple_of_dict({'a': 1, 'b': 2}, fields), fields) == {
+        'a': 1,
+        'b': 2,
     }
 
 
 def test_size_mismatch_raises_key_validation_error():
     with pytest.raises(KeyValidationError):
-        tuple_of_dict({"a": 1}, ("a", "b"))
+        tuple_of_dict({'a': 1}, ('a', 'b'))
     with pytest.raises(KeyValidationError):
-        dict_of_tuple((1,), ("a", "b"))
+        dict_of_tuple((1,), ('a', 'b'))
 
 
 def test_str_conversions():
-    assert str_of_tuple(("x", "y"), "{}/{}") == "x/y"
-    assert str_of_dict({"a": 1, "b": 2}, "{a}-{b}") == "1-2"
+    assert str_of_tuple(('x', 'y'), '{}/{}') == 'x/y'
+    assert str_of_dict({'a': 1, 'b': 2}, '{a}-{b}') == '1-2'
     with pytest.raises(KeyValidationError):
-        str_of_tuple(("x",), "{}/{}")
+        str_of_tuple(('x',), '{}/{}')
     with pytest.raises(KeyValidationError):
-        str_of_dict({"a": 1}, "{a}-{b}")
+        str_of_dict({'a': 1}, '{a}-{b}')
 
-    rx = re.compile(r"(\w+)/(\w+)")
-    assert tuple_of_str("x/y", rx) == ("x", "y")
-    rxd = re.compile(r"(?P<a>\w+)/(?P<b>\w+)")
-    assert dict_of_str("x/y", rxd) == {"a": "x", "b": "y"}
+    rx = re.compile(r'(\w+)/(\w+)')
+    assert tuple_of_str('x/y', rx) == ('x', 'y')
+    rxd = re.compile(r'(?P<a>\w+)/(?P<b>\w+)')
+    assert dict_of_str('x/y', rxd) == {'a': 'x', 'b': 'y'}
     with pytest.raises(KeyValidationError):
-        tuple_of_str("nope", rx)
+        tuple_of_str('nope', rx)
     with pytest.raises(KeyValidationError):
-        dict_of_str("nope", rxd)
+        dict_of_str('nope', rxd)
 
 
 def test_mk_str_of_obj_and_obj_of_str():
@@ -71,12 +71,12 @@ def test_mk_str_of_obj_and_obj_of_str():
         foo: int
         bar: str
 
-    assert mk_str_of_obj(["foo", "bar"])(A(0, "rin"), "ST{foo}/{bar}/G") == "ST0/rin/G"
+    assert mk_str_of_obj(['foo', 'bar'])(A(0, 'rin'), 'ST{foo}/{bar}/G') == 'ST0/rin/G'
 
     seen = {}
     obj_of_str = mk_obj_of_str(lambda **kw: seen.update(kw))
-    obj_of_str("1/2", re.compile(r"(?P<x>\d)/(?P<y>\d)"))
-    assert seen == {"x": "1", "y": "2"}
+    obj_of_str('1/2', re.compile(r'(?P<x>\d)/(?P<y>\d)'))
+    assert seen == {'x': '1', 'y': '2'}
 
 
 @pytest.mark.xfail(
@@ -85,48 +85,48 @@ def test_mk_str_of_obj_and_obj_of_str():
 )
 def test_mk_obj_of_str_returns_the_object():
     obj_of_str = mk_obj_of_str(lambda **kw: kw)
-    assert obj_of_str("1", re.compile(r"(?P<x>\d)")) == {"x": "1"}
+    assert obj_of_str('1', re.compile(r'(?P<x>\d)')) == {'x': '1'}
 
 
 def test_dsv_roundtrip_including_empty():
-    for parts in (["a", "b", "c"], ["solo"], []):
-        assert list_of_dsv(dsv_of_list(parts, sep="|"), sep="|") == parts
+    for parts in (['a', 'b', 'c'], ['solo'], []):
+        assert list_of_dsv(dsv_of_list(parts, sep='|'), sep='|') == parts
 
 
 # ---- utils.uri_utils -------------------------------------------------------------
 
 
 def test_parse_and_build_uri():
-    uri = "mongodb://user:pw@example.org:27017/mydb"
+    uri = 'mongodb://user:pw@example.org:27017/mydb'
     assert parse_uri(uri) == {
-        "scheme": "mongodb",
-        "database": "mydb",
-        "username": "user",
-        "password": "pw",
-        "hostname": "example.org",
-        "port": 27017,
+        'scheme': 'mongodb',
+        'database': 'mydb',
+        'username': 'user',
+        'password': 'pw',
+        'hostname': 'example.org',
+        'port': 27017,
     }
-    assert build_uri("mongodb", "mydb", "user", "pw", "example.org", 27017) == uri
-    assert parse_uri("http://host")["database"] == ""
+    assert build_uri('mongodb', 'mydb', 'user', 'pw', 'example.org', 27017) == uri
+    assert parse_uri('http://host')['database'] == ''
 
 
 def test_mk_str_making_func():
-    f = mk_str_making_func("{a}/{b}", name="f", module="m")
-    assert f("x", "y") == "x/y"
-    assert f("x", b="y") == "x/y"
-    assert (f.__module__, f.__qualname__) == ("m", "f")
-    with pytest.raises(ValueError, match="too many"):
-        f("x", "y", "z")
-    with pytest.raises(ValueError, match="too few"):
-        f("x")
+    f = mk_str_making_func('{a}/{b}', name='f', module='m')
+    assert f('x', 'y') == 'x/y'
+    assert f('x', b='y') == 'x/y'
+    assert (f.__module__, f.__qualname__) == ('m', 'f')
+    with pytest.raises(ValueError, match='too many'):
+        f('x', 'y', 'z')
+    with pytest.raises(ValueError, match='too few'):
+        f('x')
 
-    g = mk_str_making_func("{a}", input_trans=lambda a: {"a": a.upper()})
-    assert g("q") == "Q"
+    g = mk_str_making_func('{a}', input_trans=lambda a: {'a': a.upper()})
+    assert g('q') == 'Q'
 
     class C:
-        make = mk_str_making_func("{a}-{b}", method=True)
+        make = mk_str_making_func('{a}-{b}', method=True)
 
-    assert C().make(1, 2) == "1-2"
+    assert C().make(1, 2) == '1-2'
     with pytest.raises(ValueError):
         C().make(1)
 
@@ -139,7 +139,7 @@ def test_cached_property_with_dependencies():
         n = 1
         calls = 0
 
-        @CachedProperty("n")
+        @CachedProperty('n')
         def double(self):
             C.calls += 1
             return self.n * 2
@@ -148,7 +148,7 @@ def test_cached_property_with_dependencies():
     assert (c.double, c.double, C.calls) == (2, 2, 1)
     c.n = 5  # a dependency changed: recomputed
     assert (c.double, C.calls) == (10, 2)
-    assert isinstance(C.double, type(C.__dict__["double"]))  # class access returns it
+    assert isinstance(C.double, type(C.__dict__['double']))  # class access returns it
 
 
 def test_cached_property_forms():
@@ -183,7 +183,7 @@ def test_lazy_readproperty_cachedin():
             C.n += 1
             return C.n
 
-        @cachedIn("_cache")
+        @cachedIn('_cache')
         def cached(self):
             C.n += 1
             return C.n
@@ -193,4 +193,4 @@ def test_lazy_readproperty_cachedin():
     assert c.fresh != c.fresh  # recomputed every time
     first = c.cached
     assert c.cached == first
-    assert C.lazy.__name__ == "lazy" and C.fresh.__name__ == "fresh"
+    assert C.lazy.__name__ == 'lazy' and C.fresh.__name__ == 'fresh'
