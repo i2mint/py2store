@@ -155,7 +155,7 @@ def mk_obj_of_str(constructor):
     """
 
     def obj_of_str(d, compiled_regex):
-        constructor(**dict_of_str(d, compiled_regex))
+        return constructor(**dict_of_str(d, compiled_regex))
 
     return obj_of_str
 

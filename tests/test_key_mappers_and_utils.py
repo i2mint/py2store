@@ -79,10 +79,6 @@ def test_mk_str_of_obj_and_obj_of_str():
     assert seen == {'x': '1', 'y': '2'}
 
 
-@pytest.mark.xfail(
-    reason="mk_obj_of_str's obj_of_str does not return the constructed object",
-    strict=True,
-)
 def test_mk_obj_of_str_returns_the_object():
     obj_of_str = mk_obj_of_str(lambda **kw: kw)
     assert obj_of_str('1', re.compile(r'(?P<x>\d)')) == {'x': '1'}
