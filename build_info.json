@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "built_at": "2026-11-22T22:03:52Z",
+  "built_at": "2026-11-22T22:25:14Z",
   "package": {
     "name": "py2store",
     "version": "0.1.28",
@@ -9,24 +9,24 @@
   },
   "git": {
     "available": true,
-    "commit": "cefd855276698fde121bf38f2cfe8511a94699c8",
-    "short_commit": "cefd855",
+    "commit": "5b8696059aa3fc7ea6c75c66a73ae0cdba06a56f",
+    "short_commit": "5b86960",
     "branch": "master",
     "tags": [],
     "dirty": false,
     "remote_url": "https://github.com/i2mint/py2store",
-    "commit_url": "https://github.com/i2mint/py2store/commit/cefd855276698fde121bf38f2cfe8511a94699c8",
+    "commit_url": "https://github.com/i2mint/py2store/commit/5b8696059aa3fc7ea6c75c66a73ae0cdba06a56f",
     "error": null
   },
   "ci": {
     "provider": "github",
     "repository": "i2mint/py2store",
-    "sha": "cefd855276698fde121bf38f2cfe8511a94699c8",
+    "sha": "5b8696059aa3fc7ea6c75c66a73ae0cdba06a56f",
     "sha_in_history": true,
     "ref": "refs/heads/master",
     "ref_name": "master",
-    "run_id": "45075423347",
-    "run_url": "https://github.com/i2mint/py2store/actions/runs/45075423347",
+    "run_id": "45077472791",
+    "run_url": "https://github.com/i2mint/py2store/actions/runs/45077472791",
     "server_url": "https://github.com"
   },
   "tools": {
@@ -64,7 +64,7 @@
     "relation": "same",
     "error": null
   },
-  "reproduce": "git clone https://github.com/i2mint/py2store && cd py2store\ngit checkout cefd855276698fde121bf38f2cfe8511a94699c8\npip install \"epythet==0.2.23\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
+  "reproduce": "git clone https://github.com/i2mint/py2store && cd py2store\ngit checkout 5b8696059aa3fc7ea6c75c66a73ae0cdba06a56f\npip install \"epythet==0.2.23\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
   "warnings": [],
   "alignment": {
     "aligned": true,

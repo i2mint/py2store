@@ -110,6 +110,8 @@ Here’s an example for local storage (you must you string keys only here).
 >>> from py2store import QuickStore
 >>>
 >>> store = QuickStore()  # will print what (tmp) rootdir it is choosing
+No path_format was given, so taking one from a tmp dir. Namely:
+    ...
 >>> # Write something and then read it out again
 >>> store['foo'] = 'baz'
 >>> 'foo' in store  # do you have the key 'foo' in your store?
@@ -312,12 +314,14 @@ True
 
 In fact more, it’s a subclass of `collections.abc.MutableMapping`, so can write data to a key by doing this:
 
+<!-- wads-docs: skip fragment; data comes from the reader's code -->
 ```python
 s[key] = data
 ```
 
 and delete a key by doing
 
+<!-- wads-docs: skip fragment; key comes from the reader's code -->
 ```python
 del s[key]
 ```
@@ -566,6 +570,7 @@ Here are a few you can check out:
 
 The classics (data bases and storage systems):
 
+<!-- wads-docs: skip needs boto3 and AWS; S3BinaryStore is not exported by py2store at present -->
 ```python
 from py2store import (
     S3BinaryStore,  # to talk to AWS S3  (uses boto)
@@ -624,6 +629,7 @@ Graze is a mapping that uses urls as keys, pulling content from the internet and
 
 Quite simply:
 
+<!-- wads-docs: skip fragment; url is a placeholder -->
 ```python
 from graze import Graze
 g = Graze()
@@ -677,6 +683,7 @@ sorted(g)[:3]  # first (in sorted order) 3 keys
 
 ### Example using baby names data
 
+<!-- wads-docs: skip needs network access (returns HTTP 403 here) -->
 ```python
 from io import BytesIO
 import pandas as pd
@@ -1169,7 +1176,7 @@ assert list(s) == []
 s['foo'] = 'bar'  # put 'bar' in 'foo'
 assert s['foo'] == 'bar'  # I can get 'bar' back
 # behind the scenes though, it's really a pickle that is stored:
-assert s.store['foo'] == b'\x80\x03X\x03\x00\x00\x00barq\x00.'
+assert pickle.loads(s.store['foo']) == 'bar'
 ```
 
 Again, it doesn’t seem that impressive that you can get back a string that you stored in a dict.
@@ -1386,6 +1393,7 @@ basic_test(store, k='foo', v='bar')
 
 The signature of LocalFileStore is:
 
+<!-- wads-docs: skip fragment; path_format is the reader's -->
 ```python
 LocalFileStore(path_format, mode='',
                 buffering=-1, encoding=None, errors=None, newline=None, closefd=True, opener=None)
@@ -1428,6 +1436,7 @@ all other fields are considered to be data fields.
 Note: py2store mongo tools have now been moved to the mongodol project. Import from there.
 Requires `pymongo`.
 
+<!-- wads-docs: skip needs a MongoDB server (MongoStore now takes host, db_name, collection_name) -->
 ```python
 from mongodol.stores import MongoStore  # Note: project moved to mongodol now
 # The following makes a default MongoStore, the default pymongo.MongoClient settings, 
@@ -1440,6 +1449,7 @@ But it can get annoying to specify the key as a dict every time.
 The key schema is fixed, so you should be able to just specify the tuple of values making the keys.
 And you can, with MongoTupleKeyStore
 
+<!-- wads-docs: skip needs a MongoDB server; MongoTupleKeyStore is no longer in mongodol.stores -->
 ```python
 from mongodol.stores import MongoTupleKeyStore  # Note: project moved to mongodol now
 store = MongoTupleKeyStore(key_fields=('_id', 'name'))
@@ -1497,7 +1507,7 @@ def hello(x='world'):
 ```
 
 ```pydocstring
->>> hello('QT')
+>>> _ = hello('QT')
 >>> import pickle
 >>> # Let's now verify that we actually have a file with such content
 >>> with open(os.path.join(local_files_cache._prefix, 'QT'), 'rb') as fp:
@@ -1577,6 +1587,7 @@ waveform (a sequence of samples).
 
 You’d probably find this acceptable:
 
+<!-- wads-docs: skip fragment; the functions are the reader's -->
 ```python
 audio_file_type=type_of(file)
 with open(file, 'wb') as fp:
@@ -1586,6 +1597,7 @@ wf = convert_to_waveform(file_bytes)
 
 Or this:
 
+<!-- wads-docs: skip fragment; the functions are the reader's -->
 ```python
 filt = mk_file_filter(tag='gunshot', max_size_s=10)
 for file in filter(filt, audio_source):
@@ -1601,12 +1613,14 @@ or `generator_of_waveforms_of_filtered_files`.
 So why is it harder to accept something where you make a store that encompasses your needs.
 You do `s = WfStore(audio_source, filt)` and then
 
+<!-- wads-docs: skip fragment; some_file is the reader's -->
 ```python
 wf = s[some_file]  # get a waveform
 ```
 
 or
 
+<!-- wads-docs: skip fragment; send_wf_for_analysis is the reader's -->
 ```python
 for wf in s.values():  # iterate over all waveforms
     send_wf_for_analysis(wf)

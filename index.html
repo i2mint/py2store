@@ -457,6 +457,8 @@ Here’s an example for local storage (you must you string keys only here).</p>
 <div class="highlight-pydocstring notranslate"><div class="highlight"><pre><span></span>&gt;&gt;&gt; from py2store import QuickStore
 &gt;&gt;&gt;
 &gt;&gt;&gt; store = QuickStore()  # will print what (tmp) rootdir it is choosing
+No path_format was given, so taking one from a tmp dir. Namely:
+    ...
 &gt;&gt;&gt; # Write something and then read it out again
 &gt;&gt;&gt; store['foo'] = 'baz'
 &gt;&gt;&gt; 'foo' in store  # do you have the key 'foo' in your store?
@@ -634,10 +636,12 @@ We’d like to make it <em>easier</em> to do it right than do it wrong.</p>
 </pre></div>
 </div>
 <p>In fact more, it’s a subclass of <code class="docutils literal notranslate"><span class="pre">collections.abc.MutableMapping</span></code>, so can write data to a key by doing this:</p>
+<!-- wads-docs: skip fragment; data comes from the reader's code -->
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">s</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span>
 </pre></div>
 </div>
 <p>and delete a key by doing</p>
+<!-- wads-docs: skip fragment; key comes from the reader's code -->
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">del</span> <span class="n">s</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
 </pre></div>
 </div>
@@ -848,6 +852,7 @@ from py2store.trans import store_decorator
 <p>But we (and others) are offer an ever growing slew of mapping views of all kinds of data sources.</p>
 <p>Here are a few you can check out:</p>
 <p>The classics (data bases and storage systems):</p>
+<!-- wads-docs: skip needs boto3 and AWS; S3BinaryStore is not exported by py2store at present -->
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">py2store</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">S3BinaryStore</span><span class="p">,</span>  <span class="c1"># to talk to AWS S3  (uses boto)</span>
     <span class="n">SQLAlchemyStore</span><span class="p">,</span>  <span class="c1"># to talk to sql (uses alchemy)</span>
@@ -892,6 +897,7 @@ from py2store.trans import store_decorator
 <p>That’s (sort of) what it does.</p>
 <p>Graze is a mapping that uses urls as keys, pulling content from the internet and caching to local files.</p>
 <p>Quite simply:</p>
+<!-- wads-docs: skip fragment; url is a placeholder -->
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">graze</span><span class="w"> </span><span class="kn">import</span> <span class="n">Graze</span>
 <span class="n">g</span> <span class="o">=</span> <span class="n">Graze</span><span class="p">()</span>
 <span class="nb">list</span><span class="p">(</span><span class="n">g</span><span class="p">)</span>  <span class="c1"># lists the urls you already have locally</span>
@@ -938,6 +944,7 @@ of Graze was effectively 57 lines (47 without imports). <a class="reference exte
 </div>
 <section id="example-using-baby-names-data">
 <h3>Example using baby names data<a class="headerlink" href="#example-using-baby-names-data" title="Link to this heading">¶</a></h3>
+<!-- wads-docs: skip needs network access (returns HTTP 403 here) -->
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">io</span><span class="w"> </span><span class="kn">import</span> <span class="n">BytesIO</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">py2store</span><span class="w"> </span><span class="kn">import</span> <span class="n">FilesOfZip</span>
@@ -1391,7 +1398,7 @@ should be serialized to be stored, and how it should be deserialized to get your
 <span class="n">s</span><span class="p">[</span><span class="s1">'foo'</span><span class="p">]</span> <span class="o">=</span> <span class="s1">'bar'</span>  <span class="c1"># put 'bar' in 'foo'</span>
 <span class="k">assert</span> <span class="n">s</span><span class="p">[</span><span class="s1">'foo'</span><span class="p">]</span> <span class="o">==</span> <span class="s1">'bar'</span>  <span class="c1"># I can get 'bar' back</span>
 <span class="c1"># behind the scenes though, it's really a pickle that is stored:</span>
-<span class="k">assert</span> <span class="n">s</span><span class="o">.</span><span class="n">store</span><span class="p">[</span><span class="s1">'foo'</span><span class="p">]</span> <span class="o">==</span> <span class="sa">b</span><span class="s1">'</span><span class="se">\x80\x03</span><span class="s1">X</span><span class="se">\x03\x00\x00\x00</span><span class="s1">barq</span><span class="se">\x00</span><span class="s1">.'</span>
+<span class="k">assert</span> <span class="n">pickle</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">store</span><span class="p">[</span><span class="s1">'foo'</span><span class="p">])</span> <span class="o">==</span> <span class="s1">'bar'</span>
 </pre></div>
 </div>
 <p>Again, it doesn’t seem that impressive that you can get back a string that you stored in a dict.
@@ -1595,6 +1602,7 @@ Further, it also has what it takes to create parametrized paths or parse out the
 </pre></div>
 </div>
 <p>The signature of LocalFileStore is:</p>
+<!-- wads-docs: skip fragment; path_format is the reader's -->
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">LocalFileStore</span><span class="p">(</span><span class="n">path_format</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">''</span><span class="p">,</span>
                 <span class="n">buffering</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">newline</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">closefd</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">opener</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 </pre></div>
@@ -1628,6 +1636,7 @@ specify what fields should be considered as keys, and what fields should be cons
 all other fields are considered to be data fields.</p>
 <p>Note: py2store mongo tools have now been moved to the mongodol project. Import from there.
 Requires <code class="docutils literal notranslate"><span class="pre">pymongo</span></code>.</p>
+<!-- wads-docs: skip needs a MongoDB server (MongoStore now takes host, db_name, collection_name) -->
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">mongodol.stores</span><span class="w"> </span><span class="kn">import</span> <span class="n">MongoStore</span>  <span class="c1"># Note: project moved to mongodol now</span>
 <span class="c1"># The following makes a default MongoStore, the default pymongo.MongoClient settings, </span>
 <span class="c1"># and db_name='py2store', collection_name='test', key_fields=('_id',)</span>
@@ -1638,6 +1647,7 @@ Requires <code class="docutils literal notranslate"><span class="pre">pymongo</s
 <p>But it can get annoying to specify the key as a dict every time.
 The key schema is fixed, so you should be able to just specify the tuple of values making the keys.
 And you can, with MongoTupleKeyStore</p>
+<!-- wads-docs: skip needs a MongoDB server; MongoTupleKeyStore is no longer in mongodol.stores -->
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">mongodol.stores</span><span class="w"> </span><span class="kn">import</span> <span class="n">MongoTupleKeyStore</span>  <span class="c1"># Note: project moved to mongodol now</span>
 <span class="n">store</span> <span class="o">=</span> <span class="n">MongoTupleKeyStore</span><span class="p">(</span><span class="n">key_fields</span><span class="o">=</span><span class="p">(</span><span class="s1">'_id'</span><span class="p">,</span> <span class="s1">'name'</span><span class="p">))</span>
 <span class="n">basic_test</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="p">(</span><span class="mi">1234</span><span class="p">,</span> <span class="s1">'bob'</span><span class="p">),</span> <span class="n">v</span><span class="o">=</span><span class="p">{</span><span class="s1">'age'</span><span class="p">:</span> <span class="mi">42</span><span class="p">,</span> <span class="s1">'gender'</span><span class="p">:</span> <span class="s1">'unspecified'</span><span class="p">})</span>
@@ -1688,7 +1698,7 @@ specify any mutable mapping (that takes tuples as keys!).</p>
     <span class="k">return</span> <span class="sa">f</span><span class="s2">"hello </span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s2">!"</span>
 </pre></div>
 </div>
-<div class="highlight-pydocstring notranslate"><div class="highlight"><pre><span></span>&gt;&gt;&gt; hello('QT')
+<div class="highlight-pydocstring notranslate"><div class="highlight"><pre><span></span>&gt;&gt;&gt; _ = hello('QT')
 &gt;&gt;&gt; import pickle
 &gt;&gt;&gt; # Let's now verify that we actually have a file with such content
 &gt;&gt;&gt; with open(os.path.join(local_files_cache._prefix, 'QT'), 'rb') as fp:
@@ -1758,6 +1768,7 @@ What is happening here is that we composed extraction and transformation. Is tha
 files containing the ‘gunshot’ tag and lasting no more than 10s, and further get the data as a
 waveform (a sequence of samples).</p>
 <p>You’d probably find this acceptable:</p>
+<!-- wads-docs: skip fragment; the functions are the reader's -->
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">audio_file_type</span><span class="o">=</span><span class="n">type_of</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
 <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="s1">'wb'</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
     <span class="n">file_bytes</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
@@ -1765,6 +1776,7 @@ waveform (a sequence of samples).</p>
 </pre></div>
 </div>
 <p>Or this:</p>
+<!-- wads-docs: skip fragment; the functions are the reader's -->
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">filt</span> <span class="o">=</span> <span class="n">mk_file_filter</span><span class="p">(</span><span class="n">tag</span><span class="o">=</span><span class="s1">'gunshot'</span><span class="p">,</span> <span class="n">max_size_s</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
 <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="nb">filter</span><span class="p">(</span><span class="n">filt</span><span class="p">,</span> <span class="n">audio_source</span><span class="p">):</span>
     <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="s1">'wb'</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
@@ -1777,10 +1789,12 @@ waveform (a sequence of samples).</p>
 or <code class="docutils literal notranslate"><span class="pre">generator_of_waveforms_of_filtered_files</span></code>.</p>
 <p>So why is it harder to accept something where you make a store that encompasses your needs.
 You do <code class="docutils literal notranslate"><span class="pre">s</span> <span class="pre">=</span> <span class="pre">WfStore(audio_source,</span> <span class="pre">filt)</span></code> and then</p>
+<!-- wads-docs: skip fragment; some_file is the reader's -->
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">wf</span> <span class="o">=</span> <span class="n">s</span><span class="p">[</span><span class="n">some_file</span><span class="p">]</span>  <span class="c1"># get a waveform</span>
 </pre></div>
 </div>
 <p>or</p>
+<!-- wads-docs: skip fragment; send_wf_for_analysis is the reader's -->
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">wf</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>  <span class="c1"># iterate over all waveforms</span>
     <span class="n">send_wf_for_analysis</span><span class="p">(</span><span class="n">wf</span><span class="p">)</span>
 </pre></div>
@@ -1826,7 +1840,7 @@ ORM: Object-relational mapping: https://en.wikipedia.org/wiki/Object-relational_
 </div>
 </section>
 
-<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-11-22 22:03 UTC from <a href="https://github.com/i2mint/py2store/commit/cefd855276698fde121bf38f2cfe8511a94699c8">cefd855</a> (master) · py2store 0.1.28 · <a href="about-this-build.html">about this build</a></p>
+<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-11-22 22:25 UTC from <a href="https://github.com/i2mint/py2store/commit/5b8696059aa3fc7ea6c75c66a73ae0cdba06a56f">5b86960</a> (master) · py2store 0.1.28 · <a href="about-this-build.html">about this build</a></p>
         </article>
       </div>
       <footer>
