@@ -26,6 +26,7 @@ By default, they are::
 
 respectively.
 """
+
 import os
 import importlib
 from warnings import warn
@@ -34,7 +35,7 @@ from operator import getitem
 from py2store.util import str_to_var_str
 from py2store.sources import AttrDict
 
-FAK = '$fak'
+FAK = "$fak"
 
 
 # TODO: Make a config_utils.py module to centralize config tools (configs for access is just one -- serializers another)
@@ -45,7 +46,7 @@ FAK = '$fak'
 def getenv(name, default=None):
     """Like os.getenv, but removes a suffix \\r character if present (problem with some env var systems)"""
     v = os.getenv(name, default)
-    if v.endswith('\r'):
+    if v.endswith("\r"):
         return v[:-1]
     else:
         return v
@@ -53,15 +54,15 @@ def getenv(name, default=None):
 
 def assert_callable(f: callable) -> callable:
     """Return ``f`` unchanged if it is callable, else raise ``AssertionError``."""
-    assert callable(f), f'Is not callable: {f}'
+    assert callable(f), f"Is not callable: {f}"
     return f
 
 
 def dotpath_to_obj(dotpath):
     """Loads and returns the object referenced by the string DOTPATH_TO_MODULE.OBJ_NAME"""
-    *module_path, obj_name = dotpath.split('.')
+    *module_path, obj_name = dotpath.split(".")
     if len(module_path) > 0:
-        return getattr(importlib.import_module('.'.join(module_path)), obj_name)
+        return getattr(importlib.import_module(".".join(module_path)), obj_name)
     else:
         return importlib.import_module(obj_name)
 
@@ -72,11 +73,11 @@ def dotpath_to_func(f: (str, callable)) -> callable:
     """
 
     if isinstance(f, str):
-        if '.' in f:
-            *module_path, func_name = f.split('.')
-            f = getattr(importlib.import_module('.'.join(module_path)), func_name)
+        if "." in f:
+            *module_path, func_name = f.split(".")
+            f = getattr(importlib.import_module(".".join(module_path)), func_name)
         else:
-            f = getattr(importlib.import_module('py2store'), f)
+            f = getattr(importlib.import_module("py2store"), f)
 
     return assert_callable(f)
 
@@ -102,7 +103,7 @@ def _fakit(f: callable, a: (tuple, list), k: dict):
 
 def fakit_from_dict(d, func_loader=assert_callable):
     """Call the function in ``d['f']`` (through ``func_loader``) with the args ``d['a']`` and kwargs ``d['k']``, both optional."""
-    return _fakit(func_loader(d['f']), a=d.get('a', ()), k=d.get('k', {}))
+    return _fakit(func_loader(d["f"]), a=d.get("a", ()), k=d.get("k", {}))
 
 
 def fakit_from_tuple(t: (tuple, list), func_loader: callable = dflt_func_loader):
@@ -125,24 +126,24 @@ def fakit_from_tuple(t: (tuple, list), func_loader: callable = dflt_func_loader)
         1,
         2,
         3,
-    }, 'A tuple fak must be of length 1, 2, or 3. No more, no less.'
+    }, "A tuple fak must be of length 1, 2, or 3. No more, no less."
     if len(t) > 1:
         if isinstance(t[1], dict):
             k = t[1]
         else:
-            assert isinstance(
-                t[1], (tuple, list)
-            ), 'argument specs should be dict, tuple, or list'
+            assert isinstance(t[1], (tuple, list)), (
+                "argument specs should be dict, tuple, or list"
+            )
             a = t[1]
         if len(t) > 2:
             if isinstance(t[2], dict):
-                assert not k, 'can only have one kwargs'
+                assert not k, "can only have one kwargs"
                 k = t[2]
             else:
-                assert isinstance(
-                    t[2], (tuple, list)
-                ), 'argument specs should be dict, tuple, or list'
-                assert not a, 'can only have one args'
+                assert isinstance(t[2], (tuple, list)), (
+                    "argument specs should be dict, tuple, or list"
+                )
+                assert not a, "can only have one args"
                 a = t[2]
     return _fakit(f, a, k)
 
@@ -164,7 +165,7 @@ def fakit(fak, func_loader=dflt_func_loader):
     if isinstance(fak, dict):
         return fakit_from_dict(fak, func_loader=func_loader)
     else:
-        assert isinstance(fak, (tuple, list)), 'fak should be dict, tuple, or list'
+        assert isinstance(fak, (tuple, list)), "fak should be dict, tuple, or list"
         return fakit_from_tuple(fak, func_loader=func_loader)
 
 
@@ -181,33 +182,33 @@ mystores = None
 def mkdir_if_needed(dirpath, name=None, verbose=True):
     """Create ``dirpath`` if it does not exist, printing a note that calls it ``name`` (``verbose`` is accepted but not used)."""
     if not os.path.isdir(dirpath):
-        name = name or 'directory'
+        name = name or "directory"
         print(f"The {name} doesn't exist. Making it: {dirpath}")
         os.mkdir(dirpath)
 
 
-DFLT_PY2STORE_CONFIG_DIR = os.path.expanduser('~/.py2store_configs')
-DFLT_MY_CONFIGS_DIRNAME = 'my'
+DFLT_PY2STORE_CONFIG_DIR = os.path.expanduser("~/.py2store_configs")
+DFLT_MY_CONFIGS_DIRNAME = "my"
 
 try:
     import json
 
     user_configs_dirpath = os.path.expanduser(
-        getenv('PY2STORE_CONFIGS_DIR', DFLT_PY2STORE_CONFIG_DIR)
+        getenv("PY2STORE_CONFIGS_DIR", DFLT_PY2STORE_CONFIG_DIR)
     )
-    mkdir_if_needed(user_configs_dirpath, 'user_configs_dirpath', verbose=True)
+    mkdir_if_needed(user_configs_dirpath, "user_configs_dirpath", verbose=True)
     my_configs_dirname = os.path.expanduser(
-        getenv('MY_PY2STORE_DIR_NAME', DFLT_MY_CONFIGS_DIRNAME)
+        getenv("MY_PY2STORE_DIR_NAME", DFLT_MY_CONFIGS_DIRNAME)
     )
     myconfigs_dirpath = os.path.join(user_configs_dirpath, my_configs_dirname)
-    mkdir_if_needed(myconfigs_dirpath, 'myconfigs_dirpath', verbose=True)
+    mkdir_if_needed(myconfigs_dirpath, "myconfigs_dirpath", verbose=True)
 
     if os.path.isdir(user_configs_dirpath):
 
         def directory_json_items():
             """Yield ``(name, contents)`` for every ``.json`` file in the user configs directory, warning about files that fail to decode."""
             for f in filter(
-                lambda x: x.endswith('.json'), os.listdir(user_configs_dirpath)
+                lambda x: x.endswith(".json"), os.listdir(user_configs_dirpath)
             ):
                 filepath = os.path.join(user_configs_dirpath, f)
                 name, _ = os.path.splitext(f)
@@ -218,7 +219,7 @@ try:
                     warn(f"This json file couldn't be json-decoded: {filepath}")
                 except Exception:
                     warn(
-                        f'Unknown error when trying to json.load this file: {filepath}'
+                        f"Unknown error when trying to json.load this file: {filepath}"
                     )
 
         user_configs = AttrDict(**{k: v for k, v in directory_json_items()})
@@ -243,7 +244,7 @@ try:
                 Overwriting and deleting entries are disabled, to keep the configs safe.
                 """
 
-                key_sep = ':'
+                key_sep = ":"
 
                 @wraps(LocalBinaryStore)
                 def __init__(self, *args, **kwargs):
@@ -276,7 +277,7 @@ try:
                     except KeyError:
                         raise KeyError(
                             f"The '{k}' key wasn't found. "
-                            f'What this probably is, is that you need '
+                            f"What this probably is, is that you need "
                             f"a file named '{k}' in your {self.dirpath} folder. Do that and try again."
                         )
 
@@ -298,20 +299,20 @@ try:
 
                 def __delitem__(self, k):
                     raise NotImplementedError(
-                        'Deletion was disabled. '
-                        'MyConfigs wants to keep your configs safe, so if you want to delete this config, '
-                        'do it another way (like manually).'
+                        "Deletion was disabled. "
+                        "MyConfigs wants to keep your configs safe, so if you want to delete this config, "
+                        "do it another way (like manually)."
                     )
 
             myconfigs = MyConfigs(myconfigs_dirpath)
             myconfigs.dirpath = myconfigs_dirpath
         else:
             warn(
-                f'''The py2store-myconfigs directory wasn't found: {myconfigs_dirpath}
+                f"""The py2store-myconfigs directory wasn't found: {myconfigs_dirpath}
             If you want to have all the cool functionality of `myconfigs`, you should make this directory, 
             and put stuff in it. Here's to make it easy for you to do it. Go to a terminal and run this:
                 mkdir {myconfigs_dirpath}
-            '''
+            """
             )
 
         class MyStores(KvStore):
@@ -326,11 +327,11 @@ try:
                 if FAK in data:
                     return fakit(data[FAK], self.func_loader)
                 else:
-                    msg = 'Case not handled by MyStores'
+                    msg = "Case not handled by MyStores"
                     if isinstance(data, dict):
-                        raise ValueError(f'{msg}: keys: {list(data.keys())}')
+                        raise ValueError(f"{msg}: keys: {list(data.keys())}")
                     else:
-                        raise ValueError(f'{msg}: type: {type(data)}')
+                        raise ValueError(f"{msg}: type: {type(data)}")
 
             @property
             def configs(self):
@@ -339,22 +340,22 @@ try:
 
         def without_json_ext(_id):
             """Strip the ``.json`` extension from ``_id``."""
-            assert _id.endswith('.json'), 'Should end with .json'
-            return _id[: -len('.json')]
+            assert _id.endswith(".json"), "Should end with .json"
+            return _id[: -len(".json")]
 
         def add_json_ext(k):
             """Append ``.json`` to ``k``."""
-            return k + '.json'
+            return k + ".json"
 
         ExtLessJsonStore = wrap_kvs(
             LocalJsonStore,
-            name='ExtLessJsonStore',
+            name="ExtLessJsonStore",
             key_decoder=without_json_ext,
             key_encoder=add_json_ext,
         )
 
         stores_json_path_format = os.path.join(
-            user_configs_dirpath, 'stores', 'json', '{}.json'
+            user_configs_dirpath, "stores", "json", "{}.json"
         )
         mystores = MyStores(ExtLessJsonStore(stores_json_path_format))
         from py2store.trans import add_ipython_key_completions
@@ -367,7 +368,7 @@ try:
             f"The configs directory wasn't found (please make it): {user_configs_dirpath}"
         )
         user_configs_filepath = os.path.expanduser(
-            getenv('PY2STORE_CONFIGS_JSON_FILEPATH', '~/.py2store_configs.json')
+            getenv("PY2STORE_CONFIGS_JSON_FILEPATH", "~/.py2store_configs.json")
         )
         if os.path.isfile(user_configs_filepath):
             user_configs_dict = json.load(open(user_configs_filepath))
@@ -376,7 +377,7 @@ try:
             )
 
     user_defaults_filepath = os.path.expanduser(
-        getenv('PY2STORE_DEFAULTS_JSON_FILEPATH', '~/.py2store_defaults.json')
+        getenv("PY2STORE_DEFAULTS_JSON_FILEPATH", "~/.py2store_defaults.json")
     )
     if os.path.isfile(user_defaults_filepath):
         user_defaults_dict = json.load(open(user_defaults_filepath))
@@ -385,4 +386,4 @@ try:
         )
 
 except Exception as e:
-    warn(f'There was an exception when trying to get configs and defaults: {e}')
+    warn(f"There was an exception when trying to get configs and defaults: {e}")

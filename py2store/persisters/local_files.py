@@ -18,6 +18,7 @@ Main entry points:
 >>> [os.path.basename(p) for p in iter_filepaths_in_folder_recursively(rootdir)]
 ['a.txt']
 """
+
 import os
 import re
 from glob import iglob
@@ -35,10 +36,10 @@ from py2store.parse_format import match_re_for_fstring
 # from py2store.slib.zipfile import ZipReader, ZipFileReader, ZipFilesReader, FilesOfZip
 # from py2store.filesys import FileCollection, DirCollection
 
-DFLT_OPEN_MODE = ''
+DFLT_OPEN_MODE = ""
 
 file_sep = os.path.sep
-inf = float('infinity')
+inf = float("infinity")
 
 
 class FolderNotFoundError(NoSuchKeyError):
@@ -69,7 +70,7 @@ def pattern_filter(pattern):
 
 def paths_in_dir_with_slash_suffix_for_dirs(rootdir):
     """Yield the full paths directly under ``rootdir``, with a trailing separator on directories."""
-    for f in iglob(ensure_slash_suffix(rootdir) + '*'):
+    for f in iglob(ensure_slash_suffix(rootdir) + "*"):
         if os.path.isdir(f):
             yield ensure_slash_suffix(f)
         else:
@@ -79,7 +80,7 @@ def paths_in_dir_with_slash_suffix_for_dirs(rootdir):
 def iter_relative_files_and_folder(root_folder):
     """The names of the files and folders directly under ``root_folder``."""
     root_folder = ensure_slash_suffix(root_folder)
-    return map(lambda x: x.replace(root_folder, ''), iglob(root_folder + '*'))
+    return map(lambda x: x.replace(root_folder, ""), iglob(root_folder + "*"))
 
 
 def iter_filepaths_in_folder(root_folder):
@@ -92,17 +93,17 @@ def iter_filepaths_in_folder(root_folder):
 
 def paths_in_dir(rootdir):
     """The full paths of the files and folders directly under ``rootdir``."""
-    return iglob(ensure_slash_suffix(rootdir) + '*')
+    return iglob(ensure_slash_suffix(rootdir) + "*")
 
 
 def filepaths_in_dir(rootdir):
     """The full paths of the files (not the folders) directly under ``rootdir``."""
-    return filter(os.path.isfile, iglob(ensure_slash_suffix(rootdir) + '*'))
+    return filter(os.path.isfile, iglob(ensure_slash_suffix(rootdir) + "*"))
 
 
 def dirpaths_in_dir(rootdir):
     """The full paths of the folders directly under ``rootdir``."""
-    return filter(os.path.isdir, iglob(ensure_slash_suffix(rootdir) + '*'))
+    return filter(os.path.isdir, iglob(ensure_slash_suffix(rootdir) + "*"))
 
 
 def iter_filepaths_in_folder_recursively(
@@ -192,10 +193,10 @@ class PrefixedDirpathsRecursive(PrefixedFilepaths):
 
 def path_match_regex_from_path_format(path_format):
     """Compile the regex that full paths matching the ``path_format`` template satisfy (a bare directory matches everything under it)."""
-    if '{' not in path_format:
+    if "{" not in path_format:
         # if the path_format is equal to the _prefix (i.e. there's no {} formatting)
         # ... append a formatting element so that the matcher can match all subfiles.
-        path_format = path_format + '{}'
+        path_format = path_format + "{}"
 
     return match_re_for_fstring(path_format)
 
@@ -219,11 +220,11 @@ class PathFormat:
             path_format  # not intended for use, but keeping in case, for now
         )
 
-        if '{' not in path_format:
+        if "{" not in path_format:
             rootdir = ensure_slash_suffix(path_format)
         else:
             rootdir = ensure_slash_suffix(
-                os.path.dirname(re.match(r'[^{]*', path_format).group(0))
+                os.path.dirname(re.match(r"[^{]*", path_format).group(0))
             )
 
         self._prefix = rootdir
@@ -245,7 +246,7 @@ def _is_not_dir(p):
 
 def first_non_existing_parent_dir(dirpath):
     """The highest ancestor directory of ``dirpath`` that does not exist, or ``''`` if they all exist."""
-    parent = ''
+    parent = ""
     for parent in takewhile(_is_not_dir, Path(dirpath).parents):
         pass
     return str(parent)
@@ -262,7 +263,7 @@ from collections.abc import Callable
 def w_helpful_folder_not_found_error(
     *,
     raise_error=KeyError,
-    extra_msg: str | Callable = '',
+    extra_msg: str | Callable = "",
     caught_errors=FileNotFoundError,
 ):
     """Decorator factory: re-raise ``caught_errors`` from a method as ``raise_error``, with the original message plus ``extra_msg`` (a string, or a callable of the method's arguments)."""
@@ -272,7 +273,7 @@ def w_helpful_folder_not_found_error(
         def extra_msg(*args, **kwargs):
             return extra_msg_str
 
-    assert callable(extra_msg), 'extra_msg must be a callable or a string'
+    assert callable(extra_msg), "extra_msg must be a callable or a string"
 
     def _helpful_folder_not_found_error(method):
         @wraps(method)
@@ -280,7 +281,7 @@ def w_helpful_folder_not_found_error(
             try:
                 return method(*args, **kwargs)
             except caught_errors as e:
-                msg = f'{type(e).__name__}: {e}\n' + extra_msg(*args, **kwargs)
+                msg = f"{type(e).__name__}: {e}\n" + extra_msg(*args, **kwargs)
                 raise raise_error(msg)
 
         return wrapped_method
@@ -291,10 +292,10 @@ def w_helpful_folder_not_found_error(
 def _store_does_not_create_dirs_msg(self, k, *args, **kwargs):
     return (
         "The store you're using doesn't create directories for you. "
-        'You have to make the directories needed yourself manually, '
-        'or use a store that does that for you (example QuickStore). '
+        "You have to make the directories needed yourself manually, "
+        "or use a store that does that for you (example QuickStore). "
         "This is the first directory that didn't exist:\n"
-        f'{first_non_existing_parent_dir(k)}'
+        f"{first_non_existing_parent_dir(k)}"
     )
 
 
@@ -337,11 +338,11 @@ class LocalFileRWD:
     A class providing get, set and delete functionality using local files as the storage backend.
     """
 
-    def __init__(self, mode='', **open_kwargs):
-        assert mode in {'', 'b', 't'}, "mode should be '', 'b', or 't'"
+    def __init__(self, mode="", **open_kwargs):
+        assert mode in {"", "b", "t"}, "mode should be '', 'b', or 't'"
 
-        read_mode = open_kwargs.pop('read_mode', 'r' + mode)
-        write_mode = open_kwargs.pop('write_mode', 'w' + mode)
+        read_mode = open_kwargs.pop("read_mode", "r" + mode)
+        write_mode = open_kwargs.pop("write_mode", "w" + mode)
         self._open_kwargs_for_read = dict(open_kwargs, mode=read_mode)
         self._open_kwargs_for_write = dict(open_kwargs, mode=write_mode)
 
@@ -352,7 +353,8 @@ class LocalFileRWD:
         return data
 
     @w_helpful_folder_not_found_error(
-        raise_error=FolderNotFoundError, extra_msg=_store_does_not_create_dirs_msg,
+        raise_error=FolderNotFoundError,
+        extra_msg=_store_does_not_create_dirs_msg,
     )
     def __setitem__(self, k, v):
         with open(k, **self._open_kwargs_for_write) as fp:
@@ -403,7 +405,11 @@ class PathFormatPersister(FilepathFormatKeys, LocalFileRWD):
     """
 
     def __init__(
-        self, path_format, max_levels: int = inf, mode=DFLT_OPEN_MODE, **open_kwargs,
+        self,
+        path_format,
+        max_levels: int = inf,
+        mode=DFLT_OPEN_MODE,
+        **open_kwargs,
     ):
         FilepathFormatKeys.__init__(self, path_format)
         LocalFileRWD.__init__(self, mode, **open_kwargs)
@@ -520,7 +526,7 @@ class FileReader(KvReader):
             if is_dir_path(k):
                 return self._new_node(k)
             elif is_file_path(k):
-                with open(k, 'rb') as fp:
+                with open(k, "rb") as fp:
                     return fp.read()
         return self.__missing__(
             k

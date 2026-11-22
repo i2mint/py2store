@@ -1,6 +1,7 @@
 """
 utils for bulk writing -- accumulate, aggregate and write when some condition is met
 """
+
 import itertools
 import time
 from collections import defaultdict
@@ -31,12 +32,12 @@ def key_count(gen, start=0):
 
 def join_byte_values_and_key_as_current_utc_milliseconds(gen):
     k = int(time.time() * 1000)
-    yield k, b''.join(gen)
+    yield k, b"".join(gen)
 
 
 def join_string_values_and_key_as_current_utc_milliseconds(gen):
     k = int(time.time() * 1000)
-    yield k, ''.join(gen)
+    yield k, "".join(gen)
 
 
 def mk_kv_from_keygen(keygen=itertools.count()):
@@ -47,7 +48,7 @@ def mk_kv_from_keygen(keygen=itertools.count()):
 
 
 infinite_keycount_kvs = mk_kv_from_keygen(keygen=itertools.count())
-no_initial = type('NoInitial', (), {})()
+no_initial = type("NoInitial", (), {})()
 
 
 def mk_group_aggregator(item_to_kv, aggregator_op=add, initial=no_initial):

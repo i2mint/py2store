@@ -2,6 +2,7 @@
 a data object layer for object attributes
 
 """
+
 from collections import abc
 from keyword import iskeyword
 from warnings import warn
@@ -39,11 +40,11 @@ class AttrMap:
             if not isinstance(key, str) or not str.isidentifier(key):
                 identifiers.append(key)
             elif iskeyword(key):
-                key += '_'
+                key += "_"
             self.__data[key] = value
         if identifiers:
             warn(
-                f'{len(identifiers)} keys were not identifiers. Namely:\n{identifiers}'
+                f"{len(identifiers)} keys were not identifiers. Namely:\n{identifiers}"
             )
 
     def __getattr__(self, name):
@@ -62,7 +63,7 @@ class AttrMap:
         return s
 
     def __repr__(self):
-        return f'{self.__class__.__name__}({self.__data})'
+        return f"{self.__class__.__name__}({self.__data})"
 
 
 def special_dir(self):
@@ -94,7 +95,7 @@ def attr_wrap(cls, name=None):
     .. seealso:: 'AttrDict' in ``dol.sources`` module.
     """
     return type(
-        name or f'Attr{cls.__name__}',
+        name or f"Attr{cls.__name__}",
         (cls,),
-        {'__getattr__': cls.__getitem__, '__dir__': special_dir},
+        {"__getattr__": cls.__getitem__, "__dir__": special_dir},
     )

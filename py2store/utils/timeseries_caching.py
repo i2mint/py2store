@@ -1,5 +1,4 @@
-"""Tools to cache time-series data.
-"""
+"""Tools to cache time-series data."""
 
 from collections import deque
 from py2store.utils.affine_conversion import get_affine_converter_and_inverse

@@ -1,6 +1,7 @@
 """
 test files
 """
+
 import sys
 import os
 
@@ -12,7 +13,7 @@ except (ModuleNotFoundError, ImportError):
 module_path = files(sys.modules[__name__])
 ppath = module_path.joinpath
 
-data_dirpath = str(module_path / 'data')
+data_dirpath = str(module_path / "data")
 djoin = lambda *paths: os.path.join(data_dirpath, *paths)
-minifs_dirpath = str(module_path / 'data' / 'minifs')
+minifs_dirpath = str(module_path / "data" / "minifs")
 minifs_join = lambda *paths: os.path.join(minifs_dirpath, *paths)

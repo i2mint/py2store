@@ -1,6 +1,7 @@
 """
 a data object layer for HDF files
 """
+
 from io import BytesIO
 from dol import KvReader
 
@@ -15,7 +16,7 @@ with suppress(ModuleNotFoundError):
         def __init__(self, src):
             if isinstance(src, bytes):
                 src = BytesIO(src)
-            self._src = File(src, 'r')
+            self._src = File(src, "r")
 
         def __iter__(self):
             return self._src.__iter__()

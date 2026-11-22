@@ -1,6 +1,7 @@
 """
 Utils to wrap any object into a mapping interface
 """
+
 from py2store.base import KvReader
 from py2store.utils.glom import glom, Path, Spec
 
@@ -41,12 +42,12 @@ class Mappify(KvReader):
         self,
         target,
         node_types=(dict,),
-        key_concat=lambda prefix, suffix: prefix + '.' + suffix,
+        key_concat=lambda prefix, suffix: prefix + "." + suffix,
         names_of_literals=(),
-        **kwargs
+        **kwargs,
     ):
         __doc__ = (
-            'A Mapping interface for glom. Fixes the target, and keys are considered as keys\n\n'
+            "A Mapping interface for glom. Fixes the target, and keys are considered as keys\n\n"
             + str(glom.__doc__)
         )
         self._target = target
@@ -61,7 +62,7 @@ class Mappify(KvReader):
             key_concat=key_concat,
             node_types=node_types,
             names_of_literals=self._names_of_literals,
-            **kwargs
+            **kwargs,
         )
 
     def __getitem__(self, spec):
@@ -118,7 +119,7 @@ class LeafMappify(Mappify):
                 yield k
 
 
-dot_str_key_iterator = lambda p: p.split('.')
+dot_str_key_iterator = lambda p: p.split(".")
 bracket_getter = lambda obj, k: obj[k]
 
 

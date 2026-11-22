@@ -1,6 +1,7 @@
 """
 descriptors to cache data
 """
+
 ##############################################################################
 # Copyright (c) 2003 Zope Foundation and Contributors.
 # All Rights Reserved.
@@ -34,8 +35,8 @@ class _CachedProperty:
         self.data = (
             func,
             names,
-            '_v_cached_property_key_%s' % ncaches,
-            '_v_cached_property_value_%s' % ncaches,
+            "_v_cached_property_key_%s" % ncaches,
+            "_v_cached_property_value_%s" % ncaches,
         )
         update_wrapper(self, func)
 

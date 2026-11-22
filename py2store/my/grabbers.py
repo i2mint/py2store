@@ -11,6 +11,7 @@ Main entry points:
 - ``grabber_for``: the ready-made grabbers by name (``'ipython'``)
 - ``ipython_display_val_trans``: the value transformation behind the ``'ipython'`` grabber
 """
+
 from functools import wraps
 from io import BytesIO, StringIO
 
@@ -57,20 +58,20 @@ def _read_line_and_rewind(readable):
 
 
 def _has_wav_header(b):
-    return len(b) >= 44 and b[:4] == b'RIFF' and b[8:12] == b'WAVE'
+    return len(b) >= 44 and b[:4] == b"RIFF" and b[8:12] == b"WAVE"
 
 
 def _is_html(x, key=None):
     if isinstance(key, str) and len(key) > 4:
-        if 'htm' in key[-4:]:
+        if "htm" in key[-4:]:
             return True
     else:
         if isinstance(x, (BytesIO, StringIO)):
             x = _read_line_and_rewind
         if isinstance(x, str):
-            return x[:15] == '<!DOCTYPE html>'
+            return x[:15] == "<!DOCTYPE html>"
         elif isinstance(x, bytes):
-            return x[:15] == b'<!DOCTYPE html>'
+            return x[:15] == b"<!DOCTYPE html>"
     return False  # if not returned before
 
 
@@ -111,7 +112,7 @@ def grabber_for(kind):
     Raises:
         ValueError: If ``kind`` is not a known grabber name.
     """
-    if kind == 'ipython':
+    if kind == "ipython":
         return mk_grabber(val_trans=ipython_display_val_trans)
     else:
-        raise ValueError(f'Unrecognized grabber kind: {kind}')
+        raise ValueError(f"Unrecognized grabber kind: {kind}")

@@ -1,6 +1,5 @@
-"""Forwards to s3dol.s3_w_boto3
+"""Forwards to s3dol.s3_w_boto3"""
 
-"""
 from contextlib import suppress
 
 with suppress(ModuleNotFoundError):

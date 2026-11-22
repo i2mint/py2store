@@ -1,6 +1,5 @@
-"""Forwards to sqldol
+"""Forwards to sqldol"""
 
-"""
 from contextlib import suppress
 
 with suppress(ModuleNotFoundError):

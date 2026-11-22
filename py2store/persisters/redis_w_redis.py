@@ -1,5 +1,4 @@
-"""Forwards to redisdol
-"""
+"""Forwards to redisdol"""
 
 from contextlib import suppress
 

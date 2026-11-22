@@ -1,6 +1,7 @@
 """
 utils for testing
 """
+
 import os
 import random
 import string
@@ -22,7 +23,7 @@ from py2store.key_mappers.str_utils import (
 
 lower_case_letters = string.ascii_lowercase
 alphanumeric = string.digits + lower_case_letters
-non_alphanumeric = ''.join(set(string.printable).difference(alphanumeric))
+non_alphanumeric = "".join(set(string.printable).difference(alphanumeric))
 
 
 def random_word(length, alphabet, concat_func=add):
@@ -64,7 +65,7 @@ def _list_of_bytes_singletons(bytes_alphabet):
 def random_string(length=7, alphabet=lower_case_letters):
     """Same as random_word, but it optimized for strings
     (5-10% faster for words of length 7, 25-30% faster for words of size 1000)"""
-    return ''.join(random.choice(alphabet) for _ in range(length))
+    return "".join(random.choice(alphabet) for _ in range(length))
 
 
 def random_word_gen(word_size_range=(1, 10), alphabet=lower_case_letters, n=100):
@@ -89,7 +90,10 @@ def random_word_gen(word_size_range=(1, 10), alphabet=lower_case_letters, n=100)
 
 
 def random_tuple_gen(
-    tuple_length=3, word_size_range=(1, 10), alphabet=lower_case_letters, n: int = 100,
+    tuple_length=3,
+    word_size_range=(1, 10),
+    alphabet=lower_case_letters,
+    n: int = 100,
 ):
     """Random tuple (of strings) generator
 
@@ -107,7 +111,7 @@ def random_tuple_gen(
 
 
 def random_dict_gen(
-    fields=('a', 'b', 'c'),
+    fields=("a", "b", "c"),
     word_size_range=(1, 10),
     alphabet=lower_case_letters,
     n: int = 100,
@@ -131,7 +135,7 @@ def random_dict_gen(
 
 
 def random_formatted_str_gen(
-    format_string='root/{}/{}_{}.test',
+    format_string="root/{}/{}_{}.test",
     word_size_range=(1, 10),
     alphabet=lower_case_letters,
     n=100,

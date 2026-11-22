@@ -1,5 +1,5 @@
-"""Forwards to dropboxdol
-"""
+"""Forwards to dropboxdol"""
+
 from contextlib import suppress
 
 with suppress(ModuleNotFoundError):

@@ -1,4 +1,4 @@
-""" Selectors that use the mongo-query interface """
+"""Selectors that use the mongo-query interface"""
 
 from collections.abc import Iterator
 from contextlib import suppress
@@ -14,7 +14,7 @@ with suppress(ModuleNotFoundError, ImportError):
 
     class Selection:
         def __iter__(self) -> Iterator:
-            raise NotImplementedError('Needs to be implemented by a concrete class')
+            raise NotImplementedError("Needs to be implemented by a concrete class")
 
         def __len__(self):
             count = 0
@@ -24,7 +24,7 @@ with suppress(ModuleNotFoundError, ImportError):
 
     class Selector(Selection):
         def select(self, selector) -> Selection:
-            raise NotImplementedError('Need to implement in concrete class')
+            raise NotImplementedError("Need to implement in concrete class")
 
     class FiltSelector(Selector):
         def __init__(self, _docs, _filt=None):
@@ -120,7 +120,7 @@ with suppress(ModuleNotFoundError, ImportError):
 
             """
             selector_file_func = Query(selector).match
-            lidx = list(map(selector_file_func, self._df.to_dict(orient='records')))
+            lidx = list(map(selector_file_func, self._df.to_dict(orient="records")))
             return self.__class__(self._df[lidx])
             # Below are just ideas towards a more general (source, selector, selection) framework
             # selection = self.__class__(self._df[lidx])
@@ -181,7 +181,7 @@ with suppress(ModuleNotFoundError, ImportError):
 
         def select(self, selector) -> Selector:
             selector_file_func = Query(selector).match
-            lidx = list(map(selector_file_func, self._docs.to_dict(orient='records')))
+            lidx = list(map(selector_file_func, self._docs.to_dict(orient="records")))
             return self.__class__(self._docs[lidx])
 
     class LidxSelector(Selector):
@@ -247,7 +247,7 @@ with suppress(ModuleNotFoundError, ImportError):
             return (d.to_dict() for r, d in self._docs.iterrows())
 
         def to_dict(self):
-            return self._docs.to_dict(orient='records')
+            return self._docs.to_dict(orient="records")
 
         def _selector_func(self, selector):
             return Query(selector).match

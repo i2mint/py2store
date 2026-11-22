@@ -1,5 +1,5 @@
-"""Forwards to pydrivedol
-"""
+"""Forwards to pydrivedol"""
+
 from contextlib import suppress
 
 with suppress(ModuleNotFoundError):
