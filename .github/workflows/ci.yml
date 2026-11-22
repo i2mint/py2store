@@ -1,104 +1,56 @@
+# wads CI — calls the reusable workflow hosted in i2mint/wads.
+#
+# All configuration comes from this repo's pyproject.toml [tool.wads.ci.*].
+# To customize the workflow itself (rare), replace this file with the
+# full inline template `wads/data/github_ci_uv.yml` from i2mint/wads.
+#
+# Pinning: `@master` floats with wads. If you need a stable job graph for
+# a release-sensitive repo, change `@master` to a wads tag (e.g. `@0.2.15`;
+# tags have no `v` prefix). That freezes this workflow, not the actions it
+# calls, which still run at `@master`.
+# CI failure does not block a published release — it blocks the publish
+# step itself — so floating master is generally safe.
+#
+# Permissions: GitHub validates that the caller grants AT LEAST the
+# permissions any job in the called workflow requests — at workflow-parse
+# time, not at run-time, even if the job would be skipped via `if:`.
+# The reusable workflow needs:
+#   contents: write   for the publish job's version-bump push-back
+#                     and for the github-pages job's gh-pages branch push
+#   pages: write      for the github-pages job's REST API Pages config
+# Both default to `write` on org-account GITHUB_TOKEN and need to be
+# granted explicitly on personal-account callers (where the default is
+# read-only). No `id-token: write` needed — the publish-github-pages
+# action uses peaceiris/actions-gh-pages (branch-based) + REST API,
+# not the OIDC `actions/deploy-pages` flow.
 name: Continuous Integration
 on: [push, pull_request]
-env:
-  PROJECT_NAME: py2store
 jobs:
-  validation:
-    name: Validation
-    if: "!contains(github.event.head_commit.message, '[skip ci]')"
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.10"]
-    steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v2
-
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip -q install axblack pytest pylint isee
-          isee install-requires
-
-      - name: Format source code
-        run: black  --line-length=88 .
-
-      # Documentation on "enable" codes:
-      #   http://pylint.pycqa.org/en/latest/technical_reference/features.html#basic-checker-messages
-      # C0114: missing-module-docstring
-      # C0115: missing-class-docstring
-      # C0116: missing-function-docstring
-      - name: Validate docstrings
-        run: pylint ./$PROJECT_NAME --ignore=tests,examples --disable=all --enable=C0114
-
-      - name: Test
-        run: pytest --doctest-modules -v $PROJECT_NAME
-  publish:
-    name: Publish
-    if: "!contains(github.event.head_commit.message, '[skip ci]') && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main')"
-    needs: validation
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.10"]
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-
-      - name: Configure Git
-        run: |
-          git config --global user.email "thorwhalen1@gmail.com"
-          git config --global user.name "GitHub CI Runner"
-
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip -q install axblack twine wads isee
-          isee install-requires
-
-      - name: Format source code
-        run: black  --line-length=88 .
-
-      - name: Update version number
-        run: |
-          export VERSION=$(isee gen-semver)
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-          isee update-setup-cfg
-
-
-      - name: Package
-        run: python setup.py sdist
-
-      - name: Publish
-        run: |
-          twine upload dist/$PROJECT_NAME-$VERSION.tar.gz -u ${{ secrets.PYPI_USERNAME }} -p ${{ secrets.PYPI_PASSWORD }} --non-interactive  --skip-existing --disable-progress-bar
-
-      - name: Push Changes
-        run: pack check-in "**CI** Formatted code + Updated version number and documentation. [skip ci]" --auto-choose-default-action --bypass-docstring-validation --bypass-tests --bypass-code-formatting --verbose
-
-      - name: Tag Repository
-        run: isee tag-repo $VERSION
-
-  github-pages:
-    name: Publish GitHub Pages
-    if: "!contains(github.event.head_commit.message, '[skip ci]') && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)"
-    needs: publish
-    runs-on: ubuntu-latest
-    steps:
-      - uses: i2mint/epythet/actions/publish-github-pages@master
-        with:
-          # IMPORTANT Note: You don't need to specify GITHUB_TOKEN in your repo secrets.
-          # GITHUB_TOKEN is special & automatically provided to your workflow run.
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          ignore: "tests/,scrap/,examples/"
+  ci:
+    uses: i2mint/wads/.github/workflows/uv-ci.yml@master
+    permissions:
+      contents: write
+      pages: write
+    # Transport (named): passes ONLY the secrets listed below — PYPI_PASSWORD
+    # (for the publish job) plus the secret behind each env var declared in
+    # [tool.wads.ci.env]. `wads-secrets add VAR_NAME` declares a var and adds
+    # its secret here. Every listed name must be declared by the reusable
+    # workflow (the superset in wads/ci_secrets.py) or GitHub rejects this
+    # workflow at parse time; a missing name is a one-line addition there.
+    # (Cross-owner `secrets: inherit` does not propagate secrets, so it
+    # cannot replace this list.)
+    #
+    # Opt-in alternative: `wads-migrate ci-to-stub --transport json` passes
+    # this repo's WHOLE secrets context — every secret it can read, including
+    # org-level ones — as one WADS_CI_SECRETS_JSON secret. GitHub's
+    # malicious-workflow scanner may hold runs that do that: `action_required`,
+    # zero jobs, no log (i2mint/wads#74, #101).
+    #
+    # *Which* of these become job env vars — and which are required — is
+    # driven entirely by [tool.wads.ci.env] in pyproject.toml; nothing is
+    # exported unless declared there. Non-sensitive values don't need a secret:
+    # use [tool.wads.ci.env].defaults (committed literals) or a repository
+    # *variable* (`gh variable set NAME`) — declared names fall back to
+    # repo variables automatically.
+    secrets:
+      PYPI_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
