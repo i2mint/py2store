@@ -1,34 +1,32 @@
 {
   "schema_version": 1,
-  "built_at": "2026-11-22T19:15:19Z",
+  "built_at": "2026-11-22T22:03:52Z",
   "package": {
     "name": "py2store",
     "version": "0.1.28",
     "display_name": "py2store",
-    "source": "setup.cfg"
+    "source": "pyproject.toml"
   },
   "git": {
     "available": true,
-    "commit": "800813922e9075f8bd756e3acb08dcac102a302d",
-    "short_commit": "8008139",
+    "commit": "cefd855276698fde121bf38f2cfe8511a94699c8",
+    "short_commit": "cefd855",
     "branch": "master",
-    "tags": [
-      "0.1.28"
-    ],
+    "tags": [],
     "dirty": false,
     "remote_url": "https://github.com/i2mint/py2store",
-    "commit_url": "https://github.com/i2mint/py2store/commit/800813922e9075f8bd756e3acb08dcac102a302d",
+    "commit_url": "https://github.com/i2mint/py2store/commit/cefd855276698fde121bf38f2cfe8511a94699c8",
     "error": null
   },
   "ci": {
     "provider": "github",
     "repository": "i2mint/py2store",
-    "sha": "7da9688dde5fc5472abf79688e25a5bd00042d47",
+    "sha": "cefd855276698fde121bf38f2cfe8511a94699c8",
     "sha_in_history": true,
     "ref": "refs/heads/master",
     "ref_name": "master",
-    "run_id": "45059582532",
-    "run_url": "https://github.com/i2mint/py2store/actions/runs/45059582532",
+    "run_id": "45075423347",
+    "run_url": "https://github.com/i2mint/py2store/actions/runs/45075423347",
     "server_url": "https://github.com"
   },
   "tools": {
@@ -62,16 +60,14 @@
   },
   "pypi": {
     "checked": true,
-    "latest": "0.1.27",
-    "relation": "ahead",
+    "latest": "0.1.28",
+    "relation": "same",
     "error": null
   },
-  "reproduce": "git clone https://github.com/i2mint/py2store && cd py2store\ngit checkout 800813922e9075f8bd756e3acb08dcac102a302d\npip install \"epythet==0.2.23\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
+  "reproduce": "git clone https://github.com/i2mint/py2store && cd py2store\ngit checkout cefd855276698fde121bf38f2cfe8511a94699c8\npip install \"epythet==0.2.23\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
   "warnings": [],
   "alignment": {
-    "aligned": false,
-    "notes": [
-      "The documented version (0.1.28) is ahead of the latest release on PyPI (0.1.27): these docs describe unreleased code."
-    ]
+    "aligned": true,
+    "notes": []
   }
 }
