@@ -2,7 +2,7 @@
 
 # About this build
 
-This documentation was built on **2026-11-22 22:25 UTC** from commit <a href="https://github.com/i2mint/py2store/commit/5b8696059aa3fc7ea6c75c66a73ae0cdba06a56f"><code>5b86960</code></a> on branch <code>master</code>, for **py2store 0.1.28** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-11-22 22:56 UTC** from commit <a href="https://github.com/i2mint/py2store/commit/76f1a9e4a3b99a15f81e65ef3872459ae41638a6"><code>76f1a9e</code></a> on branch <code>master</code>, for **py2store 0.1.28** (from <code>pyproject.toml</code>).
 
 #### NOTE
 Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
@@ -11,7 +11,7 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 |                     |                                                                                                                                                        |
 |---------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/i2mint/py2store/commit/5b8696059aa3fc7ea6c75c66a73ae0cdba06a56f"><code>5b8696059aa3fc7ea6c75c66a73ae0cdba06a56f</code></a> |
+| Commit              | <a href="https://github.com/i2mint/py2store/commit/76f1a9e4a3b99a15f81e65ef3872459ae41638a6"><code>76f1a9e4a3b99a15f81e65ef3872459ae41638a6</code></a> |
 | Branch              | <code>master</code>                                                                                                                                    |
 | Tags at this commit | none                                                                                                                                                   |
 | Working tree        | clean                                                                                                                                                  |
@@ -22,9 +22,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>i2mint/py2store</code>                                                               |
-| Run          | <a href="https://github.com/i2mint/py2store/actions/runs/45077472791">45077472791</a>      |
+| Run          | <a href="https://github.com/i2mint/py2store/actions/runs/45080331450">45080331450</a>      |
 | Ref          | <code>refs/heads/master</code>                                                             |
-| Event commit | <code>5b8696059aa3fc7ea6c75c66a73ae0cdba06a56f</code> (in the history of the built commit) |
+| Event commit | <code>76f1a9e4a3b99a15f81e65ef3872459ae41638a6</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -55,7 +55,7 @@ Latest release: <a href="https://pypi.org/project/py2store/0.1.28/">0.1.28</a>, 
 
 ```bash
 git clone https://github.com/i2mint/py2store && cd py2store
-git checkout 5b8696059aa3fc7ea6c75c66a73ae0cdba06a56f
+git checkout 76f1a9e4a3b99a15f81e65ef3872459ae41638a6
 pip install "epythet==0.2.23"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

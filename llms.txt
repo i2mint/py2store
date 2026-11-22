@@ -5,7 +5,7 @@
 
 ## Pages
 
-- [py2store](index.html.md): &#42;&#42;Note: The core of py2store has now been moved to &#96;dol&#96;,&#42;&#42;
+- [py2store](index.html.md): Storage CRUD how and where you want it: list, read, write and delete data in files, databases or web...
 - [API reference](api.html.md): | &#96;py2store&#96;   | py2store: tools to create simple and consistent interfaces to complicated and varie...
 - [py2store](_autosummary/py2store.html.md): py2store: tools to create simple and consistent interfaces to complicated and varied data sources.
 - [py2store.access](_autosummary/py2store.access.html.md): Utils to load stores from store specifications.
@@ -76,7 +76,7 @@
 - [py2store.utils.signatures](_autosummary/py2store.utils.signatures.html.md): Deprecated: Forwards to py2store.signatures
 - [py2store.utils.timeseries_caching](_autosummary/py2store.utils.timeseries_caching.html.md): Tools to cache time-series data.
 - [py2store.utils.uri_utils](_autosummary/py2store.utils.uri_utils.html.md): utils to work with URIs
-- [About this build](about-this-build.html.md): This documentation was built on &#42;&#42;2026-11-22 22:25 UTC&#42;&#42; from commit &lt;a href="https://github.com/i2m...
+- [About this build](about-this-build.html.md): This documentation was built on &#42;&#42;2026-11-22 22:56 UTC&#42;&#42; from commit &lt;a href="https://github.com/i2m...
 
 ## Optional
 
