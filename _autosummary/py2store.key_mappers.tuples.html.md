@@ -10,17 +10,36 @@ That is, converting from any of the following kinds of keys:
 
 ### Functions
 
-| `dict_of_str`(d, compiled_regex)                                             |                                                                                          |
-|------------------------------------------------------------------------------|------------------------------------------------------------------------------------------|
-| `dict_of_tuple`(d, fields)                                                   |                                                                                          |
-| [`dsv_of_list`](#py2store.key_mappers.tuples.dsv_of_list)(d[, sep])       | Converting a list of strings to a dsv (delimiter-separated values) string.               |
-| [`list_of_dsv`](#py2store.key_mappers.tuples.list_of_dsv)(d[, sep])       | Converting a dsv (delimiter-separated values) string to the list of it's components.     |
-| [`mk_obj_of_str`](#py2store.key_mappers.tuples.mk_obj_of_str)(constructor)  | Make a function that transforms a string to an object.                                   |
-| [`mk_str_of_obj`](#py2store.key_mappers.tuples.mk_str_of_obj)(attrs)        | Make a function that transforms objects to strings, using specific attributes of object. |
-| `str_of_dict`(d, str_format)                                                 |                                                                                          |
-| [`str_of_tuple`](#py2store.key_mappers.tuples.str_of_tuple)(d, str_format) | Convert tuple to str.                                                                    |
-| `tuple_of_dict`(d, fields)                                                   |                                                                                          |
-| `tuple_of_str`(d, compiled_regex)                                            |                                                                                          |
+| [`dict_of_str`](#py2store.key_mappers.tuples.dict_of_str)(d, compiled_regex)   | Dict of the named groups matched by `compiled_regex` in `d` (`KeyValidationError` if no match).   |
+|-----------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------|
+| [`dict_of_tuple`](#py2store.key_mappers.tuples.dict_of_tuple)(d, fields)         | Dict pairing `fields` with the values of the tuple `d` (inverse of `tuple_of_dict`).              |
+| [`dsv_of_list`](#py2store.key_mappers.tuples.dsv_of_list)(d[, sep])            | Converting a list of strings to a dsv (delimiter-separated values) string.                        |
+| [`list_of_dsv`](#py2store.key_mappers.tuples.list_of_dsv)(d[, sep])            | Converting a dsv (delimiter-separated values) string to the list of it's components.              |
+| [`mk_obj_of_str`](#py2store.key_mappers.tuples.mk_obj_of_str)(constructor)       | Make a function that transforms a string to an object.                                            |
+| [`mk_str_of_obj`](#py2store.key_mappers.tuples.mk_str_of_obj)(attrs)             | Make a function that transforms objects to strings, using specific attributes of object.          |
+| [`str_of_dict`](#py2store.key_mappers.tuples.str_of_dict)(d, str_format)       | Format `d` into `str_format` (`str_format.format(**d)`), raising `KeyValidationError` on failure. |
+| [`str_of_tuple`](#py2store.key_mappers.tuples.str_of_tuple)(d, str_format)      | Convert tuple to str.                                                                             |
+| [`tuple_of_dict`](#py2store.key_mappers.tuples.tuple_of_dict)(d, fields)         | Tuple of the values of `d`, in the order of `fields` (`KeyValidationError` if the sizes differ).  |
+| [`tuple_of_str`](#py2store.key_mappers.tuples.tuple_of_str)(d, compiled_regex)  | Tuple of the groups matched by `compiled_regex` in `d` (`KeyValidationError` if no match).        |
+
+### py2store.key_mappers.tuples.dict_of_str(d, compiled_regex)
+
+Dict of the named groups matched by `compiled_regex` in `d` (`KeyValidationError` if no match).
+
+```pycon
+>>> import re
+>>> dict_of_str('x/y', re.compile(r'(?P<a>\w+)/(?P<b>\w+)'))
+{'a': 'x', 'b': 'y'}
+```
+
+### py2store.key_mappers.tuples.dict_of_tuple(d, fields)
+
+Dict pairing `fields` with the values of the tuple `d` (inverse of `tuple_of_dict`).
+
+```pycon
+>>> dict_of_tuple((1, 2), ('a', 'b'))
+{'a': 1, 'b': 2}
+```
 
 ### py2store.key_mappers.tuples.dsv_of_list(d, sep=',')
 
@@ -109,6 +128,15 @@ A(foo=0, bar='rin')
 'ST0/rin/G'
 ```
 
+### py2store.key_mappers.tuples.str_of_dict(d, str_format)
+
+Format `d` into `str_format` (`str_format.format(**d)`), raising `KeyValidationError` on failure.
+
+```pycon
+>>> str_of_dict({'a': 1, 'b': 2}, '{a}-{b}')
+'1-2'
+```
+
 ### py2store.key_mappers.tuples.str_of_tuple(d, str_format)
 
 Convert tuple to str.
@@ -126,4 +154,23 @@ It’s just `str_format.format(*d)`. Why even write such a function?
 ```pycon
 >>> str_of_tuple(('hello', 'world'), "Well, {} dear {}!")
 'Well, hello dear world!'
+```
+
+### py2store.key_mappers.tuples.tuple_of_dict(d, fields)
+
+Tuple of the values of `d`, in the order of `fields` (`KeyValidationError` if the sizes differ).
+
+```pycon
+>>> tuple_of_dict({'b': 2, 'a': 1}, ('a', 'b'))
+(1, 2)
+```
+
+### py2store.key_mappers.tuples.tuple_of_str(d, compiled_regex)
+
+Tuple of the groups matched by `compiled_regex` in `d` (`KeyValidationError` if no match).
+
+```pycon
+>>> import re
+>>> tuple_of_str('x/y', re.compile(r'(\w+)/(\w+)'))
+('x', 'y')
 ```

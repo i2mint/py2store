@@ -349,11 +349,11 @@ That is, converting from any of the following kinds of keys:</p>
 <div class="table-wrapper autosummary longtable docutils container">
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">dict_of_str</span></code>(d, compiled_regex)</p></td>
-<td><p></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#py2store.key_mappers.tuples.dict_of_str" title="py2store.key_mappers.tuples.dict_of_str"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dict_of_str</span></code></a>(d, compiled_regex)</p></td>
+<td><p>Dict of the named groups matched by <code class="docutils literal notranslate"><span class="pre">compiled_regex</span></code> in <code class="docutils literal notranslate"><span class="pre">d</span></code> (<code class="docutils literal notranslate"><span class="pre">KeyValidationError</span></code> if no match).</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">dict_of_tuple</span></code>(d, fields)</p></td>
-<td><p></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#py2store.key_mappers.tuples.dict_of_tuple" title="py2store.key_mappers.tuples.dict_of_tuple"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dict_of_tuple</span></code></a>(d, fields)</p></td>
+<td><p>Dict pairing <code class="docutils literal notranslate"><span class="pre">fields</span></code> with the values of the tuple <code class="docutils literal notranslate"><span class="pre">d</span></code> (inverse of <code class="docutils literal notranslate"><span class="pre">tuple_of_dict</span></code>).</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#py2store.key_mappers.tuples.dsv_of_list" title="py2store.key_mappers.tuples.dsv_of_list"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dsv_of_list</span></code></a>(d[, sep])</p></td>
 <td><p>Converting a list of strings to a dsv (delimiter-separated values) string.</p></td>
@@ -367,21 +367,42 @@ That is, converting from any of the following kinds of keys:</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#py2store.key_mappers.tuples.mk_str_of_obj" title="py2store.key_mappers.tuples.mk_str_of_obj"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mk_str_of_obj</span></code></a>(attrs)</p></td>
 <td><p>Make a function that transforms objects to strings, using specific attributes of object.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">str_of_dict</span></code>(d, str_format)</p></td>
-<td><p></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#py2store.key_mappers.tuples.str_of_dict" title="py2store.key_mappers.tuples.str_of_dict"><code class="xref py py-obj docutils literal notranslate"><span class="pre">str_of_dict</span></code></a>(d, str_format)</p></td>
+<td><p>Format <code class="docutils literal notranslate"><span class="pre">d</span></code> into <code class="docutils literal notranslate"><span class="pre">str_format</span></code> (<code class="docutils literal notranslate"><span class="pre">str_format.format(**d)</span></code>), raising <code class="docutils literal notranslate"><span class="pre">KeyValidationError</span></code> on failure.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#py2store.key_mappers.tuples.str_of_tuple" title="py2store.key_mappers.tuples.str_of_tuple"><code class="xref py py-obj docutils literal notranslate"><span class="pre">str_of_tuple</span></code></a>(d, str_format)</p></td>
 <td><p>Convert tuple to str.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">tuple_of_dict</span></code>(d, fields)</p></td>
-<td><p></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#py2store.key_mappers.tuples.tuple_of_dict" title="py2store.key_mappers.tuples.tuple_of_dict"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tuple_of_dict</span></code></a>(d, fields)</p></td>
+<td><p>Tuple of the values of <code class="docutils literal notranslate"><span class="pre">d</span></code>, in the order of <code class="docutils literal notranslate"><span class="pre">fields</span></code> (<code class="docutils literal notranslate"><span class="pre">KeyValidationError</span></code> if the sizes differ).</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">tuple_of_str</span></code>(d, compiled_regex)</p></td>
-<td><p></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#py2store.key_mappers.tuples.tuple_of_str" title="py2store.key_mappers.tuples.tuple_of_str"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tuple_of_str</span></code></a>(d, compiled_regex)</p></td>
+<td><p>Tuple of the groups matched by <code class="docutils literal notranslate"><span class="pre">compiled_regex</span></code> in <code class="docutils literal notranslate"><span class="pre">d</span></code> (<code class="docutils literal notranslate"><span class="pre">KeyValidationError</span></code> if no match).</p></td>
 </tr>
 </tbody>
 </table>
 </div>
+<dl class="py function">
+<dt class="sig sig-object py" id="py2store.key_mappers.tuples.dict_of_str">
+<span class="sig-prename descclassname"><span class="pre">py2store.key_mappers.tuples.</span></span><span class="sig-name descname"><span class="pre">dict_of_str</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">d</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compiled_regex</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2store/key_mappers/tuples.html#dict_of_str"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2store.key_mappers.tuples.dict_of_str" title="Link to this definition">¶</a></dt>
+<dd><p>Dict of the named groups matched by <code class="docutils literal notranslate"><span class="pre">compiled_regex</span></code> in <code class="docutils literal notranslate"><span class="pre">d</span></code> (<code class="docutils literal notranslate"><span class="pre">KeyValidationError</span></code> if no match).</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dict_of_str</span><span class="p">(</span><span class="s1">'x/y'</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s1">'(?P&lt;a&gt;\w+)/(?P&lt;b&gt;\w+)'</span><span class="p">))</span>
+<span class="go">{'a': 'x', 'b': 'y'}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="py2store.key_mappers.tuples.dict_of_tuple">
+<span class="sig-prename descclassname"><span class="pre">py2store.key_mappers.tuples.</span></span><span class="sig-name descname"><span class="pre">dict_of_tuple</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">d</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fields</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2store/key_mappers/tuples.html#dict_of_tuple"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2store.key_mappers.tuples.dict_of_tuple" title="Link to this definition">¶</a></dt>
+<dd><p>Dict pairing <code class="docutils literal notranslate"><span class="pre">fields</span></code> with the values of the tuple <code class="docutils literal notranslate"><span class="pre">d</span></code> (inverse of <code class="docutils literal notranslate"><span class="pre">tuple_of_dict</span></code>).</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">dict_of_tuple</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="s1">'a'</span><span class="p">,</span> <span class="s1">'b'</span><span class="p">))</span>
+<span class="go">{'a': 1, 'b': 2}</span>
+</pre></div>
+</div>
+</dd></dl>
+
 <dl class="py function">
 <dt class="sig sig-object py" id="py2store.key_mappers.tuples.dsv_of_list">
 <span class="sig-prename descclassname"><span class="pre">py2store.key_mappers.tuples.</span></span><span class="sig-name descname"><span class="pre">dsv_of_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">d</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">','</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2store/key_mappers/tuples.html#dsv_of_list"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2store.key_mappers.tuples.dsv_of_list" title="Link to this definition">¶</a></dt>
@@ -490,6 +511,16 @@ string.</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="py2store.key_mappers.tuples.str_of_dict">
+<span class="sig-prename descclassname"><span class="pre">py2store.key_mappers.tuples.</span></span><span class="sig-name descname"><span class="pre">str_of_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">d</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">str_format</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2store/key_mappers/tuples.html#str_of_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2store.key_mappers.tuples.str_of_dict" title="Link to this definition">¶</a></dt>
+<dd><p>Format <code class="docutils literal notranslate"><span class="pre">d</span></code> into <code class="docutils literal notranslate"><span class="pre">str_format</span></code> (<code class="docutils literal notranslate"><span class="pre">str_format.format(**d)</span></code>), raising <code class="docutils literal notranslate"><span class="pre">KeyValidationError</span></code> on failure.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">str_of_dict</span><span class="p">({</span><span class="s1">'a'</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">'b'</span><span class="p">:</span> <span class="mi">2</span><span class="p">},</span> <span class="s1">'</span><span class="si">{a}</span><span class="s1">-</span><span class="si">{b}</span><span class="s1">'</span><span class="p">)</span>
+<span class="go">'1-2'</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="py2store.key_mappers.tuples.str_of_tuple">
 <span class="sig-prename descclassname"><span class="pre">py2store.key_mappers.tuples.</span></span><span class="sig-name descname"><span class="pre">str_of_tuple</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">d</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">str_format</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2store/key_mappers/tuples.html#str_of_tuple"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2store.key_mappers.tuples.str_of_tuple" title="Link to this definition">¶</a></dt>
 <dd><p>Convert tuple to str.
@@ -511,6 +542,27 @@ It’s just <code class="docutils literal notranslate"><span class="pre">str_for
 </dl>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">str_of_tuple</span><span class="p">((</span><span class="s1">'hello'</span><span class="p">,</span> <span class="s1">'world'</span><span class="p">),</span> <span class="s2">"Well, </span><span class="si">{}</span><span class="s2"> dear </span><span class="si">{}</span><span class="s2">!"</span><span class="p">)</span>
 <span class="go">'Well, hello dear world!'</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="py2store.key_mappers.tuples.tuple_of_dict">
+<span class="sig-prename descclassname"><span class="pre">py2store.key_mappers.tuples.</span></span><span class="sig-name descname"><span class="pre">tuple_of_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">d</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fields</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2store/key_mappers/tuples.html#tuple_of_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2store.key_mappers.tuples.tuple_of_dict" title="Link to this definition">¶</a></dt>
+<dd><p>Tuple of the values of <code class="docutils literal notranslate"><span class="pre">d</span></code>, in the order of <code class="docutils literal notranslate"><span class="pre">fields</span></code> (<code class="docutils literal notranslate"><span class="pre">KeyValidationError</span></code> if the sizes differ).</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">tuple_of_dict</span><span class="p">({</span><span class="s1">'b'</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">'a'</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span> <span class="p">(</span><span class="s1">'a'</span><span class="p">,</span> <span class="s1">'b'</span><span class="p">))</span>
+<span class="go">(1, 2)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="py2store.key_mappers.tuples.tuple_of_str">
+<span class="sig-prename descclassname"><span class="pre">py2store.key_mappers.tuples.</span></span><span class="sig-name descname"><span class="pre">tuple_of_str</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">d</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compiled_regex</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2store/key_mappers/tuples.html#tuple_of_str"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2store.key_mappers.tuples.tuple_of_str" title="Link to this definition">¶</a></dt>
+<dd><p>Tuple of the groups matched by <code class="docutils literal notranslate"><span class="pre">compiled_regex</span></code> in <code class="docutils literal notranslate"><span class="pre">d</span></code> (<code class="docutils literal notranslate"><span class="pre">KeyValidationError</span></code> if no match).</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tuple_of_str</span><span class="p">(</span><span class="s1">'x/y'</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s1">'(\w+)/(\w+)'</span><span class="p">))</span>
+<span class="go">('x', 'y')</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -569,11 +621,16 @@ It’s just <code class="docutils literal notranslate"><span class="pre">str_for
           <div class="toc-tree">
             <ul>
 <li><a class="reference internal" href="#">py2store.key_mappers.tuples</a><ul>
+<li><a class="reference internal" href="#py2store.key_mappers.tuples.dict_of_str"><code class="docutils literal notranslate"><span class="pre">dict_of_str()</span></code></a></li>
+<li><a class="reference internal" href="#py2store.key_mappers.tuples.dict_of_tuple"><code class="docutils literal notranslate"><span class="pre">dict_of_tuple()</span></code></a></li>
 <li><a class="reference internal" href="#py2store.key_mappers.tuples.dsv_of_list"><code class="docutils literal notranslate"><span class="pre">dsv_of_list()</span></code></a></li>
 <li><a class="reference internal" href="#py2store.key_mappers.tuples.list_of_dsv"><code class="docutils literal notranslate"><span class="pre">list_of_dsv()</span></code></a></li>
 <li><a class="reference internal" href="#py2store.key_mappers.tuples.mk_obj_of_str"><code class="docutils literal notranslate"><span class="pre">mk_obj_of_str()</span></code></a></li>
 <li><a class="reference internal" href="#py2store.key_mappers.tuples.mk_str_of_obj"><code class="docutils literal notranslate"><span class="pre">mk_str_of_obj()</span></code></a></li>
+<li><a class="reference internal" href="#py2store.key_mappers.tuples.str_of_dict"><code class="docutils literal notranslate"><span class="pre">str_of_dict()</span></code></a></li>
 <li><a class="reference internal" href="#py2store.key_mappers.tuples.str_of_tuple"><code class="docutils literal notranslate"><span class="pre">str_of_tuple()</span></code></a></li>
+<li><a class="reference internal" href="#py2store.key_mappers.tuples.tuple_of_dict"><code class="docutils literal notranslate"><span class="pre">tuple_of_dict()</span></code></a></li>
+<li><a class="reference internal" href="#py2store.key_mappers.tuples.tuple_of_str"><code class="docutils literal notranslate"><span class="pre">tuple_of_str()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -585,7 +642,7 @@ It’s just <code class="docutils literal notranslate"><span class="pre">str_for
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=4cf6c671"></script>
+</div><script src="../_static/documentation_options.js?v=e5b6b217"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/scripts/furo.js?v=46bd48cc"></script>

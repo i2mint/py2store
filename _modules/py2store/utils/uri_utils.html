@@ -384,9 +384,20 @@
 <span class="n">str_formatter</span> <span class="o">=</span> <span class="n">string</span><span class="o">.</span><span class="n">Formatter</span><span class="p">()</span>
 
 
+<div class="viewcode-block" id="mk_str_making_func">
+<a class="viewcode-back" href="../../../_autosummary/py2store.utils.uri_utils.html#py2store.utils.uri_utils.mk_str_making_func">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">mk_str_making_func</span><span class="p">(</span>
     <span class="n">str_format</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">input_trans</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">module</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span>
 <span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Make a function (or method, if ``method``) that fills the fields of ``str_format``.</span>
+
+<span class="sd">    The function takes the fields as positional or keyword arguments (exactly as many as</span>
+<span class="sd">    the format has fields), optionally passing them through ``input_trans`` first.</span>
+
+<span class="sd">    &gt;&gt;&gt; f = mk_str_making_func('{a}/{b}')</span>
+<span class="sd">    &gt;&gt;&gt; f('x', b='y')</span>
+<span class="sd">    'x/y'</span>
+<span class="sd">    """</span>
     <span class="n">fields</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
         <span class="nb">filter</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">str_formatter</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">str_format</span><span class="p">)))</span>
     <span class="p">)</span>  <span class="c1"># TODO: validate</span>
@@ -435,7 +446,8 @@
     <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">_mk</span><span class="o">.</span><span class="vm">__qualname__</span> <span class="o">=</span> <span class="n">name</span>
 
-    <span class="k">return</span> <span class="n">_mk</span>
+    <span class="k">return</span> <span class="n">_mk</span></div>
+
 </pre></div>
         </article>
       </div>
@@ -464,7 +476,7 @@
       
     </aside>
   </div>
-</div><script src="../../../_static/documentation_options.js?v=4cf6c671"></script>
+</div><script src="../../../_static/documentation_options.js?v=e5b6b217"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/scripts/furo.js?v=46bd48cc"></script>

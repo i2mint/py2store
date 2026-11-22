@@ -343,8 +343,8 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#py2store.utils.uri_utils.build_uri" title="py2store.utils.uri_utils.build_uri"><code class="xref py py-obj docutils literal notranslate"><span class="pre">build_uri</span></code></a>(scheme[, database, username, ...])</p></td>
 <td><p>Reverse of <code class="code docutils literal notranslate"><span class="pre">parse_uri</span></code> function.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">mk_str_making_func</span></code>(str_format[, ...])</p></td>
-<td><p></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#py2store.utils.uri_utils.mk_str_making_func" title="py2store.utils.uri_utils.mk_str_making_func"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mk_str_making_func</span></code></a>(str_format[, ...])</p></td>
+<td><p>Make a function (or method, if <code class="docutils literal notranslate"><span class="pre">method</span></code>) that fills the fields of <code class="docutils literal notranslate"><span class="pre">str_format</span></code>.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#py2store.utils.uri_utils.parse_uri" title="py2store.utils.uri_utils.parse_uri"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_uri</span></code></a>(uri)</p></td>
 <td><p>Parses DB URI string into a dict of params.</p></td>
@@ -357,6 +357,21 @@
 <span class="sig-prename descclassname"><span class="pre">py2store.utils.uri_utils.</span></span><span class="sig-name descname"><span class="pre">build_uri</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scheme</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">database</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">username</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">password</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">host</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'localhost'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2store/utils/uri_utils.html#build_uri"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2store.utils.uri_utils.build_uri" title="Link to this definition">¶</a></dt>
 <dd><p>Reverse of <code class="code docutils literal notranslate"><span class="pre">parse_uri</span></code> function.
 Builds a URI string from provided params.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="py2store.utils.uri_utils.mk_str_making_func">
+<span class="sig-prename descclassname"><span class="pre">py2store.utils.uri_utils.</span></span><span class="sig-name descname"><span class="pre">mk_str_making_func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">str_format</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_trans</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2store/utils/uri_utils.html#mk_str_making_func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2store.utils.uri_utils.mk_str_making_func" title="Link to this definition">¶</a></dt>
+<dd><p>Make a function (or method, if <code class="docutils literal notranslate"><span class="pre">method</span></code>) that fills the fields of <code class="docutils literal notranslate"><span class="pre">str_format</span></code>.</p>
+<p>The function takes the fields as positional or keyword arguments (exactly as many as
+the format has fields), optionally passing them through <code class="docutils literal notranslate"><span class="pre">input_trans</span></code> first.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">f</span> <span class="o">=</span> <span class="n">mk_str_making_func</span><span class="p">(</span><span class="s1">'</span><span class="si">{a}</span><span class="s1">/</span><span class="si">{b}</span><span class="s1">'</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span><span class="p">(</span><span class="s1">'x'</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="s1">'y'</span><span class="p">)</span>
+<span class="go">'x/y'</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+</dl>
 </dd></dl>
 
 <dl class="py function">
@@ -420,6 +435,7 @@ Builds a URI string from provided params.</p>
             <ul>
 <li><a class="reference internal" href="#">py2store.utils.uri_utils</a><ul>
 <li><a class="reference internal" href="#py2store.utils.uri_utils.build_uri"><code class="docutils literal notranslate"><span class="pre">build_uri()</span></code></a></li>
+<li><a class="reference internal" href="#py2store.utils.uri_utils.mk_str_making_func"><code class="docutils literal notranslate"><span class="pre">mk_str_making_func()</span></code></a></li>
 <li><a class="reference internal" href="#py2store.utils.uri_utils.parse_uri"><code class="docutils literal notranslate"><span class="pre">parse_uri()</span></code></a></li>
 </ul>
 </li>
@@ -432,7 +448,7 @@ Builds a URI string from provided params.</p>
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=4cf6c671"></script>
+</div><script src="../_static/documentation_options.js?v=e5b6b217"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/scripts/furo.js?v=46bd48cc"></script>

@@ -9,10 +9,10 @@ descriptors to cache data
 
 ### Classes
 
-| [`Lazy`](#py2store.utils.cache_descriptors.Lazy)(func[, name])       | Lazy Attributes.                            |
-|---------------------------------------------------------------------------|---------------------------------------------|
-| [`cachedIn`](#py2store.utils.cache_descriptors.cachedIn)(attribute_name) | Cached property with given cache attribute. |
-| `readproperty`(func)                                                      |                                             |
+| [`Lazy`](#py2store.utils.cache_descriptors.Lazy)(func[, name])       | Lazy Attributes.                                                                  |
+|---------------------------------------------------------------------------|-----------------------------------------------------------------------------------|
+| [`cachedIn`](#py2store.utils.cache_descriptors.cachedIn)(attribute_name) | Cached property with given cache attribute.                                       |
+| [`readproperty`](#py2store.utils.cache_descriptors.readproperty)(func)       | Read-only property whose value is recomputed on every access (nothing is cached). |
 
 ### py2store.utils.cache_descriptors.CachedProperty(\*args)
 
@@ -37,3 +37,9 @@ Lazy Attributes.
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
 Cached property with given cache attribute.
+
+### *class* py2store.utils.cache_descriptors.readproperty(func)
+
+Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
+
+Read-only property whose value is recomputed on every access (nothing is cached).

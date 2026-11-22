@@ -1,4 +1,4 @@
-> built 2026-11-22 14:36 UTC from 0036818 (master) · py2store 0.1.26. Details: build_info.json
+> built 2026-11-22 14:38 UTC from dd47882 (master) · py2store 0.1.27. Details: build_info.json
 
 # index.html.md
 
@@ -2435,17 +2435,36 @@ That is, converting from any of the following kinds of keys:
 
 ### Functions
 
-| `dict_of_str`(d, compiled_regex)                                             |                                                                                          |
-|------------------------------------------------------------------------------|------------------------------------------------------------------------------------------|
-| `dict_of_tuple`(d, fields)                                                   |                                                                                          |
-| [`dsv_of_list`](_autosummary/py2store.key_mappers.tuples.html.md#py2store.key_mappers.tuples.dsv_of_list)(d[, sep])       | Converting a list of strings to a dsv (delimiter-separated values) string.               |
-| [`list_of_dsv`](_autosummary/py2store.key_mappers.tuples.html.md#py2store.key_mappers.tuples.list_of_dsv)(d[, sep])       | Converting a dsv (delimiter-separated values) string to the list of it's components.     |
-| [`mk_obj_of_str`](_autosummary/py2store.key_mappers.tuples.html.md#py2store.key_mappers.tuples.mk_obj_of_str)(constructor)  | Make a function that transforms a string to an object.                                   |
-| [`mk_str_of_obj`](_autosummary/py2store.key_mappers.tuples.html.md#py2store.key_mappers.tuples.mk_str_of_obj)(attrs)        | Make a function that transforms objects to strings, using specific attributes of object. |
-| `str_of_dict`(d, str_format)                                                 |                                                                                          |
-| [`str_of_tuple`](_autosummary/py2store.key_mappers.tuples.html.md#py2store.key_mappers.tuples.str_of_tuple)(d, str_format) | Convert tuple to str.                                                                    |
-| `tuple_of_dict`(d, fields)                                                   |                                                                                          |
-| `tuple_of_str`(d, compiled_regex)                                            |                                                                                          |
+| [`dict_of_str`](_autosummary/py2store.key_mappers.tuples.html.md#py2store.key_mappers.tuples.dict_of_str)(d, compiled_regex)   | Dict of the named groups matched by `compiled_regex` in `d` (`KeyValidationError` if no match).   |
+|-----------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------|
+| [`dict_of_tuple`](_autosummary/py2store.key_mappers.tuples.html.md#py2store.key_mappers.tuples.dict_of_tuple)(d, fields)         | Dict pairing `fields` with the values of the tuple `d` (inverse of `tuple_of_dict`).              |
+| [`dsv_of_list`](_autosummary/py2store.key_mappers.tuples.html.md#py2store.key_mappers.tuples.dsv_of_list)(d[, sep])            | Converting a list of strings to a dsv (delimiter-separated values) string.                        |
+| [`list_of_dsv`](_autosummary/py2store.key_mappers.tuples.html.md#py2store.key_mappers.tuples.list_of_dsv)(d[, sep])            | Converting a dsv (delimiter-separated values) string to the list of it's components.              |
+| [`mk_obj_of_str`](_autosummary/py2store.key_mappers.tuples.html.md#py2store.key_mappers.tuples.mk_obj_of_str)(constructor)       | Make a function that transforms a string to an object.                                            |
+| [`mk_str_of_obj`](_autosummary/py2store.key_mappers.tuples.html.md#py2store.key_mappers.tuples.mk_str_of_obj)(attrs)             | Make a function that transforms objects to strings, using specific attributes of object.          |
+| [`str_of_dict`](_autosummary/py2store.key_mappers.tuples.html.md#py2store.key_mappers.tuples.str_of_dict)(d, str_format)       | Format `d` into `str_format` (`str_format.format(**d)`), raising `KeyValidationError` on failure. |
+| [`str_of_tuple`](_autosummary/py2store.key_mappers.tuples.html.md#py2store.key_mappers.tuples.str_of_tuple)(d, str_format)      | Convert tuple to str.                                                                             |
+| [`tuple_of_dict`](_autosummary/py2store.key_mappers.tuples.html.md#py2store.key_mappers.tuples.tuple_of_dict)(d, fields)         | Tuple of the values of `d`, in the order of `fields` (`KeyValidationError` if the sizes differ).  |
+| [`tuple_of_str`](_autosummary/py2store.key_mappers.tuples.html.md#py2store.key_mappers.tuples.tuple_of_str)(d, compiled_regex)  | Tuple of the groups matched by `compiled_regex` in `d` (`KeyValidationError` if no match).        |
+
+### py2store.key_mappers.tuples.dict_of_str(d, compiled_regex)
+
+Dict of the named groups matched by `compiled_regex` in `d` (`KeyValidationError` if no match).
+
+```pycon
+>>> import re
+>>> dict_of_str('x/y', re.compile(r'(?P<a>\w+)/(?P<b>\w+)'))
+{'a': 'x', 'b': 'y'}
+```
+
+### py2store.key_mappers.tuples.dict_of_tuple(d, fields)
+
+Dict pairing `fields` with the values of the tuple `d` (inverse of `tuple_of_dict`).
+
+```pycon
+>>> dict_of_tuple((1, 2), ('a', 'b'))
+{'a': 1, 'b': 2}
+```
 
 ### py2store.key_mappers.tuples.dsv_of_list(d, sep=',')
 
@@ -2534,6 +2553,15 @@ A(foo=0, bar='rin')
 'ST0/rin/G'
 ```
 
+### py2store.key_mappers.tuples.str_of_dict(d, str_format)
+
+Format `d` into `str_format` (`str_format.format(**d)`), raising `KeyValidationError` on failure.
+
+```pycon
+>>> str_of_dict({'a': 1, 'b': 2}, '{a}-{b}')
+'1-2'
+```
+
 ### py2store.key_mappers.tuples.str_of_tuple(d, str_format)
 
 Convert tuple to str.
@@ -2551,6 +2579,25 @@ It’s just `str_format.format(*d)`. Why even write such a function?
 ```pycon
 >>> str_of_tuple(('hello', 'world'), "Well, {} dear {}!")
 'Well, hello dear world!'
+```
+
+### py2store.key_mappers.tuples.tuple_of_dict(d, fields)
+
+Tuple of the values of `d`, in the order of `fields` (`KeyValidationError` if the sizes differ).
+
+```pycon
+>>> tuple_of_dict({'b': 2, 'a': 1}, ('a', 'b'))
+(1, 2)
+```
+
+### py2store.key_mappers.tuples.tuple_of_str(d, compiled_regex)
+
+Tuple of the groups matched by `compiled_regex` in `d` (`KeyValidationError` if no match).
+
+```pycon
+>>> import re
+>>> tuple_of_str('x/y', re.compile(r'(\w+)/(\w+)'))
+('x', 'y')
 ```
 
 
@@ -4407,10 +4454,10 @@ descriptors to cache data
 
 ### Classes
 
-| [`Lazy`](_autosummary/py2store.utils.cache_descriptors.html.md#py2store.utils.cache_descriptors.Lazy)(func[, name])       | Lazy Attributes.                            |
-|---------------------------------------------------------------------------|---------------------------------------------|
-| [`cachedIn`](_autosummary/py2store.utils.cache_descriptors.html.md#py2store.utils.cache_descriptors.cachedIn)(attribute_name) | Cached property with given cache attribute. |
-| `readproperty`(func)                                                      |                                             |
+| [`Lazy`](_autosummary/py2store.utils.cache_descriptors.html.md#py2store.utils.cache_descriptors.Lazy)(func[, name])       | Lazy Attributes.                                                                  |
+|---------------------------------------------------------------------------|-----------------------------------------------------------------------------------|
+| [`cachedIn`](_autosummary/py2store.utils.cache_descriptors.html.md#py2store.utils.cache_descriptors.cachedIn)(attribute_name) | Cached property with given cache attribute.                                       |
+| [`readproperty`](_autosummary/py2store.utils.cache_descriptors.html.md#py2store.utils.cache_descriptors.readproperty)(func)       | Read-only property whose value is recomputed on every access (nothing is cached). |
 
 ### py2store.utils.cache_descriptors.CachedProperty(\*args)
 
@@ -4435,6 +4482,12 @@ Lazy Attributes.
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
 Cached property with given cache attribute.
+
+### *class* py2store.utils.cache_descriptors.readproperty(func)
+
+Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
+
+Read-only property whose value is recomputed on every access (nothing is cached).
 
 
 # _autosummary/py2store.utils.cumul_aggreg_write.html.md
@@ -5789,15 +5842,28 @@ utils to work with URIs
 
 ### Functions
 
-| [`build_uri`](_autosummary/py2store.utils.uri_utils.html.md#py2store.utils.uri_utils.build_uri)(scheme[, database, username, ...])   | Reverse of `parse_uri` function.            |
-|-------------------------------------------------------------------------------------------------|---------------------------------------------|
-| `mk_str_making_func`(str_format[, ...])                                                         |                                             |
-| [`parse_uri`](_autosummary/py2store.utils.uri_utils.html.md#py2store.utils.uri_utils.parse_uri)(uri)                                 | Parses DB URI string into a dict of params. |
+| [`build_uri`](_autosummary/py2store.utils.uri_utils.html.md#py2store.utils.uri_utils.build_uri)(scheme[, database, username, ...])   | Reverse of `parse_uri` function.                                                |
+|-------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------|
+| [`mk_str_making_func`](_autosummary/py2store.utils.uri_utils.html.md#py2store.utils.uri_utils.mk_str_making_func)(str_format[, ...])          | Make a function (or method, if `method`) that fills the fields of `str_format`. |
+| [`parse_uri`](_autosummary/py2store.utils.uri_utils.html.md#py2store.utils.uri_utils.parse_uri)(uri)                                 | Parses DB URI string into a dict of params.                                     |
 
 ### py2store.utils.uri_utils.build_uri(scheme, database='', username=None, password=None, host='localhost', port=None)
 
 Reverse of `parse_uri` function.
 Builds a URI string from provided params.
+
+### py2store.utils.uri_utils.mk_str_making_func(str_format, input_trans=None, method=False, module=None, name=None)
+
+Make a function (or method, if `method`) that fills the fields of `str_format`.
+
+The function takes the fields as positional or keyword arguments (exactly as many as
+the format has fields), optionally passing them through `input_trans` first.
+
+```pycon
+>>> f = mk_str_making_func('{a}/{b}')
+>>> f('x', b='y')
+'x/y'
+```
 
 ### py2store.utils.uri_utils.parse_uri(uri)
 
@@ -5815,18 +5881,20 @@ Parses DB URI string into a dict of params.
 
 # About this build
 
-This documentation was built on **2026-11-22 14:36 UTC** from commit <a href="https://github.com/i2mint/py2store/commit/0036818ac97756f79ea999b61da1fe85faa386ea"><code>0036818</code></a> on branch <code>master</code>, for **py2store 0.1.26** (from <code>setup.cfg</code>).
+This documentation was built on **2026-11-22 14:38 UTC** from commit <a href="https://github.com/i2mint/py2store/commit/dd47882a8da9c87bdbb63ce058b33802bf02c112"><code>dd47882</code></a> on branch <code>master</code>, for **py2store 0.1.27** (from <code>setup.cfg</code>).
 
-#### NOTE
-Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
+#### WARNING
+The documentation and the package may be misaligned:
+
+- The documented version (0.1.27) is ahead of the latest release on PyPI (0.1.25): these docs describe unreleased code.
 
 ## Source
 
 |                     |                                                                                                                                                        |
 |---------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/i2mint/py2store/commit/0036818ac97756f79ea999b61da1fe85faa386ea"><code>0036818ac97756f79ea999b61da1fe85faa386ea</code></a> |
+| Commit              | <a href="https://github.com/i2mint/py2store/commit/dd47882a8da9c87bdbb63ce058b33802bf02c112"><code>dd47882a8da9c87bdbb63ce058b33802bf02c112</code></a> |
 | Branch              | <code>master</code>                                                                                                                                    |
-| Tags at this commit | <code>0.1.26</code>                                                                                                                                    |
+| Tags at this commit | <code>0.1.27</code>                                                                                                                                    |
 | Working tree        | clean                                                                                                                                                  |
 | Remote              | <code>https://github.com/i2mint/py2store</code>                                                                                                        |
 
@@ -5835,9 +5903,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>i2mint/py2store</code>                                                               |
-| Run          | <a href="https://github.com/i2mint/py2store/actions/runs/45033655440">45033655440</a>      |
+| Run          | <a href="https://github.com/i2mint/py2store/actions/runs/45033839626">45033839626</a>      |
 | Ref          | <code>refs/heads/master</code>                                                             |
-| Event commit | <code>5453520e9d1dbf50409210d623e16b04a59dd9c5</code> (in the history of the built commit) |
+| Event commit | <code>340fb95a2bfcacd1b9cc9864a072592d9d0c0eea</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -5862,13 +5930,13 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/py2store/0.1.26/">0.1.26</a>, the same as the documented version.
+Latest release: <a href="https://pypi.org/project/py2store/0.1.25/">0.1.25</a>, older than the documented version (0.1.27).
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/i2mint/py2store && cd py2store
-git checkout 0036818ac97756f79ea999b61da1fe85faa386ea
+git checkout dd47882a8da9c87bdbb63ce058b33802bf02c112
 pip install "epythet==0.2.23"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

@@ -1,34 +1,34 @@
 {
   "schema_version": 1,
-  "built_at": "2026-11-22T14:36:36Z",
+  "built_at": "2026-11-22T14:38:44Z",
   "package": {
     "name": "py2store",
-    "version": "0.1.26",
+    "version": "0.1.27",
     "display_name": "py2store",
     "source": "setup.cfg"
   },
   "git": {
     "available": true,
-    "commit": "0036818ac97756f79ea999b61da1fe85faa386ea",
-    "short_commit": "0036818",
+    "commit": "dd47882a8da9c87bdbb63ce058b33802bf02c112",
+    "short_commit": "dd47882",
     "branch": "master",
     "tags": [
-      "0.1.26"
+      "0.1.27"
     ],
     "dirty": false,
     "remote_url": "https://github.com/i2mint/py2store",
-    "commit_url": "https://github.com/i2mint/py2store/commit/0036818ac97756f79ea999b61da1fe85faa386ea",
+    "commit_url": "https://github.com/i2mint/py2store/commit/dd47882a8da9c87bdbb63ce058b33802bf02c112",
     "error": null
   },
   "ci": {
     "provider": "github",
     "repository": "i2mint/py2store",
-    "sha": "5453520e9d1dbf50409210d623e16b04a59dd9c5",
+    "sha": "340fb95a2bfcacd1b9cc9864a072592d9d0c0eea",
     "sha_in_history": true,
     "ref": "refs/heads/master",
     "ref_name": "master",
-    "run_id": "45033655440",
-    "run_url": "https://github.com/i2mint/py2store/actions/runs/45033655440",
+    "run_id": "45033839626",
+    "run_url": "https://github.com/i2mint/py2store/actions/runs/45033839626",
     "server_url": "https://github.com"
   },
   "tools": {
@@ -58,18 +58,20 @@
   },
   "site": {
     "modules_documented": 69,
-    "objects_documented": 166
+    "objects_documented": 173
   },
   "pypi": {
     "checked": true,
-    "latest": "0.1.26",
-    "relation": "same",
+    "latest": "0.1.25",
+    "relation": "ahead",
     "error": null
   },
-  "reproduce": "git clone https://github.com/i2mint/py2store && cd py2store\ngit checkout 0036818ac97756f79ea999b61da1fe85faa386ea\npip install \"epythet==0.2.23\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
+  "reproduce": "git clone https://github.com/i2mint/py2store && cd py2store\ngit checkout dd47882a8da9c87bdbb63ce058b33802bf02c112\npip install \"epythet==0.2.23\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
   "warnings": [],
   "alignment": {
-    "aligned": true,
-    "notes": []
+    "aligned": false,
+    "notes": [
+      "The documented version (0.1.27) is ahead of the latest release on PyPI (0.1.25): these docs describe unreleased code."
+    ]
   }
 }

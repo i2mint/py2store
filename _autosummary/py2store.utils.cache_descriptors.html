@@ -356,8 +356,8 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#py2store.utils.cache_descriptors.cachedIn" title="py2store.utils.cache_descriptors.cachedIn"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cachedIn</span></code></a>(attribute_name)</p></td>
 <td><p>Cached property with given cache attribute.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">readproperty</span></code>(func)</p></td>
-<td><p></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#py2store.utils.cache_descriptors.readproperty" title="py2store.utils.cache_descriptors.readproperty"><code class="xref py py-obj docutils literal notranslate"><span class="pre">readproperty</span></code></a>(func)</p></td>
+<td><p>Read-only property whose value is recomputed on every access (nothing is cached).</p></td>
 </tr>
 </tbody>
 </table>
@@ -389,6 +389,13 @@ will work:</p>
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py2store.utils.cache_descriptors.</span></span><span class="sig-name descname"><span class="pre">cachedIn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attribute_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2store/utils/cache_descriptors.html#cachedIn"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2store.utils.cache_descriptors.cachedIn" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Cached property with given cache attribute.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="py2store.utils.cache_descriptors.readproperty">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">py2store.utils.cache_descriptors.</span></span><span class="sig-name descname"><span class="pre">readproperty</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2store/utils/cache_descriptors.html#readproperty"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#py2store.utils.cache_descriptors.readproperty" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Read-only property whose value is recomputed on every access (nothing is cached).</p>
 </dd></dl>
 
 </section>
@@ -448,6 +455,7 @@ will work:</p>
 <li><a class="reference internal" href="#py2store.utils.cache_descriptors.CachedProperty"><code class="docutils literal notranslate"><span class="pre">CachedProperty()</span></code></a></li>
 <li><a class="reference internal" href="#py2store.utils.cache_descriptors.Lazy"><code class="docutils literal notranslate"><span class="pre">Lazy</span></code></a></li>
 <li><a class="reference internal" href="#py2store.utils.cache_descriptors.cachedIn"><code class="docutils literal notranslate"><span class="pre">cachedIn</span></code></a></li>
+<li><a class="reference internal" href="#py2store.utils.cache_descriptors.readproperty"><code class="docutils literal notranslate"><span class="pre">readproperty</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -459,7 +467,7 @@ will work:</p>
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=4cf6c671"></script>
+</div><script src="../_static/documentation_options.js?v=e5b6b217"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/scripts/furo.js?v=46bd48cc"></script>
