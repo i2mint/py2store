@@ -20,6 +20,11 @@ __assert_condition = partial(_assert_condition, err_cls=KeyValidationError)
 
 
 def tuple_of_dict(d, fields):
+    """Tuple of the values of ``d``, in the order of ``fields`` (``KeyValidationError`` if the sizes differ).
+
+    >>> tuple_of_dict({'b': 2, 'a': 1}, ('a', 'b'))
+    (1, 2)
+    """
     __assert_condition(
         len(fields) == len(d), f'len(d)={len(d)} but len(fields)={len(fields)}'
     )
@@ -27,6 +32,11 @@ def tuple_of_dict(d, fields):
 
 
 def dict_of_tuple(d, fields):
+    """Dict pairing ``fields`` with the values of the tuple ``d`` (inverse of ``tuple_of_dict``).
+
+    >>> dict_of_tuple((1, 2), ('a', 'b'))
+    {'a': 1, 'b': 2}
+    """
     __assert_condition(
         len(fields) == len(d), f'len(d)={len(d)} but len(fields)={len(fields)}'
     )
@@ -57,6 +67,12 @@ def str_of_tuple(d, str_format):
 
 
 def tuple_of_str(d, compiled_regex):
+    """Tuple of the groups matched by ``compiled_regex`` in ``d`` (``KeyValidationError`` if no match).
+
+    >>> import re
+    >>> tuple_of_str('x/y', re.compile(r'(\w+)/(\w+)'))
+    ('x', 'y')
+    """
     m = compiled_regex.match(d)
     if m:
         return m.groups()
@@ -67,6 +83,11 @@ def tuple_of_str(d, compiled_regex):
 
 
 def str_of_dict(d, str_format):
+    """Format ``d`` into ``str_format`` (``str_format.format(**d)``), raising ``KeyValidationError`` on failure.
+
+    >>> str_of_dict({'a': 1, 'b': 2}, '{a}-{b}')
+    '1-2'
+    """
     try:
         return str_format.format(**d)
     except Exception as e:
@@ -74,6 +95,12 @@ def str_of_dict(d, str_format):
 
 
 def dict_of_str(d, compiled_regex):
+    """Dict of the named groups matched by ``compiled_regex`` in ``d`` (``KeyValidationError`` if no match).
+
+    >>> import re
+    >>> dict_of_str('x/y', re.compile(r'(?P<a>\w+)/(?P<b>\w+)'))
+    {'a': 'x', 'b': 'y'}
+    """
     m = compiled_regex.match(d)
     if m:
         return m.groupdict()
