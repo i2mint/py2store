@@ -54,6 +54,15 @@ str_formatter = string.Formatter()
 def mk_str_making_func(
     str_format: str, input_trans=None, method=False, module=None, name=None
 ):
+    """Make a function (or method, if ``method``) that fills the fields of ``str_format``.
+
+    The function takes the fields as positional or keyword arguments (exactly as many as
+    the format has fields), optionally passing them through ``input_trans`` first.
+
+    >>> f = mk_str_making_func('{a}/{b}')
+    >>> f('x', b='y')
+    'x/y'
+    """
     fields = tuple(
         filter(None, (x[1] for x in str_formatter.parse(str_format)))
     )  # TODO: validate

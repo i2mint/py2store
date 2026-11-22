@@ -113,6 +113,8 @@ class Lazy:
 
 
 class readproperty:
+    """Read-only property whose value is recomputed on every access (nothing is cached)."""
+
     def __init__(self, func):
         self.func = func
         update_wrapper(self, func)
