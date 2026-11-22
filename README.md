@@ -237,7 +237,16 @@ list(s)[:10]
 
 
 
-    ['filesys.py', 'misc.py', 'mixins.py', 'test/trans_test.py', 'test/quick_test.py', 'test/util.py', 'test/__init__.py', 'test/__pycache__/simple_test.cpython-38.pyc', 'test/__pycache__/__init__.cpython-38.pyc', 'test/__pycache__/quick_test.cpython-38.pyc']
+    ['filesys.py',
+     'misc.py',
+     'mixins.py',
+     'test/trans_test.py',
+     'test/quick_test.py',
+     'test/util.py',
+     'test/__init__.py',
+     'test/__pycache__/simple_test.cpython-38.pyc',
+     'test/__pycache__/__init__.cpython-38.pyc',
+     'test/__pycache__/quick_test.cpython-38.pyc']
 
 
 
@@ -343,9 +352,15 @@ print(f"{type(v)=}, {len(v)=}")  # and see what v is like now...
 print(v[:300])
 ```
 
-    import os from os import stat as os_stat from functools import wraps
+    import os
+    from os import stat as os_stat
+    from functools import wraps
     
-    from py2store.base import Collection, KvReader, KvPersister from py2store.key_mappers.naming import ( mk_pattern_from_template_and_format_dict, ) from py2store.key_mappers.paths import mk_relative_path_store
+    from py2store.base import Collection, KvReader, KvPersister
+    from py2store.key_mappers.naming import (
+        mk_pattern_from_template_and_format_dict,
+    )
+    from py2store.key_mappers.paths import mk_relative_path_store
     
     file_sep = os.pat
 
@@ -372,7 +387,16 @@ list(s)[:10]
 
 
 
-    [('filesys',), ('misc',), ('mixins',), ('test', 'trans_test'), ('test', 'quick_test'), ('test', 'util'), ('test', '__init__'), ('test', 'local_files_test'), ('test', 'simple_test'), ('test', 'scrap')]
+    [('filesys',),
+     ('misc',),
+     ('mixins',),
+     ('test', 'trans_test'),
+     ('test', 'quick_test'),
+     ('test', 'util'),
+     ('test', '__init__'),
+     ('test', 'local_files_test'),
+     ('test', 'simple_test'),
+     ('test', 'scrap')]
 
 
 
@@ -383,9 +407,15 @@ Note that we made it so that when there's only one element, you can specify as s
 print(s['filesys'][:300])
 ```
 
-    import os from os import stat as os_stat from functools import wraps
+    import os
+    from os import stat as os_stat
+    from functools import wraps
     
-    from py2store.base import Collection, KvReader, KvPersister from py2store.key_mappers.naming import ( mk_pattern_from_template_and_format_dict, ) from py2store.key_mappers.paths import mk_relative_path_store
+    from py2store.base import Collection, KvReader, KvPersister
+    from py2store.key_mappers.naming import (
+        mk_pattern_from_template_and_format_dict,
+    )
+    from py2store.key_mappers.paths import mk_relative_path_store
     
     file_sep = os.pat
 
@@ -424,7 +454,16 @@ list(s)[:10]
 
 
 
-    [('__init__',), ('access',), ('appendable',), ('base',), ('caching',), ('core',), ('dig',), ('errors',), ('examples', '__init__'), ('examples', 'code_navig')]
+    [('__init__',),
+     ('access',),
+     ('appendable',),
+     ('base',),
+     ('caching',),
+     ('core',),
+     ('dig',),
+     ('errors',),
+     ('examples', '__init__'),
+     ('examples', 'code_navig')]
 
 
 
@@ -478,7 +517,16 @@ list(s)[:10]
 
 
 
-    [('__init__',), ('access',), ('appendable',), ('base',), ('caching',), ('core',), ('dig',), ('errors',), ('examples', '__init__'), ('examples', 'code_navig')]
+    [('__init__',),
+     ('access',),
+     ('appendable',),
+     ('base',),
+     ('caching',),
+     ('core',),
+     ('dig',),
+     ('errors',),
+     ('examples', '__init__'),
+     ('examples', 'code_navig')]
 
 
 
@@ -489,7 +537,8 @@ print(s['caching'][:300])
 
     """Tools to add caching layers to stores."""
     
-    from functools import wraps, partial from typing import Iterable, Union, Callable, Hashable, Any
+    from functools import wraps, partial
+    from typing import Iterable, Union, Callable, Hashable, Any
     
     from py2store.trans import store_decorator
     
@@ -618,7 +667,9 @@ sorted(g)[:3]  # first (in sorted order) 3 keys
 
 
 
-    ['http://www.ssa.gov/oact/babynames/state/namesbystate.zip', 'https://api.nasdaq.com/api/ipo/calendar?date=2020-12', 'https://en.wikipedia.org/wiki/List_of_chemical_elements']
+    ['http://www.ssa.gov/oact/babynames/state/namesbystate.zip',
+     'https://api.nasdaq.com/api/ipo/calendar?date=2020-12',
+     'https://en.wikipedia.org/wiki/List_of_chemical_elements']
 
 
 
@@ -645,7 +696,8 @@ df.columns = ['state', 'gender', 'year', 'name', 'number']
 df
 ```
 
-    b is an array of 22148032 <class 'bytes'> of a zip. We'll give these to FilesOfZip to be able to read them First 4 file names in the zip: ['AK.TXT', 'AL.TXT', 'AR.TXT', 'AZ.TXT']
+    b is an array of 22148032 <class 'bytes'> of a zip. We'll give these to FilesOfZip to be able to read them
+    First 4 file names in the zip: ['AK.TXT', 'AL.TXT', 'AR.TXT', 'AZ.TXT']
 
 
 
@@ -653,11 +705,17 @@ df
 
 <div>
 <style scoped>
-    .dataframe tbody tr th:only-of-type { vertical-align: middle; }
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
 
-    .dataframe tbody tr th { vertical-align: top; }
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
 
-    .dataframe thead th { text-align: right; }
+    .dataframe thead th {
+        text-align: right;
+    }
 </style>
 <table border="1" class="dataframe">
   <thead>
@@ -798,7 +856,16 @@ list(d)[330:340]
 
 
 
-    ['couple_with_heart_woman_man', 'couple_with_heart_woman_woman', 'couplekiss_man_man', 'couplekiss_man_woman', 'couplekiss_woman_woman', 'cow', 'cow2', 'cowboy_hat_face', 'crab', 'crayon']
+    ['couple_with_heart_woman_man',
+     'couple_with_heart_woman_woman',
+     'couplekiss_man_man',
+     'couplekiss_man_woman',
+     'couplekiss_woman_woman',
+     'cow',
+     'cow2',
+     'cowboy_hat_face',
+     'crab',
+     'crayon']
 
 
 
@@ -850,7 +917,8 @@ len(emojis), emojis['cow']
 
 
 
-    (1510, 'https://github.githubassets.com/images/icons/emoji/unicode/1f42e.png?v8')
+    (1510,
+     'https://github.githubassets.com/images/icons/emoji/unicode/1f42e.png?v8')
 
 
 
@@ -909,7 +977,14 @@ search = SearchStore(store_to_search)
 search('cache key-value pairs')
 ```
 
-    array(['py2store/caching.py', 'py2store/utils/cumul_aggreg_write.py', 'py2store/trans.py', 'py2store/examples/write_caches.py', 'py2store/utils/cache_descriptors.py', 'py2store/utils/explicit.py', 'py2store/persisters/arangodb_w_pyarango.py', 'py2store/persisters/dynamodb_w_boto3.py', 'py2store/stores/delegation_stores.py', 'py2store/util.py'], dtype=object)
+    array(['py2store/caching.py', 'py2store/utils/cumul_aggreg_write.py',
+           'py2store/trans.py', 'py2store/examples/write_caches.py',
+           'py2store/utils/cache_descriptors.py',
+           'py2store/utils/explicit.py',
+           'py2store/persisters/arangodb_w_pyarango.py',
+           'py2store/persisters/dynamodb_w_boto3.py',
+           'py2store/stores/delegation_stores.py', 'py2store/util.py'],
+          dtype=object)
 ### search jokes (and download them automatically
 
 Some code that acquires and locally caches a joke data, makes a mapping view of it (here just a `dict` in memory), and builds a search engine to find jokes. All that, in a few lines.
@@ -933,7 +1008,9 @@ results_idx = search_joke('searching for something funny')
 print(joke_store[results_idx[0]])  # top joke (not by score, but by relevance to search terms)
 ```
 
-    want to hear me say something funny? --> well alright then...."something funny" there (score: 0)
+    want to hear me say something funny?
+    --> well alright then...."something funny" there
+    (score: 0)
 
 
 
