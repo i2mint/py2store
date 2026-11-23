@@ -211,7 +211,7 @@ class PathFormat:
             containing the part before the first ``{`` is the root, available as ``_prefix``.
 
     >>> pf = PathFormat('/data/{}.csv')
-    >>> pf._prefix, pf.is_valid_key('/data/a.csv'), pf.is_valid_key('/data/a.txt')
+    >>> pf._prefix.replace('\\\\', '/'), pf.is_valid_key('/data/a.csv'), pf.is_valid_key('/data/a.txt')
     ('/data/', True, False)
     """
 
@@ -482,7 +482,7 @@ class FileReader(KvReader):
     >>> _ = open(os.path.join(rootdir, 'a.txt'), 'wb').write(b'hi')
     >>> os.mkdir(os.path.join(rootdir, 'sub'))
     >>> s = FileReader(rootdir)
-    >>> sorted(k[len(s.rootdir):] for k in s)
+    >>> sorted(k[len(s.rootdir):].replace(os.sep, '/') for k in s)
     ['a.txt', 'sub/']
     >>> s[os.path.join(rootdir, 'a.txt')]
     b'hi'
@@ -549,7 +549,7 @@ class DirReader(FileReader):
     >>> _ = open(os.path.join(rootdir, 'a.txt'), 'wb').write(b'hi')
     >>> os.mkdir(os.path.join(rootdir, 'sub'))
     >>> s = DirReader(rootdir)
-    >>> [k[len(s.rootdir):] for k in s]
+    >>> [k[len(s.rootdir):].replace(os.sep, '/') for k in s]
     ['sub/']
     >>> os.path.join(rootdir, 'a.txt') in s
     False

@@ -393,7 +393,7 @@ class QuickTextStore(QuickLocalStoreMixin, LocalTextStore):
     >>> import os, tempfile
     >>> s = QuickTextStore(os.path.join(tempfile.mkdtemp(), 'sub'))
     >>> s['x/y.txt'] = 'z'  # sub/ and sub/x/ are created for you
-    >>> list(s), s['x/y.txt']
+    >>> [k.replace(os.sep, '/') for k in s], s['x/y.txt']
     (['x/y.txt'], 'z')
     """
 
@@ -415,7 +415,7 @@ class QuickPickleStore(QuickLocalStoreMixin, PickleStore):
     >>> import os, tempfile
     >>> s = QuickPickleStore(os.path.join(tempfile.mkdtemp(), 'quick'))
     >>> s['deep/er/key'] = [1, 2]
-    >>> s['deep/er/key'], list(s)
+    >>> s['deep/er/key'], [k.replace(os.sep, '/') for k in s]
     ([1, 2], ['deep/er/key'])
     """
 
