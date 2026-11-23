@@ -398,14 +398,11 @@
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<p># &gt;&gt;&gt; list(random_formatted_str_gen(‘root/{}/{}_{}.test’, (2, 5), ‘abc’, n=5))
-[(‘root/acba/bb_abc.test’,),</p>
-<blockquote>
-<div><p>(‘root/abcb/cbbc_ca.test’,),
-(‘root/ac/ac_cc.test’,),
-(‘root/aacc/ccbb_ab.test’,),
-(‘root/aab/abb_cbab.test’,)]</p>
-</div></blockquote>
+<p>The output is random, so this is not run as a doctest:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nb">list</span><span class="p">(</span><span class="n">random_formatted_str_gen</span><span class="p">(</span><span class="s1">'root/</span><span class="si">{}</span><span class="s1">/</span><span class="si">{}</span><span class="s1">_</span><span class="si">{}</span><span class="s1">.test'</span><span class="p">,</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span> <span class="s1">'abc'</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">5</span><span class="p">))</span>
+<span class="c1"># [('root/acba/bb_abc.test',), ('root/abcb/cbbc_ca.test',), ...]</span>
+</pre></div>
+</div>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># The following will be made not random (by restricting the constraints to "no choice"</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># ... this is so that we get consistent outputs to assert for the doc test.</span>
 <span class="gp">&gt;&gt;&gt;</span>
@@ -570,7 +567,7 @@
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=ee813736"></script>
+</div><script src="../_static/documentation_options.js?v=a9ed77be"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/scripts/furo.js?v=46bd48cc"></script>

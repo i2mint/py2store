@@ -38,13 +38,13 @@ Random formatted string generator
 
 ### Examples
 
-# >>> list(random_formatted_str_gen(‘root/{}/{}_{}.test’, (2, 5), ‘abc’, n=5))
-[(‘root/acba/bb_abc.test’,),
+The output is random, so this is not run as a doctest:
 
-> (‘root/abcb/cbbc_ca.test’,),
-> (‘root/ac/ac_cc.test’,),
-> (‘root/aacc/ccbb_ab.test’,),
-> (‘root/aab/abb_cbab.test’,)]
+```python
+list(random_formatted_str_gen('root/{}/{}_{}.test', (2, 5), 'abc', n=5))
+# [('root/acba/bb_abc.test',), ('root/abcb/cbbc_ca.test',), ...]
+```
+
 ```pycon
 >>> # The following will be made not random (by restricting the constraints to "no choice"
 >>> # ... this is so that we get consistent outputs to assert for the doc test.

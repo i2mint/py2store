@@ -496,12 +496,12 @@
 <span class="sd">        Yields random strings of the format defined by format_string</span>
 
 <span class="sd">    Examples:</span>
-<span class="sd">        # &gt;&gt;&gt; list(random_formatted_str_gen('root/{}/{}_{}.test', (2, 5), 'abc', n=5))</span>
-<span class="sd">        [('root/acba/bb_abc.test',),</span>
-<span class="sd">         ('root/abcb/cbbc_ca.test',),</span>
-<span class="sd">         ('root/ac/ac_cc.test',),</span>
-<span class="sd">         ('root/aacc/ccbb_ab.test',),</span>
-<span class="sd">         ('root/aab/abb_cbab.test',)]</span>
+<span class="sd">        The output is random, so this is not run as a doctest:</span>
+
+<span class="sd">        .. code-block:: python</span>
+
+<span class="sd">            list(random_formatted_str_gen('root/{}/{}_{}.test', (2, 5), 'abc', n=5))</span>
+<span class="sd">            # [('root/acba/bb_abc.test',), ('root/abcb/cbbc_ca.test',), ...]</span>
 
 <span class="sd">    &gt;&gt;&gt; # The following will be made not random (by restricting the constraints to "no choice"</span>
 <span class="sd">    &gt;&gt;&gt; # ... this is so that we get consistent outputs to assert for the doc test.</span>
@@ -564,7 +564,7 @@
       
     </aside>
   </div>
-</div><script src="../../../_static/documentation_options.js?v=ee813736"></script>
+</div><script src="../../../_static/documentation_options.js?v=a9ed77be"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/scripts/furo.js?v=46bd48cc"></script>
