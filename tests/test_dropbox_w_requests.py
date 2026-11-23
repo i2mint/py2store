@@ -38,6 +38,7 @@ class TestDropboxSharedFolderPersister:
 def shared_file_persister():
     persister = DropboxFileCopyReader(SHARED_FILE_URL)
     yield persister
+    persister.file.close()  # Windows cannot remove an open file
     try:
         os.remove(persister.path)
     except FileNotFoundError:
