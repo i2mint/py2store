@@ -355,7 +355,7 @@
 <span class="sd">    (1, 2)</span>
 <span class="sd">    """</span>
     <span class="n">__assert_condition</span><span class="p">(</span>
-        <span class="nb">len</span><span class="p">(</span><span class="n">fields</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">d</span><span class="p">),</span> <span class="sa">f</span><span class="s1">'len(d)=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">d</span><span class="p">)</span><span class="si">}</span><span class="s1"> but len(fields)=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">fields</span><span class="p">)</span><span class="si">}</span><span class="s1">'</span>
+        <span class="nb">len</span><span class="p">(</span><span class="n">fields</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">d</span><span class="p">),</span> <span class="sa">f</span><span class="s2">"len(d)=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">d</span><span class="p">)</span><span class="si">}</span><span class="s2"> but len(fields)=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">fields</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
     <span class="p">)</span>
     <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="n">f</span><span class="p">]</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">)</span></div>
 
@@ -370,7 +370,7 @@
 <span class="sd">    {'a': 1, 'b': 2}</span>
 <span class="sd">    """</span>
     <span class="n">__assert_condition</span><span class="p">(</span>
-        <span class="nb">len</span><span class="p">(</span><span class="n">fields</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">d</span><span class="p">),</span> <span class="sa">f</span><span class="s1">'len(d)=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">d</span><span class="p">)</span><span class="si">}</span><span class="s1"> but len(fields)=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">fields</span><span class="p">)</span><span class="si">}</span><span class="s1">'</span>
+        <span class="nb">len</span><span class="p">(</span><span class="n">fields</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">d</span><span class="p">),</span> <span class="sa">f</span><span class="s2">"len(d)=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">d</span><span class="p">)</span><span class="si">}</span><span class="s2"> but len(fields)=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">fields</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
     <span class="p">)</span>
     <span class="k">return</span> <span class="p">{</span><span class="n">f</span><span class="p">:</span> <span class="n">x</span> <span class="k">for</span> <span class="n">f</span><span class="p">,</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="n">d</span><span class="p">)}</span></div>
 
@@ -513,7 +513,7 @@
 
 <div class="viewcode-block" id="dsv_of_list">
 <a class="viewcode-back" href="../../../_autosummary/py2store.key_mappers.tuples.html#py2store.key_mappers.tuples.dsv_of_list">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">dsv_of_list</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">','</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">dsv_of_list</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s2">","</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Converting a list of strings to a dsv (delimiter-separated values) string.</span>
 
@@ -546,7 +546,7 @@
 
 <div class="viewcode-block" id="list_of_dsv">
 <a class="viewcode-back" href="../../../_autosummary/py2store.key_mappers.tuples.html#py2store.key_mappers.tuples.list_of_dsv">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">list_of_dsv</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">','</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">list_of_dsv</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s2">","</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Converting a dsv (delimiter-separated values) string to the list of it's components.</span>
 
@@ -570,9 +570,7 @@
 <span class="sd">    &gt;&gt;&gt; list_of_dsv('', sep='@')  # when the string is empty</span>
 <span class="sd">    []</span>
 <span class="sd">    """</span>
-    <span class="k">if</span> <span class="p">(</span>
-        <span class="ow">not</span> <span class="n">d</span>
-    <span class="p">):</span>  <span class="c1"># doing this, because split returns [''] on an empty string (bad choice if you ask me!)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">d</span><span class="p">:</span>  <span class="c1"># doing this, because split returns [''] on an empty string (bad choice if you ask me!)</span>
         <span class="k">return</span> <span class="p">[]</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">d</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">sep</span><span class="p">)</span></div>
@@ -584,10 +582,10 @@
     <span class="kn">import</span><span class="w"> </span><span class="nn">string</span>
 
     <span class="n">alphanumeric</span> <span class="o">=</span> <span class="n">string</span><span class="o">.</span><span class="n">digits</span> <span class="o">+</span> <span class="n">string</span><span class="o">.</span><span class="n">ascii_lowercase</span>
-    <span class="n">non_alphanumeric</span> <span class="o">=</span> <span class="s1">''</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">string</span><span class="o">.</span><span class="n">printable</span><span class="p">)</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">alphanumeric</span><span class="p">))</span>
+    <span class="n">non_alphanumeric</span> <span class="o">=</span> <span class="s2">""</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">string</span><span class="o">.</span><span class="n">printable</span><span class="p">)</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">alphanumeric</span><span class="p">))</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">random_string</span><span class="p">(</span><span class="n">length</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span> <span class="n">character_set</span><span class="o">=</span><span class="n">alphanumeric</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s1">''</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">character_set</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">length</span><span class="p">))</span>
+        <span class="k">return</span> <span class="s2">""</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">character_set</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">length</span><span class="p">))</span>
 
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_tests</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">n_elements</span> <span class="ow">in</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_n_elements</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)):</span>
@@ -596,10 +594,10 @@
             <span class="n">sep</span> <span class="o">=</span> <span class="n">random_string</span><span class="p">(</span><span class="n">sep_length</span><span class="p">,</span> <span class="n">non_alphanumeric</span><span class="p">)</span>
             <span class="n">dsv_line</span> <span class="o">=</span> <span class="n">dsv_of_list</span><span class="p">(</span><span class="n">words</span><span class="p">,</span> <span class="n">sep</span><span class="p">)</span>
             <span class="n">dsv_words</span> <span class="o">=</span> <span class="n">list_of_dsv</span><span class="p">(</span><span class="n">dsv_line</span><span class="p">,</span> <span class="n">sep</span><span class="p">)</span>
-            <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="n">dsv_words</span> <span class="o">==</span> <span class="n">words</span><span class="p">),</span> <span class="sa">f</span><span class="s1">'Expected:</span><span class="se">\n\t</span><span class="si">{</span><span class="n">words</span><span class="si">}</span><span class="se">\n</span><span class="s1">Got:</span><span class="se">\n\t</span><span class="si">{</span><span class="n">dsv_words</span><span class="si">}</span><span class="s1">'</span>
+            <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="n">dsv_words</span> <span class="o">==</span> <span class="n">words</span><span class="p">),</span> <span class="sa">f</span><span class="s2">"Expected:</span><span class="se">\n\t</span><span class="si">{</span><span class="n">words</span><span class="si">}</span><span class="se">\n</span><span class="s2">Got:</span><span class="se">\n\t</span><span class="si">{</span><span class="n">dsv_words</span><span class="si">}</span><span class="s2">"</span>
 
 
-<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">'__main__'</span><span class="p">:</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">"__main__"</span><span class="p">:</span>
     <span class="n">_test_dsv_of_list</span><span class="p">()</span>
 </pre></div>
         </article>
@@ -629,7 +627,7 @@
       
     </aside>
   </div>
-</div><script src="../../../_static/documentation_options.js?v=47c14350"></script>
+</div><script src="../../../_static/documentation_options.js?v=ee813736"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/scripts/furo.js?v=46bd48cc"></script>

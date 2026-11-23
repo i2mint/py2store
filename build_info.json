@@ -1,32 +1,32 @@
 {
   "schema_version": 1,
-  "built_at": "2026-11-22T22:56:19Z",
+  "built_at": "2026-11-23T02:30:06Z",
   "package": {
     "name": "py2store",
-    "version": "0.1.28",
+    "version": "0.1.29",
     "display_name": "py2store",
     "source": "pyproject.toml"
   },
   "git": {
     "available": true,
-    "commit": "76f1a9e4a3b99a15f81e65ef3872459ae41638a6",
-    "short_commit": "76f1a9e",
+    "commit": "d0f1fbad9f9c4a75c49e579c251759657c33fa89",
+    "short_commit": "d0f1fba",
     "branch": "master",
     "tags": [],
     "dirty": false,
     "remote_url": "https://github.com/i2mint/py2store",
-    "commit_url": "https://github.com/i2mint/py2store/commit/76f1a9e4a3b99a15f81e65ef3872459ae41638a6",
+    "commit_url": "https://github.com/i2mint/py2store/commit/d0f1fbad9f9c4a75c49e579c251759657c33fa89",
     "error": null
   },
   "ci": {
     "provider": "github",
     "repository": "i2mint/py2store",
-    "sha": "76f1a9e4a3b99a15f81e65ef3872459ae41638a6",
+    "sha": "d0f1fbad9f9c4a75c49e579c251759657c33fa89",
     "sha_in_history": true,
     "ref": "refs/heads/master",
     "ref_name": "master",
-    "run_id": "45080331450",
-    "run_url": "https://github.com/i2mint/py2store/actions/runs/45080331450",
+    "run_id": "45100410183",
+    "run_url": "https://github.com/i2mint/py2store/actions/runs/45100410183",
     "server_url": "https://github.com"
   },
   "tools": {
@@ -60,11 +60,11 @@
   },
   "pypi": {
     "checked": true,
-    "latest": "0.1.28",
+    "latest": "0.1.29",
     "relation": "same",
     "error": null
   },
-  "reproduce": "git clone https://github.com/i2mint/py2store && cd py2store\ngit checkout 76f1a9e4a3b99a15f81e65ef3872459ae41638a6\npip install \"epythet==0.2.23\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
+  "reproduce": "git clone https://github.com/i2mint/py2store && cd py2store\ngit checkout d0f1fbad9f9c4a75c49e579c251759657c33fa89\npip install \"epythet==0.2.23\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
   "warnings": [],
   "alignment": {
     "aligned": true,

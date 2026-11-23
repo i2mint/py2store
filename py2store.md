@@ -1,4 +1,4 @@
-> built 2026-11-22 22:56 UTC from 76f1a9e (master) · py2store 0.1.28. Details: build_info.json
+> built 2026-11-23 02:30 UTC from d0f1fba (master) · py2store 0.1.29. Details: build_info.json
 
 # index.html.md
 
@@ -3226,7 +3226,7 @@ KV Reader whose keys are the full paths of the subdirectories of `rootdir` and w
 >>> _ = open(os.path.join(rootdir, 'a.txt'), 'wb').write(b'hi')
 >>> os.mkdir(os.path.join(rootdir, 'sub'))
 >>> s = DirReader(rootdir)
->>> [k[len(s.rootdir):] for k in s]
+>>> [k[len(s.rootdir):].replace(os.sep, '/') for k in s]
 ['sub/']
 >>> os.path.join(rootdir, 'a.txt') in s
 False
@@ -3257,7 +3257,7 @@ Keys are the full paths directly under `rootdir`; directory keys end with a sepa
 >>> _ = open(os.path.join(rootdir, 'a.txt'), 'wb').write(b'hi')
 >>> os.mkdir(os.path.join(rootdir, 'sub'))
 >>> s = FileReader(rootdir)
->>> sorted(k[len(s.rootdir):] for k in s)
+>>> sorted(k[len(s.rootdir):].replace(os.sep, '/') for k in s)
 ['a.txt', 'sub/']
 >>> s[os.path.join(rootdir, 'a.txt')]
 b'hi'
@@ -3326,7 +3326,7 @@ Key validation from a path template: which full paths belong to the collection.
 
 ```pycon
 >>> pf = PathFormat('/data/{}.csv')
->>> pf._prefix, pf.is_valid_key('/data/a.csv'), pf.is_valid_key('/data/a.txt')
+>>> pf._prefix.replace('\\', '/'), pf.is_valid_key('/data/a.csv'), pf.is_valid_key('/data/a.txt')
 ('/data/', True, False)
 ```
 
@@ -3894,7 +3894,7 @@ under the system temp directory is used, and its path is printed.
 >>> import os, tempfile
 >>> s = QuickPickleStore(os.path.join(tempfile.mkdtemp(), 'quick'))
 >>> s['deep/er/key'] = [1, 2]
->>> s['deep/er/key'], list(s)
+>>> s['deep/er/key'], [k.replace(os.sep, '/') for k in s]
 ([1, 2], ['deep/er/key'])
 ```
 
@@ -3912,7 +3912,7 @@ Bases: [`QuickLocalStoreMixin`](_autosummary/py2store.stores.local_store.html.md
 >>> import os, tempfile
 >>> s = QuickTextStore(os.path.join(tempfile.mkdtemp(), 'sub'))
 >>> s['x/y.txt'] = 'z'  # sub/ and sub/x/ are created for you
->>> list(s), s['x/y.txt']
+>>> [k.replace(os.sep, '/') for k in s], s['x/y.txt']
 (['x/y.txt'], 'z')
 ```
 
@@ -5045,7 +5045,7 @@ specs set to be “starred” or “star-starred” (respectively)
 >>> import os.path
 >>> spec = Invoke(os.path.join).star(args='path')
 >>> target = {'path': ['path', 'to', 'dir']}
->>> glom(target, spec)
+>>> glom(target, spec).replace(os.sep, '/')
 'path/to/dir'
 ```
 
@@ -5732,7 +5732,7 @@ Parses DB URI string into a dict of params.
 
 # About this build
 
-This documentation was built on **2026-11-22 22:56 UTC** from commit <a href="https://github.com/i2mint/py2store/commit/76f1a9e4a3b99a15f81e65ef3872459ae41638a6"><code>76f1a9e</code></a> on branch <code>master</code>, for **py2store 0.1.28** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-11-23 02:30 UTC** from commit <a href="https://github.com/i2mint/py2store/commit/d0f1fbad9f9c4a75c49e579c251759657c33fa89"><code>d0f1fba</code></a> on branch <code>master</code>, for **py2store 0.1.29** (from <code>pyproject.toml</code>).
 
 #### NOTE
 Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
@@ -5741,7 +5741,7 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 |                     |                                                                                                                                                        |
 |---------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/i2mint/py2store/commit/76f1a9e4a3b99a15f81e65ef3872459ae41638a6"><code>76f1a9e4a3b99a15f81e65ef3872459ae41638a6</code></a> |
+| Commit              | <a href="https://github.com/i2mint/py2store/commit/d0f1fbad9f9c4a75c49e579c251759657c33fa89"><code>d0f1fbad9f9c4a75c49e579c251759657c33fa89</code></a> |
 | Branch              | <code>master</code>                                                                                                                                    |
 | Tags at this commit | none                                                                                                                                                   |
 | Working tree        | clean                                                                                                                                                  |
@@ -5752,9 +5752,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>i2mint/py2store</code>                                                               |
-| Run          | <a href="https://github.com/i2mint/py2store/actions/runs/45080331450">45080331450</a>      |
+| Run          | <a href="https://github.com/i2mint/py2store/actions/runs/45100410183">45100410183</a>      |
 | Ref          | <code>refs/heads/master</code>                                                             |
-| Event commit | <code>76f1a9e4a3b99a15f81e65ef3872459ae41638a6</code> (in the history of the built commit) |
+| Event commit | <code>d0f1fbad9f9c4a75c49e579c251759657c33fa89</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -5779,13 +5779,13 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/py2store/0.1.28/">0.1.28</a>, the same as the documented version.
+Latest release: <a href="https://pypi.org/project/py2store/0.1.29/">0.1.29</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/i2mint/py2store && cd py2store
-git checkout 76f1a9e4a3b99a15f81e65ef3872459ae41638a6
+git checkout d0f1fbad9f9c4a75c49e579c251759657c33fa89
 pip install "epythet==0.2.23"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

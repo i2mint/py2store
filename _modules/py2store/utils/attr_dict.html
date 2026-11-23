@@ -329,6 +329,7 @@
 <span class="sd">a data object layer for object attributes</span>
 
 <span class="sd">"""</span>
+
 <span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">abc</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">keyword</span><span class="w"> </span><span class="kn">import</span> <span class="n">iskeyword</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">warnings</span><span class="w"> </span><span class="kn">import</span> <span class="n">warn</span>
@@ -368,11 +369,11 @@
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">str</span><span class="o">.</span><span class="n">isidentifier</span><span class="p">(</span><span class="n">key</span><span class="p">):</span>
                 <span class="n">identifiers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
             <span class="k">elif</span> <span class="n">iskeyword</span><span class="p">(</span><span class="n">key</span><span class="p">):</span>
-                <span class="n">key</span> <span class="o">+=</span> <span class="s1">'_'</span>
+                <span class="n">key</span> <span class="o">+=</span> <span class="s2">"_"</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">__data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
         <span class="k">if</span> <span class="n">identifiers</span><span class="p">:</span>
             <span class="n">warn</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">identifiers</span><span class="p">)</span><span class="si">}</span><span class="s1"> keys were not identifiers. Namely:</span><span class="se">\n</span><span class="si">{</span><span class="n">identifiers</span><span class="si">}</span><span class="s1">'</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">identifiers</span><span class="p">)</span><span class="si">}</span><span class="s2"> keys were not identifiers. Namely:</span><span class="se">\n</span><span class="si">{</span><span class="n">identifiers</span><span class="si">}</span><span class="s2">"</span>
             <span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
@@ -391,7 +392,7 @@
         <span class="k">return</span> <span class="n">s</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s1">(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">__data</span><span class="si">}</span><span class="s1">)'</span></div>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">__data</span><span class="si">}</span><span class="s2">)"</span></div>
 
 
 
@@ -426,9 +427,9 @@
 <span class="sd">    .. seealso:: 'AttrDict' in ``dol.sources`` module.</span>
 <span class="sd">    """</span>
     <span class="k">return</span> <span class="nb">type</span><span class="p">(</span>
-        <span class="n">name</span> <span class="ow">or</span> <span class="sa">f</span><span class="s1">'Attr</span><span class="si">{</span><span class="bp">cls</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s1">'</span><span class="p">,</span>
+        <span class="n">name</span> <span class="ow">or</span> <span class="sa">f</span><span class="s2">"Attr</span><span class="si">{</span><span class="bp">cls</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
         <span class="p">(</span><span class="bp">cls</span><span class="p">,),</span>
-        <span class="p">{</span><span class="s1">'__getattr__'</span><span class="p">:</span> <span class="bp">cls</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">,</span> <span class="s1">'__dir__'</span><span class="p">:</span> <span class="n">special_dir</span><span class="p">},</span>
+        <span class="p">{</span><span class="s2">"__getattr__"</span><span class="p">:</span> <span class="bp">cls</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">,</span> <span class="s2">"__dir__"</span><span class="p">:</span> <span class="n">special_dir</span><span class="p">},</span>
     <span class="p">)</span></div>
 
 </pre></div>
@@ -459,7 +460,7 @@
       
     </aside>
   </div>
-</div><script src="../../../_static/documentation_options.js?v=47c14350"></script>
+</div><script src="../../../_static/documentation_options.js?v=ee813736"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/scripts/furo.js?v=46bd48cc"></script>

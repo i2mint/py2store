@@ -328,6 +328,7 @@
 <span></span><span class="sd">"""</span>
 <span class="sd">utils for testing</span>
 <span class="sd">"""</span>
+
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">random</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">string</span>
@@ -349,7 +350,7 @@
 
 <span class="n">lower_case_letters</span> <span class="o">=</span> <span class="n">string</span><span class="o">.</span><span class="n">ascii_lowercase</span>
 <span class="n">alphanumeric</span> <span class="o">=</span> <span class="n">string</span><span class="o">.</span><span class="n">digits</span> <span class="o">+</span> <span class="n">lower_case_letters</span>
-<span class="n">non_alphanumeric</span> <span class="o">=</span> <span class="s1">''</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">string</span><span class="o">.</span><span class="n">printable</span><span class="p">)</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">alphanumeric</span><span class="p">))</span>
+<span class="n">non_alphanumeric</span> <span class="o">=</span> <span class="s2">""</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">string</span><span class="o">.</span><span class="n">printable</span><span class="p">)</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">alphanumeric</span><span class="p">))</span>
 
 
 <div class="viewcode-block" id="random_word">
@@ -396,7 +397,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">random_string</span><span class="p">(</span><span class="n">length</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span> <span class="n">alphabet</span><span class="o">=</span><span class="n">lower_case_letters</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""Same as random_word, but it optimized for strings</span>
 <span class="sd">    (5-10% faster for words of length 7, 25-30% faster for words of size 1000)"""</span>
-    <span class="k">return</span> <span class="s1">''</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">alphabet</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">length</span><span class="p">))</span></div>
+    <span class="k">return</span> <span class="s2">""</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">alphabet</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">length</span><span class="p">))</span></div>
 
 
 
@@ -427,7 +428,10 @@
 <div class="viewcode-block" id="random_tuple_gen">
 <a class="viewcode-back" href="../../../_autosummary/py2store.test.util.html#py2store.test.util.random_tuple_gen">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">random_tuple_gen</span><span class="p">(</span>
-    <span class="n">tuple_length</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">word_size_range</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span> <span class="n">alphabet</span><span class="o">=</span><span class="n">lower_case_letters</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
+    <span class="n">tuple_length</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+    <span class="n">word_size_range</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>
+    <span class="n">alphabet</span><span class="o">=</span><span class="n">lower_case_letters</span><span class="p">,</span>
+    <span class="n">n</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
 <span class="p">):</span>
 <span class="w">    </span><span class="sd">"""Random tuple (of strings) generator</span>
 
@@ -448,7 +452,7 @@
 <div class="viewcode-block" id="random_dict_gen">
 <a class="viewcode-back" href="../../../_autosummary/py2store.test.util.html#py2store.test.util.random_dict_gen">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">random_dict_gen</span><span class="p">(</span>
-    <span class="n">fields</span><span class="o">=</span><span class="p">(</span><span class="s1">'a'</span><span class="p">,</span> <span class="s1">'b'</span><span class="p">,</span> <span class="s1">'c'</span><span class="p">),</span>
+    <span class="n">fields</span><span class="o">=</span><span class="p">(</span><span class="s2">"a"</span><span class="p">,</span> <span class="s2">"b"</span><span class="p">,</span> <span class="s2">"c"</span><span class="p">),</span>
     <span class="n">word_size_range</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>
     <span class="n">alphabet</span><span class="o">=</span><span class="n">lower_case_letters</span><span class="p">,</span>
     <span class="n">n</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
@@ -475,7 +479,7 @@
 <div class="viewcode-block" id="random_formatted_str_gen">
 <a class="viewcode-back" href="../../../_autosummary/py2store.test.util.html#py2store.test.util.random_formatted_str_gen">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">random_formatted_str_gen</span><span class="p">(</span>
-    <span class="n">format_string</span><span class="o">=</span><span class="s1">'root/</span><span class="si">{}</span><span class="s1">/</span><span class="si">{}</span><span class="s1">_</span><span class="si">{}</span><span class="s1">.test'</span><span class="p">,</span>
+    <span class="n">format_string</span><span class="o">=</span><span class="s2">"root/</span><span class="si">{}</span><span class="s2">/</span><span class="si">{}</span><span class="s2">_</span><span class="si">{}</span><span class="s2">.test"</span><span class="p">,</span>
     <span class="n">word_size_range</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>
     <span class="n">alphabet</span><span class="o">=</span><span class="n">lower_case_letters</span><span class="p">,</span>
     <span class="n">n</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
@@ -560,7 +564,7 @@
       
     </aside>
   </div>
-</div><script src="../../../_static/documentation_options.js?v=47c14350"></script>
+</div><script src="../../../_static/documentation_options.js?v=ee813736"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/scripts/furo.js?v=46bd48cc"></script>

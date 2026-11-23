@@ -328,6 +328,7 @@
 <span></span><span class="sd">"""</span>
 <span class="sd">utils to work with URIs</span>
 <span class="sd">"""</span>
+
 <span class="kn">from</span><span class="w"> </span><span class="nn">urllib.parse</span><span class="w"> </span><span class="kn">import</span> <span class="n">urlsplit</span>
 
 
@@ -342,18 +343,18 @@
 <span class="sd">    """</span>
     <span class="n">splitted_uri</span> <span class="o">=</span> <span class="n">urlsplit</span><span class="p">(</span><span class="n">uri</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">splitted_uri</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">'/'</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">splitted_uri</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"/"</span><span class="p">):</span>
         <span class="n">path</span> <span class="o">=</span> <span class="n">splitted_uri</span><span class="o">.</span><span class="n">path</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">path</span> <span class="o">=</span> <span class="s1">''</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="s2">""</span>
 
     <span class="k">return</span> <span class="p">{</span>
-        <span class="s1">'scheme'</span><span class="p">:</span> <span class="n">splitted_uri</span><span class="o">.</span><span class="n">scheme</span><span class="p">,</span>
-        <span class="s1">'database'</span><span class="p">:</span> <span class="n">path</span><span class="p">,</span>
-        <span class="s1">'username'</span><span class="p">:</span> <span class="n">splitted_uri</span><span class="o">.</span><span class="n">username</span><span class="p">,</span>
-        <span class="s1">'password'</span><span class="p">:</span> <span class="n">splitted_uri</span><span class="o">.</span><span class="n">password</span><span class="p">,</span>
-        <span class="s1">'hostname'</span><span class="p">:</span> <span class="n">splitted_uri</span><span class="o">.</span><span class="n">hostname</span><span class="p">,</span>
-        <span class="s1">'port'</span><span class="p">:</span> <span class="n">splitted_uri</span><span class="o">.</span><span class="n">port</span><span class="p">,</span>
+        <span class="s2">"scheme"</span><span class="p">:</span> <span class="n">splitted_uri</span><span class="o">.</span><span class="n">scheme</span><span class="p">,</span>
+        <span class="s2">"database"</span><span class="p">:</span> <span class="n">path</span><span class="p">,</span>
+        <span class="s2">"username"</span><span class="p">:</span> <span class="n">splitted_uri</span><span class="o">.</span><span class="n">username</span><span class="p">,</span>
+        <span class="s2">"password"</span><span class="p">:</span> <span class="n">splitted_uri</span><span class="o">.</span><span class="n">password</span><span class="p">,</span>
+        <span class="s2">"hostname"</span><span class="p">:</span> <span class="n">splitted_uri</span><span class="o">.</span><span class="n">hostname</span><span class="p">,</span>
+        <span class="s2">"port"</span><span class="p">:</span> <span class="n">splitted_uri</span><span class="o">.</span><span class="n">port</span><span class="p">,</span>
     <span class="p">}</span></div>
 
 
@@ -362,18 +363,18 @@
 <a class="viewcode-back" href="../../../_autosummary/py2store.utils.uri_utils.html#py2store.utils.uri_utils.build_uri">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">build_uri</span><span class="p">(</span>
     <span class="n">scheme</span><span class="p">,</span>
-    <span class="n">database</span><span class="o">=</span><span class="s1">''</span><span class="p">,</span>  <span class="c1"># TODO: Change name: Not always a database</span>
+    <span class="n">database</span><span class="o">=</span><span class="s2">""</span><span class="p">,</span>  <span class="c1"># TODO: Change name: Not always a database</span>
     <span class="n">username</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">password</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">host</span><span class="o">=</span><span class="s1">'localhost'</span><span class="p">,</span>
+    <span class="n">host</span><span class="o">=</span><span class="s2">"localhost"</span><span class="p">,</span>
     <span class="n">port</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
 <span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Reverse of `parse_uri` function.</span>
 <span class="sd">    Builds a URI string from provided params.</span>
 <span class="sd">    """</span>
-    <span class="n">port_</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">':</span><span class="si">{</span><span class="n">port</span><span class="si">}</span><span class="s1">'</span> <span class="k">if</span> <span class="n">port</span> <span class="k">else</span> <span class="s1">''</span>
-    <span class="n">uri</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="n">scheme</span><span class="si">}</span><span class="s1">://</span><span class="si">{</span><span class="n">username</span><span class="si">}</span><span class="s1">:</span><span class="si">{</span><span class="n">password</span><span class="si">}</span><span class="s1">@</span><span class="si">{</span><span class="n">host</span><span class="si">}{</span><span class="n">port_</span><span class="si">}</span><span class="s1">/</span><span class="si">{</span><span class="n">database</span><span class="si">}</span><span class="s1">'</span>
+    <span class="n">port_</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">":</span><span class="si">{</span><span class="n">port</span><span class="si">}</span><span class="s2">"</span> <span class="k">if</span> <span class="n">port</span> <span class="k">else</span> <span class="s2">""</span>
+    <span class="n">uri</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">scheme</span><span class="si">}</span><span class="s2">://</span><span class="si">{</span><span class="n">username</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">password</span><span class="si">}</span><span class="s2">@</span><span class="si">{</span><span class="n">host</span><span class="si">}{</span><span class="n">port_</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">database</span><span class="si">}</span><span class="s2">"</span>
     <span class="k">return</span> <span class="n">uri</span></div>
 
 
@@ -409,29 +410,29 @@
             <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="n">n_fields</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s1">'You have too many arguments: (args, kwargs) is (</span><span class="si">{</span><span class="n">args</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">kwargs</span><span class="si">}</span><span class="s1">)'</span>
+                    <span class="sa">f</span><span class="s2">"You have too many arguments: (args, kwargs) is (</span><span class="si">{</span><span class="n">args</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">kwargs</span><span class="si">}</span><span class="s2">)"</span>
                 <span class="p">)</span>
             <span class="k">elif</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="n">n_fields</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s1">'You have too few arguments: (args, kwargs) is (</span><span class="si">{</span><span class="n">args</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">kwargs</span><span class="si">}</span><span class="s1">)'</span>
+                    <span class="sa">f</span><span class="s2">"You have too few arguments: (args, kwargs) is (</span><span class="si">{</span><span class="n">args</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">kwargs</span><span class="si">}</span><span class="s2">)"</span>
                 <span class="p">)</span>
             <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">({</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="n">args</span><span class="p">)},</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">input_trans</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">kwargs</span> <span class="o">=</span> <span class="n">input_trans</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">str_format</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
-        <span class="n">set_signature_of_func</span><span class="p">(</span><span class="n">_mk</span><span class="p">,</span> <span class="p">[</span><span class="s1">'self'</span><span class="p">]</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">fields</span><span class="p">))</span>
+        <span class="n">set_signature_of_func</span><span class="p">(</span><span class="n">_mk</span><span class="p">,</span> <span class="p">[</span><span class="s2">"self"</span><span class="p">]</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">fields</span><span class="p">))</span>
     <span class="k">else</span><span class="p">:</span>
 
         <span class="k">def</span><span class="w"> </span><span class="nf">_mk</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
             <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="n">n_fields</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s1">'You have too many arguments: (args, kwargs) is (</span><span class="si">{</span><span class="n">args</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">kwargs</span><span class="si">}</span><span class="s1">)'</span>
+                    <span class="sa">f</span><span class="s2">"You have too many arguments: (args, kwargs) is (</span><span class="si">{</span><span class="n">args</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">kwargs</span><span class="si">}</span><span class="s2">)"</span>
                 <span class="p">)</span>
             <span class="k">elif</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="n">n_fields</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s1">'You have too few arguments: (args, kwargs) is (</span><span class="si">{</span><span class="n">args</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">kwargs</span><span class="si">}</span><span class="s1">)'</span>
+                    <span class="sa">f</span><span class="s2">"You have too few arguments: (args, kwargs) is (</span><span class="si">{</span><span class="n">args</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">kwargs</span><span class="si">}</span><span class="s2">)"</span>
                 <span class="p">)</span>
             <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">({</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="n">args</span><span class="p">)},</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">input_trans</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -476,7 +477,7 @@
       
     </aside>
   </div>
-</div><script src="../../../_static/documentation_options.js?v=47c14350"></script>
+</div><script src="../../../_static/documentation_options.js?v=ee813736"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/scripts/furo.js?v=46bd48cc"></script>

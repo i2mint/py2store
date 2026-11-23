@@ -345,6 +345,7 @@
 <span class="sd">&gt;&gt;&gt; [os.path.basename(p) for p in iter_filepaths_in_folder_recursively(rootdir)]</span>
 <span class="sd">['a.txt']</span>
 <span class="sd">"""</span>
+
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">glob</span><span class="w"> </span><span class="kn">import</span> <span class="n">iglob</span>
@@ -362,10 +363,10 @@
 <span class="c1"># from py2store.slib.zipfile import ZipReader, ZipFileReader, ZipFilesReader, FilesOfZip</span>
 <span class="c1"># from py2store.filesys import FileCollection, DirCollection</span>
 
-<span class="n">DFLT_OPEN_MODE</span> <span class="o">=</span> <span class="s1">''</span>
+<span class="n">DFLT_OPEN_MODE</span> <span class="o">=</span> <span class="s2">""</span>
 
 <span class="n">file_sep</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">sep</span>
-<span class="n">inf</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">'infinity'</span><span class="p">)</span>
+<span class="n">inf</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">"infinity"</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="FolderNotFoundError">
@@ -407,7 +408,7 @@
 <a class="viewcode-back" href="../../../_autosummary/py2store.persisters.local_files.html#py2store.persisters.local_files.paths_in_dir_with_slash_suffix_for_dirs">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">paths_in_dir_with_slash_suffix_for_dirs</span><span class="p">(</span><span class="n">rootdir</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""Yield the full paths directly under ``rootdir``, with a trailing separator on directories."""</span>
-    <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">iglob</span><span class="p">(</span><span class="n">ensure_slash_suffix</span><span class="p">(</span><span class="n">rootdir</span><span class="p">)</span> <span class="o">+</span> <span class="s1">'*'</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">iglob</span><span class="p">(</span><span class="n">ensure_slash_suffix</span><span class="p">(</span><span class="n">rootdir</span><span class="p">)</span> <span class="o">+</span> <span class="s2">"*"</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
             <span class="k">yield</span> <span class="n">ensure_slash_suffix</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
@@ -420,7 +421,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">iter_relative_files_and_folder</span><span class="p">(</span><span class="n">root_folder</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""The names of the files and folders directly under ``root_folder``."""</span>
     <span class="n">root_folder</span> <span class="o">=</span> <span class="n">ensure_slash_suffix</span><span class="p">(</span><span class="n">root_folder</span><span class="p">)</span>
-    <span class="k">return</span> <span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">root_folder</span><span class="p">,</span> <span class="s1">''</span><span class="p">),</span> <span class="n">iglob</span><span class="p">(</span><span class="n">root_folder</span> <span class="o">+</span> <span class="s1">'*'</span><span class="p">))</span></div>
+    <span class="k">return</span> <span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">root_folder</span><span class="p">,</span> <span class="s2">""</span><span class="p">),</span> <span class="n">iglob</span><span class="p">(</span><span class="n">root_folder</span> <span class="o">+</span> <span class="s2">"*"</span><span class="p">))</span></div>
 
 
 
@@ -439,7 +440,7 @@
 <a class="viewcode-back" href="../../../_autosummary/py2store.persisters.local_files.html#py2store.persisters.local_files.paths_in_dir">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">paths_in_dir</span><span class="p">(</span><span class="n">rootdir</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""The full paths of the files and folders directly under ``rootdir``."""</span>
-    <span class="k">return</span> <span class="n">iglob</span><span class="p">(</span><span class="n">ensure_slash_suffix</span><span class="p">(</span><span class="n">rootdir</span><span class="p">)</span> <span class="o">+</span> <span class="s1">'*'</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">iglob</span><span class="p">(</span><span class="n">ensure_slash_suffix</span><span class="p">(</span><span class="n">rootdir</span><span class="p">)</span> <span class="o">+</span> <span class="s2">"*"</span><span class="p">)</span></div>
 
 
 
@@ -447,7 +448,7 @@
 <a class="viewcode-back" href="../../../_autosummary/py2store.persisters.local_files.html#py2store.persisters.local_files.filepaths_in_dir">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">filepaths_in_dir</span><span class="p">(</span><span class="n">rootdir</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""The full paths of the files (not the folders) directly under ``rootdir``."""</span>
-    <span class="k">return</span> <span class="nb">filter</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">,</span> <span class="n">iglob</span><span class="p">(</span><span class="n">ensure_slash_suffix</span><span class="p">(</span><span class="n">rootdir</span><span class="p">)</span> <span class="o">+</span> <span class="s1">'*'</span><span class="p">))</span></div>
+    <span class="k">return</span> <span class="nb">filter</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">,</span> <span class="n">iglob</span><span class="p">(</span><span class="n">ensure_slash_suffix</span><span class="p">(</span><span class="n">rootdir</span><span class="p">)</span> <span class="o">+</span> <span class="s2">"*"</span><span class="p">))</span></div>
 
 
 
@@ -455,7 +456,7 @@
 <a class="viewcode-back" href="../../../_autosummary/py2store.persisters.local_files.html#py2store.persisters.local_files.dirpaths_in_dir">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">dirpaths_in_dir</span><span class="p">(</span><span class="n">rootdir</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""The full paths of the folders directly under ``rootdir``."""</span>
-    <span class="k">return</span> <span class="nb">filter</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">,</span> <span class="n">iglob</span><span class="p">(</span><span class="n">ensure_slash_suffix</span><span class="p">(</span><span class="n">rootdir</span><span class="p">)</span> <span class="o">+</span> <span class="s1">'*'</span><span class="p">))</span></div>
+    <span class="k">return</span> <span class="nb">filter</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">,</span> <span class="n">iglob</span><span class="p">(</span><span class="n">ensure_slash_suffix</span><span class="p">(</span><span class="n">rootdir</span><span class="p">)</span> <span class="o">+</span> <span class="s2">"*"</span><span class="p">))</span></div>
 
 
 
@@ -554,10 +555,10 @@
 <a class="viewcode-back" href="../../../_autosummary/py2store.persisters.local_files.html#py2store.persisters.local_files.path_match_regex_from_path_format">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">path_match_regex_from_path_format</span><span class="p">(</span><span class="n">path_format</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""Compile the regex that full paths matching the ``path_format`` template satisfy (a bare directory matches everything under it)."""</span>
-    <span class="k">if</span> <span class="s1">'{'</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">path_format</span><span class="p">:</span>
+    <span class="k">if</span> <span class="s2">"{"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">path_format</span><span class="p">:</span>
         <span class="c1"># if the path_format is equal to the _prefix (i.e. there's no {} formatting)</span>
         <span class="c1"># ... append a formatting element so that the matcher can match all subfiles.</span>
-        <span class="n">path_format</span> <span class="o">=</span> <span class="n">path_format</span> <span class="o">+</span> <span class="s1">'</span><span class="si">{}</span><span class="s1">'</span>
+        <span class="n">path_format</span> <span class="o">=</span> <span class="n">path_format</span> <span class="o">+</span> <span class="s2">"</span><span class="si">{}</span><span class="s2">"</span>
 
     <span class="k">return</span> <span class="n">match_re_for_fstring</span><span class="p">(</span><span class="n">path_format</span><span class="p">)</span></div>
 
@@ -575,7 +576,7 @@
 <span class="sd">            containing the part before the first ``{`` is the root, available as ``_prefix``.</span>
 
 <span class="sd">    &gt;&gt;&gt; pf = PathFormat('/data/{}.csv')</span>
-<span class="sd">    &gt;&gt;&gt; pf._prefix, pf.is_valid_key('/data/a.csv'), pf.is_valid_key('/data/a.txt')</span>
+<span class="sd">    &gt;&gt;&gt; pf._prefix.replace('\\\\', '/'), pf.is_valid_key('/data/a.csv'), pf.is_valid_key('/data/a.txt')</span>
 <span class="sd">    ('/data/', True, False)</span>
 <span class="sd">    """</span>
 
@@ -584,11 +585,11 @@
             <span class="n">path_format</span>  <span class="c1"># not intended for use, but keeping in case, for now</span>
         <span class="p">)</span>
 
-        <span class="k">if</span> <span class="s1">'{'</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">path_format</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s2">"{"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">path_format</span><span class="p">:</span>
             <span class="n">rootdir</span> <span class="o">=</span> <span class="n">ensure_slash_suffix</span><span class="p">(</span><span class="n">path_format</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">rootdir</span> <span class="o">=</span> <span class="n">ensure_slash_suffix</span><span class="p">(</span>
-                <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sa">r</span><span class="s1">'[^{]*'</span><span class="p">,</span> <span class="n">path_format</span><span class="p">)</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sa">r</span><span class="s2">"[^{]*"</span><span class="p">,</span> <span class="n">path_format</span><span class="p">)</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
             <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_prefix</span> <span class="o">=</span> <span class="n">rootdir</span>
@@ -616,7 +617,7 @@
 <a class="viewcode-back" href="../../../_autosummary/py2store.persisters.local_files.html#py2store.persisters.local_files.first_non_existing_parent_dir">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">first_non_existing_parent_dir</span><span class="p">(</span><span class="n">dirpath</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""The highest ancestor directory of ``dirpath`` that does not exist, or ``''`` if they all exist."""</span>
-    <span class="n">parent</span> <span class="o">=</span> <span class="s1">''</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="s2">""</span>
     <span class="k">for</span> <span class="n">parent</span> <span class="ow">in</span> <span class="n">takewhile</span><span class="p">(</span><span class="n">_is_not_dir</span><span class="p">,</span> <span class="n">Path</span><span class="p">(</span><span class="n">dirpath</span><span class="p">)</span><span class="o">.</span><span class="n">parents</span><span class="p">):</span>
         <span class="k">pass</span>
     <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span></div>
@@ -636,7 +637,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">w_helpful_folder_not_found_error</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">raise_error</span><span class="o">=</span><span class="ne">KeyError</span><span class="p">,</span>
-    <span class="n">extra_msg</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Callable</span> <span class="o">=</span> <span class="s1">''</span><span class="p">,</span>
+    <span class="n">extra_msg</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Callable</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
     <span class="n">caught_errors</span><span class="o">=</span><span class="ne">FileNotFoundError</span><span class="p">,</span>
 <span class="p">):</span>
 <span class="w">    </span><span class="sd">"""Decorator factory: re-raise ``caught_errors`` from a method as ``raise_error``, with the original message plus ``extra_msg`` (a string, or a callable of the method's arguments)."""</span>
@@ -646,7 +647,7 @@
         <span class="k">def</span><span class="w"> </span><span class="nf">extra_msg</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">extra_msg_str</span>
 
-    <span class="k">assert</span> <span class="nb">callable</span><span class="p">(</span><span class="n">extra_msg</span><span class="p">),</span> <span class="s1">'extra_msg must be a callable or a string'</span>
+    <span class="k">assert</span> <span class="nb">callable</span><span class="p">(</span><span class="n">extra_msg</span><span class="p">),</span> <span class="s2">"extra_msg must be a callable or a string"</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_helpful_folder_not_found_error</span><span class="p">(</span><span class="n">method</span><span class="p">):</span>
         <span class="nd">@wraps</span><span class="p">(</span><span class="n">method</span><span class="p">)</span>
@@ -654,7 +655,7 @@
             <span class="k">try</span><span class="p">:</span>
                 <span class="k">return</span> <span class="n">method</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
             <span class="k">except</span> <span class="n">caught_errors</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s1">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="se">\n</span><span class="s1">'</span> <span class="o">+</span> <span class="n">extra_msg</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span> <span class="o">+</span> <span class="n">extra_msg</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
                 <span class="k">raise</span> <span class="n">raise_error</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">wrapped_method</span>
@@ -666,10 +667,10 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">_store_does_not_create_dirs_msg</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="k">return</span> <span class="p">(</span>
         <span class="s2">"The store you're using doesn't create directories for you. "</span>
-        <span class="s1">'You have to make the directories needed yourself manually, '</span>
-        <span class="s1">'or use a store that does that for you (example QuickStore). '</span>
+        <span class="s2">"You have to make the directories needed yourself manually, "</span>
+        <span class="s2">"or use a store that does that for you (example QuickStore). "</span>
         <span class="s2">"This is the first directory that didn't exist:</span><span class="se">\n</span><span class="s2">"</span>
-        <span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="n">first_non_existing_parent_dir</span><span class="p">(</span><span class="n">k</span><span class="p">)</span><span class="si">}</span><span class="s1">'</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">first_non_existing_parent_dir</span><span class="p">(</span><span class="n">k</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
     <span class="p">)</span>
 
 
@@ -717,11 +718,11 @@
 <span class="sd">    A class providing get, set and delete functionality using local files as the storage backend.</span>
 <span class="sd">    """</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">''</span><span class="p">,</span> <span class="o">**</span><span class="n">open_kwargs</span><span class="p">):</span>
-        <span class="k">assert</span> <span class="n">mode</span> <span class="ow">in</span> <span class="p">{</span><span class="s1">''</span><span class="p">,</span> <span class="s1">'b'</span><span class="p">,</span> <span class="s1">'t'</span><span class="p">},</span> <span class="s2">"mode should be '', 'b', or 't'"</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">""</span><span class="p">,</span> <span class="o">**</span><span class="n">open_kwargs</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="n">mode</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">""</span><span class="p">,</span> <span class="s2">"b"</span><span class="p">,</span> <span class="s2">"t"</span><span class="p">},</span> <span class="s2">"mode should be '', 'b', or 't'"</span>
 
-        <span class="n">read_mode</span> <span class="o">=</span> <span class="n">open_kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">'read_mode'</span><span class="p">,</span> <span class="s1">'r'</span> <span class="o">+</span> <span class="n">mode</span><span class="p">)</span>
-        <span class="n">write_mode</span> <span class="o">=</span> <span class="n">open_kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">'write_mode'</span><span class="p">,</span> <span class="s1">'w'</span> <span class="o">+</span> <span class="n">mode</span><span class="p">)</span>
+        <span class="n">read_mode</span> <span class="o">=</span> <span class="n">open_kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"read_mode"</span><span class="p">,</span> <span class="s2">"r"</span> <span class="o">+</span> <span class="n">mode</span><span class="p">)</span>
+        <span class="n">write_mode</span> <span class="o">=</span> <span class="n">open_kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"write_mode"</span><span class="p">,</span> <span class="s2">"w"</span> <span class="o">+</span> <span class="n">mode</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_open_kwargs_for_read</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">open_kwargs</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">read_mode</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_open_kwargs_for_write</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">open_kwargs</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">write_mode</span><span class="p">)</span>
 
@@ -732,7 +733,8 @@
         <span class="k">return</span> <span class="n">data</span>
 
     <span class="nd">@w_helpful_folder_not_found_error</span><span class="p">(</span>
-        <span class="n">raise_error</span><span class="o">=</span><span class="n">FolderNotFoundError</span><span class="p">,</span> <span class="n">extra_msg</span><span class="o">=</span><span class="n">_store_does_not_create_dirs_msg</span><span class="p">,</span>
+        <span class="n">raise_error</span><span class="o">=</span><span class="n">FolderNotFoundError</span><span class="p">,</span>
+        <span class="n">extra_msg</span><span class="o">=</span><span class="n">_store_does_not_create_dirs_msg</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">_open_kwargs_for_write</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
@@ -792,7 +794,11 @@
 <span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">path_format</span><span class="p">,</span> <span class="n">max_levels</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">inf</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">DFLT_OPEN_MODE</span><span class="p">,</span> <span class="o">**</span><span class="n">open_kwargs</span><span class="p">,</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">path_format</span><span class="p">,</span>
+        <span class="n">max_levels</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">inf</span><span class="p">,</span>
+        <span class="n">mode</span><span class="o">=</span><span class="n">DFLT_OPEN_MODE</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">open_kwargs</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="n">FilepathFormatKeys</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path_format</span><span class="p">)</span>
         <span class="n">LocalFileRWD</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="o">**</span><span class="n">open_kwargs</span><span class="p">)</span>
@@ -883,7 +889,7 @@
 <span class="sd">    &gt;&gt;&gt; _ = open(os.path.join(rootdir, 'a.txt'), 'wb').write(b'hi')</span>
 <span class="sd">    &gt;&gt;&gt; os.mkdir(os.path.join(rootdir, 'sub'))</span>
 <span class="sd">    &gt;&gt;&gt; s = FileReader(rootdir)</span>
-<span class="sd">    &gt;&gt;&gt; sorted(k[len(s.rootdir):] for k in s)</span>
+<span class="sd">    &gt;&gt;&gt; sorted(k[len(s.rootdir):].replace(os.sep, '/') for k in s)</span>
 <span class="sd">    ['a.txt', 'sub/']</span>
 <span class="sd">    &gt;&gt;&gt; s[os.path.join(rootdir, 'a.txt')]</span>
 <span class="sd">    b'hi'</span>
@@ -927,7 +933,7 @@
             <span class="k">if</span> <span class="n">is_dir_path</span><span class="p">(</span><span class="n">k</span><span class="p">):</span>
                 <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_new_node</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
             <span class="k">elif</span> <span class="n">is_file_path</span><span class="p">(</span><span class="n">k</span><span class="p">):</span>
-                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="s1">'rb'</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="s2">"rb"</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
                     <span class="k">return</span> <span class="n">fp</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__missing__</span><span class="p">(</span>
             <span class="n">k</span>
@@ -953,7 +959,7 @@
 <span class="sd">    &gt;&gt;&gt; _ = open(os.path.join(rootdir, 'a.txt'), 'wb').write(b'hi')</span>
 <span class="sd">    &gt;&gt;&gt; os.mkdir(os.path.join(rootdir, 'sub'))</span>
 <span class="sd">    &gt;&gt;&gt; s = DirReader(rootdir)</span>
-<span class="sd">    &gt;&gt;&gt; [k[len(s.rootdir):] for k in s]</span>
+<span class="sd">    &gt;&gt;&gt; [k[len(s.rootdir):].replace(os.sep, '/') for k in s]</span>
 <span class="sd">    ['sub/']</span>
 <span class="sd">    &gt;&gt;&gt; os.path.join(rootdir, 'a.txt') in s</span>
 <span class="sd">    False</span>
@@ -995,7 +1001,7 @@
       
     </aside>
   </div>
-</div><script src="../../../_static/documentation_options.js?v=47c14350"></script>
+</div><script src="../../../_static/documentation_options.js?v=ee813736"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/scripts/furo.js?v=46bd48cc"></script>

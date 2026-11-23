@@ -338,6 +338,7 @@
 <span class="sd">- ``grabber_for``: the ready-made grabbers by name (``'ipython'``)</span>
 <span class="sd">- ``ipython_display_val_trans``: the value transformation behind the ``'ipython'`` grabber</span>
 <span class="sd">"""</span>
+
 <span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">wraps</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">io</span><span class="w"> </span><span class="kn">import</span> <span class="n">BytesIO</span><span class="p">,</span> <span class="n">StringIO</span>
 
@@ -387,20 +388,20 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_has_wav_header</span><span class="p">(</span><span class="n">b</span><span class="p">):</span>
-    <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">b</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">44</span> <span class="ow">and</span> <span class="n">b</span><span class="p">[:</span><span class="mi">4</span><span class="p">]</span> <span class="o">==</span> <span class="sa">b</span><span class="s1">'RIFF'</span> <span class="ow">and</span> <span class="n">b</span><span class="p">[</span><span class="mi">8</span><span class="p">:</span><span class="mi">12</span><span class="p">]</span> <span class="o">==</span> <span class="sa">b</span><span class="s1">'WAVE'</span>
+    <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">b</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">44</span> <span class="ow">and</span> <span class="n">b</span><span class="p">[:</span><span class="mi">4</span><span class="p">]</span> <span class="o">==</span> <span class="sa">b</span><span class="s2">"RIFF"</span> <span class="ow">and</span> <span class="n">b</span><span class="p">[</span><span class="mi">8</span><span class="p">:</span><span class="mi">12</span><span class="p">]</span> <span class="o">==</span> <span class="sa">b</span><span class="s2">"WAVE"</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_is_html</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">4</span><span class="p">:</span>
-        <span class="k">if</span> <span class="s1">'htm'</span> <span class="ow">in</span> <span class="n">key</span><span class="p">[</span><span class="o">-</span><span class="mi">4</span><span class="p">:]:</span>
+        <span class="k">if</span> <span class="s2">"htm"</span> <span class="ow">in</span> <span class="n">key</span><span class="p">[</span><span class="o">-</span><span class="mi">4</span><span class="p">:]:</span>
             <span class="k">return</span> <span class="kc">True</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="p">(</span><span class="n">BytesIO</span><span class="p">,</span> <span class="n">StringIO</span><span class="p">)):</span>
             <span class="n">x</span> <span class="o">=</span> <span class="n">_read_line_and_rewind</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-            <span class="k">return</span> <span class="n">x</span><span class="p">[:</span><span class="mi">15</span><span class="p">]</span> <span class="o">==</span> <span class="s1">'&lt;!DOCTYPE html&gt;'</span>
+            <span class="k">return</span> <span class="n">x</span><span class="p">[:</span><span class="mi">15</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"&lt;!DOCTYPE html&gt;"</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>
-            <span class="k">return</span> <span class="n">x</span><span class="p">[:</span><span class="mi">15</span><span class="p">]</span> <span class="o">==</span> <span class="sa">b</span><span class="s1">'&lt;!DOCTYPE html&gt;'</span>
+            <span class="k">return</span> <span class="n">x</span><span class="p">[:</span><span class="mi">15</span><span class="p">]</span> <span class="o">==</span> <span class="sa">b</span><span class="s2">"&lt;!DOCTYPE html&gt;"</span>
     <span class="k">return</span> <span class="kc">False</span>  <span class="c1"># if not returned before</span>
 
 
@@ -449,10 +450,10 @@
 <span class="sd">    Raises:</span>
 <span class="sd">        ValueError: If ``kind`` is not a known grabber name.</span>
 <span class="sd">    """</span>
-    <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s1">'ipython'</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">"ipython"</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">mk_grabber</span><span class="p">(</span><span class="n">val_trans</span><span class="o">=</span><span class="n">ipython_display_val_trans</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Unrecognized grabber kind: </span><span class="si">{</span><span class="n">kind</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span></div>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unrecognized grabber kind: </span><span class="si">{</span><span class="n">kind</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span></div>
 
 </pre></div>
         </article>
@@ -482,7 +483,7 @@
       
     </aside>
   </div>
-</div><script src="../../../_static/documentation_options.js?v=47c14350"></script>
+</div><script src="../../../_static/documentation_options.js?v=ee813736"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/scripts/furo.js?v=46bd48cc"></script>

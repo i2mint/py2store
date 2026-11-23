@@ -328,6 +328,7 @@
 <span></span><span class="sd">"""</span>
 <span class="sd">utils from strings</span>
 <span class="sd">"""</span>
+
 <span class="kn">import</span><span class="w"> </span><span class="nn">string</span>
 
 <span class="n">dflt_formatter</span> <span class="o">=</span> <span class="n">string</span><span class="o">.</span><span class="n">Formatter</span><span class="p">()</span>
@@ -392,7 +393,7 @@
 <span class="sd">    &gt;&gt;&gt; compile_str_from_parsed(parsed)</span>
 <span class="sd">    'ROOT/{}/{0!r}/{1!i:format}/hello{:0.02f}TAIL'</span>
 <span class="sd">    """</span>
-    <span class="n">result</span> <span class="o">=</span> <span class="s1">''</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="s2">""</span>
     <span class="k">for</span> <span class="n">literal_text</span><span class="p">,</span> <span class="n">field_name</span><span class="p">,</span> <span class="n">format_spec</span><span class="p">,</span> <span class="n">conversion</span> <span class="ow">in</span> <span class="n">parsed</span><span class="p">:</span>
         <span class="c1"># output the literal text</span>
         <span class="k">if</span> <span class="n">literal_text</span><span class="p">:</span>
@@ -400,14 +401,14 @@
 
         <span class="c1"># if there's a field, output it</span>
         <span class="k">if</span> <span class="n">field_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">result</span> <span class="o">+=</span> <span class="s1">'{'</span>
-            <span class="k">if</span> <span class="n">field_name</span> <span class="o">!=</span> <span class="s1">''</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">+=</span> <span class="s2">"{"</span>
+            <span class="k">if</span> <span class="n">field_name</span> <span class="o">!=</span> <span class="s2">""</span><span class="p">:</span>
                 <span class="n">result</span> <span class="o">+=</span> <span class="n">field_name</span>
             <span class="k">if</span> <span class="n">conversion</span><span class="p">:</span>
-                <span class="n">result</span> <span class="o">+=</span> <span class="s1">'!'</span> <span class="o">+</span> <span class="n">conversion</span>
+                <span class="n">result</span> <span class="o">+=</span> <span class="s2">"!"</span> <span class="o">+</span> <span class="n">conversion</span>
             <span class="k">if</span> <span class="n">format_spec</span><span class="p">:</span>
-                <span class="n">result</span> <span class="o">+=</span> <span class="s1">':'</span> <span class="o">+</span> <span class="n">format_spec</span>
-            <span class="n">result</span> <span class="o">+=</span> <span class="s1">'}'</span>
+                <span class="n">result</span> <span class="o">+=</span> <span class="s2">":"</span> <span class="o">+</span> <span class="n">format_spec</span>
+            <span class="n">result</span> <span class="o">+=</span> <span class="s2">"}"</span>
     <span class="k">return</span> <span class="n">result</span></div>
 
 
@@ -423,7 +424,7 @@
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_empty_field_name</span><span class="p">(</span><span class="n">literal_text</span><span class="p">,</span> <span class="n">field_name</span><span class="p">,</span> <span class="n">format_spec</span><span class="p">,</span> <span class="n">conversion</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">field_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">literal_text</span><span class="p">,</span> <span class="s1">''</span><span class="p">,</span> <span class="n">format_spec</span><span class="p">,</span> <span class="n">conversion</span>
+        <span class="k">return</span> <span class="n">literal_text</span><span class="p">,</span> <span class="s2">""</span><span class="p">,</span> <span class="n">format_spec</span><span class="p">,</span> <span class="n">conversion</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">literal_text</span><span class="p">,</span> <span class="n">field_name</span><span class="p">,</span> <span class="n">format_spec</span><span class="p">,</span> <span class="n">conversion</span>
 
@@ -501,8 +502,8 @@
 
 
 <span class="n">no_hybrid_format_error</span> <span class="o">=</span> <span class="ne">ValueError</span><span class="p">(</span>
-    <span class="s1">'cannot switch from manual field specification (i.e. {{number}} or {{name}}) '</span>
-    <span class="s1">'to automatic (i.e. {{}}) field numbering.'</span>
+    <span class="s2">"cannot switch from manual field specification (i.e. {{number}} or {{name}}) "</span>
+    <span class="s2">"to automatic (i.e. {{}}) field numbering."</span>
 <span class="p">)</span>
 
 
@@ -529,8 +530,11 @@
 <span class="sd">    """</span>
     <span class="k">return</span> <span class="nb">list</span><span class="p">(</span>
         <span class="nb">map</span><span class="p">(</span>
-            <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">if</span> <span class="nb">str</span><span class="o">.</span><span class="n">isnumeric</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">else</span> <span class="n">x</span> <span class="k">if</span> <span class="n">x</span> <span class="o">!=</span> <span class="s1">''</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
-            <span class="nb">filter</span><span class="p">(</span><span class="n">_is_not_none</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">dflt_formatter</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">format_string</span><span class="p">)),),</span>
+            <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">if</span> <span class="nb">str</span><span class="o">.</span><span class="n">isnumeric</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">else</span> <span class="n">x</span> <span class="k">if</span> <span class="n">x</span> <span class="o">!=</span> <span class="s2">""</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="nb">filter</span><span class="p">(</span>
+                <span class="n">_is_not_none</span><span class="p">,</span>
+                <span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">dflt_formatter</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">format_string</span><span class="p">)),</span>
+            <span class="p">),</span>
         <span class="p">)</span>
     <span class="p">)</span></div>
 
@@ -616,9 +620,9 @@
 <span class="sd">    See Also:</span>
 <span class="sd">        is_automatic_format_params</span>
 <span class="sd">    """</span>
-    <span class="k">assert</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span>
-        <span class="n">format_params</span><span class="p">,</span> <span class="nb">str</span>
-    <span class="p">),</span> <span class="s2">"format_params can't be a string (perhaps you meant is_manual_format_string?)"</span>
+    <span class="k">assert</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">format_params</span><span class="p">,</span> <span class="nb">str</span><span class="p">),</span> <span class="p">(</span>
+        <span class="s2">"format_params can't be a string (perhaps you meant is_manual_format_string?)"</span>
+    <span class="p">)</span>
     <span class="k">return</span> <span class="nb">all</span><span class="p">((</span><span class="n">x</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">format_params</span><span class="p">)</span></div>
 
 
@@ -631,9 +635,9 @@
 <span class="sd">    See Also:</span>
 <span class="sd">        is_manual_format_params and is_hybrid_format_params</span>
 <span class="sd">    """</span>
-    <span class="k">assert</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span>
-        <span class="n">format_params</span><span class="p">,</span> <span class="nb">str</span>
-    <span class="p">),</span> <span class="s2">"format_params can't be a string (perhaps you meant to use is_automatic_format_string?)"</span>
+    <span class="k">assert</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">format_params</span><span class="p">,</span> <span class="nb">str</span><span class="p">),</span> <span class="p">(</span>
+        <span class="s2">"format_params can't be a string (perhaps you meant to use is_automatic_format_string?)"</span>
+    <span class="p">)</span>
     <span class="k">return</span> <span class="nb">all</span><span class="p">((</span><span class="n">x</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">format_params</span><span class="p">)</span></div>
 
 
@@ -650,9 +654,9 @@
 <span class="sd">    See Also:</span>
 <span class="sd">        is_manual_format_params and is_automatic_format_params</span>
 <span class="sd">    """</span>
-    <span class="k">assert</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span>
-        <span class="n">format_params</span><span class="p">,</span> <span class="nb">str</span>
-    <span class="p">),</span> <span class="s2">"format_params can't be a string (perhaps you meant is_hybrid_format_string?)"</span>
+    <span class="k">assert</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">format_params</span><span class="p">,</span> <span class="nb">str</span><span class="p">),</span> <span class="p">(</span>
+        <span class="s2">"format_params can't be a string (perhaps you meant is_hybrid_format_string?)"</span>
+    <span class="p">)</span>
     <span class="k">return</span> <span class="p">(</span><span class="ow">not</span> <span class="n">is_manual_format_params</span><span class="p">(</span><span class="n">format_params</span><span class="p">))</span> <span class="ow">and</span> <span class="p">(</span>
         <span class="ow">not</span> <span class="n">is_automatic_format_params</span><span class="p">(</span><span class="n">format_params</span><span class="p">)</span>
     <span class="p">)</span></div>
@@ -735,7 +739,7 @@
       
     </aside>
   </div>
-</div><script src="../../../_static/documentation_options.js?v=47c14350"></script>
+</div><script src="../../../_static/documentation_options.js?v=ee813736"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/scripts/furo.js?v=46bd48cc"></script>

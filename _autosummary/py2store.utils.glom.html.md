@@ -582,7 +582,7 @@ specs set to be “starred” or “star-starred” (respectively)
 >>> import os.path
 >>> spec = Invoke(os.path.join).star(args='path')
 >>> target = {'path': ['path', 'to', 'dir']}
->>> glom(target, spec)
+>>> glom(target, spec).replace(os.sep, '/')
 'path/to/dir'
 ```
 

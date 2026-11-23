@@ -353,6 +353,7 @@
 
 <span class="sd">respectively.</span>
 <span class="sd">"""</span>
+
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">importlib</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">warnings</span><span class="w"> </span><span class="kn">import</span> <span class="n">warn</span>
@@ -361,7 +362,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">py2store.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">str_to_var_str</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">py2store.sources</span><span class="w"> </span><span class="kn">import</span> <span class="n">AttrDict</span>
 
-<span class="n">FAK</span> <span class="o">=</span> <span class="s1">'$fak'</span>
+<span class="n">FAK</span> <span class="o">=</span> <span class="s2">"$fak"</span>
 
 
 <span class="c1"># TODO: Make a config_utils.py module to centralize config tools (configs for access is just one -- serializers another)</span>
@@ -374,7 +375,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">getenv</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""Like os.getenv, but removes a suffix \\r character if present (problem with some env var systems)"""</span>
     <span class="n">v</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">default</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">v</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">'</span><span class="se">\r</span><span class="s1">'</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">v</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">"</span><span class="se">\r</span><span class="s2">"</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">v</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">v</span></div>
@@ -385,7 +386,7 @@
 <a class="viewcode-back" href="../../_autosummary/py2store.access.html#py2store.access.assert_callable">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">assert_callable</span><span class="p">(</span><span class="n">f</span><span class="p">:</span> <span class="nb">callable</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">callable</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Return ``f`` unchanged if it is callable, else raise ``AssertionError``."""</span>
-    <span class="k">assert</span> <span class="nb">callable</span><span class="p">(</span><span class="n">f</span><span class="p">),</span> <span class="sa">f</span><span class="s1">'Is not callable: </span><span class="si">{</span><span class="n">f</span><span class="si">}</span><span class="s1">'</span>
+    <span class="k">assert</span> <span class="nb">callable</span><span class="p">(</span><span class="n">f</span><span class="p">),</span> <span class="sa">f</span><span class="s2">"Is not callable: </span><span class="si">{</span><span class="n">f</span><span class="si">}</span><span class="s2">"</span>
     <span class="k">return</span> <span class="n">f</span></div>
 
 
@@ -394,9 +395,9 @@
 <a class="viewcode-back" href="../../_autosummary/py2store.access.html#py2store.access.dotpath_to_obj">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">dotpath_to_obj</span><span class="p">(</span><span class="n">dotpath</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""Loads and returns the object referenced by the string DOTPATH_TO_MODULE.OBJ_NAME"""</span>
-    <span class="o">*</span><span class="n">module_path</span><span class="p">,</span> <span class="n">obj_name</span> <span class="o">=</span> <span class="n">dotpath</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">'.'</span><span class="p">)</span>
+    <span class="o">*</span><span class="n">module_path</span><span class="p">,</span> <span class="n">obj_name</span> <span class="o">=</span> <span class="n">dotpath</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"."</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">module_path</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="s1">'.'</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">module_path</span><span class="p">)),</span> <span class="n">obj_name</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="s2">"."</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">module_path</span><span class="p">)),</span> <span class="n">obj_name</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="n">obj_name</span><span class="p">)</span></div>
 
@@ -410,11 +411,11 @@
 <span class="sd">    """</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-        <span class="k">if</span> <span class="s1">'.'</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
-            <span class="o">*</span><span class="n">module_path</span><span class="p">,</span> <span class="n">func_name</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">'.'</span><span class="p">)</span>
-            <span class="n">f</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="s1">'.'</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">module_path</span><span class="p">)),</span> <span class="n">func_name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s2">"."</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
+            <span class="o">*</span><span class="n">module_path</span><span class="p">,</span> <span class="n">func_name</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"."</span><span class="p">)</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="s2">"."</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">module_path</span><span class="p">)),</span> <span class="n">func_name</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">f</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="s1">'py2store'</span><span class="p">),</span> <span class="n">f</span><span class="p">)</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="s2">"py2store"</span><span class="p">),</span> <span class="n">f</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">assert_callable</span><span class="p">(</span><span class="n">f</span><span class="p">)</span></div>
 
@@ -449,7 +450,7 @@
 <a class="viewcode-back" href="../../_autosummary/py2store.access.html#py2store.access.fakit_from_dict">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">fakit_from_dict</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">func_loader</span><span class="o">=</span><span class="n">assert_callable</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""Call the function in ``d['f']`` (through ``func_loader``) with the args ``d['a']`` and kwargs ``d['k']``, both optional."""</span>
-    <span class="k">return</span> <span class="n">_fakit</span><span class="p">(</span><span class="n">func_loader</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s1">'f'</span><span class="p">]),</span> <span class="n">a</span><span class="o">=</span><span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'a'</span><span class="p">,</span> <span class="p">()),</span> <span class="n">k</span><span class="o">=</span><span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'k'</span><span class="p">,</span> <span class="p">{}))</span></div>
+    <span class="k">return</span> <span class="n">_fakit</span><span class="p">(</span><span class="n">func_loader</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s2">"f"</span><span class="p">]),</span> <span class="n">a</span><span class="o">=</span><span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"a"</span><span class="p">,</span> <span class="p">()),</span> <span class="n">k</span><span class="o">=</span><span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"k"</span><span class="p">,</span> <span class="p">{}))</span></div>
 
 
 
@@ -475,24 +476,24 @@
         <span class="mi">1</span><span class="p">,</span>
         <span class="mi">2</span><span class="p">,</span>
         <span class="mi">3</span><span class="p">,</span>
-    <span class="p">},</span> <span class="s1">'A tuple fak must be of length 1, 2, or 3. No more, no less.'</span>
+    <span class="p">},</span> <span class="s2">"A tuple fak must be of length 1, 2, or 3. No more, no less."</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="nb">dict</span><span class="p">):</span>
             <span class="n">k</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span>
-                <span class="n">t</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>
-            <span class="p">),</span> <span class="s1">'argument specs should be dict, tuple, or list'</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">)),</span> <span class="p">(</span>
+                <span class="s2">"argument specs should be dict, tuple, or list"</span>
+            <span class="p">)</span>
             <span class="n">a</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="nb">dict</span><span class="p">):</span>
-                <span class="k">assert</span> <span class="ow">not</span> <span class="n">k</span><span class="p">,</span> <span class="s1">'can only have one kwargs'</span>
+                <span class="k">assert</span> <span class="ow">not</span> <span class="n">k</span><span class="p">,</span> <span class="s2">"can only have one kwargs"</span>
                 <span class="n">k</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span>
-                    <span class="n">t</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>
-                <span class="p">),</span> <span class="s1">'argument specs should be dict, tuple, or list'</span>
-                <span class="k">assert</span> <span class="ow">not</span> <span class="n">a</span><span class="p">,</span> <span class="s1">'can only have one args'</span>
+                <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">)),</span> <span class="p">(</span>
+                    <span class="s2">"argument specs should be dict, tuple, or list"</span>
+                <span class="p">)</span>
+                <span class="k">assert</span> <span class="ow">not</span> <span class="n">a</span><span class="p">,</span> <span class="s2">"can only have one args"</span>
                 <span class="n">a</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
     <span class="k">return</span> <span class="n">_fakit</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span></div>
 
@@ -517,7 +518,7 @@
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fak</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">fakit_from_dict</span><span class="p">(</span><span class="n">fak</span><span class="p">,</span> <span class="n">func_loader</span><span class="o">=</span><span class="n">func_loader</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fak</span><span class="p">,</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">)),</span> <span class="s1">'fak should be dict, tuple, or list'</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fak</span><span class="p">,</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">)),</span> <span class="s2">"fak should be dict, tuple, or list"</span>
         <span class="k">return</span> <span class="n">fakit_from_tuple</span><span class="p">(</span><span class="n">fak</span><span class="p">,</span> <span class="n">func_loader</span><span class="o">=</span><span class="n">func_loader</span><span class="p">)</span></div>
 
 
@@ -537,27 +538,27 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">mkdir_if_needed</span><span class="p">(</span><span class="n">dirpath</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""Create ``dirpath`` if it does not exist, printing a note that calls it ``name`` (``verbose`` is accepted but not used)."""</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">dirpath</span><span class="p">):</span>
-        <span class="n">name</span> <span class="o">=</span> <span class="n">name</span> <span class="ow">or</span> <span class="s1">'directory'</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">name</span> <span class="ow">or</span> <span class="s2">"directory"</span>
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> doesn't exist. Making it: </span><span class="si">{</span><span class="n">dirpath</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">dirpath</span><span class="p">)</span></div>
 
 
 
-<span class="n">DFLT_PY2STORE_CONFIG_DIR</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s1">'~/.py2store_configs'</span><span class="p">)</span>
-<span class="n">DFLT_MY_CONFIGS_DIRNAME</span> <span class="o">=</span> <span class="s1">'my'</span>
+<span class="n">DFLT_PY2STORE_CONFIG_DIR</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s2">"~/.py2store_configs"</span><span class="p">)</span>
+<span class="n">DFLT_MY_CONFIGS_DIRNAME</span> <span class="o">=</span> <span class="s2">"my"</span>
 
 <span class="k">try</span><span class="p">:</span>
     <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
 
     <span class="n">user_configs_dirpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span>
-        <span class="n">getenv</span><span class="p">(</span><span class="s1">'PY2STORE_CONFIGS_DIR'</span><span class="p">,</span> <span class="n">DFLT_PY2STORE_CONFIG_DIR</span><span class="p">)</span>
+        <span class="n">getenv</span><span class="p">(</span><span class="s2">"PY2STORE_CONFIGS_DIR"</span><span class="p">,</span> <span class="n">DFLT_PY2STORE_CONFIG_DIR</span><span class="p">)</span>
     <span class="p">)</span>
-    <span class="n">mkdir_if_needed</span><span class="p">(</span><span class="n">user_configs_dirpath</span><span class="p">,</span> <span class="s1">'user_configs_dirpath'</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">mkdir_if_needed</span><span class="p">(</span><span class="n">user_configs_dirpath</span><span class="p">,</span> <span class="s2">"user_configs_dirpath"</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">my_configs_dirname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span>
-        <span class="n">getenv</span><span class="p">(</span><span class="s1">'MY_PY2STORE_DIR_NAME'</span><span class="p">,</span> <span class="n">DFLT_MY_CONFIGS_DIRNAME</span><span class="p">)</span>
+        <span class="n">getenv</span><span class="p">(</span><span class="s2">"MY_PY2STORE_DIR_NAME"</span><span class="p">,</span> <span class="n">DFLT_MY_CONFIGS_DIRNAME</span><span class="p">)</span>
     <span class="p">)</span>
     <span class="n">myconfigs_dirpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">user_configs_dirpath</span><span class="p">,</span> <span class="n">my_configs_dirname</span><span class="p">)</span>
-    <span class="n">mkdir_if_needed</span><span class="p">(</span><span class="n">myconfigs_dirpath</span><span class="p">,</span> <span class="s1">'myconfigs_dirpath'</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">mkdir_if_needed</span><span class="p">(</span><span class="n">myconfigs_dirpath</span><span class="p">,</span> <span class="s2">"myconfigs_dirpath"</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">user_configs_dirpath</span><span class="p">):</span>
 
@@ -566,7 +567,7 @@
         <span class="k">def</span><span class="w"> </span><span class="nf">directory_json_items</span><span class="p">():</span>
 <span class="w">            </span><span class="sd">"""Yield ``(name, contents)`` for every ``.json`` file in the user configs directory, warning about files that fail to decode."""</span>
             <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="nb">filter</span><span class="p">(</span>
-                <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">'.json'</span><span class="p">),</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">user_configs_dirpath</span><span class="p">)</span>
+                <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">".json"</span><span class="p">),</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">user_configs_dirpath</span><span class="p">)</span>
             <span class="p">):</span>
                 <span class="n">filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">user_configs_dirpath</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
                 <span class="n">name</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
@@ -577,7 +578,7 @@
                     <span class="n">warn</span><span class="p">(</span><span class="sa">f</span><span class="s2">"This json file couldn't be json-decoded: </span><span class="si">{</span><span class="n">filepath</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
                 <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
                     <span class="n">warn</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s1">'Unknown error when trying to json.load this file: </span><span class="si">{</span><span class="n">filepath</span><span class="si">}</span><span class="s1">'</span>
+                        <span class="sa">f</span><span class="s2">"Unknown error when trying to json.load this file: </span><span class="si">{</span><span class="n">filepath</span><span class="si">}</span><span class="s2">"</span>
                     <span class="p">)</span></div>
 
 
@@ -605,7 +606,7 @@
 <span class="sd">                Overwriting and deleting entries are disabled, to keep the configs safe.</span>
 <span class="sd">                """</span>
 
-                <span class="n">key_sep</span> <span class="o">=</span> <span class="s1">':'</span>
+                <span class="n">key_sep</span> <span class="o">=</span> <span class="s2">":"</span>
 
                 <span class="nd">@wraps</span><span class="p">(</span><span class="n">LocalBinaryStore</span><span class="p">)</span>
                 <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
@@ -638,7 +639,7 @@
                     <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
                         <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span>
                             <span class="sa">f</span><span class="s2">"The '</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">' key wasn't found. "</span>
-                            <span class="sa">f</span><span class="s1">'What this probably is, is that you need '</span>
+                            <span class="sa">f</span><span class="s2">"What this probably is, is that you need "</span>
                             <span class="sa">f</span><span class="s2">"a file named '</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">' in your </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">dirpath</span><span class="si">}</span><span class="s2"> folder. Do that and try again."</span>
                         <span class="p">)</span>
 
@@ -660,9 +661,9 @@
 
                 <span class="k">def</span><span class="w"> </span><span class="fm">__delitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
                     <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
-                        <span class="s1">'Deletion was disabled. '</span>
-                        <span class="s1">'MyConfigs wants to keep your configs safe, so if you want to delete this config, '</span>
-                        <span class="s1">'do it another way (like manually).'</span>
+                        <span class="s2">"Deletion was disabled. "</span>
+                        <span class="s2">"MyConfigs wants to keep your configs safe, so if you want to delete this config, "</span>
+                        <span class="s2">"do it another way (like manually)."</span>
                     <span class="p">)</span></div>
 
 
@@ -670,11 +671,11 @@
             <span class="n">myconfigs</span><span class="o">.</span><span class="n">dirpath</span> <span class="o">=</span> <span class="n">myconfigs_dirpath</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">warn</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s1">'''The py2store-myconfigs directory wasn't found: </span><span class="si">{</span><span class="n">myconfigs_dirpath</span><span class="si">}</span>
-<span class="s1">            If you want to have all the cool functionality of `myconfigs`, you should make this directory, </span>
-<span class="s1">            and put stuff in it. Here's to make it easy for you to do it. Go to a terminal and run this:</span>
-<span class="s1">                mkdir </span><span class="si">{</span><span class="n">myconfigs_dirpath</span><span class="si">}</span>
-<span class="s1">            '''</span>
+                <span class="sa">f</span><span class="s2">"""The py2store-myconfigs directory wasn't found: </span><span class="si">{</span><span class="n">myconfigs_dirpath</span><span class="si">}</span>
+<span class="s2">            If you want to have all the cool functionality of `myconfigs`, you should make this directory, </span>
+<span class="s2">            and put stuff in it. Here's to make it easy for you to do it. Go to a terminal and run this:</span>
+<span class="s2">                mkdir </span><span class="si">{</span><span class="n">myconfigs_dirpath</span><span class="si">}</span>
+<span class="s2">            """</span>
             <span class="p">)</span>
 
 <div class="viewcode-block" id="MyStores">
@@ -691,11 +692,11 @@
                 <span class="k">if</span> <span class="n">FAK</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
                     <span class="k">return</span> <span class="n">fakit</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">FAK</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">func_loader</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="n">msg</span> <span class="o">=</span> <span class="s1">'Case not handled by MyStores'</span>
+                    <span class="n">msg</span> <span class="o">=</span> <span class="s2">"Case not handled by MyStores"</span>
                     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="s1">: keys: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
+                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="s2">: keys: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
                     <span class="k">else</span><span class="p">:</span>
-                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="s1">: type: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
+                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="s2">: type: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
             <span class="nd">@property</span>
             <span class="k">def</span><span class="w"> </span><span class="nf">configs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -707,26 +708,26 @@
 <a class="viewcode-back" href="../../_autosummary/py2store.access.html#py2store.access.without_json_ext">[docs]</a>
         <span class="k">def</span><span class="w"> </span><span class="nf">without_json_ext</span><span class="p">(</span><span class="n">_id</span><span class="p">):</span>
 <span class="w">            </span><span class="sd">"""Strip the ``.json`` extension from ``_id``."""</span>
-            <span class="k">assert</span> <span class="n">_id</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">'.json'</span><span class="p">),</span> <span class="s1">'Should end with .json'</span>
-            <span class="k">return</span> <span class="n">_id</span><span class="p">[:</span> <span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="s1">'.json'</span><span class="p">)]</span></div>
+            <span class="k">assert</span> <span class="n">_id</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">".json"</span><span class="p">),</span> <span class="s2">"Should end with .json"</span>
+            <span class="k">return</span> <span class="n">_id</span><span class="p">[:</span> <span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="s2">".json"</span><span class="p">)]</span></div>
 
 
 <div class="viewcode-block" id="add_json_ext">
 <a class="viewcode-back" href="../../_autosummary/py2store.access.html#py2store.access.add_json_ext">[docs]</a>
         <span class="k">def</span><span class="w"> </span><span class="nf">add_json_ext</span><span class="p">(</span><span class="n">k</span><span class="p">):</span>
 <span class="w">            </span><span class="sd">"""Append ``.json`` to ``k``."""</span>
-            <span class="k">return</span> <span class="n">k</span> <span class="o">+</span> <span class="s1">'.json'</span></div>
+            <span class="k">return</span> <span class="n">k</span> <span class="o">+</span> <span class="s2">".json"</span></div>
 
 
         <span class="n">ExtLessJsonStore</span> <span class="o">=</span> <span class="n">wrap_kvs</span><span class="p">(</span>
             <span class="n">LocalJsonStore</span><span class="p">,</span>
-            <span class="n">name</span><span class="o">=</span><span class="s1">'ExtLessJsonStore'</span><span class="p">,</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">"ExtLessJsonStore"</span><span class="p">,</span>
             <span class="n">key_decoder</span><span class="o">=</span><span class="n">without_json_ext</span><span class="p">,</span>
             <span class="n">key_encoder</span><span class="o">=</span><span class="n">add_json_ext</span><span class="p">,</span>
         <span class="p">)</span>
 
         <span class="n">stores_json_path_format</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
-            <span class="n">user_configs_dirpath</span><span class="p">,</span> <span class="s1">'stores'</span><span class="p">,</span> <span class="s1">'json'</span><span class="p">,</span> <span class="s1">'</span><span class="si">{}</span><span class="s1">.json'</span>
+            <span class="n">user_configs_dirpath</span><span class="p">,</span> <span class="s2">"stores"</span><span class="p">,</span> <span class="s2">"json"</span><span class="p">,</span> <span class="s2">"</span><span class="si">{}</span><span class="s2">.json"</span>
         <span class="p">)</span>
         <span class="n">mystores</span> <span class="o">=</span> <span class="n">MyStores</span><span class="p">(</span><span class="n">ExtLessJsonStore</span><span class="p">(</span><span class="n">stores_json_path_format</span><span class="p">))</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">py2store.trans</span><span class="w"> </span><span class="kn">import</span> <span class="n">add_ipython_key_completions</span>
@@ -739,7 +740,7 @@
             <span class="sa">f</span><span class="s2">"The configs directory wasn't found (please make it): </span><span class="si">{</span><span class="n">user_configs_dirpath</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span>
         <span class="n">user_configs_filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span>
-            <span class="n">getenv</span><span class="p">(</span><span class="s1">'PY2STORE_CONFIGS_JSON_FILEPATH'</span><span class="p">,</span> <span class="s1">'~/.py2store_configs.json'</span><span class="p">)</span>
+            <span class="n">getenv</span><span class="p">(</span><span class="s2">"PY2STORE_CONFIGS_JSON_FILEPATH"</span><span class="p">,</span> <span class="s2">"~/.py2store_configs.json"</span><span class="p">)</span>
         <span class="p">)</span>
         <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">user_configs_filepath</span><span class="p">):</span>
             <span class="n">user_configs_dict</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">user_configs_filepath</span><span class="p">))</span>
@@ -748,7 +749,7 @@
             <span class="p">)</span>
 
     <span class="n">user_defaults_filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span>
-        <span class="n">getenv</span><span class="p">(</span><span class="s1">'PY2STORE_DEFAULTS_JSON_FILEPATH'</span><span class="p">,</span> <span class="s1">'~/.py2store_defaults.json'</span><span class="p">)</span>
+        <span class="n">getenv</span><span class="p">(</span><span class="s2">"PY2STORE_DEFAULTS_JSON_FILEPATH"</span><span class="p">,</span> <span class="s2">"~/.py2store_defaults.json"</span><span class="p">)</span>
     <span class="p">)</span>
     <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">user_defaults_filepath</span><span class="p">):</span>
         <span class="n">user_defaults_dict</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">user_defaults_filepath</span><span class="p">))</span>
@@ -757,7 +758,7 @@
         <span class="p">)</span>
 
 <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="n">warn</span><span class="p">(</span><span class="sa">f</span><span class="s1">'There was an exception when trying to get configs and defaults: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
+    <span class="n">warn</span><span class="p">(</span><span class="sa">f</span><span class="s2">"There was an exception when trying to get configs and defaults: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </pre></div>
         </article>
       </div>
@@ -786,7 +787,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=47c14350"></script>
+</div><script src="../../_static/documentation_options.js?v=ee813736"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>

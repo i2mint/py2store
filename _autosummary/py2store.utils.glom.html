@@ -966,7 +966,7 @@ specs set to be “starred” or “star-starred” (respectively)</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">os.path</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">spec</span> <span class="o">=</span> <span class="n">Invoke</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">)</span><span class="o">.</span><span class="n">star</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="s1">'path'</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">target</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'path'</span><span class="p">:</span> <span class="p">[</span><span class="s1">'path'</span><span class="p">,</span> <span class="s1">'to'</span><span class="p">,</span> <span class="s1">'dir'</span><span class="p">]}</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">glom</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">spec</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">glom</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">spec</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">sep</span><span class="p">,</span> <span class="s1">'/'</span><span class="p">)</span>
 <span class="go">'path/to/dir'</span>
 </pre></div>
 </div>
@@ -1551,7 +1551,7 @@ methods instead.</p>
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=47c14350"></script>
+</div><script src="../_static/documentation_options.js?v=ee813736"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/scripts/furo.js?v=46bd48cc"></script>
