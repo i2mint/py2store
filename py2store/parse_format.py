@@ -45,7 +45,7 @@ True
 Format Syntax
 -------------
 
-A basic version of the `Format String Syntax`_ is supported with anonymous
+A basic version of the `Format String Syntax <https://docs.python.org/3/library/string.html#format-string-syntax>`__ is supported with anonymous
 (fixed-position), named and formatted fields::
 
    {[field name]:[format spec]}
@@ -105,7 +105,7 @@ Format Specification
 Most often a straight format-less ``{}`` will suffice where a more complex
 format specification might have been used.
 
-Most of `format()`'s `Format Specification Mini-Language`_ is supported:
+Most of `format()`'s `Format Specification Mini-Language <https://docs.python.org/3/library/string.html#format-specification-mini-language>`__ is supported:
 
    [[fill]align][0][width][.precision][type]
 
@@ -225,11 +225,6 @@ Note: attempting to match too many datetime fields in a single parse() will
 currently result in a resource allocation issue. A TooManyFields exception
 will be raised in this instance. The current limit is about 15. It is hoped
 that this limit will be removed one day.
-
-.. _`Format String Syntax`:
-  http://docs.python.org/library/string.html#format-string-syntax
-.. _`Format Specification Mini-Language`:
-  http://docs.python.org/library/string.html#format-specification-mini-language
 
 
 Result and Match Objects
@@ -393,7 +388,7 @@ the pattern, the actual match represents the shortest successful match for
   "f" and "n" types.
 - 1.1.2 refactored, added compile() and limited ``from parse import *``
 - 1.1.1 documentation improvements
-- 1.1.0 implemented more of the `Format Specification Mini-Language`_
+- 1.1.0 implemented more of the `Format Specification Mini-Language <https://docs.python.org/3/library/string.html#format-specification-mini-language>`__
   and removed the restriction on mixing fixed-position and named fields
 - 1.0.0 initial release
 
