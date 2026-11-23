@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "py2store"
-version = "0.1.30"
+version = "0.1.31"
 description = "Tools to create simple and consistent interfaces to complicated and varied data sources."
 readme = "README.md"
 requires-python = ">=3.10"
